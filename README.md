@@ -54,15 +54,16 @@ Nur Dateien, die tatsächlich modifiziert wurden oder noch modifiziert werden m�
 |---|---|---|
 | `client/src/assets/styles/_variables.scss` | Alle Design-Tokens: Farben, Fonts, Spacing, Shadows, Transitions als CSS Custom Properties | ✅ Rewritten |
 | `client/src/assets/styles/main.scss` | Fontshare CDN-Import (Satoshi + Cabinet Grotesk), body/html-Basis, globale Resets, Focus-States, `prefers-reduced-motion` | ✅ Updated |
-| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Sidebar `<transition name="side">` (slide-from-right + fade; Mobile: slide-from-bottom), **Split-Screen-Glow** (`#neko.expanded .neko-main { box-shadow: 4px 0 20px color-mix(primary 10%) }`, deaktiviert auf Mobile), **room-container Glassmorphism** (`backdrop-filter:blur(8px)` + aufwärts-Gradient + Teal-Tint `border-top`), **hardcoded `rgba(0,0,0,0.4)` auf `var(--color-bg)` migriert**, `header-container: background:transparent` | ✅ Updated |
+| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Sidebar `<transition name="side">` (slide-from-right + fade; Mobile: slide-from-bottom), **Split-Screen-Glow** (`#neko.expanded .neko-main { box-shadow: 4px 0 20px color-mix(primary 10%) }`), **room-container Glassmorphism** (`backdrop-filter:blur(8px)` + aufwärts-Gradient + Teal-Tint `border-top`), **hardcoded `rgba(0,0,0,0.4)` auf `var(--color-bg)` migriert**, `header-container: background:transparent`, **Sticky Navigation** (`.header-container position:sticky top:0`, `.room-container position:sticky bottom:0`, beide `z-index:10`), **`scroll-behavior:smooth`** auf `.neko-main`, **`.is-scrolled`-Elevation** (passiver scroll-Listener via `mainContainer`-Ref, `scrollTop>4px` → Header `backdrop-filter:blur(8px)` + semi-transparenter BG + `shadow-sm`, `beforeDestroy`-Cleanup) | ✅ Updated |
 | `client/src/components/header.vue` | Topbar: Theme-Toggle-Button (Sonne/Mond-SVG, `aria-label`, Teal-Hover), Icon-Micro-Animations (Hover `scale(1.08)`, Active `scale(0.95)`), **Gradient** (`linear-gradient(135deg, color-mix(primary 7%, bg) → bg)` — opaker Verlauf, kein Glassmorphism-Blur), CSS Tokens durchgehend, `border-bottom: color-mix(border 70%, transparent)` | ✅ Updated |
 | `client/src/components/side.vue` | Sidebar (`<aside>`): Pill-Tabs (aktiver Tab `background:primary-highlight`, Hover-Scale), Tab-Inhalt `<transition>` fade+slide `mode="out-in"`, **Glassmorphism** (`backdrop-filter:blur(12px)` auf `.neko-menu` + `.tabs-container`, semi-transparente Backgrounds via `color-mix`), **`page-container overflow-y:auto`** (Bento-scroll-support), `border-left: color-mix(border 70%, transparent)` | ✅ Updated |
 | `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges (`border-radius:var(--radius-full)`), Message-Hover (`background:var(--color-surface-offset)`), Code-Block CSS Tokens, Textarea-Redesign (Token-basierter Focus-Ring), **Skeleton Loading State** (4 Shimmer-Messages via `@keyframes shimmer`) | ✅ Updated |
 | `client/src/components/members.vue` | Members-Bar unterhalb Video: **Status-Dots** (4 Zustände: online/away/busy/offline via `--color-success/warning/error/text-muted`), Avatar-Hover (`scale(1.08)`), Host/Admin-Badges (CSS Tokens), **Skeleton Loading State** (4 Shimmer-Circles) | ✅ Updated |
 | `client/src/components/menu.vue` | Navigationsmenü (Hamburger): Icons `color:var(--color-text-muted)` + Hover-Teal, Language-`<select>` vollständig von `$background-*/color:white` auf CSS Custom Properties migriert (Light-Mode-fix) | ✅ Updated |
-| `client/src/components/controls.vue` | Steuerleiste: Touch-Targets `min-width/height:44px`, Micro-Animations (Hover `scale(1.18)` + `color:primary`, Active `scale(0.88)`, `will-change:transform`), `.faded`-Icons `color:var(--color-text-muted)` (kein `opacity`-Hack), Lock-Switch-Track `--color-border`, Volume-Slider-Thumb mit `box-shadow` | ✅ Updated |
+| `client/src/components/controls.vue` | Steuerleiste: Touch-Targets `min-width/height:44px`, Micro-Animations (Hover `scale(1.18)` + Teal, Active `scale(0.88)`, `will-change:transform`), `.faded`-Icons `color:var(--color-text-muted)` (kein `opacity`-Hack), Lock-Switch-Track `--color-border`, Volume-Slider-Thumb mit `box-shadow`, **Animated Counters** (Bitrate/FPS-Badge: `RTCPeerConnection.getStats()` alle 2s via `$client.peerConnection`, Lerp-Animation `displayFps/displayBitrateKbps → targetFps/targetBitrateKbps` per `requestAnimationFrame`, Stat-Flip-`@keyframes` beim Eintreffen neuer Werte via `:key="statsKey"`, Mono-Font `--font-mono` + `tabular-nums`, nur sichtbar wenn `playing && statsVisible`, `beforeDestroy`-Cleanup) | ✅ Updated |
 | `client/src/components/settings.vue` | **Bento Grid Rewrite**: 2-Spalten CSS-Grid, 5 semantisch gruppierte Cards (Scrolling full-width / Chat / Input / Broadcast full-width / Session), Card-Header mit Teal-Icon + uppercase Label, `hover:box-shadow:var(--shadow-md)`, alle bestehenden Controls (Switch, Slider, Select) erhalten, **Custom Toggle Switches** (`width:44px`, Spring-Easing, Teal-Akzent, Off-Track `--color-border`) | ✅ Rewritten |
 | `client/src/components/connect.vue` | Login/Connect-Dialog: Overlay `backdrop-filter:blur(4px)` (semi-transparent), `.window` `backdrop-filter:blur(12px)` + `background:color-mix(surface 75%, transparent)` + `border-top` Glass-Highlight, **radiales Spotlight-Gradient** (`radial-gradient(ellipse, color-mix(primary 10%, bg) → bg)`), Input-Felder `background:color-mix(bg 70%, transparent)`, CSS Tokens, Touch-Targets ≥44px | ✅ Updated |
+| `client/src/neko/base.ts` | **`peerConnection` Getter** (`get peerConnection(): RTCPeerConnection \| undefined { return this._peer }`) — exponiert den internen `protected _peer` sauber nach außen; kein `any`-Hack auf protected Fields nötig. Benötigt von `controls.vue` für Stats-Polling | ✅ Updated |
 | `client/src/components/video.vue` | WebRTC-Video + Maus/Tastatur-Overlay — **zuletzt anfassen**, Event-Handler nicht verändern | ⬜ Offen |
 
 **Empfohlene Bearbeitungsreihenfolge (von außen nach innen):**
@@ -134,16 +135,30 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 | Bento Grid Layout für Settings-Panel | ✅ | `settings.vue`, `side.vue` | 2-Spalten CSS-Grid, 5 Cards |
 | Split-Screen Layout: Video-Bereich + Sidebar visuell klarer getrennt | ✅ | `app.vue` | Teal-Glow rechter Rand + room-container Glassmorphism + `rgba`→Token-Migration |
 
-> ⚠️ **Bekannte Einschränkung header.vue:** `backdrop-filter:blur(8px)` ist im Code vorhanden, hat aber keinen sichtbaren Effekt, weil der Gradient-Background opak ist (`color-mix(primary 7%, var(--color-bg))` erzeugt keine Transparenz). Soll der Header echten Glassmorphism-Blur bekommen, muss der Background auf `color-mix(in srgb, var(--color-bg) 80%, transparent)` umgestellt werden. Kandidat für Phase 4/5.
+> ⚠️ **Bekannte Einschränkung header.vue:** `backdrop-filter:blur(8px)` ist im Code vorhanden, hat aber keinen sichtbaren Effekt im Ruhezustand, weil der Gradient-Background opak ist (`color-mix(primary 7%, var(--color-bg))` erzeugt keine Transparenz). Der Blur ist jedoch bereits aktiv im `.is-scrolled`-State (Phase 4), da dort ein semi-transparenter BG gesetzt wird. Vollständiger Header-Glassmorphism (auch im Ruhezustand) ist Kandidat für Phase 5.
 
 ---
 
-### Phase 4 — Kat. 3: Interaktion & Storytelling *(kontextabhängig)*
+### Phase 4 — Kat. 3: Interaktion & Storytelling *(kontextabhängig)* ✅ Abgeschlossen (30.04.2026)
 
 | Task | Status | Datei(en) |
 |---|---|---|
-| Animated Counters für Bitrate/FPS-Anzeige in der Steuerleiste | ⬜ | `controls.vue` |
-| Smooth Scroll + Sticky Navigation | ⬜ | `app.vue` |
+| Animated Counters für Bitrate/FPS-Anzeige in der Steuerleiste | ✅ | `controls.vue`, `neko/base.ts` |
+| Smooth Scroll + Sticky Navigation | ✅ | `app.vue` |
+
+**Animated Counters (Details):**
+- `base.ts`: Neuer public getter `peerConnection` auf `BaseClient` — exponiert `protected _peer` ohne `any`-Hack
+- `controls.vue`: `RTCPeerConnection.getStats()` Polling alle 2s; FPS aus `r.framesPerSecond`, Bitrate aus `bytesReceived`-Delta × 8 / Zeitdelta (Kbps/Mbps)
+- Lerp-Animation: `displayFps/displayBitrateKbps` interpolieren per `requestAnimationFrame` zum Zielwert (Faktor 0.18), stoppt automatisch bei Zielwert
+- `stat-flip` `@keyframes` (220ms) beim Eintreffen neuer Poll-Daten via `:key="statsKey"`
+- Badge: Mono-Font `--font-mono`, `tabular-nums`, nur sichtbar wenn `playing && statsVisible`; `@Watch('playing')` reset auf 0 bei Pause
+
+**Sticky Navigation (Details):**
+- `.header-container`: `position:sticky; top:0; z-index:10` — bleibt bei Mobile-Scroll sichtbar
+- `.room-container`: `position:sticky; bottom:0; z-index:10` — Steuerleiste bleibt beim Scrollen erreichbar
+- `scroll-behavior:smooth` auf `.neko-main` — alle Scroll-Events (programmatisch + nativ) laufen smooth
+- `.is-scrolled`-State: passiver `scroll`-Listener auf `mainContainer`-Ref; bei `scrollTop > 4px` → Header `backdrop-filter:blur(8px)` + semi-transparenter BG + `shadow-sm` (Preview von Phase-5-Glassmorphism)
+- `beforeDestroy`: Listener korrekt entfernt, kein Memory Leak
 
 ---
 
@@ -153,7 +168,7 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 |---|---|---|
 | Terminal Aesthetic als optionaler Accent (Mono-Font in Controls-Leiste) | ⬜ | `controls.vue`, `_variables.scss` |
 | Dot-Grid-Hintergrund im Connect-Dialog | ⬜ | `connect.vue` |
-| Header-Glassmorphism reparieren (semi-transparenter BG für funktionierenden `backdrop-filter`) | ⬜ | `header.vue` |
+| Header-Glassmorphism reparieren (semi-transparenter BG für funktionierenden `backdrop-filter` im Ruhezustand) | ⬜ | `header.vue` |
 
 ---
 
