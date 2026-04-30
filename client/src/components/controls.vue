@@ -84,46 +84,30 @@
 </template>
 
 <style lang="scss" scoped>
+  // ------------------------------------------------------------------
+  // Shake animation — keyboard-request attention feedback
+  // ------------------------------------------------------------------
   .shake {
     animation: shake 1.25s cubic-bezier(0, 0, 0, 1);
   }
 
   @keyframes shake {
-    0% {
-      transform: scale(1) translate(0px, 0) rotate(0);
-    }
-    10% {
-      transform: scale(1.25) translate(-2px, -2px) rotate(-20deg);
-    }
-    20% {
-      transform: scale(1.5) translate(4px, -4px) rotate(20deg);
-    }
-    30% {
-      transform: scale(1.75) translate(-4px, -6px) rotate(-20deg);
-    }
-    40% {
-      transform: scale(2) translate(6px, -8px) rotate(20deg);
-    }
-    50% {
-      transform: scale(2.25) translate(-6px, -10px) rotate(-20deg);
-    }
-    60% {
-      transform: scale(2) translate(6px, -8px) rotate(20deg);
-    }
-    70% {
-      transform: scale(1.75) translate(-4px, -6px) rotate(-20deg);
-    }
-    80% {
-      transform: scale(1.5) translate(4px, -4px) rotate(20deg);
-    }
-    90% {
-      transform: scale(1.25) translate(-2px, -2px) rotate(-20deg);
-    }
-    100% {
-      transform: scale(1) translate(0px, 0) rotate(0);
-    }
+    0%   { transform: scale(1)    translate(0px,   0px)   rotate(0deg);   }
+    10%  { transform: scale(1.25) translate(-2px,  -2px)  rotate(-20deg); }
+    20%  { transform: scale(1.5)  translate(4px,   -4px)  rotate(20deg);  }
+    30%  { transform: scale(1.75) translate(-4px,  -6px)  rotate(-20deg); }
+    40%  { transform: scale(2)    translate(6px,   -8px)  rotate(20deg);  }
+    50%  { transform: scale(2.25) translate(-6px,  -10px) rotate(-20deg); }
+    60%  { transform: scale(2)    translate(6px,   -8px)  rotate(20deg);  }
+    70%  { transform: scale(1.75) translate(-4px,  -6px)  rotate(-20deg); }
+    80%  { transform: scale(1.5)  translate(4px,   -4px)  rotate(20deg);  }
+    90%  { transform: scale(1.25) translate(-2px,  -2px)  rotate(-20deg); }
+    100% { transform: scale(1)    translate(0px,   0px)   rotate(0deg);   }
   }
 
+  // ------------------------------------------------------------------
+  // Controls list
+  // ------------------------------------------------------------------
   ul {
     display: flex;
     flex-direction: row;
@@ -132,79 +116,128 @@
     list-style: none;
 
     li {
-      font-size: 24px;
+      // Touch target ≥ 44×44 px (WCAG 2.5.5 / mobile UX)
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
 
       &.no-pointer {
         cursor: default;
       }
 
+      // ------------------------------------------------------------------
+      // Icon micro-animations
+      // ------------------------------------------------------------------
       i {
-        padding: 0 5px;
+        font-size: 24px;
+        color: var(--color-text);
+        will-change: transform;
+        transition:
+          transform var(--transition-fast),
+          color    var(--transition-interactive),
+          opacity  var(--transition-interactive);
+
+        // Hover: lift + teal accent (skip for non-interactive / disabled)
+        &:hover:not(.disabled):not(.shake) {
+          transform: scale(1.18);
+          color: var(--color-primary);
+        }
+
+        // Active: press-down feedback
+        &:active:not(.disabled) {
+          transform: scale(0.88);
+          transition-duration: 80ms;
+        }
 
         &.faded {
-          color: rgba($color: $text-normal, $alpha: 0.4);
+          color: var(--color-text);
+          opacity: 0.4;
         }
 
         &.disabled {
-          color: rgba($color: $style-error, $alpha: 0.4);
+          color: var(--color-error);
+          opacity: 0.4;
+          pointer-events: none;
         }
       }
 
+      // ------------------------------------------------------------------
+      // Volume control
+      // ------------------------------------------------------------------
       .volume {
-        white-space: nowrap;
-        display: block;
         display: flex;
         flex-direction: row;
-        justify-content: center;
         align-items: center;
-        list-style: none;
+        gap: var(--space-2);
+        white-space: nowrap;
 
         input[type='range'] {
-          width: 100%;
-          background: transparent;
           width: 150px;
           height: 20px;
+          background: transparent;
           -webkit-appearance: none;
+          appearance: none;
+          cursor: pointer;
 
-          &::-moz-range-thumb {
-            height: 12px;
-            width: 12px;
-            border-radius: 12px;
-            background: #fff;
-            cursor: pointer;
-          }
-
+          // Firefox — track
           &::-moz-range-track {
             width: 100%;
             height: 4px;
+            background: var(--color-primary);
+            border-radius: var(--radius-full);
             cursor: pointer;
-            background: $style-primary;
-            border-radius: 2px;
           }
 
+          // Firefox — thumb
+          &::-moz-range-thumb {
+            height: 12px;
+            width: 12px;
+            border-radius: var(--radius-full);
+            background: #fff;
+            cursor: pointer;
+            border: none;
+            transition: transform var(--transition-fast);
+          }
+
+          &:hover::-moz-range-thumb {
+            transform: scale(1.35);
+          }
+
+          // WebKit — track
+          &::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: var(--color-primary);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+          }
+
+          // WebKit — thumb
           &::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 12px;
             width: 12px;
-            border-radius: 12px;
+            border-radius: var(--radius-full);
             background: #fff;
             cursor: pointer;
             margin-top: -4px;
+            transition: transform var(--transition-fast);
           }
 
-          &::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 4px;
-            cursor: pointer;
-            background: $style-primary;
-            border-radius: 2px;
+          &:hover::-webkit-slider-thumb {
+            transform: scale(1.35);
           }
         }
       }
 
+      // ------------------------------------------------------------------
+      // Custom toggle switch
+      // ------------------------------------------------------------------
       .switch {
-        margin: 0 5px;
+        margin: 0 var(--space-1);
         display: block;
         position: relative;
         width: 42px;
@@ -219,49 +252,50 @@
         span {
           position: absolute;
           cursor: pointer;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: $background-secondary;
-          transition: 0.2s;
-          border-radius: 34px;
+          inset: 0;
+          background-color: var(--color-surface);
+          border-radius: var(--radius-full);
+          transition: background-color var(--transition-interactive);
 
-          &:before {
-            color: $background-tertiary;
-            font-weight: 900;
+          &::before {
             font-family: 'Font Awesome 6 Free';
-            content: '\f3c1';
+            font-weight: 900;
+            content: '\f3c1'; // fa-circle-dot (unlocked indicator)
             font-size: 8px;
             line-height: 18px;
             text-align: center;
+            color: var(--color-bg);
             position: absolute;
             height: 18px;
             width: 18px;
             left: 3px;
             bottom: 3px;
-            background-color: white;
-            transition: 0.3s;
+            background-color: #fff;
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--transition-interactive);
+            will-change: transform;
           }
         }
       }
 
       input[type='checkbox'] {
         &:checked + span {
-          background-color: $style-primary;
+          background-color: var(--color-primary);
 
-          &:before {
-            content: '\f023';
+          &::before {
+            content: '\f023'; // fa-lock
             transform: translateX(18px);
           }
         }
 
         &:disabled + span {
-          &:before {
+          opacity: 0.45;
+          cursor: not-allowed;
+
+          &::before {
             content: '';
-            background-color: rgba($color: $text-normal, $alpha: 0.4);
+            background-color: var(--color-text-muted);
           }
         }
       }
