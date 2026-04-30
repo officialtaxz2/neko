@@ -268,18 +268,43 @@
         }
 
         &.row-full { padding: var(--space-3) var(--space-4); }
+
+        // Rows containing a select stack label above select so neither
+        // clips in half-width cards where row inner-width < 120px.
+        &:has(.select) {
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: center;
+          gap: var(--space-1);
+          padding-block: var(--space-2);
+          min-height: 52px;
+
+          > span { flex: none; }
+
+          .select {
+            width: 100%;
+            max-width: 100%;
+
+            select {
+              text-align: left;
+              width: 100%;
+              max-width: 100%;
+            }
+          }
+        }
       }
     }
 
     // LOG OUT: ghost button at rest — destructive action should not use
-    // the primary CTA color. Neutral at rest, error-red on hover to signal
-    // the destructive nature of the action without being visually aggressive.
+    // the primary CTA color. Neutral surface bg at rest (no extra border so
+    // no double-frame against the enclosing bento-card border). Error-red on
+    // hover signals the destructive nature without being visually aggressive.
     .btn-logout {
       width: 100%;
       min-height: 44px;
       border-radius: var(--radius-md);
-      border: 1px solid var(--color-border);
-      background: transparent;
+      border: 1px solid transparent;
+      background: var(--color-surface-offset);
       color: var(--color-text-muted);
       font-size: var(--text-sm);
       font-weight: 600;
