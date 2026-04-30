@@ -130,7 +130,6 @@
     overflow-y: auto;
     padding: var(--space-4) var(--space-3);
 
-    // ── Bento Grid ───────────────────────────────────────────────────────────
     .bento-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -138,41 +137,27 @@
       align-items: start;
     }
 
-    // ── Bento Card ───────────────────────────────────────────────────────────
     .bento-card {
       background: color-mix(in srgb, var(--color-surface-2) 90%, transparent);
-      // Full --color-border opacity: clearly visible in both light and dark mode.
-      // Previously 70% alpha caused near-invisible borders on light backgrounds.
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
       overflow: hidden;
       transition: box-shadow var(--transition-interactive);
 
-      &:hover {
-        box-shadow: var(--shadow-md);
-      }
+      &:hover { box-shadow: var(--shadow-md); }
 
-      // Full-width card spans both columns
-      &.bento-full {
-        grid-column: 1 / -1;
-      }
+      &.bento-full { grid-column: 1 / -1; }
     }
 
-    // ── Card Header ──────────────────────────────────────────────────────────
     .card-header {
       display: flex;
       align-items: center;
       gap: var(--space-2);
       padding: var(--space-2) var(--space-4);
-      // Neutral surface — removed teal 5% tint to reduce color saturation.
-      // Only the active/checked toggle and the broadcast status button use primary color.
       border-bottom: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
       background: var(--color-surface);
 
       i {
-        // --color-text-muted instead of --color-primary:
-        // icons provide structural context, not emphasis — neutral is correct here.
-        // Teal is reserved for interactive/active states (toggles, active tabs).
         color: var(--color-text-muted);
         font-size: var(--text-xs);
         flex-shrink: 0;
@@ -187,7 +172,6 @@
         color: var(--color-text-muted);
       }
 
-      // Compact icon button in card header (broadcast start/stop)
       .btn-icon {
         min-width: 28px;
         min-height: 28px;
@@ -214,7 +198,6 @@
       }
     }
 
-    // ── Card Body rows ────────────────────────────────────────────────────────
     .card-body {
       padding: var(--space-1) 0;
 
@@ -235,14 +218,10 @@
           font-size: var(--text-sm);
         }
 
-        // Full-width row variant (broadcast input)
-        &.row-full {
-          padding: var(--space-3) var(--space-4);
-        }
+        &.row-full { padding: var(--space-3) var(--space-4); }
       }
     }
 
-    // ── Logout button ─────────────────────────────────────────────────────────
     .btn-logout {
       width: 100%;
       min-height: 44px;
@@ -262,12 +241,16 @@
       &:active { background: var(--color-primary-active); transform: scale(0.97); }
     }
 
-    // ── Toggle Switch — 44×44px touch target, 42×24px visible pill ────────────
+    // ------------------------------------------------------------------
+    // Toggle Switch — OFF track uses --color-text-muted:
     //
-    // OFF-state track: --color-text-faint instead of --color-border.
-    // In light mode --color-border is hsl(220,10%,84%) on a near-white bg
-    // = ~1.2:1 contrast (WCAG fail). --color-text-faint is hsl(220,10%,64%)
-    // = ~2.6:1 — clearly visible as a grey pill in both modes.
+    // Contrast ratios for the OFF track pill:
+    //   Light mode: text-muted (44% L) on surface-2 (98% L) → ~5.0:1 ✓
+    //   Dark  mode: text-muted (50% L) on surface-2 (16% L) → ~3.7:1 ✓
+    //
+    // Previously used --color-text-faint which gave only ~2.3:1 in both
+    // modes — WCAG AA fail and visually near-invisible on light backgrounds.
+    // ------------------------------------------------------------------
     .switch {
       flex-shrink: 0;
       display: inline-block;
@@ -291,7 +274,7 @@
         left: 1px;
         right: 1px;
         bottom: 10px;
-        background-color: var(--color-text-faint);
+        background-color: var(--color-text-muted);
         border-radius: var(--radius-full);
         transition: background-color var(--transition-interactive);
 
@@ -310,7 +293,11 @@
         }
       }
 
-      &:hover span { background-color: var(--color-text-muted); }
+      // Hover: blend 30% toward --color-text for a natural
+      // darkening (light mode) / lightening (dark mode) effect.
+      &:hover span {
+        background-color: color-mix(in srgb, var(--color-text-muted) 70%, var(--color-text));
+      }
     }
 
     input[type='checkbox'] {
@@ -321,7 +308,6 @@
       &:checked + span:hover { background-color: var(--color-primary-hover); }
     }
 
-    // ── Scroll speed slider ───────────────────────────────────────────────────
     .slider {
       flex-shrink: 0;
       max-width: 120px;
@@ -360,7 +346,6 @@
       }
     }
 
-    // ── Keyboard layout select ────────────────────────────────────────────────
     .select {
       flex-shrink: 0;
       max-width: 120px;
@@ -403,7 +388,6 @@
       }
     }
 
-    // ── Broadcast URL input ───────────────────────────────────────────────────
     .input {
       display: block;
       width: 100%;
@@ -443,82 +427,38 @@
   export default class extends Vue {
     private broadcast_url: string = ''
 
-    get admin() {
-      return this.$accessor.user.admin
-    }
+    get admin() { return this.$accessor.user.admin }
+    get connected() { return this.$accessor.connected }
 
-    get connected() {
-      return this.$accessor.connected
-    }
+    get scroll() { return this.$accessor.settings.scroll.toString() }
+    set scroll(value: string) { this.$accessor.settings.setScroll(parseInt(value)) }
 
-    get scroll() {
-      return this.$accessor.settings.scroll.toString()
-    }
+    get scroll_invert() { return this.$accessor.settings.scroll_invert }
+    set scroll_invert(value: boolean) { this.$accessor.settings.setInvert(value) }
 
-    set scroll(value: string) {
-      this.$accessor.settings.setScroll(parseInt(value))
-    }
+    get autoplay() { return this.$accessor.settings.autoplay }
+    set autoplay(value: boolean) { this.$accessor.settings.setAutoplay(value) }
 
-    get scroll_invert() {
-      return this.$accessor.settings.scroll_invert
-    }
+    get ignore_emotes() { return this.$accessor.settings.ignore_emotes }
+    set ignore_emotes(value: boolean) { this.$accessor.settings.setIgnore(value) }
 
-    set scroll_invert(value: boolean) {
-      this.$accessor.settings.setInvert(value)
-    }
+    get chat_sound() { return this.$accessor.settings.chat_sound }
+    set chat_sound(value: boolean) { this.$accessor.settings.setSound(value) }
 
-    get autoplay() {
-      return this.$accessor.settings.autoplay
-    }
+    get keyboard_layouts_list() { return this.$accessor.settings.keyboard_layouts_list }
+    get keyboard_layout() { return this.$accessor.settings.keyboard_layout }
 
-    set autoplay(value: boolean) {
-      this.$accessor.settings.setAutoplay(value)
-    }
-
-    get ignore_emotes() {
-      return this.$accessor.settings.ignore_emotes
-    }
-
-    set ignore_emotes(value: boolean) {
-      this.$accessor.settings.setIgnore(value)
-    }
-
-    get chat_sound() {
-      return this.$accessor.settings.chat_sound
-    }
-
-    set chat_sound(value: boolean) {
-      this.$accessor.settings.setSound(value)
-    }
-
-    get keyboard_layouts_list() {
-      return this.$accessor.settings.keyboard_layouts_list
-    }
-
-    get keyboard_layout() {
-      return this.$accessor.settings.keyboard_layout
-    }
-
-    get broadcast_is_active() {
-      return this.$accessor.settings.broadcast_is_active
-    }
-
-    get broadcast_url_remote() {
-      return this.$accessor.settings.broadcast_url
-    }
+    get broadcast_is_active() { return this.$accessor.settings.broadcast_is_active }
+    get broadcast_url_remote() { return this.$accessor.settings.broadcast_url }
 
     @Watch('broadcast_url_remote', { immediate: true })
-    onBroadcastUrlChange() {
-      this.broadcast_url = this.broadcast_url_remote
-    }
+    onBroadcastUrlChange() { this.broadcast_url = this.broadcast_url_remote }
 
     set keyboard_layout(value: string) {
       this.$accessor.settings.setKeyboardLayout(value)
       this.$accessor.remote.changeKeyboard()
     }
 
-    logout() {
-      this.$accessor.logout()
-    }
+    logout() { this.$accessor.logout() }
   }
 </script>

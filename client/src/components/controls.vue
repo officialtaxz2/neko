@@ -81,8 +81,6 @@
       </div>
     </li>
 
-    <!-- Bitrate / FPS animated counter badge -->
-    <!-- Only visible when video is playing and at least one stat is non-zero -->
     <li class="stats-badge no-pointer" v-if="playing && statsVisible">
       <div class="stats-inner">
         <span class="stat">
@@ -100,9 +98,6 @@
 </template>
 
 <style lang="scss" scoped>
-  // ------------------------------------------------------------------
-  // Shake animation — keyboard-request attention feedback
-  // ------------------------------------------------------------------
   .shake {
     animation: shake 1.25s cubic-bezier(0, 0, 0, 1);
   }
@@ -121,20 +116,11 @@
     100% { transform: scale(1)    translate(0px,   0px)   rotate(0deg);   }
   }
 
-  // ------------------------------------------------------------------
-  // Stat-flip: brief entry animation when a new value arrives
-  // Triggered by :key change on stat-val (fires every 2s poll cycle)
-  // ------------------------------------------------------------------
   @keyframes stat-flip {
     0%   { opacity: 0.3; transform: translateY(-4px) scale(0.88); }
     100% { opacity: 1;   transform: translateY(0)    scale(1); }
   }
 
-  // ------------------------------------------------------------------
-  // Controls list
-  // Terminal accent: --font-controls defaults to --font-mono.
-  // Override --font-controls to var(--font-body) globally to disable.
-  // ------------------------------------------------------------------
   ul {
     display: flex;
     flex-direction: row;
@@ -151,13 +137,8 @@
       justify-content: center;
       cursor: pointer;
 
-      &.no-pointer {
-        cursor: default;
-      }
+      &.no-pointer { cursor: default; }
 
-      // ------------------------------------------------------------------
-      // Icon micro-animations
-      // ------------------------------------------------------------------
       i {
         font-size: 24px;
         color: var(--color-text);
@@ -177,20 +158,10 @@
           transition-duration: 80ms;
         }
 
-        &.faded {
-          color: var(--color-text-muted);
-        }
-
-        &.disabled {
-          color: var(--color-error);
-          opacity: 0.4;
-          pointer-events: none;
-        }
+        &.faded   { color: var(--color-text-muted); }
+        &.disabled { color: var(--color-error); opacity: 0.4; pointer-events: none; }
       }
 
-      // ------------------------------------------------------------------
-      // Volume control
-      // ------------------------------------------------------------------
       .volume {
         display: flex;
         flex-direction: row;
@@ -207,59 +178,33 @@
           cursor: pointer;
 
           &::-moz-range-track {
-            width: 100%;
-            height: 4px;
-            background: var(--color-primary);
-            border-radius: var(--radius-full);
-            cursor: pointer;
+            width: 100%; height: 4px;
+            background: var(--color-primary); border-radius: var(--radius-full); cursor: pointer;
           }
-
           &::-moz-range-thumb {
-            height: 12px;
-            width: 12px;
-            border-radius: var(--radius-full);
-            background: #fff;
-            cursor: pointer;
-            border: none;
-            box-shadow: var(--shadow-sm);
-            transition: transform var(--transition-fast);
+            height: 12px; width: 12px; border-radius: var(--radius-full);
+            background: #fff; cursor: pointer; border: none;
+            box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
           }
-
-          &:hover::-moz-range-thumb {
-            transform: scale(1.35);
-          }
+          &:hover::-moz-range-thumb { transform: scale(1.35); }
 
           &::-webkit-slider-runnable-track {
-            width: 100%;
-            height: 4px;
-            background: var(--color-primary);
-            border-radius: var(--radius-full);
-            cursor: pointer;
+            width: 100%; height: 4px;
+            background: var(--color-primary); border-radius: var(--radius-full); cursor: pointer;
           }
-
           &::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 12px;
-            width: 12px;
-            border-radius: var(--radius-full);
-            background: #fff;
-            cursor: pointer;
-            margin-top: -4px;
-            box-shadow: var(--shadow-sm);
-            transition: transform var(--transition-fast);
+            height: 12px; width: 12px; border-radius: var(--radius-full);
+            background: #fff; cursor: pointer; margin-top: -4px;
+            box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
           }
-
-          &:hover::-webkit-slider-thumb {
-            transform: scale(1.35);
-          }
+          &:hover::-webkit-slider-thumb { transform: scale(1.35); }
         }
       }
 
       // ------------------------------------------------------------------
-      // Custom lock toggle switch
-      // OFF-state track: --color-text-faint instead of --color-border.
-      // In light mode --color-border (84% L) on near-white bg = ~1.2:1 contrast
-      // (WCAG fail). --color-text-faint (64% L) = ~2.6:1 — visible in both modes.
+      // Lock toggle switch — OFF track: --color-text-muted
+      // Contrast: light ~5:1 / dark ~3.7:1 (was text-faint: ~2.3:1 both).
       // ------------------------------------------------------------------
       .switch {
         margin: 0 var(--space-1);
@@ -278,7 +223,7 @@
           position: absolute;
           cursor: pointer;
           inset: 0;
-          background-color: var(--color-text-faint);
+          background-color: var(--color-text-muted);
           border-radius: var(--radius-full);
           transition: background-color var(--transition-interactive);
 
@@ -307,29 +252,15 @@
       input[type='checkbox'] {
         &:checked + span {
           background-color: var(--color-primary);
-
-          &::before {
-            content: '\f023';
-            transform: translateX(18px);
-          }
+          &::before { content: '\f023'; transform: translateX(18px); }
         }
-
         &:disabled + span {
           opacity: 0.45;
           cursor: not-allowed;
-
-          &::before {
-            content: '';
-            background-color: var(--color-text-muted);
-          }
+          &::before { content: ''; background-color: var(--color-text-muted); }
         }
       }
 
-      // ------------------------------------------------------------------
-      // Bitrate / FPS stats badge
-      // Uses --font-controls for terminal aesthetic consistency.
-      // stat-val teal-tinted: numeric values read as terminal output.
-      // ------------------------------------------------------------------
       &.stats-badge {
         min-width: unset;
         padding: 0 var(--space-1);
@@ -352,12 +283,7 @@
             border-color     var(--transition-slow);
         }
 
-        .stat {
-          display: inline-flex;
-          align-items: baseline;
-          gap: 2px;
-        }
-
+        .stat { display: inline-flex; align-items: baseline; gap: 2px; }
         .stat-val {
           color: var(--color-primary);
           font-weight: 500;
@@ -367,16 +293,8 @@
           text-align: right;
           font-variant-numeric: tabular-nums;
         }
-
-        .stat-unit {
-          color: var(--color-text-faint);
-        }
-
-        .stat-sep {
-          color: var(--color-text-faint);
-          margin: 0 var(--space-1);
-          line-height: 1;
-        }
+        .stat-unit { color: var(--color-text-faint); }
+        .stat-sep  { color: var(--color-text-faint); margin: 0 var(--space-1); line-height: 1; }
       }
     }
   }
@@ -389,9 +307,6 @@
   export default class extends Vue {
     @Prop(Boolean) readonly shakeKbd!: boolean
 
-    // ------------------------------------------------------------------
-    // Stats: animated Bitrate / FPS counters
-    // ------------------------------------------------------------------
     private statsInterval: number | null = null
     private animRafId: number = 0
     private lastBytesReceived = 0
@@ -461,9 +376,7 @@
         })
         this.statsKey++
         this.scheduleAnimate()
-      } catch {
-        // PC not yet connected — silently skip
-      }
+      } catch { /* PC not yet connected */ }
     }
 
     private scheduleAnimate(): void {
@@ -483,74 +396,25 @@
       }
     }
 
-    // ------------------------------------------------------------------
-    // Existing controls logic (unchanged)
-    // ------------------------------------------------------------------
     get controlLocked() {
       return 'control' in this.$accessor.locked && this.$accessor.locked['control'] && !this.$accessor.user.admin
     }
+    get disabeld()        { return this.$accessor.remote.hosted }
+    get hosting()         { return this.$accessor.remote.hosting }
+    get controlling()     { return this.$accessor.remote.controlling }
+    get implicitHosting() { return this.$accessor.remote.implicitHosting }
+    get micAllowed()      { return this.controlling }
+    get volume()          { return this.$accessor.video.volume }
+    set volume(volume: number) { this.$accessor.video.setVolume(volume) }
+    get muted()           { return this.$accessor.video.muted || this.volume === 0 }
+    get playing()         { return this.$accessor.video.playing }
+    get playable()        { return this.$accessor.video.playable }
+    get locked()          { return this.$accessor.remote.locked && this.$accessor.remote.hosting }
+    set locked(locked: boolean) { this.$accessor.remote.setLocked(locked) }
 
-    get disabeld() {
-      return this.$accessor.remote.hosted
-    }
-
-    get hosting() {
-      return this.$accessor.remote.hosting
-    }
-
-    get controlling() {
-      return this.$accessor.remote.controlling
-    }
-
-    get implicitHosting() {
-      return this.$accessor.remote.implicitHosting
-    }
-
-    get micAllowed() {
-      return this.controlling
-    }
-
-    get volume() {
-      return this.$accessor.video.volume
-    }
-
-    set volume(volume: number) {
-      this.$accessor.video.setVolume(volume)
-    }
-
-    get muted() {
-      return this.$accessor.video.muted || this.volume === 0
-    }
-
-    get playing() {
-      return this.$accessor.video.playing
-    }
-
-    get playable() {
-      return this.$accessor.video.playable
-    }
-
-    get locked() {
-      return this.$accessor.remote.locked && this.$accessor.remote.hosting
-    }
-
-    set locked(locked: boolean) {
-      this.$accessor.remote.setLocked(locked)
-    }
-
-    toggleControl() {
-      if (!this.playable) return
-      this.$accessor.remote.toggle()
-    }
-
-    toggleMedia() {
-      if (!this.playable) return
-      this.$accessor.video.togglePlay()
-    }
-
-    toggleMute() {
-      this.$accessor.video.toggleMute()
-    }
+    toggleControl() { if (!this.playable) return; this.$accessor.remote.toggle() }
+    toggleMedia()   { if (!this.playable) return; this.$accessor.video.togglePlay() }
+    toggleMute()    { this.$accessor.video.toggleMute() }
 
     microphoneActive = false
 
