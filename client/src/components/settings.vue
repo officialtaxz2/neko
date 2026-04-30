@@ -246,23 +246,33 @@
       }
     }
 
+    // LOG OUT: ghost button at rest — destructive action should not use
+    // the primary CTA color. Neutral at rest, error-red on hover to signal
+    // the destructive nature of the action without being visually aggressive.
     .btn-logout {
       width: 100%;
       min-height: 44px;
       border-radius: var(--radius-md);
-      border: none;
-      background: var(--color-primary);
-      color: var(--color-text-inverse);
+      border: 1px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text-muted);
       font-size: var(--text-sm);
-      font-weight: 700;
+      font-weight: 600;
       text-transform: uppercase;
+      letter-spacing: 0.04em;
       cursor: pointer;
       transition:
-        background var(--transition-interactive),
-        transform  var(--transition-fast);
+        background   var(--transition-interactive),
+        border-color var(--transition-interactive),
+        color        var(--transition-interactive),
+        transform    var(--transition-fast);
 
-      &:hover  { background: var(--color-primary-hover); }
-      &:active { background: var(--color-primary-active); transform: scale(0.97); }
+      &:hover {
+        background:   color-mix(in srgb, var(--color-error) 10%, transparent);
+        border-color: var(--color-error);
+        color:        var(--color-error);
+      }
+      &:active { transform: scale(0.97); }
     }
 
     // ── Toggle Switch ─────────────────────────────────────────────────────
