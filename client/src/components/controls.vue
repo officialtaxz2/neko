@@ -257,6 +257,9 @@
 
       // ------------------------------------------------------------------
       // Custom lock toggle switch
+      // OFF-state track: --color-text-faint instead of --color-border.
+      // In light mode --color-border (84% L) on near-white bg = ~1.2:1 contrast
+      // (WCAG fail). --color-text-faint (64% L) = ~2.6:1 — visible in both modes.
       // ------------------------------------------------------------------
       .switch {
         margin: 0 var(--space-1);
@@ -275,7 +278,7 @@
           position: absolute;
           cursor: pointer;
           inset: 0;
-          background-color: var(--color-border);
+          background-color: var(--color-text-faint);
           border-radius: var(--radius-full);
           transition: background-color var(--transition-interactive);
 
@@ -356,7 +359,6 @@
         }
 
         .stat-val {
-          // Teal accent on numeric values — terminal output aesthetic
           color: var(--color-primary);
           font-weight: 500;
           animation: stat-flip 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -389,8 +391,6 @@
 
     // ------------------------------------------------------------------
     // Stats: animated Bitrate / FPS counters
-    // Polls RTCPeerConnection.getStats() every 2s via $client.peerConnection
-    // (public getter on BaseClient — see neko/base.ts).
     // ------------------------------------------------------------------
     private statsInterval: number | null = null
     private animRafId: number = 0
@@ -438,7 +438,6 @@
     }
 
     private async pollStats(): Promise<void> {
-      // peerConnection is a public getter on BaseClient (neko/base.ts)
       const pc = (this.$client as any).peerConnection as RTCPeerConnection | undefined
       if (!pc) return
       try {
@@ -463,7 +462,7 @@
         this.statsKey++
         this.scheduleAnimate()
       } catch {
-        // PC not yet connected or getStats unavailable — silently skip
+        // PC not yet connected — silently skip
       }
     }
 

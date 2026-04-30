@@ -37,7 +37,7 @@
     <!-- Tab content with smooth fade+slide transition -->
     <div class="page-container" role="tabpanel">
       <transition name="tab-fade" mode="out-in">
-        <neko-chat     v-if="tab === 'chat'"     key="chat" />
+        <neko-chat     v-if="tab === 'chat'"          key="chat" />
         <neko-files    v-else-if="tab === 'files'"    key="files" />
         <neko-settings v-else-if="tab === 'settings'" key="settings" />
       </transition>
@@ -62,14 +62,15 @@
 
     // ── Tab navigation bar ──────────────────────────────────────────────────
     .tabs-container {
-      // Glassmorphism: slightly more transparent than the panel body
       background: color-mix(in srgb, var(--color-bg) 75%, transparent);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       height: $menu-height;
       max-width: 100%;
       display: flex;
-      align-items: flex-end;
+      // align-items: stretch lets the ul + li fill the full height,
+      // enabling the ::after underline to sit flush at the bottom edge.
+      align-items: stretch;
       flex-shrink: 0;
       border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
       padding: 0 var(--space-3);
@@ -77,20 +78,21 @@
 
       ul {
         display: flex;
-        align-items: center;
+        align-items: stretch;
         gap: var(--space-1);
         list-style: none;
         padding: 0;
-        margin: 0 0 calc(var(--space-2) * -1) 0; // overlap the border-bottom
+        // No negative margin — old overlap trick caused the "Halbkreis" artefact.
+        margin: 0;
 
         li {
-          // Pill shape
+          // Full-height pill tab — no top-only radius, no translateY overlap.
           display: inline-flex;
           align-items: center;
           gap: var(--space-2);
-          padding: var(--space-2) var(--space-4);
-          min-height: 44px; // touch target
-          border-radius: var(--radius-full) var(--radius-full) 0 0;
+          padding: 0 var(--space-4);
+          border-radius: var(--radius-md);
+          position: relative;
           font-size: var(--text-sm);
           font-weight: 500;
           font-family: var(--font-body);
@@ -98,7 +100,6 @@
           background: transparent;
           cursor: pointer;
           user-select: none;
-          // Smooth transitions for all interactive states
           transition:
             color            var(--transition-interactive),
             background-color var(--transition-interactive),
@@ -109,39 +110,45 @@
             transition: transform var(--transition-interactive);
           }
 
-          // Hover state
+          // Hover: neutral surface tint, icon micro-scale
           &:hover {
             color: var(--color-text);
-            background: color-mix(in srgb, var(--color-surface-offset) 70%, transparent);
-            transform: translateY(-1px);
+            background: color-mix(in srgb, var(--color-surface-offset) 60%, transparent);
 
-            i {
-              transform: scale(1.15);
-            }
+            i { transform: scale(1.12); }
           }
 
-          // Active press state
+          // Active press
           &:active {
-            transform: scale(0.96) translateY(0);
+            transform: scale(0.95);
           }
 
-          // Selected tab
+          // Selected tab: primary color text + underline indicator
           &.active {
             color: var(--color-primary);
-            background: color-mix(in srgb, var(--color-surface) 80%, transparent);
             font-weight: 600;
 
-            i {
-              color: var(--color-primary);
+            i { color: var(--color-primary); }
+
+            // 2 px underline flush with the container bottom edge.
+            // top-radius prevents a sharp corner where it meets the border.
+            &::after {
+              content: '';
+              position: absolute;
+              bottom: 0;
+              left: var(--space-3);
+              right: var(--space-3);
+              height: 2px;
+              background: var(--color-primary);
+              border-radius: var(--radius-full) var(--radius-full) 0 0;
             }
 
             &:hover {
-              transform: none;
-              background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+              background: color-mix(in srgb, var(--color-primary-highlight) 55%, transparent);
             }
           }
 
-          // Keyboard focus
+          // Keyboard focus ring
           &:focus-visible {
             outline: 2px solid var(--color-primary);
             outline-offset: -2px;

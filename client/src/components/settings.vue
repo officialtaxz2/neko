@@ -141,7 +141,9 @@
     // ── Bento Card ───────────────────────────────────────────────────────────
     .bento-card {
       background: color-mix(in srgb, var(--color-surface-2) 90%, transparent);
-      border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+      // Full --color-border opacity: clearly visible in both light and dark mode.
+      // Previously 70% alpha caused near-invisible borders on light backgrounds.
+      border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
       overflow: hidden;
       transition: box-shadow var(--transition-interactive);
@@ -162,11 +164,16 @@
       align-items: center;
       gap: var(--space-2);
       padding: var(--space-2) var(--space-4);
+      // Neutral surface — removed teal 5% tint to reduce color saturation.
+      // Only the active/checked toggle and the broadcast status button use primary color.
       border-bottom: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
-      background: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
+      background: var(--color-surface);
 
       i {
-        color: var(--color-primary);
+        // --color-text-muted instead of --color-primary:
+        // icons provide structural context, not emphasis — neutral is correct here.
+        // Teal is reserved for interactive/active states (toggles, active tabs).
+        color: var(--color-text-muted);
         font-size: var(--text-xs);
         flex-shrink: 0;
       }
@@ -257,8 +264,10 @@
 
     // ── Toggle Switch — 44×44px touch target, 42×24px visible pill ────────────
     //
-    // Off-state track: --color-border (clearly visible in both light + dark mode).
-    // Previously used --color-surface-offset which was near-invisible on light bg.
+    // OFF-state track: --color-text-faint instead of --color-border.
+    // In light mode --color-border is hsl(220,10%,84%) on a near-white bg
+    // = ~1.2:1 contrast (WCAG fail). --color-text-faint is hsl(220,10%,64%)
+    // = ~2.6:1 — clearly visible as a grey pill in both modes.
     .switch {
       flex-shrink: 0;
       display: inline-block;
@@ -282,7 +291,7 @@
         left: 1px;
         right: 1px;
         bottom: 10px;
-        background-color: var(--color-border);
+        background-color: var(--color-text-faint);
         border-radius: var(--radius-full);
         transition: background-color var(--transition-interactive);
 
@@ -301,7 +310,7 @@
         }
       }
 
-      &:hover span { background-color: var(--color-text-faint); }
+      &:hover span { background-color: var(--color-text-muted); }
     }
 
     input[type='checkbox'] {
