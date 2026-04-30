@@ -48,24 +48,30 @@
 <style lang="scss">
   .neko-menu {
     width: $side-width;
-    background-color: var(--color-surface);
+    // Glassmorphism: semi-transparent surface + blur
+    background-color: color-mix(in srgb, var(--color-surface) 80%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     flex-shrink: 0;
     max-height: 100%;
     max-width: 100%;
     display: flex;
     flex-direction: column;
-    border-left: 1px solid var(--color-border);
+    border-left: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
     transition: background-color var(--transition-slow);
 
     // ── Tab navigation bar ──────────────────────────────────────────────────
     .tabs-container {
-      background: var(--color-bg);
+      // Glassmorphism: slightly more transparent than the panel body
+      background: color-mix(in srgb, var(--color-bg) 75%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       height: $menu-height;
       max-width: 100%;
       display: flex;
       align-items: flex-end;
       flex-shrink: 0;
-      border-bottom: 1px solid var(--color-border);
+      border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
       padding: 0 var(--space-3);
       transition: background-color var(--transition-slow);
 
@@ -106,7 +112,7 @@
           // Hover state
           &:hover {
             color: var(--color-text);
-            background: var(--color-surface-offset);
+            background: color-mix(in srgb, var(--color-surface-offset) 70%, transparent);
             transform: translateY(-1px);
 
             i {
@@ -122,7 +128,7 @@
           // Selected tab
           &.active {
             color: var(--color-primary);
-            background: var(--color-surface);
+            background: color-mix(in srgb, var(--color-surface) 80%, transparent);
             font-weight: 600;
 
             i {
@@ -131,7 +137,7 @@
 
             &:hover {
               transform: none;
-              background: var(--color-surface);
+              background: color-mix(in srgb, var(--color-surface) 80%, transparent);
             }
           }
 

@@ -29,17 +29,24 @@
     left: 0;
     right: 0;
     bottom: 0;
-    // Overlay: semi-transparent bg via color-mix (no $scss-var needed)
-    background: color-mix(in srgb, var(--color-bg) 85%, transparent);
+    // Overlay: semi-transparent bg + subtle blur for depth behind the card
+    background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
     align-items: center;
 
     .window {
       width: 300px;
-      background: var(--color-surface);
+      // Glassmorphism: frosted surface with blur(12px)
+      background: color-mix(in srgb, var(--color-surface) 75%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-radius: var(--radius-lg);
-      border: 1px solid var(--color-border);
+      // Subtle glass edge: lighter top border, standard border elsewhere
+      border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+      border-top-color: color-mix(in srgb, var(--color-text) 15%, transparent);
       padding: var(--space-3);
 
       .logo {
@@ -96,7 +103,8 @@
           border: 1px solid transparent;
           padding: var(--space-2) var(--space-3);
           border-radius: var(--radius-md);
-          background: var(--color-bg);
+          // Input fields: slightly less transparent than the card for legibility
+          background: color-mix(in srgb, var(--color-bg) 70%, transparent);
           color: var(--color-text);
           font-size: var(--text-sm);
           transition:
