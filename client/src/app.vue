@@ -94,7 +94,6 @@
 
         // Elevated state: active when user has scrolled down > 4px
         // Adds glassmorphism blur + shadow to visually lift the header
-        // Note: This is a preview of the full header glassmorphism (Phase 5).
         &.is-scrolled {
           background: color-mix(in srgb, var(--color-surface) 92%, transparent);
           backdrop-filter: blur(8px);
@@ -115,14 +114,20 @@
       }
 
       .room-container {
-        // Glassmorphism: subtle upward gradient + blur — visually separates controls from video
+        // Gradient background — semi-transparent at top to let blur show through
         background: linear-gradient(
           to top,
           var(--color-bg) 0%,
           color-mix(in srgb, var(--color-surface) 85%, transparent) 100%
         );
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        // NOTE: backdrop-filter intentionally NOT on this element.
+        // backdrop-filter creates a new containing block for position:fixed
+        // descendants (CSS spec). vue-context (emoji picker) uses position:fixed
+        // and is a child of this element — if backdrop-filter were here, the
+        // picker's viewport coordinates would be mis-interpreted as local coords,
+        // causing it to overflow .neko-main and trigger scrollbars.
+        // Glass blur is applied via ::before pseudo-element instead, which has
+        // no children and therefore does not affect any fixed-position descendants.
         height: $controls-height;
         max-width: 100%;
         flex-shrink: 0;
@@ -135,6 +140,19 @@
         position: sticky;
         bottom: 0;
         z-index: 10;
+
+        // Glass blur via pseudo-element — same visual result as backdrop-filter
+        // on the element, but without the containing-block side effect for
+        // position:fixed children (vue-context emoji picker).
+        &::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          pointer-events: none;
+          z-index: -1;
+        }
 
         .room-menu {
           max-width: 100%;
