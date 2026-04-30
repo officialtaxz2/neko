@@ -1,25 +1,46 @@
 <template>
   <aside class="neko-menu">
+    <!-- Tab navigation -->
     <div class="tabs-container">
-      <ul>
-        <li :class="{ active: tab === 'chat' }" @click.stop.prevent="change('chat')">
-          <i class="fas fa-comment-alt" />
+      <ul role="tablist">
+        <li
+          role="tab"
+          :aria-selected="tab === 'chat'"
+          :class="{ active: tab === 'chat' }"
+          @click.stop.prevent="change('chat')"
+        >
+          <i class="fas fa-comment-alt" aria-hidden="true" />
           <span>{{ $t('side.chat') }}</span>
         </li>
-        <li v-if="filetransferAllowed" :class="{ active: tab === 'files' }" @click.stop.prevent="change('files')">
-          <i class="fas fa-file" />
+        <li
+          v-if="filetransferAllowed"
+          role="tab"
+          :aria-selected="tab === 'files'"
+          :class="{ active: tab === 'files' }"
+          @click.stop.prevent="change('files')"
+        >
+          <i class="fas fa-file" aria-hidden="true" />
           <span>{{ $t('side.files') }}</span>
         </li>
-        <li :class="{ active: tab === 'settings' }" @click.stop.prevent="change('settings')">
-          <i class="fas fa-sliders-h" />
+        <li
+          role="tab"
+          :aria-selected="tab === 'settings'"
+          :class="{ active: tab === 'settings' }"
+          @click.stop.prevent="change('settings')"
+        >
+          <i class="fas fa-sliders-h" aria-hidden="true" />
           <span>{{ $t('side.settings') }}</span>
         </li>
       </ul>
     </div>
-    <div class="page-container">
-      <neko-chat v-if="tab === 'chat'" />
-      <neko-files v-if="tab === 'files'" />
-      <neko-settings v-if="tab === 'settings'" />
+
+    <!-- Tab content with smooth fade+slide transition -->
+    <div class="page-container" role="tabpanel">
+      <transition name="tab-fade" mode="out-in">
+        <neko-chat     v-if="tab === 'chat'"     key="chat" />
+        <neko-files    v-else-if="tab === 'files'"    key="files" />
+        <neko-settings v-else-if="tab === 'settings'" key="settings" />
+      </transition>
     </div>
   </aside>
 </template>
@@ -27,54 +48,128 @@
 <style lang="scss">
   .neko-menu {
     width: $side-width;
-    background-color: $background-primary;
+    background-color: var(--color-surface);
     flex-shrink: 0;
     max-height: 100%;
     max-width: 100%;
     display: flex;
     flex-direction: column;
+    border-left: 1px solid var(--color-border);
+    transition: background-color var(--transition-slow);
 
+    // ── Tab navigation bar ──────────────────────────────────────────────────
     .tabs-container {
-      background: $background-tertiary;
+      background: var(--color-bg);
       height: $menu-height;
-      max-height: 100%;
       max-width: 100%;
       display: flex;
+      align-items: flex-end;
       flex-shrink: 0;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0 var(--space-3);
+      transition: background-color var(--transition-slow);
 
       ul {
-        display: inline-block;
-        padding: 16px 0 0 0;
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        list-style: none;
+        padding: 0;
+        margin: 0 0 calc(var(--space-2) * -1) 0; // overlap the border-bottom
 
         li {
-          background: $background-secondary;
-          border-radius: 3px 3px 0 0;
-          border-bottom: none;
-          display: inline-block;
-          padding: 5px 10px;
-          margin-right: 4px;
-          font-weight: 600;
+          // Pill shape
+          display: inline-flex;
+          align-items: center;
+          gap: var(--space-2);
+          padding: var(--space-2) var(--space-4);
+          min-height: 44px; // touch target
+          border-radius: var(--radius-full) var(--radius-full) 0 0;
+          font-size: var(--text-sm);
+          font-weight: 500;
+          font-family: var(--font-body);
+          color: var(--color-text-muted);
+          background: transparent;
           cursor: pointer;
+          user-select: none;
+          // Smooth transitions for all interactive states
+          transition:
+            color            var(--transition-interactive),
+            background-color var(--transition-interactive),
+            transform        var(--transition-interactive);
 
           i {
-            margin-right: 4px;
-            font-size: 10px;
+            font-size: var(--text-xs);
+            transition: transform var(--transition-interactive);
           }
 
+          // Hover state
+          &:hover {
+            color: var(--color-text);
+            background: var(--color-surface-offset);
+            transform: translateY(-1px);
+
+            i {
+              transform: scale(1.15);
+            }
+          }
+
+          // Active press state
+          &:active {
+            transform: scale(0.96) translateY(0);
+          }
+
+          // Selected tab
           &.active {
-            background: $background-primary;
+            color: var(--color-primary);
+            background: var(--color-surface);
+            font-weight: 600;
+
+            i {
+              color: var(--color-primary);
+            }
+
+            &:hover {
+              transform: none;
+              background: var(--color-surface);
+            }
+          }
+
+          // Keyboard focus
+          &:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: -2px;
           }
         }
       }
     }
 
+    // ── Tab content area ────────────────────────────────────────────────────
     .page-container {
       max-height: 100%;
       flex-grow: 1;
       display: flex;
-      overflow: auto;
-      padding-top: 5px;
+      flex-direction: column;
+      overflow: hidden;
     }
+  }
+
+  // ── Tab fade+slide transition ──────────────────────────────────────────────
+  .tab-fade-enter-active,
+  .tab-fade-leave-active {
+    transition:
+      opacity   var(--transition-interactive),
+      transform var(--transition-interactive);
+  }
+
+  .tab-fade-enter {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  .tab-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
   }
 </style>
 
@@ -96,7 +191,8 @@
   export default class extends Vue {
     get filetransferAllowed() {
       return (
-        this.$accessor.remote.fileTransfer && (this.$accessor.user.admin || !this.$accessor.isLocked('file_transfer'))
+        this.$accessor.remote.fileTransfer &&
+        (this.$accessor.user.admin || !this.$accessor.isLocked('file_transfer'))
       )
     }
 
@@ -107,7 +203,7 @@
     @Watch('tab', { immediate: true })
     @Watch('filetransferAllowed', { immediate: true })
     onTabChange() {
-      // do not show the files tab if file transfer is disabled
+      // Do not show the files tab if file transfer is disabled
       if (this.tab === 'files' && !this.filetransferAllowed) {
         this.change('chat')
       }
