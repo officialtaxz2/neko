@@ -57,13 +57,13 @@ docker compose up --force-recreate
 | `client/src/assets/styles/fonts/` | Lokale Whitney-Fonts (veraltet, nicht mehr importiert) | Inaktiv |
 | `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout, Sidebar `<transition name="side">` Slide-Animation | ✅ Updated |
 | `client/src/components/header.vue` | Topbar: Theme-Toggle-Button, CSS Tokens, Micro-Animations (Hover/Active) | ✅ Updated |
-| `client/src/components/side.vue` | Sidebar: Pill-Tabs, Hover/Active Micro-Animations, Vue Tab-Transition, Touch-Targets, CSS Tokens | ✅ Updated |
+| `client/src/components/side.vue` | Sidebar: Pill-Tabs, Hover/Active Micro-Animations, Vue Tab-Transition, Touch-Targets, CSS Tokens, **Glassmorphism** (`backdrop-filter: blur(12px)`) | ✅ Updated |
 | `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges, Avatar-Hover, Message-Hover, Code-Block-Tokens, Textarea-Redesign, Skeleton Loading State (4 Shimmer-Messages) | ✅ Updated |
 | `client/src/components/members.vue` | Members-Bar: Status-Dots (online/away/busy/offline), Avatar-Hover, Host/Admin-Badges, CSS Tokens, Skeleton Loading State (4 Shimmer-Circles) | ✅ Updated |
 | `client/src/components/menu.vue` | Navigationsmenü: Icons auf `color: var(--color-text)` + Hover-Animation migriert, Language-Select vollständig von `$background-*`/`color: white` auf CSS Custom Properties umgestellt (Light-Mode-kompatibel) | ✅ Updated |
 | `client/src/components/controls.vue` | Steuerleiste: Touch-Targets ≥ 44px, Micro-Animations (Hover `scale(1.18)` + Teal, Active `scale(0.88)`), `.faded`-Icons nutzen `--color-text-muted` (kein `opacity`-Hack), Lock-Switch-Track `--color-border`, Volume-Slider-Thumb mit `box-shadow`, CSS Tokens | ✅ Updated |
 | `client/src/components/settings.vue` | Einstellungen-Panel: Custom Toggle Switches (Teal-Akzent, Spring-Easing), Touch-Target-Sizing via `display:inline-block + width:44px + height:44px + position:absolute` auf hidden input (kein Padding-Hack), Track-Farbe `--color-border` (sichtbar in Light Mode), Slider/Select/Input/Button Redesign, CSS Tokens durchgehend | ✅ Updated |
-| `client/src/components/connect.vue` | Login/Connect-Dialog: CSS Tokens, `color-mix`-Overlay, Touch-Targets ≥ 44×44px auf Input + Button, Hover/Active Micro-Animations | ✅ Updated |
+| `client/src/components/connect.vue` | Login/Connect-Dialog: CSS Tokens, `color-mix`-Overlay, Touch-Targets ≥ 44×44px auf Input + Button, Hover/Active Micro-Animations, **Glassmorphism** (`backdrop-filter: blur(12px)` auf `.window`, `blur(4px)` auf Overlay) | ✅ Updated |
 | `client/src/components/video.vue` | WebRTC-Video + Maus/Tastatur-Overlay — **zuletzt anfassen**, Event-Handler nicht verändern | ⬜ Offen |
 
 **Empfohlene Bearbeitungsreihenfolge (von außen nach innen):**
@@ -124,7 +124,7 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 > - **`.faded`-Icons** (`controls.vue`): `color:text + opacity:0.4` kollabierte zu ~`#c5c6ca` in Light Mode. Fix: `color:var(--color-text-muted)` ohne Opacity.
 > - **menu.vue `select`**: `color: white` hardcoded → unsichtbarer Text in Light Mode. Fix: Vollständige Migration auf CSS Custom Properties.
 >
-> **Phase 3 kann beginnen.**
+> **Phase 3 gestartet.**
 
 ---
 
@@ -132,7 +132,7 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 
 | Task | Status | Datei(en) |
 |---|---|---|
-| Glassmorphism für Sidebar-Panels + Connect-Dialog (`backdrop-filter: blur(12px)`) | ⬜ | `side.vue`, `connect.vue` |
+| Glassmorphism für Sidebar-Panels + Connect-Dialog (`backdrop-filter: blur(12px)`) | ✅ | `side.vue`, `connect.vue` |
 | Gradient-System für Header-Topbar und Login-Screen | ⬜ | `header.vue`, `connect.vue` |
 | Bento Grid Layout für Settings- und Members-Panel | ⬜ | `settings.vue`, `side.vue` |
 | Split-Screen Layout: Video-Bereich + Sidebar visuell klarer getrennt | ⬜ | `app.vue` |
