@@ -1,6 +1,23 @@
 <template>
   <div class="chat">
-    <ul class="chat-history" ref="history" @click="onClick">
+    <!-- ── Skeleton: connecting ──────────────────────────────────────── -->
+    <ul
+      v-if="loading"
+      class="chat-history chat-history--skeleton"
+      aria-hidden="true"
+    >
+      <li v-for="n in 4" :key="'sk' + n" class="skeleton-msg">
+        <div class="skeleton sk-avatar"></div>
+        <div class="sk-content">
+          <div class="skeleton sk-name"></div>
+          <div class="skeleton sk-line"></div>
+          <div class="skeleton sk-line sk-line--short"></div>
+        </div>
+      </li>
+    </ul>
+
+    <!-- ── Real messages ─────────────────────────────────────────────── -->
+    <ul v-else class="chat-history" ref="history" @click="onClick">
       <template v-for="(message, index) in history">
         <!-- Text message -->
         <li
@@ -41,6 +58,7 @@
         </li>
       </template>
     </ul>
+
     <neko-context ref="context" />
     <div v-if="!muted" class="chat-send">
       <div class="divider" />
@@ -59,6 +77,62 @@
 </template>
 
 <style lang="scss" scoped>
+  // ── Shimmer animation ────────────────────────────────────────────────────
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-offset)  25%,
+      var(--color-surface-dynamic) 50%,
+      var(--color-surface-offset)  75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+  }
+
+  // ── Skeleton message row ─────────────────────────────────────────────────
+  .skeleton-msg {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-3) var(--space-3);
+    border-top: 1px solid var(--color-divider);
+
+    .sk-avatar {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+    }
+
+    .sk-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      padding-top: var(--space-1);
+
+      .sk-name {
+        height: 12px;
+        width: 72px;
+        border-radius: var(--radius-full);
+      }
+
+      .sk-line {
+        height: 11px;
+        width: 100%;
+
+        &--short { width: 58%; }
+      }
+    }
+  }
+
   .chat {
     flex: 1;
     flex-direction: column;
@@ -448,11 +522,26 @@
       return this.$accessor.chat.history
     }
 
+    // True while the WebSocket connection is being established
+    get loading() {
+      return this.$accessor.connecting
+    }
+
     @Watch('history')
     onHistroyChange() {
       this.$nextTick(() => {
-        this._history.scrollTop = this._history.scrollHeight
+        if (this._history) this._history.scrollTop = this._history.scrollHeight
       })
+    }
+
+    // Once loading finishes, scroll chat to bottom
+    @Watch('loading')
+    onLoadingChange(val: boolean) {
+      if (!val) {
+        this.$nextTick(() => {
+          if (this._history) this._history.scrollTop = this._history.scrollHeight
+        })
+      }
     }
 
     @Watch('muted')
@@ -464,7 +553,7 @@
 
     mounted() {
       this.$nextTick(() => {
-        this._history.scrollTop = this._history.scrollHeight
+        if (this._history) this._history.scrollTop = this._history.scrollHeight
       })
     }
 

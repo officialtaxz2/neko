@@ -1,7 +1,15 @@
 <template>
   <div class="members">
     <div class="members-container">
-      <ul class="members-list">
+      <!-- ── Skeleton: connecting ────────────────────────────────────── -->
+      <ul v-if="loading" class="members-list members-list--skeleton" aria-hidden="true">
+        <li v-for="n in 4" :key="'sk' + n">
+          <div class="skeleton sk-member"></div>
+        </li>
+      </ul>
+
+      <!-- ── Real members list ──────────────────────────────────────── -->
+      <ul v-else class="members-list">
         <!-- Self -->
         <li v-if="member">
           <div :class="[{ host: member.id === host }, 'self', 'member']">
@@ -34,6 +42,32 @@
 </template>
 
 <style lang="scss" scoped>
+  // ── Shimmer animation ────────────────────────────────────────────────────
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-offset)  25%,
+      var(--color-surface-dynamic) 50%,
+      var(--color-surface-offset)  75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+  }
+
+  // ── Skeleton avatar circle ───────────────────────────────────────────────
+  .sk-member {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-full);
+    margin: var(--space-2) var(--space-1);
+  }
+
   .members {
     flex: 1;
     overflow-x: auto;
@@ -70,6 +104,17 @@
       .members-list {
         white-space: nowrap;
         clear: both;
+
+        // Skeleton list: horizontal flex row of circles
+        &--skeleton {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: var(--space-1);
+          padding: 0;
+          margin: 0;
+          list-style: none;
+        }
 
         li {
           display: inline-block;
@@ -223,6 +268,11 @@
 
     get members() {
       return this.$accessor.user.members
+    }
+
+    // True while the WebSocket connection is being established
+    get loading() {
+      return this.$accessor.connecting
     }
 
     onContext(event: MouseEvent, data: any) {
