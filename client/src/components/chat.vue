@@ -2,6 +2,7 @@
   <div class="chat">
     <ul class="chat-history" ref="history" @click="onClick">
       <template v-for="(message, index) in history">
+        <!-- Text message -->
         <li
           :key="index"
           class="message"
@@ -15,12 +16,14 @@
           </div>
           <div class="content">
             <div class="content-head">
-              <span>{{ member(message.id).displayname }}</span>
+              <!-- Pill-shaped username badge -->
+              <span class="username">{{ member(message.id).displayname }}</span>
               <span class="timestamp">{{ timestamp(message.created) }}</span>
             </div>
             <neko-markdown class="content-body" :source="message.content" />
           </div>
         </li>
+        <!-- Event message -->
         <li :key="index" class="event" v-if="message.type === 'event'">
           <div
             class="content"
@@ -40,11 +43,16 @@
     </ul>
     <neko-context ref="context" />
     <div v-if="!muted" class="chat-send">
-      <div class="accent" />
+      <div class="divider" />
       <div class="text-container">
-        <textarea ref="input" :placeholder="$t('send_a_message')" @keydown="onKeyDown" v-model="content" />
+        <textarea
+          ref="input"
+          :placeholder="$t('send_a_message')"
+          @keydown="onKeyDown"
+          v-model="content"
+        />
         <neko-emoji v-if="emoji" @picked="onEmojiPicked" @done="emoji = false" />
-        <i class="emoji-menu fas fa-laugh" @click.stop.prevent="onEmoji"></i>
+        <i class="emoji-menu fas fa-laugh" @click.stop.prevent="onEmoji" aria-label="Pick emoji" />
       </div>
     </div>
   </div>
@@ -59,16 +67,17 @@
     max-width: 100%;
     overflow-x: hidden;
 
+    // ── Message history ────────────────────────────────────────────────────
     .chat-history {
       flex: 1;
       overflow-y: scroll;
       overflow-x: hidden;
       max-width: 100%;
       scrollbar-width: thin;
-      scrollbar-color: $background-tertiary transparent;
+      scrollbar-color: var(--color-surface-offset) transparent;
 
       &::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
       }
 
       &::-webkit-scrollbar-track {
@@ -76,33 +85,39 @@
       }
 
       &::-webkit-scrollbar-thumb {
-        background-color: $background-tertiary;
-        border: 2px solid $background-primary;
-        border-radius: 4px;
-      }
+        background-color: var(--color-surface-offset);
+        border-radius: var(--radius-full);
 
-      &::-webkit-scrollbar-thumb:hover {
-        background-color: $background-floating;
+        &:hover {
+          background-color: var(--color-surface-dynamic);
+        }
       }
 
       ::v-deep *::selection {
-        background: $text-link;
+        background: var(--color-primary-highlight);
+        color: var(--color-text);
       }
 
       li {
         flex: 1;
-        border-top: 1px solid var(--border-color);
-        padding: 10px 5px 0px 10px;
+        border-top: 1px solid var(--color-divider);
+        padding: var(--space-2) var(--space-2) 0 var(--space-3);
         display: flex;
         flex-direction: row;
         flex-wrap: nowrap;
         overflow: hidden;
         user-select: text;
         word-wrap: break-word;
+        transition: background-color var(--transition-fast);
 
+        &:hover {
+          background-color: var(--color-surface-offset);
+        }
+
+        // ── Text message ─────────────────────────────────────────
         &.message {
-          padding-top: 15px;
-          font-size: 16px;
+          padding-top: var(--space-4);
+          font-size: var(--text-base);
 
           .author {
             flex-grow: 0;
@@ -110,9 +125,15 @@
             overflow: hidden;
             width: 40px;
             height: 40px;
-            border-radius: 50%;
-            background: $style-primary;
-            margin-right: 10px;
+            border-radius: var(--radius-full);
+            background: var(--color-primary-highlight);
+            margin-right: var(--space-3);
+            transition: transform var(--transition-interactive);
+            cursor: pointer;
+
+            &:hover {
+              transform: scale(1.08);
+            }
 
             .avatar {
               width: 100%;
@@ -130,21 +151,39 @@
             .content-head {
               cursor: default;
               width: 100%;
-              margin-bottom: 3px;
-              display: block;
+              margin-bottom: var(--space-1);
+              display: flex;
+              align-items: baseline;
+              gap: var(--space-2);
 
-              span {
-                display: inline-block;
-                color: $text-normal;
-                font-weight: 500;
+              // Pill-shaped username badge
+              .username {
+                display: inline-flex;
+                align-items: center;
+                padding: 0 var(--space-2);
+                height: 18px;
+                border-radius: var(--radius-full);
+                background: var(--color-primary-highlight);
+                color: var(--color-primary);
+                font-size: var(--text-xs);
+                font-weight: 600;
+                font-family: var(--font-body);
+                letter-spacing: 0.01em;
+                transition:
+                  background-color var(--transition-interactive),
+                  color            var(--transition-interactive);
+
+                &:hover {
+                  background: var(--color-primary);
+                  color: var(--color-bg);
+                }
               }
 
               .timestamp {
-                color: $text-muted;
-                font-size: 0.7rem;
-                font-weight: 500;
-                margin-left: 0.3rem;
-                line-height: 12px;
+                color: var(--color-text-faint);
+                font-size: var(--text-xs);
+                font-weight: 400;
+                line-height: 1;
 
                 &::first-letter {
                   text-transform: uppercase;
@@ -153,83 +192,90 @@
             }
 
             ::v-deep .content-body {
-              color: $text-normal;
-              line-height: 22px;
+              color: var(--color-text);
+              font-size: var(--text-sm);
+              line-height: 1.55;
               word-wrap: break-word;
               overflow-wrap: break-word;
+              padding-bottom: var(--space-2);
 
               a {
-                color: $text-link;
+                color: var(--color-link);
+                text-underline-offset: 2px;
+
+                &:hover {
+                  color: var(--color-primary);
+                }
               }
 
-              strong {
-                font-weight: 800;
-              }
+              strong { font-weight: 700; }
+              em     { font-style: italic; }
 
-              em {
-                font-style: italic;
-              }
-
+              // Blockquote with teal accent line
               blockquote {
-                border-left: 3px $background-accent solid;
-                padding-left: 3px;
+                border-left: 3px solid var(--color-primary);
+                padding-left: var(--space-3);
+                margin: var(--space-1) 0;
+                color: var(--color-text-muted);
               }
 
+              // Spoiler
               span {
                 &.spoiler {
-                  background: $background-tertiary;
-                  padding: 0 2px;
-                  border-radius: 4px;
+                  background: var(--color-surface-offset);
+                  padding: 0 var(--space-1);
+                  border-radius: var(--radius-sm);
                   cursor: pointer;
+                  transition: background-color var(--transition-interactive);
 
-                  span {
-                    opacity: 0;
-                  }
+                  span { opacity: 0; transition: opacity var(--transition-interactive); }
                 }
 
                 &.spoiler.active {
-                  background: $background-secondary;
+                  background: var(--color-surface-dynamic);
                   cursor: default;
 
-                  span {
-                    opacity: 1;
-                  }
+                  span { opacity: 1; }
                 }
               }
 
+              // Inline code
               code {
-                font-family: Consolas, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter,
-                  DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Monaco, Courier New,
-                  Courier, monospace;
-                background: $background-secondary;
-                border-radius: 3px;
-                padding: 0 3px;
-                font-size: 0.875rem;
-                line-height: 1.125rem;
-                text-indent: 0;
+                font-family: var(--font-mono);
+                background: var(--color-surface-offset);
+                border-radius: var(--radius-sm);
+                padding: 1px var(--space-1);
+                font-size: 0.85em;
+                line-height: 1.4;
                 white-space: pre-wrap;
               }
 
+              // Code block
               pre {
-                flex: 1;
-                color: $interactive-normal;
-                border: 1px solid $background-tertiary;
-                background: $background-secondary;
-                padding: 8px 6px;
-                margin: 4px 0;
-                border-radius: 4px;
+                background: var(--color-surface-offset);
+                border: 1px solid var(--color-border);
+                border-radius: var(--radius-md);
+                padding: var(--space-3) var(--space-4);
+                margin: var(--space-2) 0;
                 display: block;
-                flex: 1;
+                overflow-x: auto;
+                color: var(--color-text);
 
                 code {
+                  background: transparent;
+                  padding: 0;
+                  border-radius: 0;
                   display: block;
+                  font-size: var(--text-xs);
+                  line-height: 1.6;
                 }
               }
             }
           }
 
+          // Bulk: hide repeated avatar + header
           &.bulk {
-            padding-top: 0px;
+            padding-top: 0;
 
             .author {
               visibility: hidden;
@@ -242,8 +288,10 @@
           }
         }
 
+        // ── Event message ─────────────────────────────────────────
         &.event {
-          color: $text-muted;
+          color: var(--color-text-muted);
+          font-size: var(--text-sm);
           cursor: default;
 
           .content {
@@ -252,88 +300,105 @@
             word-wrap: break-word;
             display: inline-block;
             vertical-align: baseline;
-            line-height: 20px;
+            line-height: 1.5;
 
-            strong {
-              font-weight: 600;
-            }
-
-            i {
-              font-style: italic;
-              font-size: 10px;
-            }
+            strong { font-weight: 600; color: var(--color-text); }
+            i      { font-style: italic; font-size: var(--text-xs); }
           }
         }
       }
     }
 
+    // ── Send input area ───────────────────────────────────────────────
     .chat-send {
       flex-shrink: 0;
-      height: 80px;
-      max-height: 80px;
-      padding: 0 10px 10px 10px;
+      padding: 0 var(--space-3) var(--space-3);
       flex-direction: column;
       display: flex;
 
-      .accent {
+      .divider {
         width: 100%;
         height: 1px;
-        background: rgba($color: #fff, $alpha: 0.05);
-        margin: 5px 0 10px 0;
+        background: var(--color-divider);
+        margin: var(--space-2) 0;
       }
 
       .text-container {
         flex: 1;
         width: 100%;
-        height: 100%;
-        background-color: rgba($color: #fff, $alpha: 0.05);
-        border-radius: 5px;
+        min-height: 60px;
+        background-color: var(--color-surface-offset);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-lg);
         position: relative;
         display: flex;
+        align-items: flex-start;
+        transition:
+          border-color      var(--transition-interactive),
+          background-color  var(--transition-interactive);
+
+        &:focus-within {
+          border-color: var(--color-primary);
+          background-color: var(--color-surface-2);
+        }
 
         .emoji-menu {
-          width: 20px;
-          height: 20px;
-          font-size: 20px;
-          margin: 8px 5px 0 0;
+          width: 36px;
+          height: 36px;
+          font-size: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: var(--space-1) var(--space-1) 0 0;
+          flex-shrink: 0;
           cursor: pointer;
+          color: var(--color-text-muted);
+          border-radius: var(--radius-md);
+          transition:
+            color            var(--transition-interactive),
+            background-color var(--transition-interactive),
+            transform        var(--transition-interactive);
+
+          &:hover {
+            color: var(--color-primary);
+            background-color: var(--color-primary-highlight);
+            transform: scale(1.1);
+          }
+
+          &:active {
+            transform: scale(0.92);
+          }
         }
 
         textarea {
           flex: 1;
-          font-family: $text-family;
+          font-family: var(--font-body);
+          font-size: var(--text-sm);
           border: none;
-          caret-color: $text-normal;
-          color: $text-normal;
+          outline: none;
+          caret-color: var(--color-primary);
+          color: var(--color-text);
           resize: none;
-          margin: 5px;
+          padding: var(--space-2) var(--space-3);
           background-color: transparent;
+          line-height: 1.5;
           scrollbar-width: thin;
-          scrollbar-color: $background-tertiary transparent;
+          scrollbar-color: var(--color-surface-offset) transparent;
 
           &::placeholder {
-            color: $text-muted;
+            color: var(--color-text-faint);
           }
 
-          &::-webkit-scrollbar {
-            width: 4px;
-          }
-
-          &::-webkit-scrollbar-track {
-            background-color: transparent;
-          }
-
-          &::-webkit-scrollbar-thumb {
-            background-color: $background-tertiary;
-            border-radius: 4px;
-          }
-
-          &::-webkit-scrollbar-thumb:hover {
-            background-color: $background-floating;
+          &::-webkit-scrollbar        { width: 4px; }
+          &::-webkit-scrollbar-track  { background-color: transparent; }
+          &::-webkit-scrollbar-thumb  {
+            background-color: var(--color-surface-offset);
+            border-radius: var(--radius-full);
           }
 
           &::selection {
-            background: $text-link;
+            background: var(--color-primary-highlight);
+            color: var(--color-text);
           }
         }
       }
@@ -443,29 +508,26 @@
 
     onClick(event: { target?: HTMLElement; preventDefault(): void }) {
       const { target } = event
-      if (!target) {
-        return
-      }
+      if (!target) return
 
       if (target.tagName.toLowerCase() === 'span' && target.classList.contains('spoiler')) {
         target.classList.add('active')
         event.preventDefault()
       }
 
-      if (!target.parentElement) {
-        return
-      }
+      if (!target.parentElement) return
 
-      if (target.parentElement.tagName.toLowerCase() === 'span' && target.parentElement.classList.contains('spoiler')) {
+      if (
+        target.parentElement.tagName.toLowerCase() === 'span' &&
+        target.parentElement.classList.contains('spoiler')
+      ) {
         target.parentElement.classList.add('active')
         event.preventDefault()
       }
     }
 
     onKeyDown(event: KeyboardEvent) {
-      if (this.muted) {
-        return
-      }
+      if (this.muted) return
 
       if (this.content.length > length) {
         this.content = this.content.substring(0, length)
@@ -478,22 +540,17 @@
         ) {
           return
         }
-
         event.preventDefault()
         return
       }
 
-      if (event.keyCode !== 13 || event.shiftKey) {
-        return
-      }
-
+      if (event.keyCode !== 13 || event.shiftKey) return
       if (this.content === '') {
         event.preventDefault()
         return
       }
 
       this.$accessor.chat.sendMessage(this.content)
-
       this.content = ''
       event.preventDefault()
     }
