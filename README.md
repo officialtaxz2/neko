@@ -58,11 +58,11 @@ docker compose up --force-recreate
 | `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout, Sidebar `<transition name="side">` Slide-Animation | ✅ Updated |
 | `client/src/components/header.vue` | Topbar: Theme-Toggle-Button, CSS Tokens, Micro-Animations (Hover/Active) | ✅ Updated |
 | `client/src/components/side.vue` | Sidebar: Pill-Tabs, Hover/Active Micro-Animations, Vue Tab-Transition, Touch-Targets, CSS Tokens | ✅ Updated |
-| `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges, Avatar-Hover, Message-Hover, Code-Block-Tokens, Textarea-Redesign | ✅ Updated |
-| `client/src/components/members.vue` | Members-Bar: Status-Dots (online/away/busy/offline), Avatar-Hover, Host/Admin-Badges, CSS Tokens | ✅ Updated |
+| `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges, Avatar-Hover, Message-Hover, Code-Block-Tokens, Textarea-Redesign, Skeleton Loading State (4 Shimmer-Messages) | ✅ Updated |
+| `client/src/components/members.vue` | Members-Bar: Status-Dots (online/away/busy/offline), Avatar-Hover, Host/Admin-Badges, CSS Tokens, Skeleton Loading State (4 Shimmer-Circles) | ✅ Updated |
 | `client/src/components/controls.vue` | Steuerleiste: Touch-Targets ≥ 44px, Micro-Animations (Hover `scale(1.18)` + Teal, Active `scale(0.88)`), CSS Tokens, Volume-Thumb-Hover, Toggle-Switch Spring-Easing | ✅ Updated |
-| `client/src/components/settings.vue` | Einstellungen-Panel: Custom Toggle Switches (Teal-Akzent, Spring-Easing), CSS Tokens durchgehend, Slider/Select/Input/Button Redesign | ✅ Updated |
-| `client/src/components/connect.vue` | Login/Connect-Dialog | ⬜ Offen |
+| `client/src/components/settings.vue` | Einstellungen-Panel: Custom Toggle Switches (Teal-Akzent, Spring-Easing), Touch-Targets ≥ 44px (li `min-height`, Switch Padding 10px 1px → 44×44px Hit-Area), CSS Tokens durchgehend, Slider/Select/Input/Button Redesign | ✅ Updated |
+| `client/src/components/connect.vue` | Login/Connect-Dialog: CSS Tokens, `color-mix`-Overlay, Touch-Targets ≥ 44px auf Input + Button, Hover/Active Micro-Animations | ✅ Updated |
 | `client/src/components/video.vue` | WebRTC-Video + Maus/Tastatur-Overlay — **zuletzt anfassen**, Event-Handler nicht verändern | ⬜ Offen |
 
 **Empfohlene Bearbeitungsreihenfolge (von außen nach innen):**
@@ -91,7 +91,7 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 | 8pt-Spacing-Grid als Tokens (`--space-1` bis `--space-24`) | ✅ | `_variables.scss` |
 | Dark Mode + Light Mode Token-Sets + `prefers-color-scheme`-Fallback | ✅ | `_variables.scss` |
 | Theme-Toggle mit `data-theme`-Attribut auf `<html>`, OS-Präferenz-Listener | ✅ | `app.vue`, `header.vue` |
-| Skeleton Screens & Loading States | ⬜ | alle Komponenten |
+| Skeleton Screens & Loading States | ✅ | `chat.vue`, `members.vue` |
 
 ---
 
@@ -112,7 +112,7 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 | Smooth Sidebar open/close Animation (Vue `<transition name="side">`, slide-from-right + fade, Mobile: slide-from-bottom) | ✅ | `app.vue` |
 | Custom Toggle Switches im Settings-Panel (Teal-Akzent, Spring-Easing `cubic-bezier(0.16,1,0.3,1)`, CSS Tokens) | ✅ | `settings.vue` |
 | Touch-Targets ≥ 44×44px: Controls (`min-width/height: 44px` auf allen `li`) | ✅ | `controls.vue` |
-| Touch-Targets ≥ 44×44px: Connect, Settings | ⬜ | `connect.vue`, `settings.vue` |
+| Touch-Targets ≥ 44×44px: Connect, Settings | ✅ | `connect.vue`, `settings.vue` |
 
 ---
 
