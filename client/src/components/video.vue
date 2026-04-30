@@ -39,7 +39,6 @@
       </div>
       <ul v-if="!fullscreen && !hideControls" class="video-menu top">
         <li><i @click.stop.prevent="requestFullscreen" class="fas fa-expand"></i></li>
-        <li v-if="admin"><i @click.stop.prevent="openResolution" class="fas fa-desktop"></i></li>
         <li v-if="!controlLocked && !implicitHosting" :class="extraControls || 'extra-control'">
           <i
             :class="[
@@ -72,7 +71,6 @@
           <i class="fas fa-keyboard" />
         </li>
       </ul>
-      <neko-resolution ref="resolution" v-if="admin" />
       <neko-clipboard ref="clipboard" v-if="hosting && (!clipboard_read_available || !clipboard_write_available)" />
     </div>
   </div>
@@ -216,7 +214,6 @@
   import { elementRequestFullscreen, onFullscreenChange, isFullscreen, lockKeyboard, unlockKeyboard } from '~/utils'
 
   import Emote from './emote.vue'
-  import Resolution from './resolution.vue'
   import Clipboard from './clipboard.vue'
 
   // @ts-ignore
@@ -228,7 +225,6 @@
     name: 'neko-video',
     components: {
       'neko-emote': Emote,
-      'neko-resolution': Resolution,
       'neko-clipboard': Clipboard,
     },
   })
@@ -239,7 +235,6 @@
     @Ref('aspect') readonly _aspect!: HTMLElement
     @Ref('player') readonly _player!: HTMLElement
     @Ref('video') readonly _video!: HTMLVideoElement
-    @Ref('resolution') readonly _resolution!: Resolution
     @Ref('clipboard') readonly _clipboard!: Clipboard
 
     // all controls are hidden (e.g. for cast mode)
@@ -657,10 +652,6 @@
       //@ts-ignore
       this._video.requestPictureInPicture()
       this.onResize()
-    }
-
-    openResolution(event: MouseEvent) {
-      this._resolution.open(event)
     }
 
     openClipboard() {

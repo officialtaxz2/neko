@@ -73,6 +73,31 @@
         </div>
       </div>
 
+      <!-- Display card (admin only) -->
+      <div class="bento-card" v-if="admin">
+        <div class="card-header">
+          <i class="fas fa-desktop" aria-hidden="true" />
+          <span class="card-title">Display</span>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <span>Resolution</span>
+            <label class="select">
+              <select v-model="resValue">
+                <option
+                  v-for="(conf, i) in resConfigurations"
+                  :key="i"
+                  :value="`${conf.width}x${conf.height}@${conf.rate}`"
+                >
+                  {{ conf.width }} × {{ conf.height }} @ {{ conf.rate }} fps
+                </option>
+              </select>
+              <span />
+            </label>
+          </div>
+        </div>
+      </div>
+
       <!-- Broadcast card (admin only, full width) -->
       <div class="bento-card bento-full" v-if="admin">
         <div class="card-header">
@@ -173,7 +198,7 @@
         color: var(--color-text-muted);
       }
 
-      // ── Broadcast control buttons ─────────────────────────────────
+      // ── Broadcast control buttons ──────────────────────────────────
       // btn-icon--ghost: outlined, no background fill at rest.
       // Teal only appears on hover so the card header stays neutral
       // when no broadcast is running.
@@ -275,7 +300,7 @@
       &:active { transform: scale(0.97); }
     }
 
-    // ── Toggle Switch ─────────────────────────────────────────────────────
+    // ── Toggle Switch ───────────────────────────────────────────────
     .switch {
       flex-shrink: 0;
       display: inline-block;
@@ -321,7 +346,7 @@
       &:checked + span:hover { background-color: var(--color-primary-hover); }
     }
 
-    // ── Scroll sensitivity slider ─────────────────────────────────────────
+    // ── Scroll sensitivity slider ─────────────────────────────────────
     // --fill is set via :style on the <input> from the Vue scroll computed.
     // The track uses a split gradient: filled = teal, unfilled = surface-dynamic.
     // This avoids a solid-teal bar which reads as "too much green" in light mode.
@@ -441,6 +466,7 @@
 
 <script lang="ts">
   import { Component, Watch, Vue } from 'vue-property-decorator'
+  import { ScreenResolution } from '~/neko/types'
 
   @Component({ name: 'neko-settings' })
   export default class extends Vue {
@@ -476,6 +502,21 @@
 
     @Watch('broadcast_url_remote', { immediate: true })
     onBroadcastUrlChange() { this.broadcast_url = this.broadcast_url_remote }
+
+    // ── Display / Resolution (R6) ───────────────────────────────────
+    // Accessor values are reactive; the select v-model key is
+    // "WxH@R" so Vue can compare it against the option :value.
+    get resConfigurations(): ScreenResolution[] { return this.$accessor.video.configurations }
+    get resValue(): string {
+      const { width, height, rate } = this.$accessor.video
+      return `${width}x${height}@${rate}`
+    }
+    set resValue(v: string) {
+      const conf = this.resConfigurations.find(
+        (c) => `${c.width}x${c.height}@${c.rate}` === v
+      )
+      if (conf) this.$accessor.video.screenSet(conf)
+    }
 
     logout() { this.$accessor.logout() }
   }
