@@ -1,173 +1,197 @@
-<div align="center">
-  <a href="https://github.com/m1k1o/neko" title="Neko's Github repository.">
-    <img src="https://neko.m1k1o.net/img/logo.png" width="400" height="auto"/>
-  </a>
-  <p align="center">
-    <a href="https://github.com/m1k1o/neko/releases">
-      <img src="https://img.shields.io/github/v/release/m1k1o/neko" alt="release">
-    </a>
-    <a href="https://github.com/m1k1o/neko/blob/master/LICENSE">
-      <img src="https://img.shields.io/github/license/m1k1o/neko" alt="license">
-    </a>
-    <a href="https://hub.docker.com/r/m1k1o/neko">
-      <img src="https://img.shields.io/docker/pulls/m1k1o/neko" alt="pulls">
-    </a>
-    <a href="https://github.com/m1k1o/neko/issues">
-      <img src="https://img.shields.io/github/issues/m1k1o/neko" alt="issues">
-    </a>
-    <a href="https://github.com/sponsors/m1k1o">
-      <img src="https://img.shields.io/badge/-sponsor-red" alt="issues">
-    </a>
-    <a href="https://discord.gg/HXQJmqNJMz">
-      <img src="https://discordapp.com/api/guilds/665851821906067466/widget.png" alt="Chat on discord">
-    </a>
-    <a href="https://hellogithub.com/repository/4536d4546af24196af3f08a023dfa007" target="_blank">
-      <img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=4536d4546af24196af3f08a023dfa007&claim_uid=0x19e4dJwD83aW2&theme=small" alt="Featured｜HelloGitHub" />
-    </a>
-    <a href="https://github.com/m1k1o/neko/actions">
-      <img src="https://github.com/m1k1o/neko/actions/workflows/ghcr.yml/badge.svg" alt="build">
-    </a>
-  </p>
-  <img src="https://neko.m1k1o.net/img/intro.gif" width="650" height="auto"/>
-</div>
+# n.eko — Design Overhaul Fork
 
-# n.eko
+> **Fork von:** [m1k1o/neko](https://github.com/m1k1o/neko) — ein selbst gehosteter virtueller Browser via Docker + WebRTC.
+> **Dieses Repo:** `officialtaxz2/neko` — eigenständiger Fork mit vollständigem UI/UX-Redesign.
+> **Upstream-PRs:** Kein komplettes Design-Overhaul ins Upstream-Repo einreichen — dieser Fork lebt als eigenständiges Produkt.
 
-Welcome to Neko, a self-hosted virtual browser that runs in Docker and uses WebRTC technology. Neko is a powerful tool that allows you to **run a fully-functional browser in a virtual environment**, giving you the ability to **access the internet securely and privately from anywhere**. With Neko, you can browse the web, **run applications**, and perform other tasks just as you would on a regular browser, all within a **secure and isolated environment**. Whether you are a developer looking to test web applications, a **privacy-conscious user seeking a secure browsing experience**, or simply someone who wants to take advantage of the **convenience and flexibility of a virtual browser**, Neko is the perfect solution.
+---
 
-In addition to its security and privacy features, Neko offers the **ability for multiple users to access it simultaneously**. This makes it an ideal solution for teams or organizations that need to share access to a browser, as well as for individuals who want to use **multiple devices to access the same virtual environment**. With Neko, you can **easily and securely share access to a browser with others**, without having to worry about maintaining separate configurations or settings. Whether you need to **collaborate on a project**, access shared resources, or simply want to **share access to a browser with friends or family**, Neko makes it easy to do so.
+## Kontext & Ziel
 
-Neko is also a great tool for **hosting watch parties** and interactive presentations. With its virtual browser capabilities, Neko allows you to host watch parties and presentations that are **accessible from anywhere**, without the need for in-person gatherings. This makes it easy to **stay connected with friends and colleagues**, even when you are unable to meet in person. With Neko, you can easily host a watch party or give an **interactive presentation**, whether it's for leisure or work. Simply invite your guests to join the virtual environment, and you can share the screen and **interact with them in real-time**.
+Das ursprüngliche neko-Frontend ist ein **1:1-Discord-Klon**: Farbpalette `#36393f / #2f3136 / #202225`, Discord-exklusive Font „Whitney", keine eigene Designsprache, keine modernen UX-Patterns.
 
-## About
+Ziel dieses Forks: **Komplett eigenständiges Design** auf Basis eines modernen Design-Systems — mit Dark/Light-Mode, fluid Typography, CSS Custom Properties, Glassmorphism-Elementen und sauberer Komponentenhierarchie.
 
-This app uses WebRTC to stream a desktop inside of a docker container, original author made this because [rabb.it](https://en.wikipedia.org/wiki/Rabb.it) went under and his internet could not handle streaming and discord kept crashing when his friend attempted to. He just wanted to watch anime with his friends ლ(ಠ益ಠლ) so he started digging throughout the internet and found a few *kinda* clones, but none of them had the virtual browser, then he found [Turtus](https://github.com/Khauri/Turtus) and he was able to figure out the rest.
+---
 
-Then I found [this](https://github.com/nurdism/neko) project and started to dig into it. I really liked the idea of having collaborative browser browsing together with multiple people, so I created a fork. Initially, I wanted to merge my changes to the upstream repository, but the original author did not have time for this project anymore and it got eventually archived.
+## Dev-Umgebung aufsetzen (Einmalig)
 
-## Use-cases and comparison
+Der gesamte Build läuft in Docker — **kein Go, Node.js oder X11 auf dem Host nötig**.
 
-Neko started as a virtual browser that is streamed using WebRTC to multiple users.
-- It is **not only limited to a browser**; it can run anything that runs on linux (e.g. VLC). Browser only happens to be the most popular and widely used use-case.
-- In fact, it is not limited to a single program either; you can install a full desktop environment (e.g. XFCE, KDE).
-- Speaking of limits, it does not need to run in a container; you could install neko on your host, connect to your X server and control your whole VM.
-- Theoretically it is not limited to only X server, anything that can be controlled and scraped periodically for images could be used instead.
-  - Like implementing RDP or VNC protocol, where neko would only act as WebRTC relay server. This is currently only future.
+```bash
+# 1. Repo klonen
+git clone https://github.com/officialtaxz2/neko.git
+cd neko
 
-Primary use case is connecting with multiple people, leveraging real time synchronization and interactivity:
-- **Watch party** - watching video content together with multiple people and reacting to it (chat, emotes) - open source alternative to [giggl.app](https://giggl.app/) or [hyperbeam](https://watch.hyperbeam.com).
-- **Interactive presentation** - not only screen sharing, but others can control the screen.
-- **Collaborative tool** - brainstorming ideas, cobrowsing, code debugging together.
-- **Support/Teaching** - interactively guiding people in controlled environment.
-- **Embed anything** - embed virtual browser in your web app - open source alternative to [hyperbeam API](https://hyperbeam.com/).
-  - open any third-party website or application, synchronize audio and video flawlessly among multiple participants.
-  - request rooms using API with [neko-rooms](https://github.com/m1k1o/neko-rooms).
-- [**Neko inside VR Chat**](https://github.com/jameskitt616/vrchat_streaming) - watch remote browser together with friends in VR.
+# 2. Backend-Container starten (unverändertes Base-Image)
+docker compose up -d
 
-Other use cases that benefit from single-user:
-- **Personal workspace** - streaming containerized apps and desktops to end-users - similar to [kasm](https://www.kasmweb.com/).
-- **Persistent browser** - own browser with persistent cookies available anywhere - similar to [mightyapp](https://www.mightyapp.com/).
-  - no state is left on the host browser after terminating the connection.
-  - sensitive data like cookies are not transferred - only video is shared.
-- **Throwaway browser** - a better solution for planning secret parties and buying birthday gifts off the internet.
-  - use Tor Browser and [VPN](https://github.com/m1k1o/neko-vpn) for additional anonymity.
-  - mitigates risk of OS fingerprinting and browser vulnerabilities by running in container.
-- **Session broadcasting** - broadcast room content using RTMP (to e.g. twitch or youtube...).
-- **Session recording** - broadcast RTMP can be saved to a file using e.g. [nginx-rtmp](https://www.nginx.com/products/nginx/modules/rtmp-media-streaming/)
-  - have clean environment when recording tutorials.
-  - no need to hide bookmarks or use incognito mode.
-- **Jump host** - access your internal applications securely without the need for VPN.
-- **Automated browser** - you can install [playwright](https://playwright.dev/) or [puppeteer](https://pptr.dev/) and automate tasks while being able to actively intercept them.
+# 3. Frontend-Dev-Server mit Hot Reload starten (kein Node auf Host)
+cd client/dev
+./serve -i   # -i = node_modules beim ersten Mal installieren
+# → http://localhost:3001 mit sofortigem HMR bei jeder CSS/Vue-Änderung
+```
 
-Compared to clientless remote desktop gateway (e.g. [Apache Guacamole](https://guacamole.apache.org/) or [websockify](https://github.com/novnc/websockify) with [noVNC](https://novnc.com/)), installed with remote desktop server along with desired program (e.g. [linuxserver/firefox](https://docs.linuxserver.io/images/docker-firefox)) provides neko additionally:
-- **Smooth video** because it uses WebRTC and not images sent over WebSockets.
-- **Built in audio** support, what is not part of Apache Guacamole or noVNC.
-- **Multi-participant control**, what is not natively supported by Apache Guacamole or noVNC.
+Für schnelle Iterationen:
+```bash
+# Nur Firefox-App neu bauen (Base-Image wiederverwenden)
+./build -a firefox -b ghcr.io/m1k1o/neko/base:latest -r my-neko
 
-### Supported browsers
+# Alles neu bauen (Server + Client)
+./build -r my-neko
+docker compose up --force-recreate
+```
 
-<div align="center">
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#firefox">
-    <img src="https://neko.m1k1o.net/img/icons/firefox.svg" title="ghcr.io/m1k1o/neko/firefox" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#tor-browser">
-    <img src="https://neko.m1k1o.net/img/icons/tor-browser.svg" title="ghcr.io/m1k1o/neko/tor-browser" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#waterfox">
-    <img src="https://neko.m1k1o.net/img/icons/waterfox.svg" title="ghcr.io/m1k1o/neko/waterfox" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#chromium">
-    <img src="https://neko.m1k1o.net/img/icons/chromium.svg" title="ghcr.io/m1k1o/neko/chromium" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#google-chrome">
-    <img src="https://neko.m1k1o.net/img/icons/google-chrome.svg" title="ghcr.io/m1k1o/neko/google-chrome" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#ungoogled-chromium">
-    <img src="https://neko.m1k1o.net/img/icons/ungoogled-chromium.svg" title="ghcr.io/m1k1o/neko/google-chrome" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#microsoft-edge">
-    <img src="https://neko.m1k1o.net/img/icons/microsoft-edge.svg" title="ghcr.io/m1k1o/neko/microsoft-edge" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#brave">
-    <img src="https://neko.m1k1o.net/img/icons/brave.svg" title="ghcr.io/m1k1o/neko/brave" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#vivaldi">
-    <img src="https://neko.m1k1o.net/img/icons/vivaldi.svg" title="ghcr.io/m1k1o/neko/vivaldi" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#opera">
-    <img src="https://neko.m1k1o.net/img/icons/opera.svg" title="ghcr.io/m1k1o/neko/opera" width="60" height="auto"/>
-  </a>
+---
 
-  ... see [all available images](https://neko.m1k1o.net/docs/v3/installation/docker-images)
-</div>
+## Relevante Dateien für das Overhaul
 
-### Other applications
+| Datei / Ordner | Inhalt |
+|---|---|
+| `client/src/assets/styles/_variables.scss` | **Startpunkt:** alle Farben, Fonts, Layout-Größen als SCSS-Variablen (aktuell Discord-Palette) |
+| `client/src/assets/styles/main.scss` | Importiert Variablen + Vendor-Styles, setzt body/html-Basis |
+| `client/src/assets/styles/_reset.scss` | CSS-Reset |
+| `client/src/assets/styles/vendor/` | Fremde Styles (Font Awesome, SweetAlert2, Tooltips) — nicht anfassen |
+| `client/src/assets/styles/fonts/` | Lokal eingebundene Fonts (Whitney — wird ersetzt) |
+| `client/src/app.vue` | Root-Komponente, Haupt-Layout |
+| `client/src/components/header.vue` | Topbar |
+| `client/src/components/side.vue` | Seitenleiste (Chat, Members, Files) |
+| `client/src/components/chat.vue` | Chat-Panel |
+| `client/src/components/controls.vue` | Steuerleiste |
+| `client/src/components/connect.vue` | Login/Connect-Dialog |
+| `client/src/components/settings.vue` | Einstellungen-Panel |
+| `client/src/components/video.vue` | WebRTC-Video + Maus/Tastatur-Overlay — **zuletzt anfassen**, Logik stehen lassen |
 
-<div align="center">
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#xfce">
-    <img src="https://neko.m1k1o.net/img/icons/xfce.svg" title="ghcr.io/m1k1o/neko/xfce" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#kde">
-    <img src="https://neko.m1k1o.net/img/icons/kde.svg" title="ghcr.io/m1k1o/neko/kde" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#remmina">
-    <img src="https://neko.m1k1o.net/img/icons/remmina.svg" title="ghcr.io/m1k1o/neko/remmina" width="60" height="auto"/>
-  </a>
-  <a href="https://neko.m1k1o.net/docs/v3/installation/docker-images#vlc">
-    <img src="https://neko.m1k1o.net/img/icons/vlc.svg" title="ghcr.io/m1k1o/neko/vlc" width="60" height="auto"/>
-  </a>
+**Reihenfolge beim Bearbeiten:**
+```
+_variables.scss → app.vue → header.vue → side.vue → chat.vue → controls.vue → connect.vue → settings.vue → video.vue
+```
 
-  ... others in <a href="https://github.com/m1k1o/neko-apps">m1k1o/neko-apps</a>
-</div>
+---
 
-### Why neko?
+## Design Roadmap
 
-I like cats 🐱 (`Neko` is the Japanese word for cat), I'm a weeb/nerd.
+Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 
-***But why the cat butt?*** Because cats are *assholes*, but you love them anyways.
+> **Legende:** ✅ Fertig · 🔄 In Arbeit · ⬜ Offen
 
-## Multiple rooms
+---
 
-For neko room management software, visit [neko-rooms](https://github.com/m1k1o/neko-rooms).
+### Phase 1 — Kat. 0: Technische Basis *(Pflicht, kein Opt-Out)*
 
-It also offers [Zero-knowledge installation (with HTTPS)](https://github.com/m1k1o/neko-rooms/?tab=readme-ov-file#zero-knowledge-installation-with-https).
+| Task | Status | Datei(en) |
+|---|---|---|
+| Discord-Palette vollständig entfernen | ⬜ | `_variables.scss` |
+| HSL-basiertes CSS Custom Property System einführen (`--color-bg`, `--color-surface`, `--color-primary` etc.) | ⬜ | `_variables.scss` |
+| Whitney-Font ersetzen durch Variable Font (Fontshare: **Satoshi** Body + **Cabinet Grotesk** Display) | ⬜ | `_variables.scss`, `main.scss`, `fonts/` |
+| Fluid Typography mit `clamp()` für alle Schriftgrößen | ⬜ | `_variables.scss` |
+| 8pt-Spacing-Grid als Tokens (`--space-1` bis `--space-32`) | ⬜ | `_variables.scss` |
+| Dark Mode + Light Mode Token-Sets | ⬜ | `_variables.scss`, `app.vue` |
+| Theme-Toggle (Dark/Light) mit `data-theme`-Attribut + `prefers-color-scheme`-Fallback | ⬜ | `app.vue`, `header.vue` |
+| Skeleton Screens & Loading States | ⬜ | alle Komponenten |
 
-## Documentation
+---
 
-Full documentation is available at [neko.m1k1o.net](https://neko.m1k1o.net/). Key sections include:
+### Phase 2 — Kat. 1: Universal UX Patterns *(immer, außer explizit widerlegt)*
 
-- [Migration from V2](https://neko.m1k1o.net/docs/v3/migration-from-v2)
-- [Getting Started](https://neko.m1k1o.net/docs/v3/quick-start)
-- [Installation](https://neko.m1k1o.net/docs/v3/installation)
-- [Examples](https://neko.m1k1o.net/docs/v3/installation/examples)
-- [Configuration](https://neko.m1k1o.net/docs/v3/configuration)
-- [Frequently Asked Questions](https://neko.m1k1o.net/docs/v3/faq)
-- [Troubleshooting](https://neko.m1k1o.net/docs/v3/troubleshooting)
+| Task | Status | Datei(en) |
+|---|---|---|
+| Micro-Animations: Hover-States auf Sidebar-Icons (`transform: scale(1.05)`), Button-Transitions `active:scale-95` | ⬜ | `side.vue`, `controls.vue` |
+| Color-Coded Status + Status Dot Indicators bei Nutzern (Online / Away / Busy) | ⬜ | `side.vue`, `chat.vue` |
+| Collapsible Sections: Chat, Members, Files als aufklappbare Panels | ⬜ | `side.vue` |
+| Toggle Switches im Settings-Panel (custom, animiert) | ⬜ | `settings.vue` |
+| Pill-Shaped Elements: Status-Labels, User-Badges | ⬜ | `side.vue`, `chat.vue` |
+| Smooth Panel-Ein-/Ausblenden (keine Instant-Show/Hide) | ⬜ | alle Panel-Komponenten |
+| Focus-States sichtbar, nie `outline: none` ohne Ersatz | ⬜ | `_variables.scss` |
+| Touch-Targets ≥ 44×44px, 8px Gap zwischen Touch-Elementen | ⬜ | alle Komponenten |
 
-## How to Contribute
+---
 
-Contributions are welcome! Check the [Contributing Guide](https://neko.m1k1o.net/contributing) for details.
+### Phase 3 — Kat. 2: Layout & Visual Standard *(Standard: implementieren)*
 
-## Support
+| Task | Status | Datei(en) |
+|---|---|---|
+| Glassmorphism für Sidebar-Panels + Connect-Dialog (`backdrop-filter: blur(12px)`) | ⬜ | `side.vue`, `connect.vue` |
+| Gradient-System für Header-Topbar und Login-Screen | ⬜ | `header.vue`, `connect.vue` |
+| Bento Grid Layout für Settings- und Members-Panel | ⬜ | `settings.vue`, `side.vue` |
+| Split-Screen Layout: Video-Bereich + Sidebar klarer getrennt | ⬜ | `app.vue` |
 
-If you find Neko useful, consider supporting the project via [GitHub Sponsors](https://github.com/sponsors/m1k1o).
+---
+
+### Phase 4 — Kat. 3: Interaktion & Storytelling *(kontextabhängig)*
+
+| Task | Status | Datei(en) |
+|---|---|---|
+| Animated Counters für Bitrate/FPS-Anzeige in der Steuerleiste | ⬜ | `controls.vue` |
+| Smooth Scroll + Sticky Navigation | ⬜ | `app.vue` |
+
+---
+
+### Phase 5 — Kat. 4: Ästhetischer Stil *(Brand-Fit: Tech/Terminal)*
+
+| Task | Status | Datei(en) |
+|---|---|---|
+| Terminal Aesthetic als optionaler Accent (Mono-Font in Controls-Leiste) | ⬜ | `controls.vue`, `_variables.scss` |
+| Dot-Grid-Hintergrund im Connect-Dialog | ⬜ | `connect.vue` |
+
+---
+
+## Design-System Kurzreferenz
+
+**Farb-Tokens (Zielzustand):**
+```scss
+// Dark Mode (Standard)
+--color-bg:       hsl(220, 13%, 10%);
+--color-surface:  hsl(220, 13%, 13%);
+--color-surface-2: hsl(220, 13%, 16%);
+--color-primary:  hsl(186, 98%, 28%);   // Teal-Akzent
+--color-text:     hsl(220, 10%, 85%);
+--color-text-muted: hsl(220, 8%, 55%);
+```
+
+**Font-Stack (Zielzustand):**
+```scss
+--font-display: 'Cabinet Grotesk', 'Helvetica Neue', sans-serif;
+--font-body:    'Satoshi', 'Inter', sans-serif;
+--font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+```
+
+**Spacing (8pt-Grid):**
+```scss
+--space-1: 0.25rem;  // 4px
+--space-2: 0.5rem;   // 8px
+--space-4: 1rem;     // 16px
+--space-8: 2rem;     // 32px
+// ... bis --space-32: 8rem (128px)
+```
+
+---
+
+## Design-Abnahme-Checkliste
+
+Vor jedem Commit / PR in diesem Fork prüfen:
+
+```
+Design & UX:
+  [ ] Alle Views responsive (320px – 2560px) / Mobile First
+  [ ] Dark Mode vorhanden und korrekt
+  [ ] Kontrast ≥ 4.5:1 (WCAG AA)
+  [ ] Focus-States sichtbar
+  [ ] Touch-Targets ≥ 44×44px
+  [ ] prefers-reduced-motion implementiert
+  [ ] Kein Emoji als Icon (SVG only)
+
+Feature-Coverage:
+  [ ] Kat. 0–1 vollständig implementiert
+  [ ] Kat. 2–4 implementiert oder Opt-Out dokumentiert
+```
+
+---
+
+## Upstream-Projekt
+
+Originales Projekt: [m1k1o/neko](https://github.com/m1k1o/neko)
+Dokumentation: [neko.m1k1o.net](https://neko.m1k1o.net/)
+
+> Bugfixes und kleinere UX-Verbesserungen können als PR ans Upstream-Projekt eingereicht werden.
+> Das komplette Design-Overhaul lebt in diesem Fork als eigenständiges Produkt.
