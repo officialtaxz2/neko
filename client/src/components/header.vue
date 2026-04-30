@@ -85,14 +85,16 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    // Gradient-System: diagonaler Teal-Tint vom Logo-Bereich (links) zur reinen bg-Farbe (rechts)
-    // 135deg erzeugt einen Diagonalverlauf von oben-links nach unten-rechts
+    // Glassmorphism fix: both stops use transparent as the mix base so the
+    // background has actual alpha — this is what allows backdrop-filter:blur(8px)
+    // to function at rest (not just in the .is-scrolled state).
+    // Left stop: teal-tinted glass edge at the logo side.
+    // Right stop: near-opaque frosted surface (82% bg) that still lets blur through.
     background: linear-gradient(
       135deg,
-      color-mix(in srgb, var(--color-primary) 7%, var(--color-bg)) 0%,
-      var(--color-bg) 55%
+      color-mix(in srgb, var(--color-primary) 12%, transparent) 0%,
+      color-mix(in srgb, var(--color-bg) 82%, transparent) 55%
     );
-    // Glassmorphism-Konsistenz: Topbar soll mit dem Sidebar-Glas harmonieren
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
