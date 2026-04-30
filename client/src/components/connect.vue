@@ -29,8 +29,14 @@
     left: 0;
     right: 0;
     bottom: 0;
-    // Overlay: semi-transparent bg + subtle blur for depth behind the card
-    background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+    // Gradient-System: radiales Spotlight-Gradient zentriert auf die Login-Card.
+    // Erzeugt einen Teal-getönten Lichtkegel — hebt die Card vom Hintergrund ab.
+    background: radial-gradient(
+      ellipse 80% 70% at 50% 50%,
+      color-mix(in srgb, var(--color-primary) 10%, var(--color-bg)) 0%,
+      var(--color-bg) 70%
+    );
+    // Zusätzlicher blur auf dem Overlay für Tiefe hinter der Card
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     display: flex;

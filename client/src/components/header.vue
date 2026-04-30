@@ -85,6 +85,17 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+    // Gradient-System: diagonaler Teal-Tint vom Logo-Bereich (links) zur reinen bg-Farbe (rechts)
+    // 135deg erzeugt einen Diagonalverlauf von oben-links nach unten-rechts
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--color-primary) 7%, var(--color-bg)) 0%,
+      var(--color-bg) 55%
+    );
+    // Glassmorphism-Konsistenz: Topbar soll mit dem Sidebar-Glas harmonieren
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
 
     .neko {
       flex: 1;
@@ -169,8 +180,8 @@
 
         // Hamburger menu toggle
         .toggle {
-          background: var(--color-surface-2);
-          border: 1px solid var(--color-border);
+          background: color-mix(in srgb, var(--color-surface-2) 80%, transparent);
+          border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
           color: var(--color-text-muted);
 
           &:hover {
@@ -188,8 +199,8 @@
           width: 30px;
           height: 30px;
           border-radius: var(--radius-md);
-          background: var(--color-surface-2);
-          border: 1px solid var(--color-border);
+          background: color-mix(in srgb, var(--color-surface-2) 80%, transparent);
+          border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
           color: var(--color-text-muted);
           cursor: pointer;
           padding: 0;
