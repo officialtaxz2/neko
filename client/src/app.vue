@@ -18,7 +18,6 @@
           />
         </div>
         <div v-if="!videoOnly" class="room-container">
-          <neko-members />
           <div class="room-menu">
             <div class="settings">
               <neko-menu />
@@ -278,7 +277,6 @@
   import Menu from '~/components/menu.vue'
   import Side from '~/components/side.vue'
   import Controls from '~/components/controls.vue'
-  import Members from '~/components/members.vue'
   import Emotes from '~/components/emotes.vue'
   import About from '~/components/about.vue'
   import Header from '~/components/header.vue'
@@ -294,7 +292,6 @@
       'neko-menu': Menu,
       'neko-side': Side,
       'neko-controls': Controls,
-      'neko-members': Members,
       'neko-emotes': Emotes,
       'neko-about': About,
       'neko-header': Header,
