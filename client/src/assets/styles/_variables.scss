@@ -1,30 +1,199 @@
-$text-family: Whitney, Helvetica Neue, Helvetica, Arial, sans-serif;;
-$text-size:   14px;
-$text-normal: #dcddde;
-$text-muted: #72767d;
-$text-link: #00b0f4;
+// =============================================================================
+// DESIGN TOKENS — neko UI Overhaul
+// Art direction: Dark-first tech tool → deep cool-gray surfaces, teal accent
+// Palette: HSL-based, dark default · light via [data-theme="light"]
+// Typography: Cabinet Grotesk (display) + Satoshi (body) via Fontshare CDN
+// =============================================================================
 
-$interactive-normal: #b9bbbe;
-$interactive-hover: #dcddde;
-$interactive-muted: #4f545c;
+// -----------------------------------------------------------------------------
+// CSS Custom Properties — Dark Mode (default)
+// -----------------------------------------------------------------------------
+:root {
+  // Surfaces
+  --color-bg:                hsl(220, 15%, 9%);
+  --color-surface:           hsl(220, 13%, 13%);
+  --color-surface-2:         hsl(220, 11%, 16%);
+  --color-surface-offset:    hsl(220, 10%, 20%);
+  --color-surface-dynamic:   hsl(220, 9%, 24%);
+  --color-divider:           hsl(220, 10%, 19%);
+  --color-border:            hsl(220, 9%, 23%);
 
-$background-primary: #36393f;
-$background-secondary: #2f3136;
-$background-tertiary: #202225;
-$background-accent: #4f545c;
-$background-floating: #18191c;
-$background-modifier-hover: rgba(79, 84, 92, 0.16);
-$background-modifier-active: rgba(79, 84, 92, 0.24);
-$background-modifier-selected: rgba(79, 84, 92, 0.32);
-$background-modifier-accent: hsla(0, 0%, 100%, 0.06);
+  // Text
+  --color-text:              hsl(220, 10%, 86%);
+  --color-text-muted:        hsl(220, 8%, 50%);
+  --color-text-faint:        hsl(220, 7%, 34%);
+  --color-text-inverse:      hsl(220, 15%, 9%);
 
-$elevation-low: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
-$elevation-high: 0 8px 16px rgba(0, 0, 0, 0.24);
+  // Primary Accent (Teal)
+  --color-primary:           hsl(174, 72%, 38%);
+  --color-primary-hover:     hsl(174, 72%, 30%);
+  --color-primary-active:    hsl(174, 72%, 23%);
+  --color-primary-highlight: hsl(174, 30%, 18%);
 
-$style-primary: #19bd9c;
-$style-error: #d32f2f;
+  // Status
+  --color-success:           hsl(142, 50%, 48%);
+  --color-success-hover:     hsl(142, 50%, 38%);
+  --color-error:             hsl(4, 68%, 52%);
+  --color-error-hover:       hsl(4, 68%, 42%);
+  --color-warning:           hsl(36, 92%, 52%);
+  --color-warning-hover:     hsl(36, 92%, 42%);
 
-$menu-height: 40px;
+  // Link
+  --color-link:              hsl(201, 90%, 60%);
+  --color-link-hover:        hsl(201, 90%, 72%);
+
+  // Typography
+  --font-display:  'Cabinet Grotesk', 'Helvetica Neue', sans-serif;
+  --font-body:     'Satoshi', 'Inter', 'Helvetica Neue', sans-serif;
+  --font-mono:     'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  // Fluid type scale (clamp: min | fluid | max)
+  --text-xs:   clamp(0.75rem,  0.70rem + 0.25vw, 0.875rem); //  12px → 14px
+  --text-sm:   clamp(0.875rem, 0.80rem + 0.35vw, 1rem);     //  14px → 16px
+  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem); //  16px → 18px
+  --text-lg:   clamp(1.125rem, 1.00rem + 0.75vw, 1.5rem);   //  18px → 24px
+  --text-xl:   clamp(1.5rem,   1.20rem + 1.25vw, 2.25rem);  //  24px → 36px
+
+  // Spacing (8pt-Grid)
+  --space-1:   0.25rem;  //  4px
+  --space-2:   0.5rem;   //  8px
+  --space-3:   0.75rem;  // 12px
+  --space-4:   1rem;     // 16px
+  --space-5:   1.25rem;  // 20px
+  --space-6:   1.5rem;   // 24px
+  --space-8:   2rem;     // 32px
+  --space-10:  2.5rem;   // 40px
+  --space-12:  3rem;     // 48px
+  --space-16:  4rem;     // 64px
+  --space-20:  5rem;     // 80px
+  --space-24:  6rem;     // 96px
+
+  // Border Radius
+  --radius-sm:   0.25rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-full: 9999px;
+
+  // Shadows (tone-matched to cool-dark surfaces)
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-lg:  0 12px 32px rgba(0, 0, 0, 0.60);
+
+  // Transitions (ease-out spring curve)
+  --transition-fast:        100ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow:        300ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  // Z-Index Scale
+  --z-base:     0;
+  --z-raised:   10;
+  --z-dropdown: 20;
+  --z-overlay:  30;
+  --z-modal:    50;
+  --z-toast:    100;
+}
+
+// -----------------------------------------------------------------------------
+// Light Mode — [data-theme="light"] (manual toggle)
+// -----------------------------------------------------------------------------
+[data-theme="light"] {
+  --color-bg:                hsl(220, 20%, 97%);
+  --color-surface:           hsl(220, 18%, 100%);
+  --color-surface-2:         hsl(220, 16%, 98%);
+  --color-surface-offset:    hsl(220, 14%, 94%);
+  --color-surface-dynamic:   hsl(220, 12%, 90%);
+  --color-divider:           hsl(220, 12%, 88%);
+  --color-border:            hsl(220, 10%, 84%);
+
+  --color-text:              hsl(220, 20%, 12%);
+  --color-text-muted:        hsl(220, 12%, 44%);
+  --color-text-faint:        hsl(220, 10%, 64%);
+  --color-text-inverse:      hsl(220, 20%, 97%);
+
+  --color-primary:           hsl(174, 72%, 30%);
+  --color-primary-hover:     hsl(174, 72%, 24%);
+  --color-primary-active:    hsl(174, 72%, 18%);
+  --color-primary-highlight: hsl(174, 40%, 90%);
+
+  --color-link:              hsl(201, 90%, 38%);
+  --color-link-hover:        hsl(201, 90%, 28%);
+
+  --shadow-sm:  0 1px 2px  rgba(30, 40, 60, 0.08);
+  --shadow-md:  0 4px 12px rgba(30, 40, 60, 0.12);
+  --shadow-lg:  0 12px 32px rgba(30, 40, 60, 0.16);
+}
+
+// System preference fallback (no manual toggle set)
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --color-bg:                hsl(220, 20%, 97%);
+    --color-surface:           hsl(220, 18%, 100%);
+    --color-surface-2:         hsl(220, 16%, 98%);
+    --color-surface-offset:    hsl(220, 14%, 94%);
+    --color-surface-dynamic:   hsl(220, 12%, 90%);
+    --color-divider:           hsl(220, 12%, 88%);
+    --color-border:            hsl(220, 10%, 84%);
+
+    --color-text:              hsl(220, 20%, 12%);
+    --color-text-muted:        hsl(220, 12%, 44%);
+    --color-text-faint:        hsl(220, 10%, 64%);
+    --color-text-inverse:      hsl(220, 20%, 97%);
+
+    --color-primary:           hsl(174, 72%, 30%);
+    --color-primary-hover:     hsl(174, 72%, 24%);
+    --color-primary-active:    hsl(174, 72%, 18%);
+    --color-primary-highlight: hsl(174, 40%, 90%);
+
+    --color-link:              hsl(201, 90%, 38%);
+    --color-link-hover:        hsl(201, 90%, 28%);
+
+    --shadow-sm:  0 1px 2px  rgba(30, 40, 60, 0.08);
+    --shadow-md:  0 4px 12px rgba(30, 40, 60, 0.12);
+    --shadow-lg:  0 12px 32px rgba(30, 40, 60, 0.16);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// SCSS Variables — backwards compatibility for existing components
+// Maps old Discord variable names → new design token values
+// Do NOT use in new code — use CSS custom properties directly.
+// -----------------------------------------------------------------------------
+
+// Typography
+$text-family:   var(--font-body);
+$text-size:     var(--text-sm);        // 14–16px — base UI chrome size
+$text-normal:   var(--color-text);
+$text-muted:    var(--color-text-muted);
+$text-link:     var(--color-link);
+
+// Interactive states
+$interactive-normal:   var(--color-text-muted);
+$interactive-hover:    var(--color-text);
+$interactive-muted:    var(--color-text-faint);
+
+// Backgrounds
+$background-primary:   var(--color-surface-2);    // main content area
+$background-secondary: var(--color-surface);      // sidebar / panels
+$background-tertiary:  var(--color-bg);           // outermost background
+$background-accent:    var(--color-surface-offset);
+$background-floating:  var(--color-bg);
+
+// Overlay modifiers — theme-agnostic semi-transparent tints
+$background-modifier-hover:    rgba(255, 255, 255, 0.06);
+$background-modifier-active:   rgba(255, 255, 255, 0.10);
+$background-modifier-selected: rgba(255, 255, 255, 0.14);
+$background-modifier-accent:   rgba(255, 255, 255, 0.04);
+
+// Elevation
+$elevation-low:  var(--shadow-sm);
+$elevation-high: var(--shadow-lg);
+
+// Status
+$style-primary: var(--color-primary);
+$style-error:   var(--color-error);
+
+// Layout dimensions (structural — do not change without updating components)
+$menu-height:     40px;
 $controls-height: 125px;
-$side-width: 400px;
-
+$side-width:      400px;

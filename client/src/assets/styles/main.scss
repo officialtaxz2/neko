@@ -1,28 +1,82 @@
 @charset "utf-8";
 
-// Import variables
+// Fontshare CDN — Cabinet Grotesk (display) + Satoshi (body)
+// Replaces local Whitney font (Discord-exclusive, removed)
+@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&f[]=satoshi@300,400,500,700&display=swap');
+
+// Design tokens (must be first local import)
 @import "variables";
 
-// Reset CSS
+// Reset
 @import "reset";
 
-// Import Vendor
+// Vendor — do not modify these
 @import "vendor/font-awesome";
-@import "vendor/font-whitney";
+// @import "vendor/font-whitney"; // removed: replaced by Fontshare CDN above
 @import "vendor/swal";
 @import "vendor/tooltip";
 @import "vendor/github";
 @import "vendor/emoji";
 @import "vendor/emote";
 
-html, body {
-  -webkit-font-smoothing: subpixel-antialiased;
-  background-color: $background-tertiary;
-  font-family: $text-family;
-  font-size: $text-size;
-  color:  $text-normal;
-  overflow: hidden;
-  width: 100vw;
-  height: 100vh;
-  min-width: 320px;
+// Base styles
+html,
+body {
+  -webkit-font-smoothing:  antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering:          optimizeLegibility;
+  background-color: var(--color-bg);
+  font-family:      var(--font-body);
+  font-size:        var(--text-sm);
+  color:            var(--color-text);
+  overflow:         hidden;
+  width:            100vw;
+  height:           100vh;
+  min-width:        320px;
+  // Smooth theme transitions
+  transition:
+    background-color var(--transition-slow),
+    color            var(--transition-slow);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+// Focus ring — WCAG AA compliant, never outline: none without replacement
+:focus-visible {
+  outline:        2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius:  var(--radius-sm);
+}
+
+// Interactive element default transitions
+a,
+button,
+[role="button"] {
+  transition:
+    color             var(--transition-interactive),
+    background-color  var(--transition-interactive),
+    border-color      var(--transition-interactive),
+    box-shadow        var(--transition-interactive),
+    opacity           var(--transition-interactive);
+}
+
+// Selection
+::selection {
+  background: var(--color-primary-highlight);
+  color:      var(--color-text);
+}
+
+// Respect user motion preferences
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration:       0.01ms !important;
+  }
 }
