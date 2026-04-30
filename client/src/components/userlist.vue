@@ -322,7 +322,8 @@
     }
 
     get otherMembers() {
-      return this.members.filter((m: any) => m.id !== this.id && m.connected)
+      // members is a { [id: string]: Member } dict — Object.values() converts to Member[]
+      return Object.values(this.members).filter((m: any) => m.id !== this.id && m.connected)
     }
 
     get loading() {
