@@ -59,8 +59,10 @@
     max-height: 100vh;
     flex-direction: row;
     display: flex;
+    background: var(--color-bg);
     // Clip sidebar during slide animation
     overflow: hidden;
+    transition: background-color var(--transition-slow);
 
     .neko-main {
       min-width: 360px;
@@ -69,31 +71,43 @@
       flex-direction: column;
       display: flex;
       overflow: auto;
+      // Transition for the split-separator glow
+      transition: box-shadow var(--transition-slow);
 
       .header-container {
-        background: var(--color-bg);
+        // Transparent: lets the gradient in header.vue show through without doubling bg
+        background: transparent;
         height: $menu-height;
         flex-shrink: 0;
         display: flex;
-        border-bottom: 1px solid var(--color-border);
         transition: background-color var(--transition-slow);
       }
 
       .video-container {
-        background: rgba(0, 0, 0, 0.4);
+        // Token-based bg (replaces hardcoded rgba(0,0,0,0.4))
+        background: var(--color-bg);
         max-width: 100%;
         flex-grow: 1;
         display: flex;
+        transition: background-color var(--transition-slow);
       }
 
       .room-container {
-        background: var(--color-bg);
+        // Glassmorphism: subtle upward gradient + blur — visually separates controls from video
+        background: linear-gradient(
+          to top,
+          var(--color-bg) 0%,
+          color-mix(in srgb, var(--color-surface) 85%, transparent) 100%
+        );
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         height: $controls-height;
         max-width: 100%;
         flex-shrink: 0;
         flex-direction: column;
         display: flex;
-        border-top: 1px solid var(--color-border);
+        // Teal-tinted top border as split accent between video and controls
+        border-top: 1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-border));
         transition: background-color var(--transition-slow);
 
         .room-menu {
@@ -125,6 +139,11 @@
           }
         }
       }
+    }
+
+    // When sidebar is open: right-edge glow on main as visual split separator
+    &.expanded .neko-main {
+      box-shadow: 4px 0 20px color-mix(in srgb, var(--color-primary) 10%, transparent);
     }
   }
 
@@ -171,6 +190,11 @@
       .neko-menu {
         height: 100vh;
         width: 100% !important;
+      }
+
+      // No split glow on mobile — sidebar slides up, not beside
+      &.expanded .neko-main {
+        box-shadow: none;
       }
     }
 
