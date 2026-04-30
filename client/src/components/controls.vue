@@ -80,6 +80,22 @@
         <input type="range" min="0" max="100" v-model="volume" />
       </div>
     </li>
+
+    <!-- Bitrate / FPS animated counter badge -->
+    <!-- Only visible when video is playing and at least one stat is non-zero -->
+    <li class="stats-badge no-pointer" v-if="playing && statsVisible">
+      <div class="stats-inner">
+        <span class="stat">
+          <span class="stat-val" :key="'f' + statsKey">{{ displayFps }}</span>
+          <span class="stat-unit">fps</span>
+        </span>
+        <span class="stat-sep">&middot;</span>
+        <span class="stat">
+          <span class="stat-val" :key="'b' + statsKey">{{ displayBitrateLabel }}</span>
+          <span class="stat-unit">{{ bitrateUnit }}</span>
+        </span>
+      </div>
+    </li>
   </ul>
 </template>
 
@@ -103,6 +119,15 @@
     80%  { transform: scale(1.5)  translate(4px,   -4px)  rotate(20deg);  }
     90%  { transform: scale(1.25) translate(-2px,  -2px)  rotate(-20deg); }
     100% { transform: scale(1)    translate(0px,   0px)   rotate(0deg);   }
+  }
+
+  // ------------------------------------------------------------------
+  // Stat-flip: brief entry animation when a new value arrives
+  // Triggered by :key change on stat-val (fires every 2s poll cycle)
+  // ------------------------------------------------------------------
+  @keyframes stat-flip {
+    0%   { opacity: 0.3; transform: translateY(-4px) scale(0.88); }
+    100% { opacity: 1;   transform: translateY(0)    scale(1); }
   }
 
   // ------------------------------------------------------------------
@@ -149,9 +174,8 @@
           transition-duration: 80ms;
         }
 
-        // Inactive/off state (e.g. mic off, kbd not held):
-        // Use text-muted token instead of opacity so contrast is
-        // reliable in both light (44% L) and dark (50% L) mode.
+        // Inactive/off state: use text-muted token (reliable contrast
+        // in both light and dark mode, no opacity hack)
         &.faded {
           color: var(--color-text-muted);
         }
@@ -232,9 +256,6 @@
 
       // ------------------------------------------------------------------
       // Custom lock toggle switch
-      // Off-state track: --color-border (84% L light / 23% L dark) so
-      // the pill is clearly visible in both modes. Previously used
-      // --color-surface-offset (94% L in light = near-invisible).
       // ------------------------------------------------------------------
       .switch {
         margin: 0 var(--space-1);
@@ -299,6 +320,59 @@
           }
         }
       }
+
+      // ------------------------------------------------------------------
+      // Bitrate / FPS stats badge
+      // ------------------------------------------------------------------
+      &.stats-badge {
+        min-width: unset;
+        padding: 0 var(--space-1);
+
+        .stats-inner {
+          display: flex;
+          align-items: center;
+          gap: var(--space-1);
+          padding: var(--space-1) var(--space-2);
+          background: color-mix(in srgb, var(--color-surface-2) 85%, transparent);
+          border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+          border-radius: var(--radius-md);
+          font-family: var(--font-mono);
+          font-size: var(--text-xs);
+          color: var(--color-text-muted);
+          white-space: nowrap;
+          user-select: none;
+          transition:
+            background-color var(--transition-slow),
+            border-color     var(--transition-slow);
+        }
+
+        .stat {
+          display: inline-flex;
+          align-items: baseline;
+          gap: 2px;
+        }
+
+        .stat-val {
+          color: var(--color-text);
+          font-weight: 500;
+          // stat-flip fires each time :key changes (= each poll cycle with new data)
+          animation: stat-flip 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+          display: inline-block;
+          min-width: 2ch;
+          text-align: right;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .stat-unit {
+          color: var(--color-text-faint);
+        }
+
+        .stat-sep {
+          color: var(--color-text-faint);
+          margin: 0 var(--space-1);
+          line-height: 1;
+        }
+      }
     }
   }
 </style>
@@ -310,6 +384,112 @@
   export default class extends Vue {
     @Prop(Boolean) readonly shakeKbd!: boolean
 
+    // ------------------------------------------------------------------
+    // Stats: animated Bitrate / FPS counters
+    // Polls RTCPeerConnection.getStats() every 2s via $client.peer.
+    // Uses lerp animation to smoothly count toward the new target value.
+    // ------------------------------------------------------------------
+    private statsInterval: number | null = null
+    private animRafId: number = 0
+    private lastBytesReceived = 0
+    private lastStatsTime = 0
+    private targetFps = 0
+    private targetBitrateKbps = 0
+
+    statsKey = 0
+    displayFps = 0
+    displayBitrateKbps = 0
+
+    get statsVisible(): boolean {
+      return this.displayFps > 0 || this.displayBitrateKbps > 0
+    }
+
+    get displayBitrateLabel(): string {
+      // Show one decimal place for Mbps, integer for Kbps
+      return this.targetBitrateKbps >= 1000
+        ? (this.displayBitrateKbps / 1000).toFixed(1)
+        : String(Math.round(this.displayBitrateKbps))
+    }
+
+    get bitrateUnit(): string {
+      return this.targetBitrateKbps >= 1000 ? 'Mbps' : 'Kbps'
+    }
+
+    mounted() {
+      this.statsInterval = window.setInterval(() => void this.pollStats(), 2000)
+    }
+
+    beforeDestroy() {
+      if (this.statsInterval !== null) clearInterval(this.statsInterval)
+      cancelAnimationFrame(this.animRafId)
+    }
+
+    // Reset counters to 0 when playback stops
+    @Watch('playing')
+    onPlayingChanged(isPlaying: boolean) {
+      if (!isPlaying) {
+        this.targetFps = 0
+        this.targetBitrateKbps = 0
+        this.lastBytesReceived = 0
+        this.lastStatsTime = 0
+        this.scheduleAnimate()
+      }
+    }
+
+    private async pollStats(): Promise<void> {
+      // $client.peer is the RTCPeerConnection exposed by the neko client library
+      const pc = (this.$client as any).peer as RTCPeerConnection | undefined
+      if (!pc) return
+      try {
+        const now = performance.now()
+        const stats = await pc.getStats()
+        stats.forEach((r: any) => {
+          if (r.type !== 'inbound-rtp' || r.kind !== 'video') return
+          // FPS from WebRTC report (framesPerSecond is spec-standard)
+          if (typeof r.framesPerSecond === 'number') {
+            this.targetFps = Math.round(r.framesPerSecond)
+          }
+          // Bitrate: bytes-delta * 8 / time-delta = bps → /1000 = Kbps
+          if (typeof r.bytesReceived === 'number' && this.lastStatsTime > 0) {
+            const dt = (now - this.lastStatsTime) / 1000
+            if (dt > 0) {
+              this.targetBitrateKbps = Math.round(
+                ((r.bytesReceived - this.lastBytesReceived) * 8) / dt / 1000,
+              )
+            }
+          }
+          this.lastBytesReceived = r.bytesReceived ?? this.lastBytesReceived
+          this.lastStatsTime = now
+        })
+        // Increment key → triggers stat-flip animation on both values
+        this.statsKey++
+        this.scheduleAnimate()
+      } catch {
+        // PC not yet connected or getStats unavailable — silently skip
+      }
+    }
+
+    private scheduleAnimate(): void {
+      cancelAnimationFrame(this.animRafId)
+      this.animRafId = requestAnimationFrame(this.animateTick)
+    }
+
+    // Arrow function — preserves `this` context when passed to rAF
+    private readonly animateTick = (): void => {
+      const lerp = (a: number, b: number): number => {
+        const d = b - a
+        return Math.abs(d) < 1 ? b : Math.round(a + d * 0.18)
+      }
+      this.displayFps = lerp(this.displayFps, this.targetFps)
+      this.displayBitrateKbps = lerp(this.displayBitrateKbps, this.targetBitrateKbps)
+      if (this.displayFps !== this.targetFps || this.displayBitrateKbps !== this.targetBitrateKbps) {
+        this.animRafId = requestAnimationFrame(this.animateTick)
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Existing controls logic (unchanged)
+    // ------------------------------------------------------------------
     get controlLocked() {
       return 'control' in this.$accessor.locked && this.$accessor.locked['control'] && !this.$accessor.user.admin
     }
@@ -363,16 +543,12 @@
     }
 
     toggleControl() {
-      if (!this.playable) {
-        return
-      }
+      if (!this.playable) return
       this.$accessor.remote.toggle()
     }
 
     toggleMedia() {
-      if (!this.playable) {
-        return
-      }
+      if (!this.playable) return
       this.$accessor.video.togglePlay()
     }
 
@@ -391,10 +567,7 @@
     }
 
     async toggleMicrophone() {
-      if (!this.playable || !this.micAllowed) {
-        return
-      }
-
+      if (!this.playable || !this.micAllowed) return
       if (this.microphoneActive) {
         this.$client.disableMicrophone()
         this.microphoneActive = false
