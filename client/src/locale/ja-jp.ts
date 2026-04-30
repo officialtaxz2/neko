@@ -9,6 +9,7 @@ export const side = {
   chat: 'チャット',
   files: 'ファイル',
   settings: '設定',
+  users: 'ユーザー',
 }
 
 export const connect = {
@@ -28,7 +29,7 @@ export const context = {
   unmute: 'ミュート解除',
   release: '強制的にコントロールを解放する',
   take: '強制的にコントロールを得る',
-  give: 'コントロールを譲渡する',
+  give: 'コントロールを㖬渡する',
   kick: '追い出す',
   ban: 'IPを禁止にする',
   confirm: {
@@ -109,7 +110,7 @@ export const notifications = {
   controls_released: '{name} がコントロールを解放しました',
   controls_released_force: 'が強制的にコントロールを解放しました',
   controls_released_steal: 'が {name} からコントロールを解放しました',
-  controls_given: '{name} にコントロールを譲渡しました',
+  controls_given: '{name} にコントロールを㖬渡しました',
   controls_has: '{name} にコントロールがあります',
   controls_has_alt: 'しかし、その人にあなたがそれを希望していることを伝えました',
   controls_requesting: '{name} がコントロールを要求しています',

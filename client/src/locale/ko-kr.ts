@@ -9,6 +9,7 @@ export const side = {
   chat: '채팅',
   files: '파일',
   settings: '설정',
+  users: '사용자',
 }
 
 export const connect = {
@@ -60,7 +61,7 @@ export const locks = {
     unlock: '조작 잠금 해제하기 (사용자)',
     locked: '조작이 잠겼습니다 (사용자)',
     unlocked: '조작 잠금이 해제됐습니다 (사용자)',
-    notif_locked: '사용자의 조작을 잠궜습니다',
+    notif_locked: '사용자의 조작을 잠군습니다',
     notif_unlocked: '사용자의 조작 잠금을 해제했습니다',
   },
   login: {
@@ -102,14 +103,14 @@ export const connection = {
 
 export const notifications = {
   connected: '{name} 님이 접속하셨습니다',
-  disconnected: '{name} 님이 퇴장하셨습니다',
+  disconnected: '{name} 님이 폴장하셨습니다',
   controls_taken: '{name} 님이 조작 권한을 가지셨습니다',
   controls_taken_force: '조작 권한을 강제로 가졌습니다',
   controls_taken_steal: '{name} 님으로 부터 조작 권한을 가져왔습니다',
-  controls_released: '{name} 님이 조작 권한을 내려놨습니다',
-  controls_released_force: '조작 권한을 강제로 내려놨습니다',
-  controls_released_steal: '{name} 님의 조작 권한을 내려놨습니다',
-  controls_given: '{name} 님에게 조작 권한을 줬습니다',
+  controls_released: '{name} 님이 조작 권한을 내려놓았습니다',
+  controls_released_force: '조작 권한을 강제로 내려놓았습니다',
+  controls_released_steal: '{name} 님의 조작 권한을 내려놓았습니다',
+  controls_given: '{name} 님에게 조작 권한을 줘습니다',
   controls_has: '{name} 님이 조작 권한을 가지고 있습니다',
   controls_has_alt: '가지고 있는 사람에게 가지고 싶어한다고 알려드리겠습니다',
   controls_requesting: '{name}님이 조작 권한을 요청하셨습니다',
