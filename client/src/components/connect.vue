@@ -29,34 +29,46 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba($color: $background-floating, $alpha: 0.8);
-
+    // Overlay: semi-transparent bg via color-mix (no $scss-var needed)
+    background: color-mix(in srgb, var(--color-bg) 85%, transparent);
     display: flex;
     justify-content: center;
     align-items: center;
 
     .window {
       width: 300px;
-      background: $background-secondary;
-      border-radius: 5px;
-      padding: 10px;
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border);
+      padding: var(--space-3);
 
       .logo {
         width: 100%;
+        // Touch target: logo button is ~90px tall — already exceeds 44px
         display: flex;
         flex-direction: row;
         justify-content: center;
         align-items: center;
         cursor: pointer;
+        transition: opacity var(--transition-interactive);
+
+        &:hover {
+          opacity: 0.8;
+        }
+
+        &:active {
+          opacity: 0.6;
+        }
 
         img {
           height: 90px;
-          margin-right: 10px;
+          margin-right: var(--space-2);
         }
 
         span {
           font-size: 30px;
           line-height: 56px;
+          color: var(--color-text);
 
           b {
             font-weight: 900;
@@ -67,40 +79,69 @@
       .message {
         display: flex;
         flex-direction: column;
+        gap: var(--space-1);
 
         span {
           display: block;
           text-align: center;
           text-transform: uppercase;
           line-height: 30px;
+          color: var(--color-text-muted);
+          font-size: var(--text-sm);
         }
 
         input {
-          border: none;
-          padding: 6px 8px;
-          line-height: 20px;
-          border-radius: 5px;
-          margin: 5px 0;
-          background: $background-tertiary;
-          color: $text-normal;
+          // Touch target ≥ 44px
+          min-height: 44px;
+          border: 1px solid transparent;
+          padding: var(--space-2) var(--space-3);
+          border-radius: var(--radius-md);
+          background: var(--color-bg);
+          color: var(--color-text);
+          font-size: var(--text-sm);
+          transition:
+            border-color     var(--transition-interactive),
+            background-color var(--transition-interactive);
+
+          &:focus {
+            border-color: var(--color-primary);
+            outline: none;
+          }
+
+          &::placeholder {
+            color: var(--color-text-faint);
+          }
 
           &::selection {
-            background: $text-link;
+            background: var(--color-primary-highlight);
           }
         }
 
         button {
+          // Touch target ≥ 44px
+          min-height: 44px;
           cursor: pointer;
-          border-radius: 5px;
-          padding: 4px;
-          background: $style-primary;
-          color: $text-normal;
+          border-radius: var(--radius-md);
+          padding: var(--space-2) var(--space-4);
+          background: var(--color-primary);
+          color: var(--color-text-inverse);
           text-align: center;
           text-transform: uppercase;
-          font-weight: bold;
-          line-height: 30px;
-          margin: 5px 0;
+          font-weight: 700;
+          font-size: var(--text-sm);
           border: none;
+          transition:
+            background-color var(--transition-interactive),
+            transform        var(--transition-fast);
+
+          &:hover {
+            background: var(--color-primary-hover);
+          }
+
+          &:active {
+            background: var(--color-primary-active);
+            transform: scale(0.97);
+          }
         }
       }
 
@@ -108,26 +149,25 @@
         width: 90px;
         height: 90px;
         position: relative;
-        margin: 0 auto;
+        margin: var(--space-3) auto;
 
         .bounce1,
         .bounce2 {
           width: 100%;
           height: 100%;
           border-radius: 50%;
-          background-color: $style-primary;
+          background-color: var(--color-primary);
           opacity: 0.6;
           position: absolute;
           top: 0;
           left: 0;
-
-          -webkit-animation: bounce 2s infinite ease-in-out;
           animation: bounce 2s infinite ease-in-out;
+          -webkit-animation: bounce 2s infinite ease-in-out;
         }
 
         .bounce2 {
-          -webkit-animation-delay: -1s;
           animation-delay: -1s;
+          -webkit-animation-delay: -1s;
         }
       }
     }

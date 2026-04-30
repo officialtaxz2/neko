@@ -80,14 +80,15 @@
       padding: var(--space-1) var(--space-5);
 
       li {
+        // Touch target row ≥ 44px tall (WCAG 2.5.5)
+        min-height: 44px;
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
         border-bottom: 1px solid var(--color-border);
-        padding: var(--space-1) 0;
-        white-space: nowrap;
         gap: var(--space-3);
+        white-space: nowrap;
 
         &:last-child {
           border-bottom: none;
@@ -95,13 +96,13 @@
 
         > span {
           margin-right: auto;
-          height: 24px;
-          line-height: 24px;
           color: var(--color-text);
           font-size: var(--text-sm);
         }
 
         button {
+          // Touch target ≥ 44px
+          min-height: 44px;
           cursor: pointer;
           border-radius: var(--radius-md);
           padding: var(--space-1) var(--space-3);
@@ -111,8 +112,6 @@
           text-transform: uppercase;
           font-weight: 700;
           font-size: var(--text-sm);
-          line-height: 30px;
-          margin: var(--space-1) 0;
           border: none;
           display: block;
           width: 100%;
@@ -139,14 +138,18 @@
         }
 
         // ------------------------------------------------------------------
-        // Custom Toggle Switch — clean pill, teal accent, spring easing
+        // Custom Toggle Switch
+        // Visual pill: 42×24px. Transparent padding extends touch target to
+        // 44×44px without changing the appearance (WCAG 2.5.5).
         // ------------------------------------------------------------------
         .switch {
           flex-shrink: 0;
           justify-self: flex-end;
           position: relative;
-          width: 42px;
-          height: 24px;
+          // 10px top/bottom padding: (44 - 24) / 2 = 10px → total height 44px
+          // 1px left/right padding: 42 + 2 = 44px → total width 44px
+          padding: 10px 1px;
+          cursor: pointer;
 
           input {
             opacity: 0;
@@ -155,9 +158,13 @@
           }
 
           span {
+            // Pill is absolutely positioned within the padded label
             position: absolute;
             cursor: pointer;
-            inset: 0;
+            top: 10px;
+            left: 1px;
+            right: 1px;
+            bottom: 10px;
             background-color: var(--color-surface-offset);
             border-radius: var(--radius-full);
             transition: background-color var(--transition-interactive);
@@ -177,7 +184,6 @@
             }
           }
 
-          // Hover: subtle lift on the track
           &:hover span {
             background-color: var(--color-surface-dynamic);
           }
@@ -192,8 +198,6 @@
             }
           }
 
-          // Checked + hover: teal hover state
-          &:checked ~ label:hover span,
           &:checked + span:hover {
             background-color: var(--color-primary-hover);
           }
@@ -292,8 +296,8 @@
             background-color: var(--color-bg);
             cursor: pointer;
             transition:
-              border-color       var(--transition-interactive),
-              background-color   var(--transition-interactive);
+              border-color     var(--transition-interactive),
+              background-color var(--transition-interactive);
 
             &:hover {
               border-color: var(--color-border);
@@ -351,6 +355,7 @@
         &.broadcast {
           flex-direction: column;
           align-items: stretch;
+          min-height: unset;
 
           div {
             margin-bottom: var(--space-2);
