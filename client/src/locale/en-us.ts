@@ -9,6 +9,7 @@ export const side = {
   chat: 'Chat',
   files: 'Files',
   settings: 'Settings',
+  users: 'Users',
 }
 
 export const connect = {
