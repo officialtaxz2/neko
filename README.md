@@ -57,9 +57,76 @@ Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · Testphase abge
 
 > ⬜ = Geplant · 🔄 = In Arbeit · ✅ = Fertig
 
-| Feature / Verbesserung | Priorität | Status |
-|---|---|---|
-| — | — | — |
+### Übersicht
+
+| # | Feature | Betroffene Dateien | Status |
+|---|---|---|---|
+| R1 | Sidebar: 3. Tab „Users“ ergänzen | `side.vue` | ⬜ |
+| R2 | Neue `userlist.vue` — User-Einträge + Moderationsaktionen | `userlist.vue` (neu erstellen) | ⬜ |
+| R3 | Multiple-Choice Sidebar: Chat + Users gleichzeitig (50/50) | `side.vue` | ⬜ |
+| R4 | User-Avatare aus Controls-Bar entfernen | `members.vue`, `app.vue` | ⬜ |
+| R5 | Resolution-Button aus Video-Player entfernen | `video.vue` | ⬜ |
+| R6 | Resolution-Dropdown in Settings ergänzen | `settings.vue` | ⬜ |
+| R7 | *(Platzhalter — noch zu definieren)* | — | ⬜ |
+| R8 | *(Platzhalter — noch zu definieren)* | — | ⬜ |
+| R9 | *(Platzhalter — noch zu definieren)* | — | ⬜ |
+
+---
+
+### R1–R3: Sidebar Redesign + Userlist
+
+**Ziel:** Die Sidebar erhält einen dritten Tab „Users“. Chat und Users können gleichzeitig aktiv sein (Multiple-Choice). Settings ist exklusiv — entweder ist Chat/Users aktiv, oder Settings, nie beides.
+
+**Tab-Logik in `side.vue`:**
+
+| Zustand | Sidebar-Inhalt |
+|---|---|
+| Nur Chat aktiv | Chat nimmt 100% der Sidebar-Höhe |
+| Nur Users aktiv | Userlist nimmt 100% der Sidebar-Höhe |
+| Chat + Users aktiv | Chat 50% oben / Userlist 50% unten (`flex-direction: column`, beide `flex: 1`) |
+| Settings aktiv | Settings nimmt 100% — Chat/Users-State wird nicht beibehalten (oder eingefroren) |
+
+- Tab-Leiste: 3 Tabs — `fa-comment` Chat · `fa-users` Users · `fa-cog` Settings
+- Chat und Users-Tabs sind **Toggle-Buttons** (unabhängig an/abwählbar), Settings-Tab ist **exklusiv** (deaktiviert Chat+Users-State beim Wechsel)
+- Tab-Zustand: `activeChat: boolean`, `activeUsers: boolean`, `activeSettings: boolean` — Settings schließt die anderen aus
+- Der Sidebar-Content-Bereich nutzt CSS `display: flex; flex-direction: column` — aktive Panels erhalten `flex: 1`
+- Übergang zwischen Split und Single via `<transition>` (Höhe smooth mit `max-height`-Trick oder Vue `<transition-group>`)
+
+**Neue `userlist.vue`:**
+
+- Pro User eine Zeile: **Avatar** (kleines Pill-Badge wie in `chat.vue`) + **Username** + **Aktions-Icons** rechts
+- Aktions-Icons (nur sichtbar für Admin/Host oder per Hover): `fa-eye-slash` Ignore · `fa-microphone-slash` Mute · `fa-gamepad` Give Controls · `fa-user-times` Kick · `fa-ban` Ban IP
+- Icons: Touch-Target ≥44px, Micro-Animation (`scale(1.18)` Hover / `scale(0.88)` Active), `--color-text-muted` at rest → `--color-error` bei destruktiven Aktionen (Kick/Ban) on Hover
+- Skeleton Loading: 4 Shimmer-Rows (konsistent mit `chat.vue` und `members.vue`)
+- Bestehende Right-Click-Logik aus `members.vue` (Context-Menu) in `userlist.vue`-Aktionen übertragen; Right-Click in Controls-Bar entfällt damit
+- CSS Tokens durchgehend, kein hardcodierter Wert
+
+---
+
+### R4: User-Avatare aus Controls-Bar entfernen
+
+**Ziel:** Die User-Avatar-Bubbles, die aktuell in der Controls-Bar unterhalb des Video-Players angezeigt werden, werden komplett entfernt — User-Übersicht lebt ausschließlich in der Sidebar (Userlist, R2).
+
+- `members.vue`: Komponente bleibt vorerst bestehen, wird aber nicht mehr in der Controls-Bar gerendert (Einbindung aus `app.vue` oder `controls.vue` entfernen)
+- Prüfen ob `members.vue` danach noch benötigt wird oder in `userlist.vue` aufgeht
+- Controls-Bar (`controls.vue` / `app.vue`): Avatar-Render-Slot entfernen; kein visuelles Loch — Spacing anpassen
+
+---
+
+### R5–R6: Resolution aus Video-Player → Settings
+
+**Ziel:** Der Monitor-Icon-Button auf dem Video-Player (`video.vue`) wird entfernt. Die Auflösungsauswahl wird als neue Card in `settings.vue` integriert.
+
+**R5 — `video.vue`:**
+- Monitor-Icon-Button (Auflösungsauswahl) aus dem Player-Overlay entfernen
+- Nur Button + zugehöriges Dropdown/Modal entfernen — Video-Event-Handler (Maus, Tastatur, WebRTC) nicht anfassen
+
+**R6 — `settings.vue`:**
+- Neue 6. Card im Bento Grid: **„Display“** (Icon: `fa-desktop`)
+- Inhalt: Custom Dropdown-Select mit der Liste verfügbarer Auflösungen (aus vorhandener Neko-API)
+- Preview-Label: zeigt aktuell aktive Auflösung im geschlossenen Zustand an (z.B. `1920 × 1080 @ 30 fps`)
+- Styling: konsistent mit bestehenden Settings-Cards — CSS Custom Properties, kein hardcodierter Wert
+- Dropdown-State und API-Aufruf analog zur bestehenden Resolution-Logik aus `video.vue` übernehmen
 
 ---
 
