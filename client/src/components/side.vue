@@ -151,12 +151,14 @@
     }
 
     // ── Tab content area ────────────────────────────────────────────────────
+    // overflow-y: auto allows the bento grid in settings tab to scroll
+    // without clipping card shadows or content
     .page-container {
       max-height: 100%;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow-y: auto;
     }
   }
 
