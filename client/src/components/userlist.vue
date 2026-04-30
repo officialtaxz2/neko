@@ -23,7 +23,7 @@
         :key="m.id || index"
         class="userlist-row"
         :class="{ 'is-host': m.id === host, 'is-admin': m.admin }"
-        @contextmenu.stop.prevent="onContext($event, { member: m })"
+        @contextmenu.stop.prevent
       >
         <neko-avatar class="user-avatar" :seed="m.displayname" :size="28" />
         <span class="user-name">{{ m.displayname }}</span>
@@ -37,51 +37,62 @@
 
         <!-- Moderation actions: only rendered for admin/host, revealed on hover -->
         <div v-if="canModerate" class="user-actions" @click.stop>
+          <!-- Ignore / Unignore -->
           <button
             class="action-btn"
-            title="Ignore"
-            aria-label="Ignore user"
-            @click="onContext($event, { member: m })"
+            :title="m.ignored ? 'Unignore' : 'Ignore'"
+            :aria-label="m.ignored ? 'Unignore user' : 'Ignore user'"
+            @click="toggleIgnore(m)"
           >
-            <i class="fas fa-eye-slash" aria-hidden="true" />
+            <i :class="m.ignored ? 'fas fa-eye' : 'fas fa-eye-slash'" aria-hidden="true" />
           </button>
+
+          <!-- Mute / Unmute (admin only) -->
           <button
+            v-if="isAdmin"
             class="action-btn"
-            title="Mute"
-            aria-label="Mute user"
-            @click="onContext($event, { member: m })"
+            :title="m.muted ? 'Unmute' : 'Mute'"
+            :aria-label="m.muted ? 'Unmute user' : 'Mute user'"
+            @click="toggleMute(m)"
           >
-            <i class="fas fa-microphone-slash" aria-hidden="true" />
+            <i :class="m.muted ? 'fas fa-microphone' : 'fas fa-microphone-slash'" aria-hidden="true" />
           </button>
+
+          <!-- Give Controls: hidden if member already has host or implicit hosting active -->
           <button
+            v-if="!implicitHosting && m.id !== host"
             class="action-btn"
             title="Give Controls"
             aria-label="Give controls to user"
-            @click="onContext($event, { member: m })"
+            @click="give(m)"
           >
             <i class="fas fa-gamepad" aria-hidden="true" />
           </button>
+
+          <!-- Kick (admin only, non-admin target) -->
           <button
+            v-if="isAdmin && !m.admin"
             class="action-btn action-btn--destructive"
             title="Kick"
             aria-label="Kick user"
-            @click="onContext($event, { member: m })"
+            @click="kick(m)"
           >
             <i class="fas fa-user-times" aria-hidden="true" />
           </button>
+
+          <!-- Ban IP (admin only, non-admin target) -->
           <button
+            v-if="isAdmin && !m.admin"
             class="action-btn action-btn--destructive"
             title="Ban IP"
             aria-label="Ban IP address"
-            @click="onContext($event, { member: m })"
+            @click="ban(m)"
           >
             <i class="fas fa-ban" aria-hidden="true" />
           </button>
         </div>
       </li>
     </ul>
-
-    <neko-context ref="context" />
   </div>
 </template>
 
@@ -290,21 +301,18 @@
 </style>
 
 <script lang="ts">
-  import { Component, Ref, Vue } from 'vue-property-decorator'
+  import { Component, Vue } from 'vue-property-decorator'
+  import { Member } from '~/neko/types'
 
-  import Context from './context.vue'
   import Avatar from './avatar.vue'
 
   @Component({
     name: 'neko-userlist',
     components: {
-      'neko-context': Context,
       'neko-avatar': Avatar,
     },
   })
   export default class extends Vue {
-    @Ref('context') readonly _context!: any
-
     get self() {
       return this.$accessor.user.member
     }
@@ -315,6 +323,14 @@
 
     get host() {
       return this.$accessor.remote.id
+    }
+
+    get isAdmin() {
+      return this.$accessor.user.admin
+    }
+
+    get implicitHosting() {
+      return this.$accessor.remote.implicitHosting
     }
 
     get members() {
@@ -330,7 +346,7 @@
       return this.$accessor.connecting
     }
 
-    // Admin or current host may moderate
+    // Admin or current host may see moderation actions
     get canModerate() {
       return (
         this.$accessor.user.admin ||
@@ -338,8 +354,65 @@
       )
     }
 
-    onContext(event: MouseEvent, data: any) {
-      this._context.open(event, data)
+    toggleIgnore(member: Member) {
+      this.$accessor.user.setIgnored({ id: member.id, ignored: !member.ignored })
+    }
+
+    async toggleMute(member: Member) {
+      if (member.muted) {
+        const ok = await this.$swal({
+          title: this.$t('context.confirm.unmute_title', { name: member.displayname }) as string,
+          text: this.$t('context.confirm.unmute_text', { name: member.displayname }) as string,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: this.$t('context.confirm.button_yes') as string,
+          cancelButtonText: this.$t('context.confirm.button_cancel') as string,
+        })
+        if (ok) this.$accessor.user.unmute(member)
+      } else {
+        const ok = await this.$swal({
+          title: this.$t('context.confirm.mute_title', { name: member.displayname }) as string,
+          text: this.$t('context.confirm.mute_text', { name: member.displayname }) as string,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: this.$t('context.confirm.button_yes') as string,
+          cancelButtonText: this.$t('context.confirm.button_cancel') as string,
+        })
+        if (ok) this.$accessor.user.mute(member)
+      }
+    }
+
+    give(member: Member) {
+      // Admin uses privileged give; non-admin host uses standard give
+      if (this.$accessor.user.admin) {
+        this.$accessor.remote.adminGive(member)
+      } else {
+        this.$accessor.remote.give(member)
+      }
+    }
+
+    async kick(member: Member) {
+      const ok = await this.$swal({
+        title: this.$t('context.confirm.kick_title', { name: member.displayname }) as string,
+        text: this.$t('context.confirm.kick_text', { name: member.displayname }) as string,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: this.$t('context.confirm.button_yes') as string,
+        cancelButtonText: this.$t('context.confirm.button_cancel') as string,
+      })
+      if (ok) this.$accessor.user.kick(member)
+    }
+
+    async ban(member: Member) {
+      const ok = await this.$swal({
+        title: this.$t('context.confirm.ban_title', { name: member.displayname }) as string,
+        text: this.$t('context.confirm.ban_text', { name: member.displayname }) as string,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: this.$t('context.confirm.button_yes') as string,
+        cancelButtonText: this.$t('context.confirm.button_cancel') as string,
+      })
+      if (ok) this.$accessor.user.ban(member)
     }
   }
 </script>
