@@ -57,12 +57,12 @@ docker compose up --force-recreate
 | `client/src/assets/styles/fonts/` | Lokale Whitney-Fonts (veraltet, nicht mehr importiert) | Inaktiv |
 | `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout, Sidebar `<transition name="side">` Slide-Animation | ✅ Updated |
 | `client/src/components/header.vue` | Topbar: Theme-Toggle-Button, CSS Tokens, Micro-Animations (Hover/Active), **Gradient** (135deg Teal-Tint → bg) + `backdrop-filter:blur(8px)` | ✅ Updated |
-| `client/src/components/side.vue` | Sidebar: Pill-Tabs, Hover/Active Micro-Animations, Vue Tab-Transition, Touch-Targets, CSS Tokens, **Glassmorphism** (`backdrop-filter: blur(12px)`) | ✅ Updated |
+| `client/src/components/side.vue` | Sidebar: Pill-Tabs, Glassmorphism (`backdrop-filter: blur(12px)`), **`page-container` `overflow-y: auto`** (Bento-scroll-support) | ✅ Updated |
 | `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges, Avatar-Hover, Message-Hover, Code-Block-Tokens, Textarea-Redesign, Skeleton Loading State (4 Shimmer-Messages) | ✅ Updated |
 | `client/src/components/members.vue` | Members-Bar: Status-Dots (online/away/busy/offline), Avatar-Hover, Host/Admin-Badges, CSS Tokens, Skeleton Loading State (4 Shimmer-Circles) | ✅ Updated |
 | `client/src/components/menu.vue` | Navigationsmenü: Icons auf `color: var(--color-text)` + Hover-Animation migriert, Language-Select vollständig von `$background-*`/`color: white` auf CSS Custom Properties umgestellt (Light-Mode-kompatibel) | ✅ Updated |
 | `client/src/components/controls.vue` | Steuerleiste: Touch-Targets ≥ 44px, Micro-Animations (Hover `scale(1.18)` + Teal, Active `scale(0.88)`), `.faded`-Icons nutzen `--color-text-muted` (kein `opacity`-Hack), Lock-Switch-Track `--color-border`, Volume-Slider-Thumb mit `box-shadow`, CSS Tokens | ✅ Updated |
-| `client/src/components/settings.vue` | Einstellungen-Panel: Custom Toggle Switches (Teal-Akzent, Spring-Easing), Touch-Target-Sizing via `display:inline-block + width:44px + height:44px + position:absolute` auf hidden input (kein Padding-Hack), Track-Farbe `--color-border` (sichtbar in Light Mode), Slider/Select/Input/Button Redesign, CSS Tokens durchgehend | ✅ Updated |
+| `client/src/components/settings.vue` | **Bento Grid Rewrite**: Semantisch gruppierte Cards (Scrolling / Chat / Input / Broadcast / Session) in 2-Spalten-CSS-Grid, Card-Header mit Teal-Icon + Label, `hover: shadow-md`, alle Tokens erhalten | ✅ Rewritten |
 | `client/src/components/connect.vue` | Login/Connect-Dialog: Glassmorphism (`backdrop-filter:blur(12px)` auf `.window`, `blur(4px)` auf Overlay), **radiales Spotlight-Gradient** (10% primary-tint → bg), CSS Tokens, Touch-Targets | ✅ Updated |
 | `client/src/components/video.vue` | WebRTC-Video + Maus/Tastatur-Overlay — **zuletzt anfassen**, Event-Handler nicht verändern | ⬜ Offen |
 
@@ -134,7 +134,7 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 |---|---|---|
 | Glassmorphism für Sidebar-Panels + Connect-Dialog (`backdrop-filter: blur(12px)`) | ✅ | `side.vue`, `connect.vue` |
 | Gradient-System für Header-Topbar und Login-Screen | ✅ | `header.vue`, `connect.vue` |
-| Bento Grid Layout für Settings- und Members-Panel | ⬜ | `settings.vue`, `side.vue` |
+| Bento Grid Layout für Settings-Panel | ✅ | `settings.vue`, `side.vue` |
 | Split-Screen Layout: Video-Bereich + Sidebar visuell klarer getrennt | ⬜ | `app.vue` |
 
 ---
