@@ -9,6 +9,7 @@ export const side = {
   chat: 'Obrolan',
   files: 'Berkas',
   settings: 'Pengaturan',
+  users: 'Pengguna',
 }
 
 export const connect = {
