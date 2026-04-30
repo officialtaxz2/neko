@@ -139,26 +139,34 @@
 
         // ------------------------------------------------------------------
         // Custom Toggle Switch
-        // Visual pill: 42×24px. Transparent padding extends touch target to
-        // 44×44px without changing the appearance (WCAG 2.5.5).
+        // Root cause of previous bug: no explicit width/height on the label
+        // caused it to collapse to ~2px (hidden input = 0×0). Span with
+        // right:1px/left:1px resolved to 0px width → invisible pill.
+        // Fix: display:inline-block + width:44px + height:44px gives the
+        // absolute-positioned span a real container to resolve against.
+        // Touch target: 44×44px total (pill is 42×24px, centred via padding).
         // ------------------------------------------------------------------
         .switch {
           flex-shrink: 0;
-          justify-self: flex-end;
+          display: inline-block;
           position: relative;
-          // 10px top/bottom padding: (44 - 24) / 2 = 10px → total height 44px
-          // 1px left/right padding: 42 + 2 = 44px → total width 44px
+          // 42px pill + 1px left/right padding = 44px touch width
+          width: 44px;
+          // 24px pill + 10px top/bottom padding = 44px touch height
+          height: 44px;
           padding: 10px 1px;
           cursor: pointer;
 
           input {
+            // Taken fully out of flow so it doesn't affect label dimensions
+            position: absolute;
             opacity: 0;
             width: 0;
             height: 0;
           }
 
           span {
-            // Pill is absolutely positioned within the padded label
+            // Resolves to 42×24px inside the 44×44px label
             position: absolute;
             cursor: pointer;
             top: 10px;
@@ -235,6 +243,7 @@
               background: #fff;
               cursor: pointer;
               border: none;
+              box-shadow: var(--shadow-sm);
               transition: transform var(--transition-fast);
             }
 
@@ -258,6 +267,7 @@
               background: #fff;
               cursor: pointer;
               margin-top: -4px;
+              box-shadow: var(--shadow-sm);
               transition: transform var(--transition-fast);
             }
 

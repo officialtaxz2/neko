@@ -191,7 +191,7 @@
             cursor: pointer;
           }
 
-          // Firefox — thumb
+          // Firefox — thumb: box-shadow ensures visibility on light surfaces
           &::-moz-range-thumb {
             height: 12px;
             width: 12px;
@@ -199,6 +199,7 @@
             background: #fff;
             cursor: pointer;
             border: none;
+            box-shadow: var(--shadow-sm);
             transition: transform var(--transition-fast);
           }
 
@@ -215,7 +216,7 @@
             cursor: pointer;
           }
 
-          // WebKit — thumb
+          // WebKit — thumb: box-shadow ensures visibility on light surfaces
           &::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 12px;
@@ -224,6 +225,7 @@
             background: #fff;
             cursor: pointer;
             margin-top: -4px;
+            box-shadow: var(--shadow-sm);
             transition: transform var(--transition-fast);
           }
 
@@ -234,7 +236,9 @@
       }
 
       // ------------------------------------------------------------------
-      // Custom toggle switch
+      // Custom lock toggle switch
+      // Track uses var(--color-surface-offset) instead of var(--color-surface)
+      // so it's visible in light mode (surface = near-white = invisible track).
       // ------------------------------------------------------------------
       .switch {
         margin: 0 var(--space-1);
@@ -253,7 +257,7 @@
           position: absolute;
           cursor: pointer;
           inset: 0;
-          background-color: var(--color-surface);
+          background-color: var(--color-surface-offset);
           border-radius: var(--radius-full);
           transition: background-color var(--transition-interactive);
 
