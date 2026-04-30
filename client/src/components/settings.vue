@@ -77,44 +77,72 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 5px 20px;
+      padding: var(--space-1) var(--space-5);
 
       li {
         display: flex;
         flex-direction: row;
-        align-content: center;
-        justify-content: center;
-        border-bottom: 1px solid $background-secondary;
-        padding: 5px 0;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--color-border);
+        padding: var(--space-1) 0;
         white-space: nowrap;
+        gap: var(--space-3);
 
         &:last-child {
           border-bottom: none;
         }
 
-        span {
+        > span {
           margin-right: auto;
           height: 24px;
           line-height: 24px;
+          color: var(--color-text);
+          font-size: var(--text-sm);
         }
 
         button {
           cursor: pointer;
-          border-radius: 5px;
-          padding: 4px;
-          background: $style-primary;
-          color: $text-normal;
+          border-radius: var(--radius-md);
+          padding: var(--space-1) var(--space-3);
+          background: var(--color-primary);
+          color: var(--color-text-inverse);
           text-align: center;
           text-transform: uppercase;
-          font-weight: bold;
+          font-weight: 700;
+          font-size: var(--text-sm);
           line-height: 30px;
-          margin: 5px 0;
+          margin: var(--space-1) 0;
           border: none;
           display: block;
           width: 100%;
+          transition:
+            background-color var(--transition-interactive),
+            transform        var(--transition-fast);
+
+          &:hover {
+            background: var(--color-primary-hover);
+          }
+
+          &:active {
+            background: var(--color-primary-active);
+            transform: scale(0.97);
+          }
+
+          &.btn-red {
+            background: var(--color-error);
+
+            &:hover {
+              background: var(--color-error-hover);
+            }
+          }
         }
 
+        // ------------------------------------------------------------------
+        // Custom Toggle Switch — clean pill, teal accent, spring easing
+        // ------------------------------------------------------------------
         .switch {
+          flex-shrink: 0;
           justify-self: flex-end;
           position: relative;
           width: 42px;
@@ -129,40 +157,53 @@
           span {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: $background-tertiary;
-            transition: 0.2s;
-            border-radius: 34px;
+            inset: 0;
+            background-color: var(--color-surface-offset);
+            border-radius: var(--radius-full);
+            transition: background-color var(--transition-interactive);
 
-            &:before {
-              position: absolute;
+            &::before {
               content: '';
+              position: absolute;
               height: 18px;
               width: 18px;
               left: 3px;
               bottom: 3px;
-              background-color: white;
-              transition: 0.3s;
+              background-color: #fff;
               border-radius: 50%;
-              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+              box-shadow: var(--shadow-sm);
+              transition: transform var(--transition-interactive);
+              will-change: transform;
             }
+          }
+
+          // Hover: subtle lift on the track
+          &:hover span {
+            background-color: var(--color-surface-dynamic);
           }
         }
 
         input[type='checkbox'] {
           &:checked + span {
-            background-color: $style-primary;
+            background-color: var(--color-primary);
+
+            &::before {
+              transform: translateX(18px);
+            }
           }
 
-          &:checked + span:before {
-            transform: translateX(18px);
+          // Checked + hover: teal hover state
+          &:checked ~ label:hover span,
+          &:checked + span:hover {
+            background-color: var(--color-primary-hover);
           }
         }
 
+        // ------------------------------------------------------------------
+        // Scroll speed slider
+        // ------------------------------------------------------------------
         .slider {
+          flex-shrink: 0;
           white-space: nowrap;
           max-width: 120px;
 
@@ -170,52 +211,65 @@
             display: inline-block;
             background: transparent;
             appearance: none;
+            -webkit-appearance: none;
             height: 24px;
             max-width: 120px;
-
-            &::-moz-range-thumb {
-              height: 12px;
-              width: 12px;
-              border-radius: 12px;
-              background: #fff;
-              cursor: pointer;
-            }
+            cursor: pointer;
 
             &::-moz-range-track {
               width: 100%;
               height: 4px;
               cursor: pointer;
-              background: $style-primary;
-              border-radius: 2px;
+              background: var(--color-primary);
+              border-radius: var(--radius-full);
             }
 
-            &::-webkit-slider-thumb {
-              appearance: none;
+            &::-moz-range-thumb {
               height: 12px;
               width: 12px;
-              border-radius: 12px;
+              border-radius: var(--radius-full);
               background: #fff;
               cursor: pointer;
-              margin-top: -4px;
+              border: none;
+              transition: transform var(--transition-fast);
+            }
+
+            &:hover::-moz-range-thumb {
+              transform: scale(1.35);
             }
 
             &::-webkit-slider-runnable-track {
               width: 100%;
               height: 4px;
               cursor: pointer;
-              background: $style-primary;
-              border-radius: 2px;
+              background: var(--color-primary);
+              border-radius: var(--radius-full);
+            }
+
+            &::-webkit-slider-thumb {
+              -webkit-appearance: none;
+              height: 12px;
+              width: 12px;
+              border-radius: var(--radius-full);
+              background: #fff;
+              cursor: pointer;
+              margin-top: -4px;
+              transition: transform var(--transition-fast);
+            }
+
+            &:hover::-webkit-slider-thumb {
+              transform: scale(1.35);
             }
           }
         }
 
+        // ------------------------------------------------------------------
+        // Keyboard layout select
+        // ------------------------------------------------------------------
         .select {
+          flex-shrink: 0;
           max-width: 120px;
           text-align: right;
-
-          select:hover {
-            border: 1px solid $background-secondary;
-          }
 
           select {
             -webkit-appearance: none;
@@ -226,57 +280,80 @@
             max-width: 100%;
             height: 30px;
             text-align: right;
-            padding: 0 5px 0 10px;
+            padding: 0 var(--space-1) 0 var(--space-2);
             margin: 0;
             line-height: 30px;
-            font-weight: bold;
-            font-size: 12px;
+            font-weight: 400;
+            font-size: var(--text-xs);
             text-overflow: ellipsis;
             border: 1px solid transparent;
-            border-radius: 5px;
-            color: white;
-            background-color: $background-tertiary;
-            font-weight: lighter;
+            border-radius: var(--radius-md);
+            color: var(--color-text);
+            background-color: var(--color-bg);
             cursor: pointer;
+            transition:
+              border-color       var(--transition-interactive),
+              background-color   var(--transition-interactive);
+
+            &:hover {
+              border-color: var(--color-border);
+              background-color: var(--color-surface-offset);
+            }
 
             option {
               font-weight: normal;
-              color: $text-normal;
-              background-color: $background-tertiary;
+              color: var(--color-text);
+              background-color: var(--color-bg);
             }
           }
         }
 
+        // ------------------------------------------------------------------
+        // Broadcast URL input
+        // ------------------------------------------------------------------
         .input {
           display: block;
           height: 30px;
           text-align: right;
-          padding: 0 10px;
-          margin-left: 10px;
+          padding: 0 var(--space-2);
+          margin-left: var(--space-2);
           line-height: 30px;
           text-overflow: ellipsis;
           border: 1px solid transparent;
-          border-radius: 5px;
-          color: white;
-          background-color: $background-tertiary;
-          font-weight: lighter;
+          border-radius: var(--radius-md);
+          color: var(--color-text);
+          background-color: var(--color-bg);
+          font-weight: 300;
           user-select: auto;
+          transition:
+            border-color     var(--transition-interactive),
+            background-color var(--transition-interactive);
+
+          &:focus {
+            border-color: var(--color-primary);
+            outline: none;
+          }
 
           &::selection {
-            background: $text-normal;
+            background: var(--color-primary-highlight);
           }
 
           &[disabled] {
             background: none;
+            opacity: 0.5;
+            cursor: not-allowed;
           }
         }
 
+        // ------------------------------------------------------------------
+        // Broadcast section layout
+        // ------------------------------------------------------------------
         &.broadcast {
-          display: flex;
           flex-direction: column;
+          align-items: stretch;
 
           div {
-            margin-bottom: 10px;
+            margin-bottom: var(--space-2);
             display: flex;
             justify-content: space-between;
 
@@ -284,11 +361,7 @@
               flex-shrink: 1;
               width: auto !important;
               margin: 0;
-              padding: 0 10px;
-
-              &.btn-red {
-                background: #a62626;
-              }
+              padding: 0 var(--space-2);
             }
           }
 

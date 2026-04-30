@@ -31,7 +31,10 @@
           </div>
         </div>
       </main>
-      <neko-side v-if="!videoOnly && side" />
+      <!-- Sidebar: wrapped in <transition> for slide-in/out animation -->
+      <transition name="side">
+        <neko-side v-if="!videoOnly && side" />
+      </transition>
       <neko-connect v-if="!connected" />
       <neko-about v-if="about" />
       <notifications
@@ -56,6 +59,8 @@
     max-height: 100vh;
     flex-direction: row;
     display: flex;
+    // Clip sidebar during slide animation
+    overflow: hidden;
 
     .neko-main {
       min-width: 360px;
@@ -70,7 +75,6 @@
         height: $menu-height;
         flex-shrink: 0;
         display: flex;
-        // Subtle bottom border separating header from video
         border-bottom: 1px solid var(--color-border);
         transition: background-color var(--transition-slow);
       }
@@ -89,7 +93,6 @@
         flex-shrink: 0;
         flex-direction: column;
         display: flex;
-        // Subtle top border separating controls from video
         border-top: 1px solid var(--color-border);
         transition: background-color var(--transition-slow);
 
@@ -125,6 +128,25 @@
     }
   }
 
+  // ------------------------------------------------------------------
+  // Sidebar open/close transition — slide from right + fade
+  // Vue 2 hook names: -enter / -leave-to
+  // ------------------------------------------------------------------
+  .side-enter-active,
+  .side-leave-active {
+    transition:
+      transform var(--transition-slow),
+      opacity   var(--transition-slow);
+    // Prevent layout overflow during animation
+    overflow: hidden;
+  }
+
+  .side-enter,
+  .side-leave-to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
   @media only screen and (max-width: 1024px) {
     html,
     body {
@@ -150,6 +172,13 @@
         height: 100vh;
         width: 100% !important;
       }
+    }
+
+    // On mobile: sidebar slides up from the bottom instead
+    .side-enter,
+    .side-leave-to {
+      transform: translateY(100%);
+      opacity: 0;
     }
   }
 
@@ -211,14 +240,11 @@
     currentTheme: Theme = 'dark'
 
     mounted() {
-      // Initialise theme from system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       this.currentTheme = prefersDark ? 'dark' : 'light'
       this.applyTheme(this.currentTheme)
 
-      // Keep in sync if user changes OS preference while the app is open
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-        // Only follow OS if no explicit user choice has been made this session
         if (!this._userChoseTheme) {
           this.currentTheme = e.matches ? 'dark' : 'light'
           this.applyTheme(this.currentTheme)
@@ -226,7 +252,6 @@
       })
     }
 
-    // Tracks whether the user has manually toggled this session
     private _userChoseTheme = false
 
     toggleTheme() {
