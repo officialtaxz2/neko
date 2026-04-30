@@ -67,14 +67,9 @@
         aria-hidden="true"
       />
 
-      <!-- Users panel: toggleable — R2 replaces placeholder with <neko-userlist /> -->
+      <!-- Users panel: userlist.vue fills this slot -->
       <transition name="panel-grow">
-        <div v-if="activeUsers && !isFilesActive" key="users" class="users-panel">
-          <div class="users-placeholder">
-            <i class="fas fa-users" aria-hidden="true" />
-            <span>{{ $t('side.users') }}</span>
-          </div>
-        </div>
+        <neko-userlist v-if="activeUsers && !isFilesActive" key="users" />
       </transition>
     </div>
   </aside>
@@ -198,29 +193,6 @@
       flex-shrink: 0;
       background: color-mix(in srgb, var(--color-border) 60%, transparent);
     }
-
-    // ── Users placeholder panel (R2: replace with neko-userlist) ────────────
-    .users-panel {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow-y: auto;
-      min-height: 0;
-
-      .users-placeholder {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-3);
-        color: var(--color-text-faint);
-        font-size: var(--text-sm);
-        font-family: var(--font-body);
-        padding: var(--space-8);
-
-        i { font-size: var(--text-xl); }
-      }
-    }
   }
 
   // ── Tab fade+slide transition (files / settings exclusive panels) ──────────
@@ -271,6 +243,7 @@
   import Settings from '~/components/settings.vue'
   import Chat from '~/components/chat.vue'
   import Files from '~/components/files.vue'
+  import Userlist from '~/components/userlist.vue'
 
   @Component({
     name: 'neko',
@@ -278,6 +251,7 @@
       'neko-settings': Settings,
       'neko-chat': Chat,
       'neko-files': Files,
+      'neko-userlist': Userlist,
     },
   })
   export default class extends Vue {
