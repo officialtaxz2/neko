@@ -52,6 +52,12 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     return this.peerConnected && this.socketOpen
   }
 
+  // Exposes the RTCPeerConnection for read-only consumers (e.g. stats polling).
+  // Protected _peer must not be accessed directly outside the class hierarchy.
+  get peerConnection(): RTCPeerConnection | undefined {
+    return this._peer
+  }
+
   public connect(url: string, password: string, displayname: string) {
     if (this.socketOpen) {
       this.emit('warn', `attempting to create websocket while connection open`)
@@ -296,10 +302,6 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
         case 'disconnected':
           this[EVENT.RECONNECTING]()
           break
-        // https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling#ice_connection_state
-        // We don't watch the disconnected signaling state here as it can indicate temporary issues and may
-        // go back to a connected state after some time. Watching it would close the video call on any temporary
-        // network issue.
         case 'failed':
           this.onDisconnected(new Error('peer failed'))
           break

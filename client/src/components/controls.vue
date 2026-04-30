@@ -174,8 +174,6 @@
           transition-duration: 80ms;
         }
 
-        // Inactive/off state: use text-muted token (reliable contrast
-        // in both light and dark mode, no opacity hack)
         &.faded {
           color: var(--color-text-muted);
         }
@@ -355,7 +353,6 @@
         .stat-val {
           color: var(--color-text);
           font-weight: 500;
-          // stat-flip fires each time :key changes (= each poll cycle with new data)
           animation: stat-flip 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
           display: inline-block;
           min-width: 2ch;
@@ -386,8 +383,8 @@
 
     // ------------------------------------------------------------------
     // Stats: animated Bitrate / FPS counters
-    // Polls RTCPeerConnection.getStats() every 2s via $client.peer.
-    // Uses lerp animation to smoothly count toward the new target value.
+    // Polls RTCPeerConnection.getStats() every 2s via $client.peerConnection
+    // (public getter on BaseClient — see neko/base.ts).
     // ------------------------------------------------------------------
     private statsInterval: number | null = null
     private animRafId: number = 0
@@ -405,7 +402,6 @@
     }
 
     get displayBitrateLabel(): string {
-      // Show one decimal place for Mbps, integer for Kbps
       return this.targetBitrateKbps >= 1000
         ? (this.displayBitrateKbps / 1000).toFixed(1)
         : String(Math.round(this.displayBitrateKbps))
@@ -424,7 +420,6 @@
       cancelAnimationFrame(this.animRafId)
     }
 
-    // Reset counters to 0 when playback stops
     @Watch('playing')
     onPlayingChanged(isPlaying: boolean) {
       if (!isPlaying) {
@@ -437,19 +432,17 @@
     }
 
     private async pollStats(): Promise<void> {
-      // $client.peer is the RTCPeerConnection exposed by the neko client library
-      const pc = (this.$client as any).peer as RTCPeerConnection | undefined
+      // peerConnection is a public getter on BaseClient (neko/base.ts)
+      const pc = (this.$client as any).peerConnection as RTCPeerConnection | undefined
       if (!pc) return
       try {
         const now = performance.now()
         const stats = await pc.getStats()
         stats.forEach((r: any) => {
           if (r.type !== 'inbound-rtp' || r.kind !== 'video') return
-          // FPS from WebRTC report (framesPerSecond is spec-standard)
           if (typeof r.framesPerSecond === 'number') {
             this.targetFps = Math.round(r.framesPerSecond)
           }
-          // Bitrate: bytes-delta * 8 / time-delta = bps → /1000 = Kbps
           if (typeof r.bytesReceived === 'number' && this.lastStatsTime > 0) {
             const dt = (now - this.lastStatsTime) / 1000
             if (dt > 0) {
@@ -461,7 +454,6 @@
           this.lastBytesReceived = r.bytesReceived ?? this.lastBytesReceived
           this.lastStatsTime = now
         })
-        // Increment key → triggers stat-flip animation on both values
         this.statsKey++
         this.scheduleAnimate()
       } catch {
@@ -474,7 +466,6 @@
       this.animRafId = requestAnimationFrame(this.animateTick)
     }
 
-    // Arrow function — preserves `this` context when passed to rAF
     private readonly animateTick = (): void => {
       const lerp = (a: number, b: number): number => {
         const d = b - a
