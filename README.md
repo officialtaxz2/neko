@@ -48,22 +48,21 @@ docker compose up --force-recreate
 
 ## Relevante Dateien für das Overhaul
 
+Nur Dateien, die tatsächlich modifiziert wurden oder noch modifiziert werden müssen. Unveränderte Dateien (`about.vue`, `avatar.vue`, `clipboard.vue`, `context.vue`, `emoji.vue`, `emote.vue`, `emotes.vue`, `files.vue`, `markdown.ts`, `resolution.vue`, `_reset.scss`, `vendor/`) sind nicht aufgeführt.
+
 | Datei / Ordner | Inhalt | Status |
 |---|---|---|
 | `client/src/assets/styles/_variables.scss` | Alle Design-Tokens: Farben, Fonts, Spacing, Shadows, Transitions als CSS Custom Properties | ✅ Rewritten |
 | `client/src/assets/styles/main.scss` | Fontshare CDN-Import (Satoshi + Cabinet Grotesk), body/html-Basis, globale Resets, Focus-States, `prefers-reduced-motion` | ✅ Updated |
-| `client/src/assets/styles/_reset.scss` | CSS-Reset | Unverändert |
-| `client/src/assets/styles/vendor/` | Font Awesome, SweetAlert2, Tooltips, Emoji — nicht anfassen | Unverändert |
-| `client/src/assets/styles/fonts/` | Lokale Whitney-Fonts (veraltet, nicht mehr importiert) | Inaktiv |
-| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout, Sidebar `<transition name="side">` Slide-Animation, **Split-Screen-Glow** (`#neko.expanded .neko-main: box-shadow`), **room-container Glassmorphism** (blur(8px) + Gradient + Teal-border-top), `rgba`-Werte auf CSS Tokens migriert | ✅ Updated |
-| `client/src/components/header.vue` | Topbar: Theme-Toggle-Button, CSS Tokens, Micro-Animations (Hover/Active), **Gradient** (135deg Teal-Tint → bg) + `backdrop-filter:blur(8px)` | ✅ Updated |
-| `client/src/components/side.vue` | Sidebar: Pill-Tabs, Glassmorphism (`backdrop-filter: blur(12px)`), **`page-container` `overflow-y: auto`** (Bento-scroll-support) | ✅ Updated |
-| `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges, Avatar-Hover, Message-Hover, Code-Block-Tokens, Textarea-Redesign, Skeleton Loading State (4 Shimmer-Messages) | ✅ Updated |
-| `client/src/components/members.vue` | Members-Bar: Status-Dots (online/away/busy/offline), Avatar-Hover, Host/Admin-Badges, CSS Tokens, Skeleton Loading State (4 Shimmer-Circles) | ✅ Updated |
-| `client/src/components/menu.vue` | Navigationsmenü: Icons auf `color: var(--color-text)` + Hover-Animation migriert, Language-Select vollständig von `$background-*`/`color: white` auf CSS Custom Properties umgestellt (Light-Mode-kompatibel) | ✅ Updated |
-| `client/src/components/controls.vue` | Steuerleiste: Touch-Targets ≥ 44px, Micro-Animations (Hover `scale(1.18)` + Teal, Active `scale(0.88)`), `.faded`-Icons nutzen `--color-text-muted` (kein `opacity`-Hack), Lock-Switch-Track `--color-border`, Volume-Slider-Thumb mit `box-shadow`, CSS Tokens | ✅ Updated |
-| `client/src/components/settings.vue` | **Bento Grid Rewrite**: Semantisch gruppierte Cards (Scrolling / Chat / Input / Broadcast / Session) in 2-Spalten-CSS-Grid, Card-Header mit Teal-Icon + Label, `hover: shadow-md`, alle Tokens erhalten | ✅ Rewritten |
-| `client/src/components/connect.vue` | Login/Connect-Dialog: Glassmorphism (`backdrop-filter:blur(12px)` auf `.window`, `blur(4px)` auf Overlay), **radiales Spotlight-Gradient** (10% primary-tint → bg), CSS Tokens, Touch-Targets | ✅ Updated |
+| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Sidebar `<transition name="side">` (slide-from-right + fade; Mobile: slide-from-bottom), **Split-Screen-Glow** (`#neko.expanded .neko-main { box-shadow: 4px 0 20px color-mix(primary 10%) }`, deaktiviert auf Mobile), **room-container Glassmorphism** (`backdrop-filter:blur(8px)` + aufwärts-Gradient + Teal-Tint `border-top`), **hardcoded `rgba(0,0,0,0.4)` auf `var(--color-bg)` migriert**, `header-container: background:transparent` | ✅ Updated |
+| `client/src/components/header.vue` | Topbar: Theme-Toggle-Button (Sonne/Mond-SVG, `aria-label`, Teal-Hover), Icon-Micro-Animations (Hover `scale(1.08)`, Active `scale(0.95)`), **Gradient** (`linear-gradient(135deg, color-mix(primary 7%, bg) → bg)` — opaker Verlauf, kein Glassmorphism-Blur), CSS Tokens durchgehend, `border-bottom: color-mix(border 70%, transparent)` | ✅ Updated |
+| `client/src/components/side.vue` | Sidebar (`<aside>`): Pill-Tabs (aktiver Tab `background:primary-highlight`, Hover-Scale), Tab-Inhalt `<transition>` fade+slide `mode="out-in"`, **Glassmorphism** (`backdrop-filter:blur(12px)` auf `.neko-menu` + `.tabs-container`, semi-transparente Backgrounds via `color-mix`), **`page-container overflow-y:auto`** (Bento-scroll-support), `border-left: color-mix(border 70%, transparent)` | ✅ Updated |
+| `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges (`border-radius:var(--radius-full)`), Message-Hover (`background:var(--color-surface-offset)`), Code-Block CSS Tokens, Textarea-Redesign (Token-basierter Focus-Ring), **Skeleton Loading State** (4 Shimmer-Messages via `@keyframes shimmer`) | ✅ Updated |
+| `client/src/components/members.vue` | Members-Bar unterhalb Video: **Status-Dots** (4 Zustände: online/away/busy/offline via `--color-success/warning/error/text-muted`), Avatar-Hover (`scale(1.08)`), Host/Admin-Badges (CSS Tokens), **Skeleton Loading State** (4 Shimmer-Circles) | ✅ Updated |
+| `client/src/components/menu.vue` | Navigationsmenü (Hamburger): Icons `color:var(--color-text-muted)` + Hover-Teal, Language-`<select>` vollständig von `$background-*/color:white` auf CSS Custom Properties migriert (Light-Mode-fix) | ✅ Updated |
+| `client/src/components/controls.vue` | Steuerleiste: Touch-Targets `min-width/height:44px`, Micro-Animations (Hover `scale(1.18)` + `color:primary`, Active `scale(0.88)`, `will-change:transform`), `.faded`-Icons `color:var(--color-text-muted)` (kein `opacity`-Hack), Lock-Switch-Track `--color-border`, Volume-Slider-Thumb mit `box-shadow` | ✅ Updated |
+| `client/src/components/settings.vue` | **Bento Grid Rewrite**: 2-Spalten CSS-Grid, 5 semantisch gruppierte Cards (Scrolling full-width / Chat / Input / Broadcast full-width / Session), Card-Header mit Teal-Icon + uppercase Label, `hover:box-shadow:var(--shadow-md)`, alle bestehenden Controls (Switch, Slider, Select) erhalten, **Custom Toggle Switches** (`width:44px`, Spring-Easing, Teal-Akzent, Off-Track `--color-border`) | ✅ Rewritten |
+| `client/src/components/connect.vue` | Login/Connect-Dialog: Overlay `backdrop-filter:blur(4px)` (semi-transparent), `.window` `backdrop-filter:blur(12px)` + `background:color-mix(surface 75%, transparent)` + `border-top` Glass-Highlight, **radiales Spotlight-Gradient** (`radial-gradient(ellipse, color-mix(primary 10%, bg) → bg)`), Input-Felder `background:color-mix(bg 70%, transparent)`, CSS Tokens, Touch-Targets ≥44px | ✅ Updated |
 | `client/src/components/video.vue` | WebRTC-Video + Maus/Tastatur-Overlay — **zuletzt anfassen**, Event-Handler nicht verändern | ⬜ Offen |
 
 **Empfohlene Bearbeitungsreihenfolge (von außen nach innen):**
@@ -123,19 +122,19 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 > - **Toggle-Track-Kontrast** (`settings.vue`, `controls.vue`): Off-State-Track `--color-surface-offset` (94% L) nahezu unsichtbar auf weißem Hintergrund. Fix: `--color-border` (84% L, klar sichtbares Grau).
 > - **`.faded`-Icons** (`controls.vue`): `color:text + opacity:0.4` kollabierte zu ~`#c5c6ca` in Light Mode. Fix: `color:var(--color-text-muted)` ohne Opacity.
 > - **menu.vue `select`**: `color: white` hardcoded → unsichtbarer Text in Light Mode. Fix: Vollständige Migration auf CSS Custom Properties.
->
-> **Phase 3 abgeschlossen ✅ (30.04.2026).**
 
 ---
 
-### Phase 3 — Kat. 2: Layout & Visual Standard *(Standard: implementieren)*
+### Phase 3 — Kat. 2: Layout & Visual Standard *(Standard: implementieren)* ✅ Abgeschlossen (30.04.2026)
 
-| Task | Status | Datei(en) |
-|---|---|---|
-| Glassmorphism für Sidebar-Panels + Connect-Dialog (`backdrop-filter: blur(12px)`) | ✅ | `side.vue`, `connect.vue` |
-| Gradient-System für Header-Topbar und Login-Screen | ✅ | `header.vue`, `connect.vue` |
-| Bento Grid Layout für Settings-Panel | ✅ | `settings.vue`, `side.vue` |
-| Split-Screen Layout: Video-Bereich + Sidebar visuell klarer getrennt | ✅ | `app.vue` |
+| Task | Status | Datei(en) | Hinweis |
+|---|---|---|---|
+| Glassmorphism für Sidebar + Connect-Dialog (`backdrop-filter:blur(12px)`) | ✅ | `side.vue`, `connect.vue` | Semi-transparente Backgrounds via `color-mix(… transparent)` — Blur effektiv |
+| Gradient-System für Header-Topbar + Connect-Login-Screen | ✅ | `header.vue`, `connect.vue` | Header: opaker Diagonal-Gradient (kein Blur-Effekt da kein transparenter BG). Connect: radiales Spotlight-Gradient |
+| Bento Grid Layout für Settings-Panel | ✅ | `settings.vue`, `side.vue` | 2-Spalten CSS-Grid, 5 Cards |
+| Split-Screen Layout: Video-Bereich + Sidebar visuell klarer getrennt | ✅ | `app.vue` | Teal-Glow rechter Rand + room-container Glassmorphism + `rgba`→Token-Migration |
+
+> ⚠️ **Bekannte Einschränkung header.vue:** `backdrop-filter:blur(8px)` ist im Code vorhanden, hat aber keinen sichtbaren Effekt, weil der Gradient-Background opak ist (`color-mix(primary 7%, var(--color-bg))` erzeugt keine Transparenz). Soll der Header echten Glassmorphism-Blur bekommen, muss der Background auf `color-mix(in srgb, var(--color-bg) 80%, transparent)` umgestellt werden. Kandidat für Phase 4/5.
 
 ---
 
@@ -154,6 +153,7 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 |---|---|---|
 | Terminal Aesthetic als optionaler Accent (Mono-Font in Controls-Leiste) | ⬜ | `controls.vue`, `_variables.scss` |
 | Dot-Grid-Hintergrund im Connect-Dialog | ⬜ | `connect.vue` |
+| Header-Glassmorphism reparieren (semi-transparenter BG für funktionierenden `backdrop-filter`) | ⬜ | `header.vue` |
 
 ---
 
