@@ -43,9 +43,11 @@
   --color-link-hover:        hsl(201, 90%, 72%);
 
   // Typography
-  --font-display:  'Cabinet Grotesk', 'Helvetica Neue', sans-serif;
-  --font-body:     'Satoshi', 'Inter', 'Helvetica Neue', sans-serif;
-  --font-mono:     'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-display:   'Cabinet Grotesk', 'Helvetica Neue', sans-serif;
+  --font-body:      'Satoshi', 'Inter', 'Helvetica Neue', sans-serif;
+  --font-mono:      'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  // Terminal accent for controls bar — override to var(--font-body) to disable mono aesthetic
+  --font-controls:  var(--font-mono);
 
   // Fluid type scale (clamp: min | fluid | max)
   --text-xs:   clamp(0.75rem,  0.70rem + 0.25vw, 0.875rem); //  12px → 14px

@@ -132,6 +132,8 @@
 
   // ------------------------------------------------------------------
   // Controls list
+  // Terminal accent: --font-controls defaults to --font-mono.
+  // Override --font-controls to var(--font-body) globally to disable.
   // ------------------------------------------------------------------
   ul {
     display: flex;
@@ -139,6 +141,7 @@
     justify-content: center;
     align-items: center;
     list-style: none;
+    font-family: var(--font-controls);
 
     li {
       min-width: 44px;
@@ -321,6 +324,8 @@
 
       // ------------------------------------------------------------------
       // Bitrate / FPS stats badge
+      // Uses --font-controls for terminal aesthetic consistency.
+      // stat-val teal-tinted: numeric values read as terminal output.
       // ------------------------------------------------------------------
       &.stats-badge {
         min-width: unset;
@@ -334,7 +339,7 @@
           background: color-mix(in srgb, var(--color-surface-2) 85%, transparent);
           border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
           border-radius: var(--radius-md);
-          font-family: var(--font-mono);
+          font-family: var(--font-controls);
           font-size: var(--text-xs);
           color: var(--color-text-muted);
           white-space: nowrap;
@@ -351,7 +356,8 @@
         }
 
         .stat-val {
-          color: var(--color-text);
+          // Teal accent on numeric values — terminal output aesthetic
+          color: var(--color-primary);
           font-weight: 500;
           animation: stat-flip 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
           display: inline-block;
