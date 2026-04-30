@@ -29,14 +29,24 @@
     left: 0;
     right: 0;
     bottom: 0;
-    // Gradient-System: radiales Spotlight-Gradient zentriert auf die Login-Card.
-    // Erzeugt einen Teal-getönten Lichtkegel — hebt die Card vom Hintergrund ab.
-    background: radial-gradient(
-      ellipse 80% 70% at 50% 50%,
-      color-mix(in srgb, var(--color-primary) 10%, var(--color-bg)) 0%,
-      var(--color-bg) 70%
-    );
-    // Zusätzlicher blur auf dem Overlay für Tiefe hinter der Card
+    // Base color — sits below all background-image layers
+    background-color: var(--color-bg);
+    // Layer 1 (top): radial Spotlight-Gradient — teal-tinted light cone centred on the login card
+    // Layer 2 (below): dot-grid pattern — subtly reveals the tech/terminal aesthetic
+    // Dots are transparent-based so the spotlight glow bleeds through naturally in the centre.
+    background-image:
+      radial-gradient(
+        ellipse 80% 70% at 50% 50%,
+        color-mix(in srgb, var(--color-primary) 10%, transparent) 0%,
+        transparent 70%
+      ),
+      radial-gradient(
+        circle,
+        color-mix(in srgb, var(--color-primary) 20%, transparent) 1.5px,
+        transparent 1.5px
+      );
+    background-size: auto, 28px 28px;
+    // Blur on overlay for depth behind the card
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     display: flex;
