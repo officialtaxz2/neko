@@ -55,7 +55,7 @@ docker compose up --force-recreate
 | `client/src/assets/styles/_reset.scss` | CSS-Reset | Unverändert |
 | `client/src/assets/styles/vendor/` | Font Awesome, SweetAlert2, Tooltips, Emoji — nicht anfassen | Unverändert |
 | `client/src/assets/styles/fonts/` | Lokale Whitney-Fonts (veraltet, nicht mehr importiert) | Inaktiv |
-| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout, Sidebar `<transition name="side">` Slide-Animation | ✅ Updated |
+| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout, Sidebar `<transition name="side">` Slide-Animation, **Split-Screen-Glow** (`#neko.expanded .neko-main: box-shadow`), **room-container Glassmorphism** (blur(8px) + Gradient + Teal-border-top), `rgba`-Werte auf CSS Tokens migriert | ✅ Updated |
 | `client/src/components/header.vue` | Topbar: Theme-Toggle-Button, CSS Tokens, Micro-Animations (Hover/Active), **Gradient** (135deg Teal-Tint → bg) + `backdrop-filter:blur(8px)` | ✅ Updated |
 | `client/src/components/side.vue` | Sidebar: Pill-Tabs, Glassmorphism (`backdrop-filter: blur(12px)`), **`page-container` `overflow-y: auto`** (Bento-scroll-support) | ✅ Updated |
 | `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges, Avatar-Hover, Message-Hover, Code-Block-Tokens, Textarea-Redesign, Skeleton Loading State (4 Shimmer-Messages) | ✅ Updated |
@@ -124,7 +124,7 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 > - **`.faded`-Icons** (`controls.vue`): `color:text + opacity:0.4` kollabierte zu ~`#c5c6ca` in Light Mode. Fix: `color:var(--color-text-muted)` ohne Opacity.
 > - **menu.vue `select`**: `color: white` hardcoded → unsichtbarer Text in Light Mode. Fix: Vollständige Migration auf CSS Custom Properties.
 >
-> **Phase 3 gestartet.**
+> **Phase 3 abgeschlossen ✅ (30.04.2026).**
 
 ---
 
@@ -135,7 +135,7 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 | Glassmorphism für Sidebar-Panels + Connect-Dialog (`backdrop-filter: blur(12px)`) | ✅ | `side.vue`, `connect.vue` |
 | Gradient-System für Header-Topbar und Login-Screen | ✅ | `header.vue`, `connect.vue` |
 | Bento Grid Layout für Settings-Panel | ✅ | `settings.vue`, `side.vue` |
-| Split-Screen Layout: Video-Bereich + Sidebar visuell klarer getrennt | ⬜ | `app.vue` |
+| Split-Screen Layout: Video-Bereich + Sidebar visuell klarer getrennt | ✅ | `app.vue` |
 
 ---
 
