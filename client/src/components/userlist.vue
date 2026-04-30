@@ -77,7 +77,7 @@
               <i class="fas fa-gamepad" aria-hidden="true" />
             </button>
 
-            <!-- Force Take Controls: shown when this member IS the host (admin only) -->
+            <!-- Force Take Controls: shown when this member IS the current host (admin only) -->
             <button
               v-if="isAdmin && m.id === host"
               class="action-btn action-btn--take"
@@ -210,7 +210,6 @@
       background: color-mix(in srgb, var(--color-surface-offset) 55%, transparent);
     }
 
-    // Self row
     &--self {
       align-items: center;
       cursor: default;
@@ -218,7 +217,6 @@
       &:hover { background: transparent; }
     }
 
-    // Skeleton row
     &--skeleton {
       cursor: default;
       align-items: flex-start;
@@ -226,18 +224,17 @@
     }
   }
 
-  // ── Avatar: spans both name + actions rows ────────────────────────────────
+  // ── Avatar ─────────────────────────────────────────────────────────────────
   .user-avatar {
     width: 32px;
     height: 32px;
     border-radius: var(--radius-full);
     overflow: hidden;
     flex-shrink: 0;
-    // Vertically centre avatar between the two info rows
     margin-top: var(--space-1);
   }
 
-  // ── Info block (name row + actions row) ───────────────────────────────────
+  // ── Info block ────────────────────────────────────────────────────────────
   .user-info {
     flex: 1;
     min-width: 0;
@@ -266,7 +263,7 @@
     min-width: 0;
   }
 
-  // ── "You" badge (self row) ────────────────────────────────────────────────
+  // ── "You" badge ────────────────────────────────────────────────────────────
   .user-you-badge {
     font-size: var(--text-xs);
     font-family: var(--font-body);
@@ -277,7 +274,7 @@
     flex-shrink: 0;
   }
 
-  // ── Host crown icon ───────────────────────────────────────────────────────
+  // ── Host crown ────────────────────────────────────────────────────────────
   .user-crown {
     font-size: var(--text-xs);
     color: var(--color-primary);
@@ -285,7 +282,7 @@
     transition: color var(--transition-interactive);
   }
 
-  // ── Action buttons row: always visible ────────────────────────────────────
+  // ── Action buttons: always visible ────────────────────────────────────────
   .user-actions {
     display: flex;
     align-items: center;
@@ -330,7 +327,7 @@
       outline-offset: -2px;
     }
 
-    // Force-take: amber accent to signal "reclaim" intent
+    // Force-take: amber to signal "reclaim" intent
     &--take {
       color: var(--color-warning);
       &:hover {
@@ -339,7 +336,7 @@
       }
     }
 
-    // Destructive actions (Kick, Ban)
+    // Destructive actions
     &--destructive:hover {
       color: var(--color-error);
       background: color-mix(in srgb, var(--color-error) 10%, transparent);
@@ -436,8 +433,8 @@
     }
 
     forceControl() {
-      // Admin forcibly reclaims control from current host
-      this.$accessor.remote.adminForceControl()
+      // Admin forcibly takes control from whoever currently holds it
+      this.$accessor.remote.adminControl()
     }
 
     async kick(member: Member) {
