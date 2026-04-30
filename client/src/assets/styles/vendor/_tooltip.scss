@@ -3,8 +3,9 @@
   z-index: 10000;
 
   .tooltip-inner {
-    background: darken($background-floating, $amount: 5);
-    color: $text-normal;
+    // darken($background-floating, 5) → --color-surface-offset (next darker surface level)
+    background: var(--color-surface-offset);
+    color: var(--color-text);
     border-radius: 3px;
     padding: 5px 10px 4px;
   }
@@ -15,7 +16,7 @@
     border-style: solid;
     position: absolute;
     margin: 5px;
-    border-color: darken($background-floating, $amount: 5);
+    border-color: var(--color-surface-offset);
     z-index: 1;
   }
 
@@ -80,18 +81,16 @@
   }
 
   &.popover {
-    $color: $text-normal;
-
     .popover-inner {
-      background: $color;
-      color: $background-floating;
+      background: var(--color-text);
+      color: var(--color-bg);
       padding: 24px;
       border-radius: 3px;
-      box-shadow: 0 5px 30px rgba(black, .1);
+      box-shadow: 0 5px 30px rgba(0, 0, 0, 0.1);
     }
 
     .popover-arrow {
-      border-color: $color;
+      border-color: var(--color-text);
     }
   }
 
