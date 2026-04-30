@@ -9,6 +9,7 @@ export const side = {
   chat: 'Czat',
   files: 'Pliki',
   settings: 'Ustawienia',
+  users: 'Użytkownicy',
 }
 
 export const connect = {
@@ -34,7 +35,7 @@ export const context = {
   confirm: {
     kick_title: 'Wyrzucić {name}?',
     kick_text: 'Czy na pewno chcesz wyrzucić {name}?',
-    ban_title: 'Zbanować {name}?',
+    ban_title: 'Zanować {name}?',
     ban_text: 'Czy chcesz zbanować {name}? Aby cofnąć, musisz zrestartować serwer.',
     mute_title: 'Wyciszyć {name}?',
     mute_text: 'Czy na pewno chcesz wyciszyć {name}?',
@@ -114,7 +115,7 @@ export const notifications = {
   controls_has_alt: 'Ale poinformowałem osobę, że chciałeś je otrzymać',
   controls_requesting: '{name} prosi o sterowanie',
   resolution: 'zmienił rozdzielczość na {width}x{height}@{rate}',
-  banned: 'zbanował {name}',
+  banned: 'zanował {name}',
   kicked: 'wyrzucił {name}',
   muted: 'wyciszył {name}',
   unmuted: 'cofnął wyciszenie {name}',

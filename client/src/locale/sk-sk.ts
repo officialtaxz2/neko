@@ -1,48 +1,46 @@
-export const logout = 'odhlásiť sa'
-export const unsupported = 'tento prehliadač nepodporuje webrtc'
-export const admin_loggedin = 'Ste prihlásení/á ako administrátor'
-// export const you = '' // Incorrect in some translations! Cannot be used!
-export const somebody = 'Niekto' // TODO: skontrolovať preklad
-// TODO
-//export const somebody = 'Somebody'
+export const logout = 'Odhlásiť sa'
+export const unsupported = 'Tento prehliačač nepodporuje WebRTC'
+export const admin_loggedin = 'Ste prihlásený ako správca'
+export const you = 'Vy'
+export const somebody = 'Niekto'
 export const send_a_message = 'Odoslať správu'
 
 export const side = {
   chat: 'Chat',
   files: 'Súbory',
   settings: 'Nastavenia',
+  users: 'Používatelia',
 }
 
 export const connect = {
   login_title: 'Prihláste sa',
-  invitation_title: 'Boli ste pozvaný/á do miestnosti',
-  displayname: 'Vaše meno',
+  invitation_title: 'Boli ste pozvaný do tejto miestnosti',
+  displayname: 'Zadajte svoje zobrazovacie meno',
   password: 'Heslo',
-  connect: 'Pripojiť sa',
-  error: 'Chyba pri prihlasovaní',
-  empty_displayname: 'Meno nemôže byť prázdne.',
+  connect: 'Pripojiť',
+  error: 'Chyba prihlásenia',
+  empty_displayname: 'Zobrazovacie meno nemôže byť prázdne.',
 }
 
 export const context = {
   ignore: 'Ignorovať',
-  unignore: 'Zrušiť ignorovanie',
-  mute: 'Zakázať chat',
-  unmute: 'Povoliť chat',
-  release: 'Zrušiť ovládanie',
-  take: 'Prevziať ovládanie',
-  give: 'Ponúknuť ovládanie',
-  kick: 'Kick',
-  ban: 'Ban IP',
+  unignore: 'Prestať ignorovať',
+  mute: 'Stíšiť',
+  unmute: 'Zrušiť stíšenie',
+  release: 'Vynútiť uvoľnenie ovládania',
+  take: 'Vynútiť prevzatie ovládania',
+  give: 'Dať ovládanie',
+  kick: 'Vyhoдиť',
+  ban: 'Zablokovať IP',
   confirm: {
-    kick_title: 'Kick {name}?',
-    kick_text: 'Ste si istý/á, že chcete vykopnúť používateľa {name}?',
-    ban_title: 'Ban {name}?',
-    ban_text:
-      'Ste si istý/á, že chcete zablokovať používateľa {name}? Pre odblokovanie budete musieť reštartovať server.',
-    mute_title: 'Zakázať chat pre používateľa {name}?',
-    mute_text: 'Ste si istý/á, že chcete zakázať chat pre používateľa {name}?',
-    unmute_title: 'Povoliť chat pre používateľa {name}?',
-    unmute_text: 'Ste si istý/á, že chcete povoliť chat pre používateľa {name}?',
+    kick_title: 'Vyhoдиť {name}?',
+    kick_text: 'Naozaj chcete vyhoдиť {name}?',
+    ban_title: 'Zablokovať {name}?',
+    ban_text: 'Chcete zablokovať {name}? Na zrušenie budete musieť reštartovať server.',
+    mute_title: 'Stíšiť {name}?',
+    mute_text: 'Naozaj chcete stíšiť {name}?',
+    unmute_title: 'Zrušiť stíšenie {name}?',
+    unmute_text: 'Chcete zrušiť stíšenie {name}?',
     button_yes: 'Áno',
     button_cancel: 'Zrušiť',
   },
@@ -50,84 +48,81 @@ export const context = {
 
 export const controls = {
   release: 'Uvoľniť ovládanie',
-  request: 'Požiadať o ovládanie',
+  request: 'Požиадаť o ovládanie',
   lock: 'Zamknúť ovládanie',
   unlock: 'Odomknúť ovládanie',
-  has: 'Máte ovládanie', // TODO: skontrolovať preklad
-  hasnot: 'Nemáte ovládanie', // TODO: skontrolovať preklad
-  // TODO
-  //has: 'You have control',
-  //hasnot: 'You do not have control',
+  has: 'Máte ovládanie',
+  hasnot: 'Nemáte ovládanie',
 }
 
 export const locks = {
   control: {
-    lock: 'Zakázať ovládanie (pre používateľov)',
-    unlock: 'Povoliť ovládanie (pre používateľov)',
-    locked: 'Ovládanie je zakázané (pre používateľov)',
-    unlocked: 'Ovládanie je povolené (pre používateľov)',
-    notif_locked: 'zakázal/a ovládanie pre používateľov',
-    notif_unlocked: 'povolil/a ovládanie pre používateľov',
+    lock: 'Zamknúť ovládanie (pre používateľov)',
+    unlock: 'Odomknúť ovládanie (pre používateľov)',
+    locked: 'Ovládanie zamknuté (pre používateľov)',
+    unlocked: 'Ovládanie odomknuté (pre používateľov)',
+    notif_locked: 'zamkol ovládanie pre používateľov',
+    notif_unlocked: 'odomkol ovládanie pre používateľov',
   },
   login: {
-    lock: 'Zamknúť miestnosť (pre používateľov)',
-    unlock: 'Odomknúť miestnosť (pre používateľov)',
-    locked: 'Miestnosť je zamknutá (pre používateľov)',
-    unlocked: 'Miestnosť odomknutá (pre používateľov)',
-    notif_locked: 'miestnosť bola zamknutá',
-    notif_unlocked: 'miestnosť bola odomknutá',
+    lock: 'Zamknúť miestnostť (pre používateľov)',
+    unlock: 'Odomknúť miestnostť (pre používateľov)',
+    locked: 'Miestnostť zamknutá (pre používateľov)',
+    unlocked: 'Miestnostť odomknutá (pre používateľov)',
+    notif_locked: 'zamkol miestnostť',
+    notif_unlocked: 'odomkol miestnostť',
   },
   file_transfer: {
-    lock: 'Zakázať prenos súborov (pre používateľov)',
-    unlock: 'Povoliť prenos súborov (pre používateľov)',
-    locked: 'Prenos súborov je zakázaný (pre používateľov)',
-    unlocked: 'Prenos súborov je povolený (pre používateľov)',
-    notif_locked: 'zakázal/a prenos súborov',
-    notif_unlocked: 'povolil/a prenos súborov',
+    lock: 'Zamknúť prenos súborov (pre používateľov)',
+    unlock: 'Odomknúť prenos súborov (pre používateľov)',
+    locked: 'Prenos súborov zamknutý (pre používateľov)',
+    unlocked: 'Prenos súborov odomknutý (pre používateľov)',
+    notif_locked: 'zamkol prenos súborov',
+    notif_unlocked: 'odomkol prenos súborov',
   },
 }
 
 export const setting = {
-  scroll: 'Citlivosť kolieska myši',
-  scroll_invert: 'Invertovať koliesko myši',
+  scroll: 'Citlivosť posúvania',
+  scroll_invert: 'Invertovať posúvanie',
   autoplay: 'Automatické prehrávanie videa',
-  ignore_emotes: 'Ignorovať smajlíky',
-  chat_sound: 'Prehrávať zvuky chatu',
+  ignore_emotes: 'Ignorovať emotikony',
+  chat_sound: 'Prehrávať zvuk chatu',
   keyboard_layout: 'Rozloženie klávesnice',
   broadcast_title: 'Živé vysielanie',
 }
 
 export const connection = {
-  logged_out: 'Boli ste odhlásený/á',
-  reconnecting: 'Obnova spojenia...',
-  connected: 'Úspešne pripojený/á',
-  disconnected: 'Boli ste odpojený/á',
-  kicked: 'Boli ste odstránený/á z tejto miestnosti.',
-  button_confirm: 'Ok',
+  logged_out: 'Boli ste odhlásený.',
+  reconnecting: 'Opätovné pripájanie...',
+  connected: 'Pripojený',
+  disconnected: 'Odpojený',
+  kicked: 'Boli ste odstránený z tejto miestnosti.',
+  button_confirm: 'OK',
 }
 
 export const notifications = {
-  connected: '{name} sa pripojil/a',
-  disconnected: '{name} sa odpojil/a',
-  controls_taken: '{name} prevzal/a ovládanie',
-  controls_taken_force: 'ovládanie bolo prevzaté',
-  controls_taken_steal: 'prevzal/a ovládanie od použivateľa {name}',
-  controls_released: '{name} uvoľnil/a ovládanie',
-  controls_released_force: 'ovládanie bolo uvoľnené',
-  controls_released_steal: 'uvoľnil/a ovládanie použivateľa {name}',
-  controls_given: 'ponúkol/a ovládanie používateľovi {name}',
+  connected: '{name} sa pripojil',
+  disconnected: '{name} sa odpojil',
+  controls_taken: '{name} prevzal ovládanie',
+  controls_taken_force: 'násilne prevzal ovládanie',
+  controls_taken_steal: 'prevzal ovládanie od {name}',
+  controls_released: '{name} uvoľnil ovládanie',
+  controls_released_force: 'násilne uvoľnil ovládanie',
+  controls_released_steal: 'uvoľnil ovládanie od {name}',
+  controls_given: 'dal ovládanie {name}',
   controls_has: '{name} má ovládanie',
-  controls_has_alt: 'Ale dám mu vedieť, že si chcel ovládanie',
-  controls_requesting: '{name} by chcel/a ovládanie',
-  resolution: 'zmenené rozlíšenie na {width}x{height}@{rate}',
-  banned: '{name} dostal/a BAN',
-  kicked: '{name} bol/a vykopnutý/a',
-  muted: 'zakázal chat používateľovi {name}',
-  unmuted: 'povolil chat používateľovi {name}',
+  controls_has_alt: 'Ale dal som tej osobe vedieť, že ste to chceli',
+  controls_requesting: '{name} žiada o ovládanie',
+  resolution: 'zmenil rozlíšenie na {width}x{height}@{rate}',
+  banned: 'zablokoval {name}',
+  kicked: 'vyhodil {name}',
+  muted: 'stíšil {name}',
+  unmuted: 'zrušil stíšenie {name}',
 }
 
 export const files = {
-  downloads: 'Stiahnutia',
-  uploads: 'Nahrávanie',
-  upload_here: 'Kliknutím alebo pretiahnutím súborov sem ich môžete nahrať',
+  downloads: 'Stiahnuté',
+  uploads: 'Nahraté',
+  upload_here: 'Kliknite alebo potiáhnite súbory sem na nahranie',
 }

@@ -9,6 +9,7 @@ export const side = {
   chat: 'Sludring',
   files: 'Filer',
   settings: 'Innstillinger',
+  users: 'Brukere',
 }
 
 export const connect = {
