@@ -80,7 +80,6 @@
       padding: var(--space-1) var(--space-5);
 
       li {
-        // Touch target row ≥ 44px tall (WCAG 2.5.5)
         min-height: 44px;
         display: flex;
         flex-direction: row;
@@ -101,7 +100,6 @@
         }
 
         button {
-          // Touch target ≥ 44px
           min-height: 44px;
           cursor: pointer;
           border-radius: var(--radius-md);
@@ -138,27 +136,23 @@
         }
 
         // ------------------------------------------------------------------
-        // Custom Toggle Switch
-        // Root cause of previous bug: no explicit width/height on the label
-        // caused it to collapse to ~2px (hidden input = 0×0). Span with
-        // right:1px/left:1px resolved to 0px width → invisible pill.
-        // Fix: display:inline-block + width:44px + height:44px gives the
-        // absolute-positioned span a real container to resolve against.
-        // Touch target: 44×44px total (pill is 42×24px, centred via padding).
+        // Custom Toggle Switch — 44×44px touch target, 42×24px visible pill
+        //
+        // Off-state track uses --color-border (84% L in light / 23% L in dark)
+        // so the pill is clearly visible on --color-bg/--color-surface in
+        // both modes. Previously used --color-surface-offset (94% L in light)
+        // which was near-invisible on the white settings panel background.
         // ------------------------------------------------------------------
         .switch {
           flex-shrink: 0;
           display: inline-block;
           position: relative;
-          // 42px pill + 1px left/right padding = 44px touch width
           width: 44px;
-          // 24px pill + 10px top/bottom padding = 44px touch height
           height: 44px;
           padding: 10px 1px;
           cursor: pointer;
 
           input {
-            // Taken fully out of flow so it doesn't affect label dimensions
             position: absolute;
             opacity: 0;
             width: 0;
@@ -166,14 +160,14 @@
           }
 
           span {
-            // Resolves to 42×24px inside the 44×44px label
             position: absolute;
             cursor: pointer;
             top: 10px;
             left: 1px;
             right: 1px;
             bottom: 10px;
-            background-color: var(--color-surface-offset);
+            // 84% L in light (clearly visible gray), 23% L in dark (visible)
+            background-color: var(--color-border);
             border-radius: var(--radius-full);
             transition: background-color var(--transition-interactive);
 
@@ -192,8 +186,10 @@
             }
           }
 
+          // Hover darkens toward text-faint (64% L light / 34% L dark)
+          // so direction is always: hover = darker than base
           &:hover span {
-            background-color: var(--color-surface-dynamic);
+            background-color: var(--color-text-faint);
           }
         }
 

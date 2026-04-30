@@ -31,30 +31,48 @@
 
       i {
         font-size: 24px;
+        color: var(--color-text);
         cursor: pointer;
+        transition: color var(--transition-interactive), transform var(--transition-fast);
+
+        &:hover {
+          color: var(--color-primary);
+          transform: scale(1.1);
+        }
       }
     }
   }
 
   select {
     appearance: none;
-    background-color: $background-tertiary;
-    border: 1px solid $background-primary;
-    color: white;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    // Adapts to both modes via CSS custom properties.
+    // Previously used hardcoded dark SCSS vars ($background-tertiary,
+    // color: white) which made text invisible in light mode.
+    background-color: var(--color-surface-offset);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: var(--radius-md);
     height: 24px;
+    padding: 0 var(--space-2);
     vertical-align: text-bottom;
     display: inline-block;
+    font-size: var(--text-xs);
+    transition:
+      background-color var(--transition-interactive),
+      border-color     var(--transition-interactive);
 
     option {
       font-weight: normal;
-      color: $text-normal;
-      background-color: $background-tertiary;
+      color: var(--color-text);
+      background-color: var(--color-bg);
     }
 
     &:hover {
-      border: 1px solid $background-primary;
+      border-color: var(--color-primary);
+      background-color: var(--color-surface-dynamic);
     }
   }
 </style>

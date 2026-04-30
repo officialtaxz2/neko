@@ -116,7 +116,6 @@
     list-style: none;
 
     li {
-      // Touch target ≥ 44×44 px (WCAG 2.5.5 / mobile UX)
       min-width: 44px;
       min-height: 44px;
       display: flex;
@@ -140,21 +139,21 @@
           color    var(--transition-interactive),
           opacity  var(--transition-interactive);
 
-        // Hover: lift + teal accent (skip for non-interactive / disabled)
         &:hover:not(.disabled):not(.shake) {
           transform: scale(1.18);
           color: var(--color-primary);
         }
 
-        // Active: press-down feedback
         &:active:not(.disabled) {
           transform: scale(0.88);
           transition-duration: 80ms;
         }
 
+        // Inactive/off state (e.g. mic off, kbd not held):
+        // Use text-muted token instead of opacity so contrast is
+        // reliable in both light (44% L) and dark (50% L) mode.
         &.faded {
-          color: var(--color-text);
-          opacity: 0.4;
+          color: var(--color-text-muted);
         }
 
         &.disabled {
@@ -182,7 +181,6 @@
           appearance: none;
           cursor: pointer;
 
-          // Firefox — track
           &::-moz-range-track {
             width: 100%;
             height: 4px;
@@ -191,7 +189,6 @@
             cursor: pointer;
           }
 
-          // Firefox — thumb: box-shadow ensures visibility on light surfaces
           &::-moz-range-thumb {
             height: 12px;
             width: 12px;
@@ -207,7 +204,6 @@
             transform: scale(1.35);
           }
 
-          // WebKit — track
           &::-webkit-slider-runnable-track {
             width: 100%;
             height: 4px;
@@ -216,7 +212,6 @@
             cursor: pointer;
           }
 
-          // WebKit — thumb: box-shadow ensures visibility on light surfaces
           &::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 12px;
@@ -237,8 +232,9 @@
 
       // ------------------------------------------------------------------
       // Custom lock toggle switch
-      // Track uses var(--color-surface-offset) instead of var(--color-surface)
-      // so it's visible in light mode (surface = near-white = invisible track).
+      // Off-state track: --color-border (84% L light / 23% L dark) so
+      // the pill is clearly visible in both modes. Previously used
+      // --color-surface-offset (94% L in light = near-invisible).
       // ------------------------------------------------------------------
       .switch {
         margin: 0 var(--space-1);
@@ -257,14 +253,14 @@
           position: absolute;
           cursor: pointer;
           inset: 0;
-          background-color: var(--color-surface-offset);
+          background-color: var(--color-border);
           border-radius: var(--radius-full);
           transition: background-color var(--transition-interactive);
 
           &::before {
             font-family: 'Font Awesome 6 Free';
             font-weight: 900;
-            content: '\f3c1'; // fa-circle-dot (unlocked indicator)
+            content: '\f3c1';
             font-size: 8px;
             line-height: 18px;
             text-align: center;
@@ -288,7 +284,7 @@
           background-color: var(--color-primary);
 
           &::before {
-            content: '\f023'; // fa-lock
+            content: '\f023';
             transform: translateX(18px);
           }
         }
@@ -334,11 +330,6 @@
       return this.$accessor.remote.implicitHosting
     }
 
-    // Microphone is allowed when the user is actively controlling (has host).
-    // With implicit hosting, the controlling getter is true only when the user
-    // has actually been assigned as host (clicked inside the video), not for
-    // everyone by default. This prevents multiple users from sharing their
-    // microphone simultaneously — only the person in control can.
     get micAllowed() {
       return this.controlling
     }
@@ -391,9 +382,6 @@
 
     microphoneActive = false
 
-    // Auto-disable microphone when the user loses control (e.g. another user
-    // takes host, or admin releases control). This ensures the mic track is
-    // cleaned up and the server-side audio input is freed for the new host.
     @Watch('controlling')
     onControllingChanged(isControlling: boolean) {
       if (!isControlling && this.microphoneActive) {
