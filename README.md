@@ -33,7 +33,7 @@ docker compose up --force-recreate
 
 ## Implementierter Stand
 
-Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · **R1–R6 vollständig abgeschlossen** ✅ · Testphase abgeschlossen ✅ (30.04.2026)
+Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · **R1–R6 vollständig abgeschlossen** ✅ · Bugfix-Session abgeschlossen ✅ (30.04.2026)
 
 | Datei | Wichtigste Änderungen | Status |
 |---|---|---|
@@ -42,7 +42,7 @@ Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · **R1–R6 voll
 | `app.vue` | Theme-Toggle (`data-theme`); Sidebar-Transition slide+fade; Split-Screen Blue-Glow; room-container Glassmorphism; Sticky Header + Controls (`position:sticky`); `.is-scrolled`-Elevation; **R4:** `neko-members` aus Controls-Bar entfernt (Import + Registrierung bereinigt) | ✅ |
 | `header.vue` | Theme-Toggle-Button (SVG); Icon Micro-Animations (`scale`); funktionierender Glassmorphism-Diagonal-Gradient; CSS Tokens durchgehend | ✅ |
 | `side.vue` | Glassmorphism (`backdrop-filter:blur(12px)`); Pill-Tabs; Tab-Inhalt-Transition `out-in`; **R1+R3:** 4-Tab-Leiste (Chat · Users · Files · Settings); Toggle-Logik (Chat+Users unabhängig, Settings exklusiv); 50/50-Split mit `panel-divider` wenn beide aktiv; `panel-grow`-Transition (max-height); **R2:** `<neko-userlist>` ersetzt Placeholder | ✅ |
-| `userlist.vue` | **R2 (neu):** User-Einträge (Avatar-Pill + Username + Aktions-Icons); Moderationsaktionen für Admin/Host (Ignore · Mute · Give Controls · Kick · Ban); Hover-revealed Actions; `scale`-Micro-Animations; Skeleton Loading (4 Shimmer-Rows); Right-Click → `neko-context` (analog `members.vue`) | ✅ |
+| `userlist.vue` | **R2 + Bugfix:** Card-Layout (Avatar 32px links; Zeile 1: Name + Crown; Zeile 2: Buttons dauerhaft sichtbar); **Alle User:** Ignore/Unignore (`fa-eye-slash/fa-eye`); **Admin:** Mute/Unmute · Release Controls (`fa-times-circle`) · Force Take Controls (`fa-hand-paper`) · Give Controls (`fa-gamepad`); **Host (non-admin):** Give Controls; **Admin, non-admin Target:** Kick · Ban; Controls-Buttons nur bei `!implicitHosting`; Skeleton Loading 2-zeilig (Name + Actions); `isCurrentHost`-Getter; kein Right-Click-Kontextmenü (alle Aktionen inline) | ✅ |
 | `chat.vue` | Pill-Username-Badges; Message-Hover; Textarea Token-Focus; Skeleton Loading (4 Shimmer-Messages) | ✅ |
 | `members.vue` | 4-Zustand-Status-Dots (online/away/busy/offline); Avatar Hover-Scale; Skeleton Loading — **R4:** nicht mehr in Controls-Bar gerendert, Datei bleibt vorerst erhalten | ✅ |
 | `menu.vue` | Icons auf `--color-text-muted`; `<select>` vollständig auf CSS Custom Properties migriert (Light-Mode-fix) | ✅ |
@@ -103,19 +103,52 @@ Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · **R1–R6 voll
 
 ---
 
-### R2 — Neue `userlist.vue` ✅
+### R2 — `userlist.vue` ✅
 
-**Implementiert in `userlist.vue` (neu) + `side.vue` (Placeholder ersetzt)**
+**Initial: `userlist.vue` (neu) + `side.vue` (Placeholder ersetzt)**  
+**Bugfix (30.04.2026): Layout-Redesign + fehlende Aktionen wiederhergestellt**
 
-- Pro User eine Zeile: **Avatar-Pill** (28px, konsistent mit `chat.vue`) + **Displayname** + **Host-Crown** (`fa-crown`, falls `m.id === host`)
-- **Moderationsaktionen** (`v-if="canModerate"` — Admin oder aktueller Host): `fa-eye-slash` Ignore · `fa-microphone-slash` Mute · `fa-gamepad` Give Controls · `fa-user-times` Kick · `fa-ban` Ban IP
-- Actions standardmäßig `opacity: 0` → per Row-Hover revealed (kein `v-if`-Toggle)
-- `scale(1.18)` Hover / `scale(0.88)` Active; `--color-error`-Hover für Kick + Ban
-- Touch-Targets: `min-width/height: 44px` auf jedem `.action-btn`
-- **Right-Click auf Row** → `neko-context.open()` (identische Logik wie `members.vue`)
-- **Skeleton Loading:** 4 Shimmer-Rows mit `sk-avatar` + `sk-name`
-- CSS Custom Properties durchgehend, kein hardcodierter Wert
-- `side.vue`: `.users-panel`/`.users-placeholder` CSS-Blöcke entfernt [cleanup]
+#### Layout (aktueller Stand)
+
+Jeder User-Eintrag ist als **Card** aufgebaut:
+
+```
+┌─────────────────────────────────────────────┐
+│ [Avatar 32px]  Username  [Crown-Icon?]      │  ← Zeile 1: Name-Row
+│               [Btn][Btn][Btn][Btn][Btn]     │  ← Zeile 2: Actions (immer sichtbar)
+└─────────────────────────────────────────────┘
+```
+
+- Avatar (`32px`, `border-radius: full`) links, `margin-top: space-1` für optische Zentrierung
+- `.user-info` (flex-column) mit `user-name-row` + `user-actions`
+- Buttons sind **dauerhaft sichtbar** — kein Hover-Reveal mehr
+
+#### Self-Row
+
+- Avatar + Name (muted) + `YOU`-Badge rechts
+- Keine Action-Buttons
+
+#### Aktions-Buttons (Sichtbarkeits-Logik)
+
+| Button | Icon | Bedingung | Store-Aktion |
+|---|---|---|---|
+| Ignore / Unignore | `fa-eye-slash` / `fa-eye` | Alle User (immer sichtbar) | `user.setIgnored()` |
+| Mute / Unmute | `fa-microphone-slash` / `fa-microphone` | `isAdmin` | `user.mute()` / `user.unmute()` |
+| Give Controls | `fa-gamepad` | `!implicitHosting && m.id !== host && (isAdmin \| isCurrentHost)` | `remote.adminGive()` / `remote.give()` |
+| Release Controls | `fa-times-circle` | `isAdmin && !implicitHosting && m.id === host` | `remote.adminRelease()` |
+| Force Take Controls | `fa-hand-paper` | `isAdmin && !implicitHosting && m.id === host` | `remote.adminControl()` |
+| Kick | `fa-user-times` | `isAdmin && !m.admin` | `user.kick()` |
+| Ban IP | `fa-ban` | `isAdmin && !m.admin` | `user.ban()` |
+
+**Release vs. Force Take:** Release entfernt den Host-Status (niemand hat danach Kontrolle); Force Take überträgt die Kontrolle direkt an den Admin.
+
+#### Sonstiges
+
+- `isCurrentHost`-Getter: `remote.id === user.id`
+- Skeleton Loading: 2-zeilig (`sk-name` + `sk-actions`) passend zum Card-Layout
+- Right-Click auf Row: `@contextmenu.stop.prevent` (unterdrückt Browser-Menü; kein Custom-Kontextmenü — alle Aktionen sind inline)
+- Mute/Unmute + Kick/Ban jeweils mit `$swal`-Bestätigungsdialog
+- `.action-btn--take` (amber) für Release + Force Take; `.action-btn--destructive` (red on hover) für Kick + Ban
 
 ---
 
