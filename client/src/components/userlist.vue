@@ -43,9 +43,10 @@
             />
           </div>
 
-          <!-- Action buttons row: always visible when canModerate -->
-          <div v-if="canModerate" class="user-actions" @click.stop>
-            <!-- Ignore / Unignore -->
+          <!-- Action buttons: always rendered; each button guards itself -->
+          <div class="user-actions" @click.stop>
+
+            <!-- Ignore / Unignore — visible to ALL users -->
             <button
               class="action-btn"
               :title="m.ignored ? 'Unignore' : 'Ignore'"
@@ -66,9 +67,10 @@
               <i :class="m.muted ? 'fas fa-microphone' : 'fas fa-microphone-slash'" aria-hidden="true" />
             </button>
 
-            <!-- Give Controls: shown when member does NOT have host -->
+            <!-- Give Controls: m is NOT host, no implicit hosting -->
+            <!-- admin uses adminGive internally; non-admin host uses give -->
             <button
-              v-if="!implicitHosting && m.id !== host"
+              v-if="!implicitHosting && m.id !== host && (isAdmin || isCurrentHost)"
               class="action-btn"
               title="Give Controls"
               aria-label="Give controls to user"
@@ -77,9 +79,20 @@
               <i class="fas fa-gamepad" aria-hidden="true" />
             </button>
 
-            <!-- Force Take Controls: shown when this member IS the current host (admin only) -->
+            <!-- Release Controls: admin releases host status from this user (nobody gets control) -->
             <button
-              v-if="isAdmin && m.id === host"
+              v-if="isAdmin && !implicitHosting && m.id === host"
+              class="action-btn action-btn--take"
+              title="Release Controls"
+              aria-label="Release controls from user"
+              @click="releaseControl()"
+            >
+              <i class="fas fa-times-circle" aria-hidden="true" />
+            </button>
+
+            <!-- Force Take Controls: admin takes control from this user for themselves -->
+            <button
+              v-if="isAdmin && !implicitHosting && m.id === host"
               class="action-btn action-btn--take"
               title="Force Take Controls"
               aria-label="Force take controls from user"
@@ -109,6 +122,7 @@
             >
               <i class="fas fa-ban" aria-hidden="true" />
             </button>
+
           </div>
         </div>
       </li>
@@ -327,7 +341,7 @@
       outline-offset: -2px;
     }
 
-    // Force-take: amber to signal "reclaim" intent
+    // Release / Force-take: amber accent
     &--take {
       color: var(--color-warning);
       &:hover {
@@ -373,6 +387,11 @@
       return this.$accessor.user.admin
     }
 
+    // True when the current user (self) is the active host
+    get isCurrentHost() {
+      return this.$accessor.remote.id === this.$accessor.user.id
+    }
+
     get implicitHosting() {
       return this.$accessor.remote.implicitHosting
     }
@@ -387,13 +406,6 @@
 
     get loading() {
       return this.$accessor.connecting
-    }
-
-    get canModerate() {
-      return (
-        this.$accessor.user.admin ||
-        this.$accessor.remote.id === this.$accessor.user.id
-      )
     }
 
     toggleIgnore(member: Member) {
@@ -432,8 +444,13 @@
       }
     }
 
+    releaseControl() {
+      // Admin releases host status from the current host — nobody gets control
+      this.$accessor.remote.adminRelease()
+    }
+
     forceControl() {
-      // Admin forcibly takes control from whoever currently holds it
+      // Admin takes control from the current host for themselves
       this.$accessor.remote.adminControl()
     }
 
