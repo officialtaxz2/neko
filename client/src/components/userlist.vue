@@ -15,7 +15,7 @@
     <ul v-else class="userlist" role="list">
       <!-- Self -->
       <li v-if="self" class="userlist-row userlist-row--self">
-        <neko-avatar class="user-avatar" :seed="self.displayname" :size="32" />
+        <neko-avatar class="user-avatar" :seed="self.displayname" :size="36" />
         <div class="user-info">
           <span class="user-name">{{ self.displayname }}</span>
         </div>
@@ -30,7 +30,7 @@
         :class="{ 'is-host': m.id === host, 'is-admin': m.admin }"
         @contextmenu.stop.prevent
       >
-        <neko-avatar class="user-avatar" :seed="m.displayname" :size="32" />
+        <neko-avatar class="user-avatar" :seed="m.displayname" :size="36" />
 
         <div class="user-info">
           <!-- Name row -->
@@ -152,8 +152,8 @@
   }
 
   .sk-avatar {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-full);
     flex-shrink: 0;
   }
@@ -167,15 +167,15 @@
   }
 
   .sk-name {
-    height: 0.875rem;
+    height: 1rem;
     border-radius: var(--radius-sm);
-    max-width: 120px;
+    max-width: 130px;
   }
 
   .sk-actions {
-    height: 0.75rem;
+    height: 0.875rem;
     border-radius: var(--radius-sm);
-    max-width: 80px;
+    max-width: 90px;
   }
 
   // ── Root container ────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@
     display: flex;
     align-items: flex-start;
     gap: var(--space-3);
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
     margin: 0 var(--space-2);
     cursor: default;
@@ -240,8 +240,8 @@
 
   // ── Avatar ─────────────────────────────────────────────────────────────────
   .user-avatar {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-full);
     overflow: hidden;
     flex-shrink: 0;
@@ -254,7 +254,7 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: var(--space-2);
   }
 
   // ── Name row ─────────────────────────────────────────────────────────────
@@ -267,9 +267,9 @@
 
   .user-name {
     flex: 1;
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     font-family: var(--font-body);
-    font-weight: 500;
+    font-weight: 600;
     color: var(--color-text);
     white-space: nowrap;
     overflow: hidden;
@@ -290,7 +290,7 @@
 
   // ── Host crown ────────────────────────────────────────────────────────────
   .user-crown {
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--color-primary);
     flex-shrink: 0;
     transition: color var(--transition-interactive);
@@ -300,7 +300,7 @@
   .user-actions {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-2);
     flex-wrap: wrap;
     flex-shrink: 0;
   }
@@ -309,8 +309,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 30px;
+    height: 30px;
     padding: 0;
     background: none;
     border: none;
@@ -323,7 +323,7 @@
       transform        var(--transition-interactive);
 
     i {
-      font-size: 11px;
+      font-size: 13px;
       pointer-events: none;
       transition: transform var(--transition-interactive);
     }
@@ -354,6 +354,39 @@
     &--destructive:hover {
       color: var(--color-error);
       background: color-mix(in srgb, var(--color-error) 10%, transparent);
+    }
+  }
+
+  // ── Mobile scale-down (sidebar narrows on small screens) ─────────────────
+  @media (max-width: 480px) {
+    .userlist-row {
+      padding: var(--space-2) var(--space-3);
+      gap: var(--space-2);
+    }
+
+    .user-avatar {
+      width: 30px;
+      height: 30px;
+    }
+
+    .sk-avatar {
+      width: 30px;
+      height: 30px;
+    }
+
+    .user-name {
+      font-size: var(--text-sm);
+    }
+
+    .action-btn {
+      width: 26px;
+      height: 26px;
+
+      i { font-size: 11px; }
+    }
+
+    .user-actions {
+      gap: var(--space-1);
     }
   }
 </style>
