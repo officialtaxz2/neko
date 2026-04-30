@@ -1,6 +1,6 @@
 // =============================================================================
 // DESIGN TOKENS — neko UI Overhaul
-// Art direction: Dark-first tech tool → deep cool-gray surfaces, teal accent
+// Art direction: Dark-first tech tool → deep cool-gray surfaces, blue accent
 // Palette: HSL-based, dark default · light via [data-theme="light"]
 // Typography: Cabinet Grotesk (display) + Satoshi (body) via Fontshare CDN
 // =============================================================================
@@ -24,11 +24,11 @@
   --color-text-faint:        hsl(220, 7%, 34%);
   --color-text-inverse:      hsl(220, 15%, 9%);
 
-  // Primary Accent (Teal)
-  --color-primary:           hsl(174, 72%, 38%);
-  --color-primary-hover:     hsl(174, 72%, 30%);
-  --color-primary-active:    hsl(174, 72%, 23%);
-  --color-primary-highlight: hsl(174, 30%, 18%);
+  // Primary Accent (Blue — replaces teal hsl(174))
+  --color-primary:           hsl(213, 90%, 62%);
+  --color-primary-hover:     hsl(213, 90%, 52%);
+  --color-primary-active:    hsl(213, 90%, 42%);
+  --color-primary-highlight: hsl(213, 35%, 18%);
 
   // Status
   --color-success:           hsl(142, 50%, 48%);
@@ -38,9 +38,9 @@
   --color-warning:           hsl(36, 92%, 52%);
   --color-warning-hover:     hsl(36, 92%, 42%);
 
-  // Link
-  --color-link:              hsl(201, 90%, 60%);
-  --color-link-hover:        hsl(201, 90%, 72%);
+  // Link (harmonised to primary blue hue)
+  --color-link:              hsl(213, 90%, 70%);
+  --color-link-hover:        hsl(213, 90%, 80%);
 
   // Typography
   --font-display:   'Cabinet Grotesk', 'Helvetica Neue', sans-serif;
@@ -113,13 +113,15 @@
   --color-text-faint:        hsl(220, 10%, 64%);
   --color-text-inverse:      hsl(220, 20%, 97%);
 
-  --color-primary:           hsl(174, 72%, 30%);
-  --color-primary-hover:     hsl(174, 72%, 24%);
-  --color-primary-active:    hsl(174, 72%, 18%);
-  --color-primary-highlight: hsl(174, 40%, 90%);
+  // Primary Accent — Blue, darker for light-mode WCAG contrast
+  --color-primary:           hsl(213, 90%, 44%);
+  --color-primary-hover:     hsl(213, 90%, 36%);
+  --color-primary-active:    hsl(213, 90%, 28%);
+  --color-primary-highlight: hsl(213, 60%, 92%);
 
-  --color-link:              hsl(201, 90%, 38%);
-  --color-link-hover:        hsl(201, 90%, 28%);
+  // Link
+  --color-link:              hsl(213, 90%, 38%);
+  --color-link-hover:        hsl(213, 90%, 28%);
 
   --shadow-sm:  0 1px 2px  rgba(30, 40, 60, 0.08);
   --shadow-md:  0 4px 12px rgba(30, 40, 60, 0.12);
@@ -142,13 +144,13 @@
     --color-text-faint:        hsl(220, 10%, 64%);
     --color-text-inverse:      hsl(220, 20%, 97%);
 
-    --color-primary:           hsl(174, 72%, 30%);
-    --color-primary-hover:     hsl(174, 72%, 24%);
-    --color-primary-active:    hsl(174, 72%, 18%);
-    --color-primary-highlight: hsl(174, 40%, 90%);
+    --color-primary:           hsl(213, 90%, 44%);
+    --color-primary-hover:     hsl(213, 90%, 36%);
+    --color-primary-active:    hsl(213, 90%, 28%);
+    --color-primary-highlight: hsl(213, 60%, 92%);
 
-    --color-link:              hsl(201, 90%, 38%);
-    --color-link-hover:        hsl(201, 90%, 28%);
+    --color-link:              hsl(213, 90%, 38%);
+    --color-link-hover:        hsl(213, 90%, 28%);
 
     --shadow-sm:  0 1px 2px  rgba(30, 40, 60, 0.08);
     --shadow-md:  0 4px 12px rgba(30, 40, 60, 0.12);

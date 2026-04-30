@@ -40,8 +40,13 @@
       </label>
     </li>
     <li>
+      <!--
+        fa-pause / fa-play (outline) instead of fa-pause-circle / fa-play-circle (solid filled).
+        Filled circle icons render as a teal disc — visually indistinguishable from a teal button.
+        Outline icons match all other controls-bar icons (fa-keyboard, fa-volume-up, etc.).
+      -->
       <i
-        :class="[{ disabled: !playable }, playing ? 'fa-pause-circle' : 'fa-play-circle', 'fas', 'play']"
+        :class="[{ disabled: !playable }, playing ? 'fa-pause' : 'fa-play', 'fas', 'play']"
         @click.stop.prevent="toggleMedia"
       />
     </li>
@@ -152,7 +157,7 @@
         &.disabled { color: var(--color-error); opacity: 0.4; pointer-events: none; }
       }
 
-      // ── Volume control ───────────────────────────────────────────────
+      // ── Volume control ────────────────────────────────────────────────────
       .volume {
         display: flex;
         flex-direction: row;
@@ -161,7 +166,7 @@
         white-space: nowrap;
 
         // Split track: --fill CSS var is set via :style on the input (volume %).
-        // Filled = teal; unfilled = surface-dynamic (visible gray in both modes).
+        // Filled = primary; unfilled = surface-dynamic (visible gray in both modes).
         input[type='range'] {
           width: 150px;
           height: 20px;
@@ -205,7 +210,7 @@
         }
       }
 
-      // ── Lock toggle switch ───────────────────────────────────────────
+      // ── Lock toggle switch ───────────────────────────────────────────────
       .switch {
         margin: 0 var(--space-1);
         display: block;
