@@ -55,19 +55,19 @@ docker compose up --force-recreate
 | `client/src/assets/styles/_reset.scss` | CSS-Reset | Unverändert |
 | `client/src/assets/styles/vendor/` | Font Awesome, SweetAlert2, Tooltips, Emoji — nicht anfassen | Unverändert |
 | `client/src/assets/styles/fonts/` | Lokale Whitney-Fonts (veraltet, nicht mehr importiert) | Inaktiv |
-| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout, CSS Tokens | ✅ Updated |
+| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout, Sidebar `<transition name="side">` Slide-Animation | ✅ Updated |
 | `client/src/components/header.vue` | Topbar: Theme-Toggle-Button, CSS Tokens, Micro-Animations (Hover/Active) | ✅ Updated |
 | `client/src/components/side.vue` | Sidebar: Pill-Tabs, Hover/Active Micro-Animations, Vue Tab-Transition, Touch-Targets, CSS Tokens | ✅ Updated |
 | `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges, Avatar-Hover, Message-Hover, Code-Block-Tokens, Textarea-Redesign | ✅ Updated |
 | `client/src/components/members.vue` | Members-Bar: Status-Dots (online/away/busy/offline), Avatar-Hover, Host/Admin-Badges, CSS Tokens | ✅ Updated |
-| `client/src/components/controls.vue` | Steuerleiste | ⬜ Offen |
+| `client/src/components/controls.vue` | Steuerleiste: Touch-Targets ≥ 44px, Micro-Animations (Hover `scale(1.18)` + Teal, Active `scale(0.88)`), CSS Tokens, Volume-Thumb-Hover, Toggle-Switch Spring-Easing | ✅ Updated |
+| `client/src/components/settings.vue` | Einstellungen-Panel: Custom Toggle Switches (Teal-Akzent, Spring-Easing), CSS Tokens durchgehend, Slider/Select/Input/Button Redesign | ✅ Updated |
 | `client/src/components/connect.vue` | Login/Connect-Dialog | ⬜ Offen |
-| `client/src/components/settings.vue` | Einstellungen-Panel | ⬜ Offen |
 | `client/src/components/video.vue` | WebRTC-Video + Maus/Tastatur-Overlay — **zuletzt anfassen**, Event-Handler nicht verändern | ⬜ Offen |
 
 **Empfohlene Bearbeitungsreihenfolge (von außen nach innen):**
 ```
-_variables.scss → main.scss → app.vue → header.vue → side.vue → chat.vue → members.vue → controls.vue → connect.vue → settings.vue → video.vue
+_variables.scss → main.scss → app.vue → header.vue → side.vue → chat.vue → members.vue → controls.vue → settings.vue → connect.vue → video.vue
 ```
 
 ---
@@ -104,15 +104,15 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 | Micro-Animations auf Header-Icons + Theme-Toggle (Hover `scale(1.08)`, Active `scale(0.95)`) | ✅ | `header.vue` |
 | Micro-Animations auf Sidebar-Tabs (Hover `scale(1.15)` Icon, `translateY(-1px)`, Active `scale(0.96)`) | ✅ | `side.vue` |
 | Micro-Animations auf Chat- und Members-Avataren (Hover `scale(1.08)`, Active `scale(0.95)`) | ✅ | `chat.vue`, `members.vue` |
-| Micro-Animations auf Controls-Buttons | ⬜ | `controls.vue` |
+| Micro-Animations auf Controls-Icons (Hover `scale(1.18)` + Teal, Active `scale(0.88)`, `will-change: transform`) | ✅ | `controls.vue` |
 | Color-Coded Status Dot Indicators bei Nutzern (4 Zustände: online/away/busy/offline) | ✅ | `members.vue` |
 | Pill-Shaped Tabs in der Sidebar-Navigation | ✅ | `side.vue` |
 | Pill-Shaped Username-Badges im Chat | ✅ | `chat.vue` |
 | Smooth Tab-Inhalt-Transition (Vue `<transition>` fade+slide, `mode="out-in"`) | ✅ | `side.vue` |
-| Smooth Sidebar open/close Animation (`app.vue` `v-if` → `<transition>`) | ⬜ | `app.vue` |
-| Custom Toggle Switches im Settings-Panel (animiert) | ⬜ | `settings.vue` |
-| Touch-Targets ≥ 44×44px: Sidebar-Tabs | ✅ | `side.vue` |
-| Touch-Targets ≥ 44×44px: Controls, Connect, Settings | ⬜ | `controls.vue`, `connect.vue`, `settings.vue` |
+| Smooth Sidebar open/close Animation (Vue `<transition name="side">`, slide-from-right + fade, Mobile: slide-from-bottom) | ✅ | `app.vue` |
+| Custom Toggle Switches im Settings-Panel (Teal-Akzent, Spring-Easing `cubic-bezier(0.16,1,0.3,1)`, CSS Tokens) | ✅ | `settings.vue` |
+| Touch-Targets ≥ 44×44px: Controls (`min-width/height: 44px` auf allen `li`) | ✅ | `controls.vue` |
+| Touch-Targets ≥ 44×44px: Connect, Settings | ⬜ | `connect.vue`, `settings.vue` |
 
 ---
 
