@@ -60,14 +60,15 @@ docker compose up --force-recreate
 | `client/src/components/side.vue` | Sidebar: Pill-Tabs, Hover/Active Micro-Animations, Vue Tab-Transition, Touch-Targets, CSS Tokens | ✅ Updated |
 | `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges, Avatar-Hover, Message-Hover, Code-Block-Tokens, Textarea-Redesign, Skeleton Loading State (4 Shimmer-Messages) | ✅ Updated |
 | `client/src/components/members.vue` | Members-Bar: Status-Dots (online/away/busy/offline), Avatar-Hover, Host/Admin-Badges, CSS Tokens, Skeleton Loading State (4 Shimmer-Circles) | ✅ Updated |
-| `client/src/components/controls.vue` | Steuerleiste: Touch-Targets ≥ 44px, Micro-Animations (Hover `scale(1.18)` + Teal, Active `scale(0.88)`), CSS Tokens, Volume-Thumb-Hover, Toggle-Switch Spring-Easing | ✅ Updated |
-| `client/src/components/settings.vue` | Einstellungen-Panel: Custom Toggle Switches (Teal-Akzent, Spring-Easing), Touch-Targets ≥ 44px (li `min-height`, Switch Padding 10px 1px → 44×44px Hit-Area), CSS Tokens durchgehend, Slider/Select/Input/Button Redesign | ✅ Updated |
-| `client/src/components/connect.vue` | Login/Connect-Dialog: CSS Tokens, `color-mix`-Overlay, Touch-Targets ≥ 44px auf Input + Button, Hover/Active Micro-Animations | ✅ Updated |
+| `client/src/components/menu.vue` | Navigationsmenü: Icons auf `color: var(--color-text)` + Hover-Animation migriert, Language-Select vollständig von `$background-*`/`color: white` auf CSS Custom Properties umgestellt (Light-Mode-kompatibel) | ✅ Updated |
+| `client/src/components/controls.vue` | Steuerleiste: Touch-Targets ≥ 44px, Micro-Animations (Hover `scale(1.18)` + Teal, Active `scale(0.88)`), `.faded`-Icons nutzen `--color-text-muted` (kein `opacity`-Hack), Lock-Switch-Track `--color-border`, Volume-Slider-Thumb mit `box-shadow`, CSS Tokens | ✅ Updated |
+| `client/src/components/settings.vue` | Einstellungen-Panel: Custom Toggle Switches (Teal-Akzent, Spring-Easing), Touch-Target-Sizing via `display:inline-block + width:44px + height:44px + position:absolute` auf hidden input (kein Padding-Hack), Track-Farbe `--color-border` (sichtbar in Light Mode), Slider/Select/Input/Button Redesign, CSS Tokens durchgehend | ✅ Updated |
+| `client/src/components/connect.vue` | Login/Connect-Dialog: CSS Tokens, `color-mix`-Overlay, Touch-Targets ≥ 44×44px auf Input + Button, Hover/Active Micro-Animations | ✅ Updated |
 | `client/src/components/video.vue` | WebRTC-Video + Maus/Tastatur-Overlay — **zuletzt anfassen**, Event-Handler nicht verändern | ⬜ Offen |
 
 **Empfohlene Bearbeitungsreihenfolge (von außen nach innen):**
 ```
-_variables.scss → main.scss → app.vue → header.vue → side.vue → chat.vue → members.vue → controls.vue → settings.vue → connect.vue → video.vue
+_variables.scss → main.scss → app.vue → header.vue → side.vue → chat.vue → members.vue → menu.vue → controls.vue → settings.vue → connect.vue → video.vue
 ```
 
 ---
@@ -113,6 +114,17 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 | Custom Toggle Switches im Settings-Panel (Teal-Akzent, Spring-Easing `cubic-bezier(0.16,1,0.3,1)`, CSS Tokens) | ✅ | `settings.vue` |
 | Touch-Targets ≥ 44×44px: Controls (`min-width/height: 44px` auf allen `li`) | ✅ | `controls.vue` |
 | Touch-Targets ≥ 44×44px: Connect, Settings | ✅ | `connect.vue`, `settings.vue` |
+
+---
+
+> **Test/Fix-Durchlauf abgeschlossen (30.04.2026):**
+> Nach Abschluss von Phase 1 + 2 wurde ein vollständiger Light/Dark-Mode-Test durchgeführt. Behobene Bugs:
+> - **Toggle-Switch-Sizing** (`settings.vue`): Label kollabierte auf 0px Breite (kein `width`/`height` → Pill unsichtbar, Thumb flog aus Container). Fix: `display:inline-block + width:44px + height:44px + position:absolute` auf hidden input.
+> - **Toggle-Track-Kontrast** (`settings.vue`, `controls.vue`): Off-State-Track `--color-surface-offset` (94% L) nahezu unsichtbar auf weißem Hintergrund. Fix: `--color-border` (84% L, klar sichtbares Grau).
+> - **`.faded`-Icons** (`controls.vue`): `color:text + opacity:0.4` kollabierte zu ~`#c5c6ca` in Light Mode. Fix: `color:var(--color-text-muted)` ohne Opacity.
+> - **menu.vue `select`**: `color: white` hardcoded → unsichtbarer Text in Light Mode. Fix: Vollständige Migration auf CSS Custom Properties.
+>
+> **Phase 3 kann beginnen.**
 
 ---
 
@@ -162,10 +174,22 @@ Dies sind die **tatsächlich implementierten** Token-Werte aus `_variables.scss`
 --color-text:              hsl(220, 10%, 86%);
 --color-text-muted:        hsl(220, 8%, 50%);
 --color-text-faint:        hsl(220, 7%, 34%);
+--color-border:            hsl(220, 9%, 23%);   /* Toggle-Track off-state */
 --color-error:             hsl(4, 68%, 52%);
 --color-success:           hsl(142, 50%, 48%);
 --color-warning:           hsl(36, 92%, 52%);
 --color-link:              hsl(201, 90%, 60%);
+```
+
+**Light Mode (via `[data-theme="light"]`):**
+```css
+--color-bg:                hsl(220, 20%, 97%);
+--color-surface:           hsl(220, 18%, 100%);
+--color-border:            hsl(220, 10%, 84%);  /* Toggle-Track off-state — 16% Δ zu bg */
+--color-text:              hsl(220, 20%, 12%);
+--color-text-muted:        hsl(220, 12%, 44%);
+--color-text-faint:        hsl(220, 10%, 64%);
+--color-primary:           hsl(174, 72%, 30%);
 ```
 
 **Font-Stack:**
@@ -196,9 +220,10 @@ Dies sind die **tatsächlich implementierten** Token-Werte aus `_variables.scss`
 
 **Shadows, Radius, Transitions:**
 ```css
---shadow-sm:  0 1px 2px rgba(0,0,0,0.35);
---shadow-md:  0 4px 12px rgba(0,0,0,0.45);
---shadow-lg:  0 12px 32px rgba(0,0,0,0.60);
+--shadow-sm:  0 1px 2px rgba(30,40,60,0.08);   /* Light Mode */
+--shadow-md:  0 4px 12px rgba(30,40,60,0.12);
+--shadow-lg:  0 12px 32px rgba(30,40,60,0.16);
+/* Dark Mode: rgba(0,0,0,0.35/0.45/0.60) */
 
 --radius-sm: 0.25rem;  --radius-md: 0.5rem;
 --radius-lg: 0.75rem;  --radius-xl: 1rem;  --radius-full: 9999px;
@@ -218,11 +243,13 @@ Vor jedem Commit / PR in diesem Fork prüfen:
 Design & UX:
   [ ] Alle Views responsive (320px – 2560px) / Mobile First
   [ ] Dark Mode vorhanden und korrekt
+  [ ] Light Mode: Toggle-Tracks, Icons, Select-Elemente auf Kontrast prüfen
   [ ] Kontrast ≥ 4.5:1 (WCAG AA)
   [ ] Focus-States sichtbar
   [ ] Touch-Targets ≥ 44×44px
   [ ] prefers-reduced-motion implementiert
-  [ ] Kein Emoji als Icon (SVG only)
+  [ ] Kein hardcodierter Farbwert (kein color:white, kein #36393f etc.)
+  [ ] Keine alten $background-*/color:white SCSS-Vars in neuen Komponenten
 
 Feature-Coverage:
   [ ] Kat. 0–1 vollständig implementiert
