@@ -6,7 +6,7 @@
     <template v-else>
       <main class="neko-main">
         <div v-if="!videoOnly" class="header-container">
-          <neko-header />
+          <neko-header :currentTheme="currentTheme" @toggle-theme="toggleTheme" />
         </div>
         <div class="video-container">
           <neko-video
@@ -66,26 +66,32 @@
       overflow: auto;
 
       .header-container {
-        background: $background-tertiary;
+        background: var(--color-bg);
         height: $menu-height;
         flex-shrink: 0;
         display: flex;
+        // Subtle bottom border separating header from video
+        border-bottom: 1px solid var(--color-border);
+        transition: background-color var(--transition-slow);
       }
 
       .video-container {
-        background: rgba($color: #000, $alpha: 0.4);
+        background: rgba(0, 0, 0, 0.4);
         max-width: 100%;
         flex-grow: 1;
         display: flex;
       }
 
       .room-container {
-        background: $background-tertiary;
+        background: var(--color-bg);
         height: $controls-height;
         max-width: 100%;
         flex-shrink: 0;
         flex-direction: column;
         display: flex;
+        // Subtle top border separating controls from video
+        border-top: 1px solid var(--color-border);
+        transition: background-color var(--transition-slow);
 
         .room-menu {
           max-width: 100%;
@@ -93,7 +99,7 @@
           display: flex;
 
           .settings {
-            margin-left: 10px;
+            margin-left: var(--space-3);
             flex: 1;
             justify-content: flex-start;
             align-items: center;
@@ -108,7 +114,7 @@
           }
 
           .emotes {
-            margin-right: 10px;
+            margin-right: var(--space-3);
             flex: 1;
             justify-content: flex-end;
             align-items: center;
@@ -181,6 +187,8 @@
   import Header from '~/components/header.vue'
   import Unsupported from '~/components/unsupported.vue'
 
+  type Theme = 'dark' | 'light'
+
   @Component({
     name: 'neko',
     components: {
@@ -200,6 +208,36 @@
     @Ref('video') video!: Video
 
     shakeKbd = false
+    currentTheme: Theme = 'dark'
+
+    mounted() {
+      // Initialise theme from system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      this.currentTheme = prefersDark ? 'dark' : 'light'
+      this.applyTheme(this.currentTheme)
+
+      // Keep in sync if user changes OS preference while the app is open
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        // Only follow OS if no explicit user choice has been made this session
+        if (!this._userChoseTheme) {
+          this.currentTheme = e.matches ? 'dark' : 'light'
+          this.applyTheme(this.currentTheme)
+        }
+      })
+    }
+
+    // Tracks whether the user has manually toggled this session
+    private _userChoseTheme = false
+
+    toggleTheme() {
+      this._userChoseTheme = true
+      this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark'
+      this.applyTheme(this.currentTheme)
+    }
+
+    private applyTheme(theme: Theme) {
+      document.documentElement.setAttribute('data-theme', theme)
+    }
 
     get volume() {
       const numberParam = parseFloat(new URL(location.href).searchParams.get('volume') || '1.0')
@@ -240,12 +278,10 @@
     @Watch('side')
     onSide(side: boolean) {
       if (side) {
-        console.log('side enabled')
-        // scroll to the side
         this.$nextTick(() => {
-          const side = document.querySelector('aside')
-          if (side) {
-            side.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          const sideEl = document.querySelector('aside')
+          if (sideEl) {
+            sideEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
           }
         })
       }
@@ -253,7 +289,6 @@
 
     controlAttempt() {
       if (this.shakeKbd || this.$accessor.remote.hosted) return
-
       this.shakeKbd = true
       window.setTimeout(() => (this.shakeKbd = false), 5000)
     }
