@@ -33,7 +33,6 @@
           </div>
           <div class="content">
             <div class="content-head">
-              <!-- Pill-shaped username badge -->
               <span class="username">{{ member(message.id).displayname }}</span>
               <span class="timestamp">{{ timestamp(message.created) }}</span>
             </div>
@@ -95,7 +94,6 @@
     border-radius: var(--radius-sm);
   }
 
-  // ── Skeleton message row ─────────────────────────────────────────────────
   .skeleton-msg {
     display: flex;
     flex-direction: row;
@@ -118,18 +116,9 @@
       gap: var(--space-2);
       padding-top: var(--space-1);
 
-      .sk-name {
-        height: 12px;
-        width: 72px;
-        border-radius: var(--radius-full);
-      }
-
-      .sk-line {
-        height: 11px;
-        width: 100%;
-
-        &--short { width: 58%; }
-      }
+      .sk-name  { height: 12px; width: 72px; border-radius: var(--radius-full); }
+      .sk-line  { height: 11px; width: 100%; }
+      .sk-line--short { width: 58%; }
     }
   }
 
@@ -141,7 +130,6 @@
     max-width: 100%;
     overflow-x: hidden;
 
-    // ── Message history ────────────────────────────────────────────────────
     .chat-history {
       flex: 1;
       overflow-y: scroll;
@@ -150,21 +138,12 @@
       scrollbar-width: thin;
       scrollbar-color: var(--color-surface-offset) transparent;
 
-      &::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      &::-webkit-scrollbar-track {
-        background-color: transparent;
-      }
-
+      &::-webkit-scrollbar       { width: 6px; }
+      &::-webkit-scrollbar-track { background-color: transparent; }
       &::-webkit-scrollbar-thumb {
         background-color: var(--color-surface-offset);
         border-radius: var(--radius-full);
-
-        &:hover {
-          background-color: var(--color-surface-dynamic);
-        }
+        &:hover { background-color: var(--color-surface-dynamic); }
       }
 
       ::v-deep *::selection {
@@ -184,11 +163,9 @@
         word-wrap: break-word;
         transition: background-color var(--transition-fast);
 
-        &:hover {
-          background-color: var(--color-surface-offset);
-        }
+        &:hover { background-color: var(--color-surface-offset); }
 
-        // ── Text message ─────────────────────────────────────────
+        // ── Text message ────────────────────────────────────────────
         &.message {
           padding-top: var(--space-4);
           font-size: var(--text-base);
@@ -200,18 +177,16 @@
             width: 40px;
             height: 40px;
             border-radius: var(--radius-full);
-            background: var(--color-primary-highlight);
+            // Neutral gray background instead of --color-primary-highlight (mint/teal).
+            // Eliminates the "light green ring" around avatars in light mode.
+            background: var(--color-surface-offset);
             margin-right: var(--space-3);
             transition: transform var(--transition-interactive);
             cursor: pointer;
 
-            &:hover {
-              transform: scale(1.08);
-            }
+            &:hover { transform: scale(1.08); }
 
-            .avatar {
-              width: 100%;
-            }
+            .avatar { width: 100%; }
           }
 
           .content {
@@ -230,17 +205,20 @@
               align-items: baseline;
               gap: var(--space-2);
 
-              // Pill-shaped username badge
+              // Username badge: neutral pill — was teal-highlight bg + teal text.
+              // --color-primary-highlight in light mode = hsl(174,40%,90%) = mint green.
+              // New: neutral surface-offset bg + regular text + bold weight.
+              // Pill shape preserved for UX; color is now theme-agnostic.
               .username {
                 display: inline-flex;
                 align-items: center;
                 padding: 0 var(--space-2);
                 height: 18px;
                 border-radius: var(--radius-full);
-                background: var(--color-primary-highlight);
-                color: var(--color-primary);
+                background: var(--color-surface-offset);
+                color: var(--color-text);
                 font-size: var(--text-xs);
-                font-weight: 600;
+                font-weight: 700;
                 font-family: var(--font-body);
                 letter-spacing: 0.01em;
                 transition:
@@ -248,8 +226,8 @@
                   color            var(--transition-interactive);
 
                 &:hover {
-                  background: var(--color-primary);
-                  color: var(--color-bg);
+                  background: var(--color-surface-dynamic);
+                  color: var(--color-text);
                 }
               }
 
@@ -259,9 +237,7 @@
                 font-weight: 400;
                 line-height: 1;
 
-                &::first-letter {
-                  text-transform: uppercase;
-                }
+                &::first-letter { text-transform: uppercase; }
               }
             }
 
@@ -276,16 +252,12 @@
               a {
                 color: var(--color-link);
                 text-underline-offset: 2px;
-
-                &:hover {
-                  color: var(--color-primary);
-                }
+                &:hover { color: var(--color-primary); }
               }
 
               strong { font-weight: 700; }
               em     { font-style: italic; }
 
-              // Blockquote with teal accent line
               blockquote {
                 border-left: 3px solid var(--color-primary);
                 padding-left: var(--space-3);
@@ -293,7 +265,6 @@
                 color: var(--color-text-muted);
               }
 
-              // Spoiler
               span {
                 &.spoiler {
                   background: var(--color-surface-offset);
@@ -301,19 +272,15 @@
                   border-radius: var(--radius-sm);
                   cursor: pointer;
                   transition: background-color var(--transition-interactive);
-
                   span { opacity: 0; transition: opacity var(--transition-interactive); }
                 }
-
                 &.spoiler.active {
                   background: var(--color-surface-dynamic);
                   cursor: default;
-
                   span { opacity: 1; }
                 }
               }
 
-              // Inline code
               code {
                 font-family: var(--font-mono);
                 background: var(--color-surface-offset);
@@ -324,7 +291,6 @@
                 white-space: pre-wrap;
               }
 
-              // Code block
               pre {
                 background: var(--color-surface-offset);
                 border: 1px solid var(--color-border);
@@ -347,22 +313,14 @@
             }
           }
 
-          // Bulk: hide repeated avatar + header
           &.bulk {
             padding-top: 0;
-
-            .author {
-              visibility: hidden;
-              height: 0;
-            }
-
-            .content-head {
-              display: none;
-            }
+            .author         { visibility: hidden; height: 0; }
+            .content-head   { display: none; }
           }
         }
 
-        // ── Event message ─────────────────────────────────────────
+        // ── Event message ───────────────────────────────────────────
         &.event {
           color: var(--color-text-muted);
           font-size: var(--text-sm);
@@ -383,7 +341,7 @@
       }
     }
 
-    // ── Send input area ───────────────────────────────────────────────
+    // ── Send input area ──────────────────────────────────────────────────
     .chat-send {
       flex-shrink: 0;
       padding: 0 var(--space-3) var(--space-3);
@@ -439,9 +397,7 @@
             transform: scale(1.1);
           }
 
-          &:active {
-            transform: scale(0.92);
-          }
+          &:active { transform: scale(0.92); }
         }
 
         textarea {
@@ -459,13 +415,11 @@
           scrollbar-width: thin;
           scrollbar-color: var(--color-surface-offset) transparent;
 
-          &::placeholder {
-            color: var(--color-text-faint);
-          }
+          &::placeholder { color: var(--color-text-faint); }
 
-          &::-webkit-scrollbar        { width: 4px; }
-          &::-webkit-scrollbar-track  { background-color: transparent; }
-          &::-webkit-scrollbar-thumb  {
+          &::-webkit-scrollbar       { width: 4px; }
+          &::-webkit-scrollbar-track { background-color: transparent; }
+          &::-webkit-scrollbar-thumb {
             background-color: var(--color-surface-offset);
             border-radius: var(--radius-full);
           }
@@ -491,7 +445,7 @@
   import Emoji from './emoji.vue'
   import Avatar from './avatar.vue'
 
-  const length = 512 // max length of message
+  const length = 512
 
   @Component({
     name: 'neko-chat',
@@ -510,22 +464,10 @@
     emoji = false
     content = ''
 
-    get id() {
-      return this.$accessor.user.id
-    }
-
-    get muted() {
-      return this.$accessor.user.muted
-    }
-
-    get history() {
-      return this.$accessor.chat.history
-    }
-
-    // True while the WebSocket connection is being established
-    get loading() {
-      return this.$accessor.connecting
-    }
+    get id()      { return this.$accessor.user.id }
+    get muted()   { return this.$accessor.user.muted }
+    get history() { return this.$accessor.chat.history }
+    get loading() { return this.$accessor.connecting }
 
     @Watch('history')
     onHistroyChange() {
@@ -534,7 +476,6 @@
       })
     }
 
-    // Once loading finishes, scroll chat to bottom
     @Watch('loading')
     onLoadingChange(val: boolean) {
       if (!val) {
@@ -546,9 +487,7 @@
 
     @Watch('muted')
     onMutedChange(muted: boolean) {
-      if (muted) {
-        this.content = ''
-      }
+      if (muted) this.content = ''
     }
 
     mounted() {
@@ -574,12 +513,12 @@
     onEmojiPicked(emoji: string) {
       const text = `:${emoji}:`
       if (this._input.selectionStart || this._input.selectionStart === 0) {
-        var startPos = this._input.selectionStart
-        var endPos = this._input.selectionEnd
+        const startPos = this._input.selectionStart
+        const endPos   = this._input.selectionEnd
         this.content = this.content.substring(0, startPos) + text + this.content.substring(endPos, this.content.length)
         this.$nextTick(() => {
           this._input.selectionStart = startPos + text.length
-          this._input.selectionEnd = startPos + text.length
+          this._input.selectionEnd   = startPos + text.length
         })
       } else {
         this.content += text
@@ -589,9 +528,7 @@
     }
 
     onContext(event: MouseEvent, { member }: { member: Member }) {
-      if (member.id === this.id) {
-        return
-      }
+      if (member.id === this.id) return
       this._context.open(event, { member })
     }
 
@@ -618,17 +555,13 @@
     onKeyDown(event: KeyboardEvent) {
       if (this.muted) return
 
-      if (this.content.length > length) {
-        this.content = this.content.substring(0, length)
-      }
+      if (this.content.length > length) this.content = this.content.substring(0, length)
 
       if (this.content.length == length) {
         if (
           [8, 16, 17, 18, 20, 33, 34, 35, 36, 37, 38, 39, 40, 45, 46, 91, 93, 144].includes(event.keyCode) ||
           (event.ctrlKey && [67, 65, 88].includes(event.keyCode))
-        ) {
-          return
-        }
+        ) return
         event.preventDefault()
         return
       }

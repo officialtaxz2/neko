@@ -12,7 +12,14 @@
           <div class="row">
             <span>{{ $t('setting.scroll') }}</span>
             <label class="slider">
-              <input type="range" min="1" max="100" v-model="scroll" />
+              <!--
+                :style sets --fill so the CSS track gradient knows the
+                filled portion. Formula: (value - min) / (max - min) * 100.
+              -->
+              <input
+                type="range" min="1" max="100" v-model="scroll"
+                :style="{ '--fill': ((+scroll - 1) / 99 * 100) + '%' }"
+              />
             </label>
           </div>
           <div class="row">
@@ -34,24 +41,15 @@
         <div class="card-body">
           <div class="row">
             <span>{{ $t('setting.autoplay') }}</span>
-            <label class="switch">
-              <input type="checkbox" v-model="autoplay" />
-              <span />
-            </label>
+            <label class="switch"><input type="checkbox" v-model="autoplay" /><span /></label>
           </div>
           <div class="row">
             <span>{{ $t('setting.ignore_emotes') }}</span>
-            <label class="switch">
-              <input type="checkbox" v-model="ignore_emotes" />
-              <span />
-            </label>
+            <label class="switch"><input type="checkbox" v-model="ignore_emotes" /><span /></label>
           </div>
           <div class="row">
             <span>{{ $t('setting.chat_sound') }}</span>
-            <label class="switch">
-              <input type="checkbox" v-model="chat_sound" />
-              <span />
-            </label>
+            <label class="switch"><input type="checkbox" v-model="chat_sound" /><span /></label>
           </div>
         </div>
       </div>
@@ -80,10 +78,14 @@
         <div class="card-header">
           <i class="fas fa-broadcast-tower" aria-hidden="true" />
           <span class="card-title">{{ $t('setting.broadcast_title') }}</span>
+          <!--
+            Start button: outlined ghost style when inactive (no solid teal fill).
+            Hover reveals the solid teal background. Stop button stays solid red.
+          -->
           <button
             v-if="!broadcast_is_active"
             @click.stop.prevent="$accessor.settings.broadcastCreate(broadcast_url)"
-            class="btn-icon"
+            class="btn-icon btn-icon--ghost"
             :aria-label="$t('setting.broadcast_title')"
           >
             <i class="fas fa-play" aria-hidden="true" />
@@ -145,7 +147,6 @@
       transition: box-shadow var(--transition-interactive);
 
       &:hover { box-shadow: var(--shadow-md); }
-
       &.bento-full { grid-column: 1 / -1; }
     }
 
@@ -172,6 +173,10 @@
         color: var(--color-text-muted);
       }
 
+      // ── Broadcast control buttons ─────────────────────────────────
+      // btn-icon--ghost: outlined, no background fill at rest.
+      // Teal only appears on hover so the card header stays neutral
+      // when no broadcast is running.
       .btn-icon {
         min-width: 28px;
         min-height: 28px;
@@ -179,21 +184,40 @@
         align-items: center;
         justify-content: center;
         border-radius: var(--radius-md);
-        border: none;
-        background: var(--color-primary);
-        color: var(--color-text-inverse);
         cursor: pointer;
         font-size: var(--text-xs);
         transition:
           background var(--transition-interactive),
-          transform  var(--transition-fast);
+          color       var(--transition-interactive),
+          border-color var(--transition-interactive),
+          transform   var(--transition-fast);
 
-        &:hover  { background: var(--color-primary-hover); }
+        // Default (solid teal) — kept as fallback
+        border: 1px solid var(--color-primary);
+        background: var(--color-primary);
+        color: var(--color-text-inverse);
+
+        &:hover  { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
         &:active { transform: scale(0.92); }
+
+        // Ghost variant: transparent at rest, teal on hover
+        &.btn-icon--ghost {
+          background: transparent;
+          color: var(--color-primary);
+          border: 1px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+
+          &:hover {
+            background: var(--color-primary);
+            color: var(--color-text-inverse);
+            border-color: var(--color-primary);
+          }
+        }
 
         &.btn-red {
           background: var(--color-error);
-          &:hover { background: var(--color-error-hover); }
+          border-color: var(--color-error);
+          color: #fff;
+          &:hover { background: var(--color-error-hover); border-color: var(--color-error-hover); }
         }
       }
     }
@@ -241,16 +265,7 @@
       &:active { background: var(--color-primary-active); transform: scale(0.97); }
     }
 
-    // ------------------------------------------------------------------
-    // Toggle Switch — OFF track uses --color-text-muted:
-    //
-    // Contrast ratios for the OFF track pill:
-    //   Light mode: text-muted (44% L) on surface-2 (98% L) → ~5.0:1 ✓
-    //   Dark  mode: text-muted (50% L) on surface-2 (16% L) → ~3.7:1 ✓
-    //
-    // Previously used --color-text-faint which gave only ~2.3:1 in both
-    // modes — WCAG AA fail and visually near-invisible on light backgrounds.
-    // ------------------------------------------------------------------
+    // ── Toggle Switch ─────────────────────────────────────────────────────
     .switch {
       flex-shrink: 0;
       display: inline-block;
@@ -260,20 +275,12 @@
       padding: 10px 1px;
       cursor: pointer;
 
-      input {
-        position: absolute;
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
+      input { position: absolute; opacity: 0; width: 0; height: 0; }
 
       span {
         position: absolute;
         cursor: pointer;
-        top: 10px;
-        left: 1px;
-        right: 1px;
-        bottom: 10px;
+        top: 10px; left: 1px; right: 1px; bottom: 10px;
         background-color: var(--color-text-muted);
         border-radius: var(--radius-full);
         transition: background-color var(--transition-interactive);
@@ -281,10 +288,8 @@
         &::before {
           content: '';
           position: absolute;
-          height: 18px;
-          width: 18px;
-          left: 3px;
-          bottom: 3px;
+          height: 18px; width: 18px;
+          left: 3px; bottom: 3px;
           background-color: #fff;
           border-radius: 50%;
           box-shadow: var(--shadow-sm);
@@ -293,8 +298,6 @@
         }
       }
 
-      // Hover: blend 30% toward --color-text for a natural
-      // darkening (light mode) / lightening (dark mode) effect.
       &:hover span {
         background-color: color-mix(in srgb, var(--color-text-muted) 70%, var(--color-text));
       }
@@ -308,6 +311,10 @@
       &:checked + span:hover { background-color: var(--color-primary-hover); }
     }
 
+    // ── Scroll sensitivity slider ─────────────────────────────────────────
+    // --fill is set via :style on the <input> from the Vue scroll computed.
+    // The track uses a split gradient: filled = teal, unfilled = surface-dynamic.
+    // This avoids a solid-teal bar which reads as "too much green" in light mode.
     .slider {
       flex-shrink: 0;
       max-width: 120px;
@@ -323,7 +330,12 @@
 
         &::-moz-range-track {
           width: 100%; height: 4px; cursor: pointer;
-          background: var(--color-primary); border-radius: var(--radius-full);
+          background: linear-gradient(
+            to right,
+            var(--color-primary)         0% var(--fill, 50%),
+            var(--color-surface-dynamic) var(--fill, 50%) 100%
+          );
+          border-radius: var(--radius-full);
         }
         &::-moz-range-thumb {
           height: 12px; width: 12px; border-radius: var(--radius-full);
@@ -334,7 +346,12 @@
 
         &::-webkit-slider-runnable-track {
           width: 100%; height: 4px; cursor: pointer;
-          background: var(--color-primary); border-radius: var(--radius-full);
+          background: linear-gradient(
+            to right,
+            var(--color-primary)         0% var(--fill, 50%),
+            var(--color-surface-dynamic) var(--fill, 50%) 100%
+          );
+          border-radius: var(--radius-full);
         }
         &::-webkit-slider-thumb {
           -webkit-appearance: none;
@@ -405,17 +422,9 @@
         border-color     var(--transition-interactive),
         background-color var(--transition-interactive);
 
-      &:focus {
-        border-color: var(--color-primary);
-        outline: none;
-      }
-
+      &:focus { border-color: var(--color-primary); outline: none; }
       &::selection { background: var(--color-primary-highlight); }
-
-      &[disabled] {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
+      &[disabled] { opacity: 0.5; cursor: not-allowed; }
     }
   }
 </style>
@@ -427,37 +436,36 @@
   export default class extends Vue {
     private broadcast_url: string = ''
 
-    get admin() { return this.$accessor.user.admin }
+    get admin()     { return this.$accessor.user.admin }
     get connected() { return this.$accessor.connected }
 
-    get scroll() { return this.$accessor.settings.scroll.toString() }
-    set scroll(value: string) { this.$accessor.settings.setScroll(parseInt(value)) }
+    get scroll()    { return this.$accessor.settings.scroll.toString() }
+    set scroll(v: string) { this.$accessor.settings.setScroll(parseInt(v)) }
 
-    get scroll_invert() { return this.$accessor.settings.scroll_invert }
-    set scroll_invert(value: boolean) { this.$accessor.settings.setInvert(value) }
+    get scroll_invert()    { return this.$accessor.settings.scroll_invert }
+    set scroll_invert(v: boolean) { this.$accessor.settings.setInvert(v) }
 
-    get autoplay() { return this.$accessor.settings.autoplay }
-    set autoplay(value: boolean) { this.$accessor.settings.setAutoplay(value) }
+    get autoplay()    { return this.$accessor.settings.autoplay }
+    set autoplay(v: boolean) { this.$accessor.settings.setAutoplay(v) }
 
-    get ignore_emotes() { return this.$accessor.settings.ignore_emotes }
-    set ignore_emotes(value: boolean) { this.$accessor.settings.setIgnore(value) }
+    get ignore_emotes()    { return this.$accessor.settings.ignore_emotes }
+    set ignore_emotes(v: boolean) { this.$accessor.settings.setIgnore(v) }
 
-    get chat_sound() { return this.$accessor.settings.chat_sound }
-    set chat_sound(value: boolean) { this.$accessor.settings.setSound(value) }
+    get chat_sound()    { return this.$accessor.settings.chat_sound }
+    set chat_sound(v: boolean) { this.$accessor.settings.setSound(v) }
 
     get keyboard_layouts_list() { return this.$accessor.settings.keyboard_layouts_list }
-    get keyboard_layout() { return this.$accessor.settings.keyboard_layout }
+    get keyboard_layout()       { return this.$accessor.settings.keyboard_layout }
+    set keyboard_layout(v: string) {
+      this.$accessor.settings.setKeyboardLayout(v)
+      this.$accessor.remote.changeKeyboard()
+    }
 
-    get broadcast_is_active() { return this.$accessor.settings.broadcast_is_active }
-    get broadcast_url_remote() { return this.$accessor.settings.broadcast_url }
+    get broadcast_is_active()   { return this.$accessor.settings.broadcast_is_active }
+    get broadcast_url_remote()  { return this.$accessor.settings.broadcast_url }
 
     @Watch('broadcast_url_remote', { immediate: true })
     onBroadcastUrlChange() { this.broadcast_url = this.broadcast_url_remote }
-
-    set keyboard_layout(value: string) {
-      this.$accessor.settings.setKeyboardLayout(value)
-      this.$accessor.remote.changeKeyboard()
-    }
 
     logout() { this.$accessor.logout() }
   }

@@ -6,15 +6,11 @@
           !disabeld && shakeKbd ? 'shake' : '',
           disabeld && !hosting ? 'disabled' : '',
           !disabeld && !hosting ? 'faded' : '',
-          'fas',
-          'fa-keyboard',
-          'request',
+          'fas', 'fa-keyboard', 'request',
         ]"
         v-tooltip="{
           content: !disabeld || hosting ? (hosting ? $t('controls.release') : $t('controls.request')) : '',
-          placement: 'top',
-          offset: 5,
-          boundariesElement: 'body',
+          placement: 'top', offset: 5, boundariesElement: 'body',
           delay: { show: 300, hide: 100 },
         }"
         @click.stop.prevent="toggleControl"
@@ -25,9 +21,7 @@
         :class="[controlLocked ? 'disabled' : '', 'fas', 'fa-mouse-pointer']"
         v-tooltip="{
           content: controlLocked ? $t('controls.hasnot') : $t('controls.has'),
-          placement: 'top',
-          offset: 5,
-          boundariesElement: 'body',
+          placement: 'top', offset: 5, boundariesElement: 'body',
           delay: { show: 300, hide: 100 },
         }"
       />
@@ -37,9 +31,7 @@
         class="switch"
         v-tooltip="{
           content: hosting ? (locked ? $t('controls.unlock') : $t('controls.lock')) : '',
-          placement: 'top',
-          offset: 5,
-          boundariesElement: 'body',
+          placement: 'top', offset: 5, boundariesElement: 'body',
           delay: { show: 300, hide: 100 },
         }"
       >
@@ -63,9 +55,7 @@
         ]"
         v-tooltip="{
           content: microphoneActive ? $t('controls.mic_off') : $t('controls.mic_on'),
-          placement: 'top',
-          offset: 5,
-          boundariesElement: 'body',
+          placement: 'top', offset: 5, boundariesElement: 'body',
           delay: { show: 300, hide: 100 },
         }"
         @click.stop.prevent="toggleMicrophone"
@@ -77,7 +67,14 @@
           :class="[volume === 0 || muted ? 'fa-volume-mute' : 'fa-volume-up', 'fas']"
           @click.stop.prevent="toggleMute"
         />
-        <input type="range" min="0" max="100" v-model="volume" />
+        <!--
+          :style --fill drives the split track gradient.
+          volume range is 0–100, so fill % = volume directly.
+        -->
+        <input
+          type="range" min="0" max="100" v-model="volume"
+          :style="{ '--fill': volume + '%' }"
+        />
       </div>
     </li>
 
@@ -98,22 +95,20 @@
 </template>
 
 <style lang="scss" scoped>
-  .shake {
-    animation: shake 1.25s cubic-bezier(0, 0, 0, 1);
-  }
+  .shake { animation: shake 1.25s cubic-bezier(0, 0, 0, 1); }
 
   @keyframes shake {
-    0%   { transform: scale(1)    translate(0px,   0px)   rotate(0deg);   }
-    10%  { transform: scale(1.25) translate(-2px,  -2px)  rotate(-20deg); }
-    20%  { transform: scale(1.5)  translate(4px,   -4px)  rotate(20deg);  }
-    30%  { transform: scale(1.75) translate(-4px,  -6px)  rotate(-20deg); }
-    40%  { transform: scale(2)    translate(6px,   -8px)  rotate(20deg);  }
-    50%  { transform: scale(2.25) translate(-6px,  -10px) rotate(-20deg); }
-    60%  { transform: scale(2)    translate(6px,   -8px)  rotate(20deg);  }
-    70%  { transform: scale(1.75) translate(-4px,  -6px)  rotate(-20deg); }
-    80%  { transform: scale(1.5)  translate(4px,   -4px)  rotate(20deg);  }
-    90%  { transform: scale(1.25) translate(-2px,  -2px)  rotate(-20deg); }
-    100% { transform: scale(1)    translate(0px,   0px)   rotate(0deg);   }
+    0%   { transform: scale(1)    translate(0,    0)    rotate(0deg);   }
+    10%  { transform: scale(1.25) translate(-2px, -2px) rotate(-20deg); }
+    20%  { transform: scale(1.5)  translate(4px,  -4px) rotate(20deg);  }
+    30%  { transform: scale(1.75) translate(-4px, -6px) rotate(-20deg); }
+    40%  { transform: scale(2)    translate(6px,  -8px) rotate(20deg);  }
+    50%  { transform: scale(2.25) translate(-6px,-10px) rotate(-20deg); }
+    60%  { transform: scale(2)    translate(6px,  -8px) rotate(20deg);  }
+    70%  { transform: scale(1.75) translate(-4px, -6px) rotate(-20deg); }
+    80%  { transform: scale(1.5)  translate(4px,  -4px) rotate(20deg);  }
+    90%  { transform: scale(1.25) translate(-2px, -2px) rotate(-20deg); }
+    100% { transform: scale(1)    translate(0,    0)    rotate(0deg);   }
   }
 
   @keyframes stat-flip {
@@ -145,23 +140,19 @@
         will-change: transform;
         transition:
           transform var(--transition-fast),
-          color    var(--transition-interactive),
-          opacity  var(--transition-interactive);
+          color     var(--transition-interactive),
+          opacity   var(--transition-interactive);
 
         &:hover:not(.disabled):not(.shake) {
           transform: scale(1.18);
           color: var(--color-primary);
         }
-
-        &:active:not(.disabled) {
-          transform: scale(0.88);
-          transition-duration: 80ms;
-        }
-
-        &.faded   { color: var(--color-text-muted); }
+        &:active:not(.disabled) { transform: scale(0.88); transition-duration: 80ms; }
+        &.faded    { color: var(--color-text-muted); }
         &.disabled { color: var(--color-error); opacity: 0.4; pointer-events: none; }
       }
 
+      // ── Volume control ───────────────────────────────────────────────
       .volume {
         display: flex;
         flex-direction: row;
@@ -169,6 +160,8 @@
         gap: var(--space-2);
         white-space: nowrap;
 
+        // Split track: --fill CSS var is set via :style on the input (volume %).
+        // Filled = teal; unfilled = surface-dynamic (visible gray in both modes).
         input[type='range'] {
           width: 150px;
           height: 20px;
@@ -179,7 +172,12 @@
 
           &::-moz-range-track {
             width: 100%; height: 4px;
-            background: var(--color-primary); border-radius: var(--radius-full); cursor: pointer;
+            background: linear-gradient(
+              to right,
+              var(--color-primary)         0% var(--fill, 50%),
+              var(--color-surface-dynamic) var(--fill, 50%) 100%
+            );
+            border-radius: var(--radius-full); cursor: pointer;
           }
           &::-moz-range-thumb {
             height: 12px; width: 12px; border-radius: var(--radius-full);
@@ -190,7 +188,12 @@
 
           &::-webkit-slider-runnable-track {
             width: 100%; height: 4px;
-            background: var(--color-primary); border-radius: var(--radius-full); cursor: pointer;
+            background: linear-gradient(
+              to right,
+              var(--color-primary)         0% var(--fill, 50%),
+              var(--color-surface-dynamic) var(--fill, 50%) 100%
+            );
+            border-radius: var(--radius-full); cursor: pointer;
           }
           &::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -202,10 +205,7 @@
         }
       }
 
-      // ------------------------------------------------------------------
-      // Lock toggle switch — OFF track: --color-text-muted
-      // Contrast: light ~5:1 / dark ~3.7:1 (was text-faint: ~2.3:1 both).
-      // ------------------------------------------------------------------
+      // ── Lock toggle switch ───────────────────────────────────────────
       .switch {
         margin: 0 var(--space-1);
         display: block;
@@ -213,11 +213,7 @@
         width: 42px;
         height: 24px;
 
-        input[type='checkbox'] {
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
+        input[type='checkbox'] { opacity: 0; width: 0; height: 0; }
 
         span {
           position: absolute;
@@ -236,10 +232,8 @@
             text-align: center;
             color: var(--color-bg);
             position: absolute;
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
             background-color: #fff;
             border-radius: 50%;
             box-shadow: var(--shadow-sm);
@@ -261,6 +255,7 @@
         }
       }
 
+      // ── Stats badge ──────────────────────────────────────────────────
       &.stats-badge {
         min-width: unset;
         padding: 0 var(--space-1);
@@ -283,7 +278,7 @@
             border-color     var(--transition-slow);
         }
 
-        .stat { display: inline-flex; align-items: baseline; gap: 2px; }
+        .stat     { display: inline-flex; align-items: baseline; gap: 2px; }
         .stat-val {
           color: var(--color-primary);
           font-weight: 500;
@@ -318,9 +313,7 @@
     displayFps = 0
     displayBitrateKbps = 0
 
-    get statsVisible(): boolean {
-      return this.displayFps > 0 || this.displayBitrateKbps > 0
-    }
+    get statsVisible(): boolean { return this.displayFps > 0 || this.displayBitrateKbps > 0 }
 
     get displayBitrateLabel(): string {
       return this.targetBitrateKbps >= 1000
@@ -328,13 +321,9 @@
         : String(Math.round(this.displayBitrateKbps))
     }
 
-    get bitrateUnit(): string {
-      return this.targetBitrateKbps >= 1000 ? 'Mbps' : 'Kbps'
-    }
+    get bitrateUnit(): string { return this.targetBitrateKbps >= 1000 ? 'Mbps' : 'Kbps' }
 
-    mounted() {
-      this.statsInterval = window.setInterval(() => void this.pollStats(), 2000)
-    }
+    mounted() { this.statsInterval = window.setInterval(() => void this.pollStats(), 2000) }
 
     beforeDestroy() {
       if (this.statsInterval !== null) clearInterval(this.statsInterval)
@@ -344,10 +333,8 @@
     @Watch('playing')
     onPlayingChanged(isPlaying: boolean) {
       if (!isPlaying) {
-        this.targetFps = 0
-        this.targetBitrateKbps = 0
-        this.lastBytesReceived = 0
-        this.lastStatsTime = 0
+        this.targetFps = 0; this.targetBitrateKbps = 0
+        this.lastBytesReceived = 0; this.lastStatsTime = 0
         this.scheduleAnimate()
       }
     }
@@ -360,16 +347,10 @@
         const stats = await pc.getStats()
         stats.forEach((r: any) => {
           if (r.type !== 'inbound-rtp' || r.kind !== 'video') return
-          if (typeof r.framesPerSecond === 'number') {
-            this.targetFps = Math.round(r.framesPerSecond)
-          }
+          if (typeof r.framesPerSecond === 'number') this.targetFps = Math.round(r.framesPerSecond)
           if (typeof r.bytesReceived === 'number' && this.lastStatsTime > 0) {
             const dt = (now - this.lastStatsTime) / 1000
-            if (dt > 0) {
-              this.targetBitrateKbps = Math.round(
-                ((r.bytesReceived - this.lastBytesReceived) * 8) / dt / 1000,
-              )
-            }
+            if (dt > 0) this.targetBitrateKbps = Math.round(((r.bytesReceived - this.lastBytesReceived) * 8) / dt / 1000)
           }
           this.lastBytesReceived = r.bytesReceived ?? this.lastBytesReceived
           this.lastStatsTime = now
@@ -396,21 +377,19 @@
       }
     }
 
-    get controlLocked() {
-      return 'control' in this.$accessor.locked && this.$accessor.locked['control'] && !this.$accessor.user.admin
-    }
+    get controlLocked()   { return 'control' in this.$accessor.locked && this.$accessor.locked['control'] && !this.$accessor.user.admin }
     get disabeld()        { return this.$accessor.remote.hosted }
     get hosting()         { return this.$accessor.remote.hosting }
     get controlling()     { return this.$accessor.remote.controlling }
     get implicitHosting() { return this.$accessor.remote.implicitHosting }
     get micAllowed()      { return this.controlling }
     get volume()          { return this.$accessor.video.volume }
-    set volume(volume: number) { this.$accessor.video.setVolume(volume) }
+    set volume(v: number) { this.$accessor.video.setVolume(v) }
     get muted()           { return this.$accessor.video.muted || this.volume === 0 }
     get playing()         { return this.$accessor.video.playing }
     get playable()        { return this.$accessor.video.playable }
     get locked()          { return this.$accessor.remote.locked && this.$accessor.remote.hosting }
-    set locked(locked: boolean) { this.$accessor.remote.setLocked(locked) }
+    set locked(v: boolean){ this.$accessor.remote.setLocked(v) }
 
     toggleControl() { if (!this.playable) return; this.$accessor.remote.toggle() }
     toggleMedia()   { if (!this.playable) return; this.$accessor.video.togglePlay() }
