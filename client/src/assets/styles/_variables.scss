@@ -199,5 +199,8 @@ $style-error:   var(--color-error);
 
 // Layout dimensions (structural — do not change without updating components)
 $menu-height:     40px;
-$controls-height: 125px;
+// R4: reduced from 125px (members row ~72px + controls ~53px)
+// neko-members removed from controls bar → room-menu fills full height.
+// 64px = 8×8pt grid; comfortable breathing room around ≥44px touch-targets.
+$controls-height: 64px;
 $side-width:      400px;
