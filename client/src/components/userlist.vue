@@ -4,7 +4,10 @@
     <ul v-if="loading" class="userlist userlist--skeleton" aria-hidden="true">
       <li v-for="n in 4" :key="'sk' + n" class="userlist-row userlist-row--skeleton">
         <div class="skeleton sk-avatar"></div>
-        <div class="skeleton sk-name"></div>
+        <div class="sk-content">
+          <div class="skeleton sk-name"></div>
+          <div class="skeleton sk-actions"></div>
+        </div>
       </li>
     </ul>
 
@@ -12,8 +15,10 @@
     <ul v-else class="userlist" role="list">
       <!-- Self -->
       <li v-if="self" class="userlist-row userlist-row--self">
-        <neko-avatar class="user-avatar" :seed="self.displayname" :size="28" />
-        <span class="user-name">{{ self.displayname }}</span>
+        <neko-avatar class="user-avatar" :seed="self.displayname" :size="32" />
+        <div class="user-info">
+          <span class="user-name">{{ self.displayname }}</span>
+        </div>
         <span class="user-you-badge">{{ $t('you') || 'You' }}</span>
       </li>
 
@@ -25,71 +30,86 @@
         :class="{ 'is-host': m.id === host, 'is-admin': m.admin }"
         @contextmenu.stop.prevent
       >
-        <neko-avatar class="user-avatar" :seed="m.displayname" :size="28" />
-        <span class="user-name">{{ m.displayname }}</span>
+        <neko-avatar class="user-avatar" :seed="m.displayname" :size="32" />
 
-        <!-- Host crown -->
-        <i
-          v-if="m.id === host"
-          class="fas fa-crown user-crown"
-          aria-label="Host"
-        />
+        <div class="user-info">
+          <!-- Name row -->
+          <div class="user-name-row">
+            <span class="user-name">{{ m.displayname }}</span>
+            <i
+              v-if="m.id === host"
+              class="fas fa-crown user-crown"
+              aria-label="Host"
+            />
+          </div>
 
-        <!-- Moderation actions: only rendered for admin/host, revealed on hover -->
-        <div v-if="canModerate" class="user-actions" @click.stop>
-          <!-- Ignore / Unignore -->
-          <button
-            class="action-btn"
-            :title="m.ignored ? 'Unignore' : 'Ignore'"
-            :aria-label="m.ignored ? 'Unignore user' : 'Ignore user'"
-            @click="toggleIgnore(m)"
-          >
-            <i :class="m.ignored ? 'fas fa-eye' : 'fas fa-eye-slash'" aria-hidden="true" />
-          </button>
+          <!-- Action buttons row: always visible when canModerate -->
+          <div v-if="canModerate" class="user-actions" @click.stop>
+            <!-- Ignore / Unignore -->
+            <button
+              class="action-btn"
+              :title="m.ignored ? 'Unignore' : 'Ignore'"
+              :aria-label="m.ignored ? 'Unignore user' : 'Ignore user'"
+              @click="toggleIgnore(m)"
+            >
+              <i :class="m.ignored ? 'fas fa-eye' : 'fas fa-eye-slash'" aria-hidden="true" />
+            </button>
 
-          <!-- Mute / Unmute (admin only) -->
-          <button
-            v-if="isAdmin"
-            class="action-btn"
-            :title="m.muted ? 'Unmute' : 'Mute'"
-            :aria-label="m.muted ? 'Unmute user' : 'Mute user'"
-            @click="toggleMute(m)"
-          >
-            <i :class="m.muted ? 'fas fa-microphone' : 'fas fa-microphone-slash'" aria-hidden="true" />
-          </button>
+            <!-- Mute / Unmute (admin only) -->
+            <button
+              v-if="isAdmin"
+              class="action-btn"
+              :title="m.muted ? 'Unmute' : 'Mute'"
+              :aria-label="m.muted ? 'Unmute user' : 'Mute user'"
+              @click="toggleMute(m)"
+            >
+              <i :class="m.muted ? 'fas fa-microphone' : 'fas fa-microphone-slash'" aria-hidden="true" />
+            </button>
 
-          <!-- Give Controls: hidden if member already has host or implicit hosting active -->
-          <button
-            v-if="!implicitHosting && m.id !== host"
-            class="action-btn"
-            title="Give Controls"
-            aria-label="Give controls to user"
-            @click="give(m)"
-          >
-            <i class="fas fa-gamepad" aria-hidden="true" />
-          </button>
+            <!-- Give Controls: shown when member does NOT have host -->
+            <button
+              v-if="!implicitHosting && m.id !== host"
+              class="action-btn"
+              title="Give Controls"
+              aria-label="Give controls to user"
+              @click="give(m)"
+            >
+              <i class="fas fa-gamepad" aria-hidden="true" />
+            </button>
 
-          <!-- Kick (admin only, non-admin target) -->
-          <button
-            v-if="isAdmin && !m.admin"
-            class="action-btn action-btn--destructive"
-            title="Kick"
-            aria-label="Kick user"
-            @click="kick(m)"
-          >
-            <i class="fas fa-user-times" aria-hidden="true" />
-          </button>
+            <!-- Force Take Controls: shown when this member IS the host (admin only) -->
+            <button
+              v-if="isAdmin && m.id === host"
+              class="action-btn action-btn--take"
+              title="Force Take Controls"
+              aria-label="Force take controls from user"
+              @click="forceControl()"
+            >
+              <i class="fas fa-hand-paper" aria-hidden="true" />
+            </button>
 
-          <!-- Ban IP (admin only, non-admin target) -->
-          <button
-            v-if="isAdmin && !m.admin"
-            class="action-btn action-btn--destructive"
-            title="Ban IP"
-            aria-label="Ban IP address"
-            @click="ban(m)"
-          >
-            <i class="fas fa-ban" aria-hidden="true" />
-          </button>
+            <!-- Kick (admin only, non-admin target) -->
+            <button
+              v-if="isAdmin && !m.admin"
+              class="action-btn action-btn--destructive"
+              title="Kick"
+              aria-label="Kick user"
+              @click="kick(m)"
+            >
+              <i class="fas fa-user-times" aria-hidden="true" />
+            </button>
+
+            <!-- Ban IP (admin only, non-admin target) -->
+            <button
+              v-if="isAdmin && !m.admin"
+              class="action-btn action-btn--destructive"
+              title="Ban IP"
+              aria-label="Ban IP address"
+              @click="ban(m)"
+            >
+              <i class="fas fa-ban" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </li>
     </ul>
@@ -114,26 +134,37 @@
     animation: shimmer 1.5s ease-in-out infinite;
     border-radius: var(--radius-sm);
 
-    @media (prefers-reduced-motion: reduce) {
-      animation: none;
-    }
+    @media (prefers-reduced-motion: reduce) { animation: none; }
   }
 
   .sk-avatar {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-full);
     flex-shrink: 0;
   }
 
-  .sk-name {
+  .sk-content {
     flex: 1;
-    height: 0.875rem;
-    border-radius: var(--radius-sm);
-    max-width: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
   }
 
-  // ── Root container: fills parent panel (flex:1 from side.vue) ────────────
+  .sk-name {
+    height: 0.875rem;
+    border-radius: var(--radius-sm);
+    max-width: 120px;
+  }
+
+  .sk-actions {
+    height: 0.75rem;
+    border-radius: var(--radius-sm);
+    max-width: 80px;
+  }
+
+  // ── Root container ────────────────────────────────────────────────────────
   .neko-userlist {
     flex: 1;
     display: flex;
@@ -148,7 +179,6 @@
     &::-webkit-scrollbar-thumb {
       background: var(--color-surface-offset);
       border-radius: var(--radius-full);
-
       &:hover { background: var(--color-surface-dynamic); }
     }
   }
@@ -162,18 +192,15 @@
     flex-direction: column;
     gap: 0;
 
-    &--skeleton {
-      padding: var(--space-3) 0;
-    }
+    &--skeleton { padding: var(--space-3) 0; }
   }
 
-  // ── Row ──────────────────────────────────────────────────────────────────
+  // ── Row (card layout) ─────────────────────────────────────────────────────
   .userlist-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--space-3);
     padding: var(--space-2) var(--space-4);
-    min-height: 44px; // touch-target floor
     border-radius: var(--radius-md);
     margin: 0 var(--space-2);
     cursor: default;
@@ -181,34 +208,52 @@
 
     &:hover {
       background: color-mix(in srgb, var(--color-surface-offset) 55%, transparent);
-
-      // Reveal action icons on hover
-      .user-actions { opacity: 1; pointer-events: auto; }
     }
 
-    // Self row: slightly subdued, no hover effect
+    // Self row
     &--self {
+      align-items: center;
       cursor: default;
-
       .user-name { color: var(--color-text-muted); }
-
       &:hover { background: transparent; }
     }
 
-    // Skeleton row: no hover
-    &--skeleton { cursor: default; &:hover { background: transparent; } }
+    // Skeleton row
+    &--skeleton {
+      cursor: default;
+      align-items: flex-start;
+      &:hover { background: transparent; }
+    }
   }
 
-  // ── Avatar ───────────────────────────────────────────────────────────────
+  // ── Avatar: spans both name + actions rows ────────────────────────────────
   .user-avatar {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-full);
     overflow: hidden;
     flex-shrink: 0;
+    // Vertically centre avatar between the two info rows
+    margin-top: var(--space-1);
   }
 
-  // ── Name ─────────────────────────────────────────────────────────────────
+  // ── Info block (name row + actions row) ───────────────────────────────────
+  .user-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  // ── Name row ─────────────────────────────────────────────────────────────
+  .user-name-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
   .user-name {
     flex: 1;
     font-size: var(--text-sm);
@@ -221,7 +266,7 @@
     min-width: 0;
   }
 
-  // ── "You" badge (self row) ───────────────────────────────────────────────
+  // ── "You" badge (self row) ────────────────────────────────────────────────
   .user-you-badge {
     font-size: var(--text-xs);
     font-family: var(--font-body);
@@ -232,7 +277,7 @@
     flex-shrink: 0;
   }
 
-  // ── Host crown icon ──────────────────────────────────────────────────────
+  // ── Host crown icon ───────────────────────────────────────────────────────
   .user-crown {
     font-size: var(--text-xs);
     color: var(--color-primary);
@@ -240,31 +285,25 @@
     transition: color var(--transition-interactive);
   }
 
-  // ── Moderation action icons ───────────────────────────────────────────────
+  // ── Action buttons row: always visible ────────────────────────────────────
   .user-actions {
     display: flex;
     align-items: center;
     gap: var(--space-1);
+    flex-wrap: wrap;
     flex-shrink: 0;
-    // Hidden by default; shown on row hover via parent :hover rule
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--transition-interactive);
   }
 
   .action-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    // Touch-target: min 44×44px
-    width: 28px;
-    height: 28px;
-    min-width: 44px;
-    min-height: 44px;
+    width: 26px;
+    height: 26px;
     padding: 0;
     background: none;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     color: var(--color-text-muted);
     cursor: pointer;
     transition:
@@ -273,7 +312,7 @@
       transform        var(--transition-interactive);
 
     i {
-      font-size: var(--text-xs);
+      font-size: 11px;
       pointer-events: none;
       transition: transform var(--transition-interactive);
     }
@@ -281,7 +320,6 @@
     &:hover {
       background: color-mix(in srgb, var(--color-surface-dynamic) 70%, transparent);
       color: var(--color-text);
-
       i { transform: scale(1.18); }
     }
 
@@ -292,7 +330,16 @@
       outline-offset: -2px;
     }
 
-    // Destructive actions (Kick, Ban): red on hover
+    // Force-take: amber accent to signal "reclaim" intent
+    &--take {
+      color: var(--color-warning);
+      &:hover {
+        color: var(--color-warning-hover);
+        background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+      }
+    }
+
+    // Destructive actions (Kick, Ban)
     &--destructive:hover {
       color: var(--color-error);
       background: color-mix(in srgb, var(--color-error) 10%, transparent);
@@ -338,7 +385,6 @@
     }
 
     get otherMembers() {
-      // members is a { [id: string]: Member } dict — Object.values() converts to Member[]
       return Object.values(this.members).filter((m: any) => m.id !== this.id && m.connected)
     }
 
@@ -346,7 +392,6 @@
       return this.$accessor.connecting
     }
 
-    // Admin or current host may see moderation actions
     get canModerate() {
       return (
         this.$accessor.user.admin ||
@@ -383,12 +428,16 @@
     }
 
     give(member: Member) {
-      // Admin uses privileged give; non-admin host uses standard give
       if (this.$accessor.user.admin) {
         this.$accessor.remote.adminGive(member)
       } else {
         this.$accessor.remote.give(member)
       }
+    }
+
+    forceControl() {
+      // Admin forcibly reclaims control from current host
+      this.$accessor.remote.adminForceControl()
     }
 
     async kick(member: Member) {
