@@ -4,8 +4,9 @@
       <neko-unsupported />
     </template>
     <template v-else>
-      <main class="neko-main">
-        <div v-if="!videoOnly" class="header-container">
+      <!-- ref="mainContainer" used for scroll-listener (sticky header state) -->
+      <main class="neko-main" ref="mainContainer">
+        <div v-if="!videoOnly" class="header-container" :class="{ 'is-scrolled': headerScrolled }">
           <neko-header :currentTheme="currentTheme" @toggle-theme="toggleTheme" />
         </div>
         <div class="video-container">
@@ -71,16 +72,37 @@
       flex-direction: column;
       display: flex;
       overflow: auto;
+      // Native smooth scrolling for all scroll events within this container
+      scroll-behavior: smooth;
       // Transition for the split-separator glow
       transition: box-shadow var(--transition-slow);
 
       .header-container {
-        // Transparent: lets the gradient in header.vue show through without doubling bg
+        // Transparent baseline: lets header.vue gradient show through
         background: transparent;
         height: $menu-height;
         flex-shrink: 0;
         display: flex;
-        transition: background-color var(--transition-slow);
+        // Sticky: stays at top when neko-main is scrolled (mobile)
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        transition:
+          background-color var(--transition-slow),
+          backdrop-filter  var(--transition-slow),
+          box-shadow       var(--transition-slow);
+
+        // Elevated state: active when user has scrolled down > 4px
+        // Adds glassmorphism blur + shadow to visually lift the header
+        // Note: This is a preview of the full header glassmorphism (Phase 5).
+        &.is-scrolled {
+          background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          box-shadow:
+            0 1px 0 color-mix(in srgb, var(--color-border) 70%, transparent),
+            var(--shadow-sm);
+        }
       }
 
       .video-container {
@@ -109,6 +131,10 @@
         // Teal-tinted top border as split accent between video and controls
         border-top: 1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-border));
         transition: background-color var(--transition-slow);
+        // Sticky: stays at bottom when neko-main is scrolled (mobile)
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
 
         .room-menu {
           max-width: 100%;
@@ -259,9 +285,14 @@
   })
   export default class extends Vue {
     @Ref('video') video!: Video
+    @Ref('mainContainer') mainContainer!: HTMLElement
 
     shakeKbd = false
     currentTheme: Theme = 'dark'
+
+    // Tracks whether the main container has been scrolled — drives .is-scrolled on header
+    headerScrolled = false
+    private mainScrollHandler: (() => void) | null = null
 
     mounted() {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -274,6 +305,22 @@
           this.applyTheme(this.currentTheme)
         }
       })
+
+      // Attach passive scroll listener to detect header elevation state
+      this.$nextTick(() => {
+        if (this.mainContainer) {
+          this.mainScrollHandler = () => {
+            this.headerScrolled = this.mainContainer.scrollTop > 4
+          }
+          this.mainContainer.addEventListener('scroll', this.mainScrollHandler, { passive: true })
+        }
+      })
+    }
+
+    beforeDestroy() {
+      if (this.mainContainer && this.mainScrollHandler) {
+        this.mainContainer.removeEventListener('scroll', this.mainScrollHandler)
+      }
     }
 
     private _userChoseTheme = false
