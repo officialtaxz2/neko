@@ -51,14 +51,15 @@ docker compose up --force-recreate
 | Datei / Ordner | Inhalt | Status |
 |---|---|---|
 | `client/src/assets/styles/_variables.scss` | Alle Design-Tokens: Farben, Fonts, Spacing, Shadows, Transitions als CSS Custom Properties | ✅ Rewritten |
-| `client/src/assets/styles/main.scss` | Fontshare CDN-Import (Satoshi + Cabinet Grotesk), body/html-Basis, globale Resets | ✅ Updated |
+| `client/src/assets/styles/main.scss` | Fontshare CDN-Import (Satoshi + Cabinet Grotesk), body/html-Basis, globale Resets, Focus-States, `prefers-reduced-motion` | ✅ Updated |
 | `client/src/assets/styles/_reset.scss` | CSS-Reset | Unverändert |
 | `client/src/assets/styles/vendor/` | Font Awesome, SweetAlert2, Tooltips, Emoji — nicht anfassen | Unverändert |
 | `client/src/assets/styles/fonts/` | Lokale Whitney-Fonts (veraltet, nicht mehr importiert) | Inaktiv |
-| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout | ✅ Updated |
-| `client/src/components/header.vue` | Topbar: Theme-Toggle-Button, CSS Tokens, Micro-Animations | ✅ Updated |
-| `client/src/components/side.vue` | Seitenleiste (Chat, Members, Files) | ⬜ Offen |
-| `client/src/components/chat.vue` | Chat-Panel | ⬜ Offen |
+| `client/src/app.vue` | Root-Komponente: Theme-Initialisierung, `data-theme`-Toggle, Layout, CSS Tokens | ✅ Updated |
+| `client/src/components/header.vue` | Topbar: Theme-Toggle-Button, CSS Tokens, Micro-Animations (Hover/Active) | ✅ Updated |
+| `client/src/components/side.vue` | Sidebar: Pill-Tabs, Hover/Active Micro-Animations, Vue Tab-Transition, Touch-Targets, CSS Tokens | ✅ Updated |
+| `client/src/components/chat.vue` | Chat-Panel: Pill-Username-Badges, Avatar-Hover, Message-Hover, Code-Block-Tokens, Textarea-Redesign | ✅ Updated |
+| `client/src/components/members.vue` | Members-Bar: Status-Dots (online/away/busy/offline), Avatar-Hover, Host/Admin-Badges, CSS Tokens | ✅ Updated |
 | `client/src/components/controls.vue` | Steuerleiste | ⬜ Offen |
 | `client/src/components/connect.vue` | Login/Connect-Dialog | ⬜ Offen |
 | `client/src/components/settings.vue` | Einstellungen-Panel | ⬜ Offen |
@@ -66,7 +67,7 @@ docker compose up --force-recreate
 
 **Empfohlene Bearbeitungsreihenfolge (von außen nach innen):**
 ```
-_variables.scss → main.scss → app.vue → header.vue → side.vue → chat.vue → controls.vue → connect.vue → settings.vue → video.vue
+_variables.scss → main.scss → app.vue → header.vue → side.vue → chat.vue → members.vue → controls.vue → connect.vue → settings.vue → video.vue
 ```
 
 ---
@@ -75,7 +76,7 @@ _variables.scss → main.scss → app.vue → header.vue → side.vue → chat.v
 
 Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 
-> **Legende:** ✅ Fertig · 🔄 In Arbeit · ⬜ Offen
+> **Legende:** ✅ Fertig · 🔄 In Arbeit (teilweise) · ⬜ Offen
 
 ---
 
@@ -99,15 +100,19 @@ Die Roadmap folgt der **Prioritätsmatrix** aus dem Design-System (Kat. 0–4).
 | Task | Status | Datei(en) |
 |---|---|---|
 | Focus-States global sichtbar (`:focus-visible`, nie `outline: none` ohne Ersatz) | ✅ | `main.scss` |
-| Micro-Animations: Hover `scale(1.08)` + Active `scale(0.95)` auf Header-Icons + Theme-Toggle | ✅ | `header.vue` |
 | `prefers-reduced-motion` global implementiert | ✅ | `main.scss` |
-| Micro-Animations: Sidebar-Icons, Buttons in übrigen Komponenten | ⬜ | `side.vue`, `controls.vue` |
-| Color-Coded Status + Status Dot Indicators bei Nutzern (Online / Away / Busy) | ⬜ | `side.vue`, `chat.vue` |
-| Collapsible Sections: Chat, Members, Files als aufklappbare Panels | ⬜ | `side.vue` |
+| Micro-Animations auf Header-Icons + Theme-Toggle (Hover `scale(1.08)`, Active `scale(0.95)`) | ✅ | `header.vue` |
+| Micro-Animations auf Sidebar-Tabs (Hover `scale(1.15)` Icon, `translateY(-1px)`, Active `scale(0.96)`) | ✅ | `side.vue` |
+| Micro-Animations auf Chat- und Members-Avataren (Hover `scale(1.08)`, Active `scale(0.95)`) | ✅ | `chat.vue`, `members.vue` |
+| Micro-Animations auf Controls-Buttons | ⬜ | `controls.vue` |
+| Color-Coded Status Dot Indicators bei Nutzern (4 Zustände: online/away/busy/offline) | ✅ | `members.vue` |
+| Pill-Shaped Tabs in der Sidebar-Navigation | ✅ | `side.vue` |
+| Pill-Shaped Username-Badges im Chat | ✅ | `chat.vue` |
+| Smooth Tab-Inhalt-Transition (Vue `<transition>` fade+slide, `mode="out-in"`) | ✅ | `side.vue` |
+| Smooth Sidebar open/close Animation (`app.vue` `v-if` → `<transition>`) | ⬜ | `app.vue` |
 | Custom Toggle Switches im Settings-Panel (animiert) | ⬜ | `settings.vue` |
-| Pill-Shaped Elements: Status-Labels, User-Badges | ⬜ | `side.vue`, `chat.vue` |
-| Smooth Panel-Ein-/Ausblenden (keine Instant-Show/Hide) | ⬜ | alle Panel-Komponenten |
-| Touch-Targets ≥ 44×44px, 8px Gap zwischen Touch-Elementen | ⬜ | alle Komponenten |
+| Touch-Targets ≥ 44×44px: Sidebar-Tabs | ✅ | `side.vue` |
+| Touch-Targets ≥ 44×44px: Controls, Connect, Settings | ⬜ | `controls.vue`, `connect.vue`, `settings.vue` |
 
 ---
 
