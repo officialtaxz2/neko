@@ -9,6 +9,7 @@ export const side = {
   chat: 'Chat',
   files: 'Archivos',
   settings: 'Configuración',
+  users: 'Usuarios',
 }
 
 export const connect = {
@@ -68,7 +69,7 @@ export const locks = {
     unlock: 'Desbloquear sala (para usuarios)',
     locked: 'Sala bloqueada (para usuarios)',
     unlocked: 'Sala desbloqueada (para usuarios)',
-    notif_locked: 'bloqueó la sala',
+    notif_locked: 'bloquó la sala',
     notif_unlocked: 'desbloqueó la sala',
   },
   file_transfer: {
@@ -114,7 +115,7 @@ export const notifications = {
   controls_has_alt: 'Pero le hice saber a la persona que los querías',
   controls_requesting: '{name} está solicitando los controles',
   resolution: 'cambió la resolución a {width}x{height}@{rate}',
-  banned: 'bloqueó a {name}',
+  banned: 'bloquó a {name}',
   kicked: 'expulsó a {name}',
   muted: 'silenció a {name}',
   unmuted: 'quitó el silencio a {name}',

@@ -9,6 +9,7 @@ export const side = {
   chat: 'Chatti',
   files: 'Tiedostot',
   settings: 'Asetukset',
+  users: 'Käyttäjät',
 }
 
 export const connect = {
@@ -30,7 +31,7 @@ export const context = {
   take: 'Pakko ota kontrollit',
   give: 'Anna kontrollit',
   kick: 'Heitä ulos',
-  ban: 'Kiellä IP',
+  ban: 'Kieldä IP',
   confirm: {
     kick_title: 'Haluatko heittää {name} ulos?',
     kick_text: 'Oletko varma että haluat heittää {name} ulos?',
@@ -112,7 +113,7 @@ export const notifications = {
   controls_given: 'antoi kontrollit {name}',
   controls_has: '{name} on kontrollit',
   controls_has_alt: 'Kerroin henkilölle että haluat ne',
-  controls_requesting: '{name} pyytää kontrolleja',
+  controls_requesting: '{name} pytää kontrolleja',
   resolution: 'vaihdettu resoluutio {width}x{height}@{rate}',
   banned: 'kielletty {name}',
   kicked: 'heitetty {name} ulos',
