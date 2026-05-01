@@ -13,6 +13,7 @@ export const state = () => {
   return {
     scroll: get<number>('scroll', 10),
     scroll_invert: get<boolean>('scroll_invert', true),
+    trackpad_mode: get<boolean>('trackpad_mode', false),
     autoplay: get<boolean>('autoplay', true),
     ignore_emotes: get<boolean>('ignore_emotes', false),
     chat_sound: get<boolean>('chat_sound', true),
@@ -25,7 +26,9 @@ export const state = () => {
   }
 }
 
-export const getters = getterTree(state, {})
+export const getters = getterTree(state, {
+  trackpad_mode: (state) => state.trackpad_mode,
+})
 
 export const mutations = mutationTree(state, {
   setScroll(state, scroll: number) {
@@ -36,6 +39,11 @@ export const mutations = mutationTree(state, {
   setInvert(state, value: boolean) {
     state.scroll_invert = value
     set('scroll_invert', value)
+  },
+
+  setTrackpadMode(state, value: boolean) {
+    state.trackpad_mode = value
+    set('trackpad_mode', value)
   },
 
   setAutoplay(state, value: boolean) {
