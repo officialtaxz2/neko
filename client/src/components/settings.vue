@@ -13,13 +13,25 @@
             <span>{{ $t('setting.scroll') }}</span>
             <label class="slider">
               <!--
-                :style sets --fill so the CSS track gradient knows the
-                filled portion. Formula: (value - min) / (max - min) * 100.
+                max is 50 (was 100). --fill formula updated accordingly.
+                The tooltip bubble shows the live value while dragging.
               -->
-              <input
-                type="range" min="1" max="100" v-model="scroll"
-                :style="{ '--fill': ((+scroll - 1) / 99 * 100) + '%' }"
-              />
+              <div class="slider-wrap">
+                <input
+                  type="range" min="1" max="50" v-model="scroll"
+                  :style="{ '--fill': ((+scroll - 1) / 49 * 100) + '%' }"
+                  @mousedown="showTooltip"
+                  @touchstart="showTooltip"
+                  @mouseup="hideTooltip"
+                  @touchend="hideTooltip"
+                />
+                <span
+                  class="slider-tooltip"
+                  :class="{ 'slider-tooltip--visible': tooltipVisible }"
+                  :style="{ left: ((+scroll - 1) / 49 * 100) + '%' }"
+                  aria-hidden="true"
+                >{{ scroll }}</span>
+              </div>
             </label>
           </div>
           <div class="row">
@@ -294,278 +306,309 @@
           display: flex;
           align-items: center;
           gap: var(--space-2);
-          flex-wrap: wrap;
         }
 
-        // Rows containing a select stack label above select so neither
-        // clips in half-width cards where row inner-width < 120px.
-        &:has(.select) {
-          flex-direction: column;
-          align-items: flex-start;
-          justify-content: center;
-          gap: var(--space-1);
-          padding-block: var(--space-2);
-          min-height: 52px;
+        // Touch-only badge
+        .badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 2px var(--space-2);
+          border-radius: var(--radius-full);
+          font-size: var(--text-xs);
+          font-weight: 500;
+          line-height: 1;
+          white-space: nowrap;
 
-          > span { flex: none; }
+          &.badge--mobile {
+            background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+            color: var(--color-primary);
+            border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+          }
 
-          .select {
-            width: 100%;
-            max-width: 100%;
-
-            select {
-              text-align: left;
-              width: 100%;
-              max-width: 100%;
-            }
+          &.badge--desktop {
+            background: color-mix(in srgb, var(--color-text-faint) 16%, transparent);
+            color: var(--color-text-muted);
+            border: 1px solid color-mix(in srgb, var(--color-text-faint) 30%, transparent);
           }
         }
-      }
-    }
-
-    // ── Touch-mode badge ────────────────────────────────────────────
-    // Green on real touch devices, neutral gray on desktop.
-    // Intentionally small (text-xs) — secondary information, not a CTA.
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 1px var(--space-2);
-      border-radius: var(--radius-full);
-      font-size: var(--text-xs);
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      white-space: nowrap;
-      line-height: 1.6;
-
-      &--mobile {
-        background: color-mix(in srgb, var(--color-success) 15%, transparent);
-        color: var(--color-success);
-        border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
-      }
-
-      &--desktop {
-        background: color-mix(in srgb, var(--color-text-muted) 12%, transparent);
-        color: var(--color-text-muted);
-        border: 1px solid color-mix(in srgb, var(--color-text-muted) 25%, transparent);
-      }
-    }
-
-    // LOG OUT: ghost button at rest — destructive action should not use
-    // the primary CTA color. Neutral surface bg at rest (no extra border so
-    // no double-frame against the enclosing bento-card border). Error-red on
-    // hover signals the destructive nature without being visually aggressive.
-    .btn-logout {
-      width: 100%;
-      min-height: 44px;
-      border-radius: var(--radius-md);
-      border: 1px solid transparent;
-      background: var(--color-surface-offset);
-      color: var(--color-text-muted);
-      font-size: var(--text-sm);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      cursor: pointer;
-      transition:
-        background   var(--transition-interactive),
-        border-color var(--transition-interactive),
-        color        var(--transition-interactive),
-        transform    var(--transition-fast);
-
-      &:hover {
-        background:   color-mix(in srgb, var(--color-error) 10%, transparent);
-        border-color: var(--color-error);
-        color:        var(--color-error);
-      }
-      &:active { transform: scale(0.97); }
-    }
-
-    // ── Toggle Switch ───────────────────────────────────────────────
-    .switch {
-      flex-shrink: 0;
-      display: inline-block;
-      position: relative;
-      width: 44px;
-      height: 44px;
-      padding: 10px 1px;
-      cursor: pointer;
-
-      input { position: absolute; opacity: 0; width: 0; height: 0; }
-
-      span {
-        position: absolute;
-        cursor: pointer;
-        top: 10px; left: 1px; right: 1px; bottom: 10px;
-        background-color: var(--color-text-muted);
-        border-radius: var(--radius-full);
-        transition: background-color var(--transition-interactive);
-
-        &::before {
-          content: '';
-          position: absolute;
-          height: 18px; width: 18px;
-          left: 3px; bottom: 3px;
-          background-color: #fff;
-          border-radius: 50%;
-          box-shadow: var(--shadow-sm);
-          transition: transform var(--transition-interactive);
-          will-change: transform;
-        }
-      }
-
-      &:hover span {
-        background-color: color-mix(in srgb, var(--color-text-muted) 70%, var(--color-text));
-      }
-    }
-
-    input[type='checkbox'] {
-      &:checked + span {
-        background-color: var(--color-primary);
-        &::before { transform: translateX(18px); }
-      }
-      &:checked + span:hover { background-color: var(--color-primary-hover); }
-
-      // Disabled state: muted toggle, no pointer interaction
-      &:disabled + span {
-        opacity: 0.45;
-        cursor: not-allowed;
-        pointer-events: none;
       }
     }
 
     // ── Scroll sensitivity slider ─────────────────────────────────────
     // --fill is set via :style on the <input> from the Vue scroll computed.
     // The track uses a split gradient: filled = teal, unfilled = surface-dynamic.
-    // This avoids a solid-teal bar which reads as "too much green" in light mode.
     .slider {
-      flex-shrink: 0;
-      max-width: 120px;
+      display: flex;
+      align-items: center;
+
+      // ── Slider wrap: positions tooltip relative to the thumb ──────
+      .slider-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 120px;
+      }
+
+      // ── Tooltip bubble ────────────────────────────────────────────
+      // Appears above the thumb while dragging, fades out after release.
+      .slider-tooltip {
+        position: absolute;
+        top: -28px;
+        // Translate centres the bubble over its left anchor.
+        // We subtract half the thumb width (6px) so it tracks the thumb centre.
+        transform: translateX(-50%);
+        background: var(--color-surface-offset);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        padding: 1px var(--space-2);
+        font-size: var(--text-xs);
+        color: var(--color-text);
+        white-space: nowrap;
+        pointer-events: none;
+        // Hidden by default
+        opacity: 0;
+        transition: opacity 150ms ease;
+
+        // Tiny arrow pointing down to the thumb
+        &::after {
+          content: '';
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border: 4px solid transparent;
+          border-top-color: var(--color-border);
+        }
+
+        &.slider-tooltip--visible {
+          opacity: 1;
+        }
+      }
 
       input[type='range'] {
-        display: inline-block;
-        background: transparent;
-        appearance: none;
-        -webkit-appearance: none;
-        height: 24px;
+        width: 120px;
         max-width: 120px;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 4px;
+        border-radius: var(--radius-full);
+        outline: none;
         cursor: pointer;
 
         &::-moz-range-track {
-          width: 100%; height: 4px; cursor: pointer;
+          height: 4px;
+          border-radius: var(--radius-full);
           background: linear-gradient(
             to right,
-            var(--color-primary)         0% var(--fill, 50%),
-            var(--color-surface-dynamic) var(--fill, 50%) 100%
+            var(--color-primary)         0% var(--fill, 20%),
+            var(--color-surface-dynamic) var(--fill, 20%) 100%
           );
-          border-radius: var(--radius-full);
         }
+
         &::-moz-range-thumb {
-          height: 12px; width: 12px; border-radius: var(--radius-full);
-          background: #fff; cursor: pointer; border: none;
-          box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
+          width: 14px; height: 14px;
+          border-radius: var(--radius-full);
+          background: var(--color-primary);
+          border: none;
+          cursor: grab;
         }
         &:hover::-moz-range-thumb { transform: scale(1.35); }
 
         &::-webkit-slider-runnable-track {
-          width: 100%; height: 4px; cursor: pointer;
+          height: 4px;
+          border-radius: var(--radius-full);
           background: linear-gradient(
             to right,
-            var(--color-primary)         0% var(--fill, 50%),
-            var(--color-surface-dynamic) var(--fill, 50%) 100%
+            var(--color-primary)         0% var(--fill, 20%),
+            var(--color-surface-dynamic) var(--fill, 20%) 100%
           );
-          border-radius: var(--radius-full);
         }
+
         &::-webkit-slider-thumb {
           -webkit-appearance: none;
-          height: 12px; width: 12px; border-radius: var(--radius-full);
-          background: #fff; cursor: pointer; margin-top: -4px;
-          box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
+          width: 14px; height: 14px;
+          margin-top: -5px;
+          border-radius: var(--radius-full);
+          background: var(--color-primary);
+          border: none;
+          cursor: grab;
+          transition: transform var(--transition-fast);
         }
         &:hover::-webkit-slider-thumb { transform: scale(1.35); }
       }
     }
 
-    .select {
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
       flex-shrink: 0;
-      max-width: 120px;
-      text-align: right;
+
+      input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+        position: absolute;
+
+        // Checked: teal background
+        &:checked + span { background: var(--color-primary); }
+        &:checked + span::before { transform: translateX(18px); }
+
+        // Disabled: muted appearance
+        &:disabled + span {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+
+        // Focus ring for keyboard nav
+        &:focus-visible + span {
+          outline: 2px solid var(--color-primary);
+          outline-offset: 2px;
+        }
+      }
+
+      span {
+        position: absolute;
+        inset: 0;
+        background: var(--color-surface-dynamic);
+        border-radius: var(--radius-full);
+        cursor: pointer;
+        transition: background var(--transition-interactive);
+
+        &::before {
+          content: '';
+          position: absolute;
+          width: 18px; height: 18px;
+          left: 3px; top: 3px;
+          background: #fff;
+          border-radius: var(--radius-full);
+          transition: transform var(--transition-interactive);
+        }
+      }
+    }
+
+    .select {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-height: 52px;
 
       select {
         -webkit-appearance: none;
-        -moz-appearance: none;
         appearance: none;
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        height: 30px;
-        text-align: right;
-        padding: 0 var(--space-1) 0 var(--space-2);
-        margin: 0;
-        line-height: 30px;
-        font-weight: 400;
-        font-size: var(--text-xs);
-        text-overflow: ellipsis;
-        border: 1px solid transparent;
+        background: var(--color-surface-offset);
+        border: 1px solid var(--color-border);
         border-radius: var(--radius-md);
+        padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
         color: var(--color-text);
-        background-color: var(--color-bg);
+        font-size: var(--text-sm);
         cursor: pointer;
+        max-width: 100%;
         transition:
-          border-color     var(--transition-interactive),
-          background-color var(--transition-interactive);
+          border-color var(--transition-interactive),
+          background   var(--transition-interactive);
 
-        &:hover {
-          border-color: var(--color-border);
-          background-color: var(--color-surface-offset);
-        }
+        &:hover   { border-color: var(--color-primary); }
+        &:focus   { outline: none; border-color: var(--color-primary); }
+        &:disabled { opacity: 0.5; cursor: not-allowed; }
+      }
 
-        option {
-          font-weight: normal;
-          color: var(--color-text);
-          background-color: var(--color-bg);
+      // Custom dropdown chevron via pseudo-element
+      span {
+        position: absolute;
+        right: var(--space-3);
+        pointer-events: none;
+        color: var(--color-text-muted);
+
+        &::after {
+          content: '▾';
+          font-size: var(--text-xs);
         }
       }
     }
 
     .input {
-      display: block;
-      width: 100%;
-      height: 36px;
-      padding: 0 var(--space-3);
-      line-height: 36px;
-      font-size: var(--text-sm);
-      font-weight: 300;
-      border: 1px solid transparent;
+      flex: 1;
+      background: var(--color-surface-offset);
+      border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-3);
       color: var(--color-text);
-      background-color: color-mix(in srgb, var(--color-bg) 80%, transparent);
-      user-select: auto;
-      transition:
-        border-color     var(--transition-interactive),
-        background-color var(--transition-interactive);
+      font-size: var(--text-sm);
+      max-width: 100%;
+      transition: border-color var(--transition-interactive);
 
-      &:focus { border-color: var(--color-primary); outline: none; }
-      &::selection { background: var(--color-primary-highlight); }
-      &[disabled] { opacity: 0.5; cursor: not-allowed; }
+      &::placeholder { color: var(--color-text-faint); }
+      &:hover        { border-color: var(--color-primary); }
+      &:focus        { outline: none; border-color: var(--color-primary); }
+      &:disabled     { opacity: 0.5; cursor: not-allowed; }
+    }
+
+    .btn-logout {
+      width: 100%;
+      min-height: 44px;
+      background: color-mix(in srgb, var(--color-error) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-error) 35%, transparent);
+      border-radius: var(--radius-md);
+      color: var(--color-error);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition:
+        background    var(--transition-interactive),
+        border-color  var(--transition-interactive),
+        color         var(--transition-interactive);
+
+      &:hover {
+        background: var(--color-error);
+        border-color: var(--color-error);
+        color: #fff;
+      }
+
+      &:active { transform: scale(0.98); }
     }
   }
 </style>
 
 <script lang="ts">
-  import { Component, Watch, Vue } from 'vue-property-decorator'
-  import { ScreenResolution } from '~/neko/types'
+  import { Vue, Component } from 'vue-property-decorator'
+  import Resolution from '~/components/resolution.vue'
 
-  @Component({ name: 'neko-settings' })
+  @Component({
+    name: 'neko-settings',
+    components: {
+      'neko-resolution': Resolution,
+    },
+  })
   export default class extends Vue {
-    private broadcast_url: string = ''
+    // ── Tooltip state ─────────────────────────────────────────────────
+    tooltipVisible = false
+    private _tooltipTimer: ReturnType<typeof setTimeout> | null = null
 
+    showTooltip() {
+      if (this._tooltipTimer !== null) {
+        clearTimeout(this._tooltipTimer)
+        this._tooltipTimer = null
+      }
+      this.tooltipVisible = true
+    }
+
+    hideTooltip() {
+      // Keep visible briefly after release so user can read the final value
+      this._tooltipTimer = setTimeout(() => {
+        this.tooltipVisible = false
+        this._tooltipTimer = null
+      }, 900)
+    }
+
+    // ── Computed: settings store bindings ─────────────────────────────
     get admin()     { return this.$accessor.user.admin }
-    get connected() { return this.$accessor.connected }
 
     get is_touch_device(): boolean {
       return (
         ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
-        window.matchMedia('(pointer: coarse)').matches
+        ('ontouchend' in window)
       )
     }
 
@@ -587,34 +630,33 @@
     get chat_sound()    { return this.$accessor.settings.chat_sound }
     set chat_sound(v: boolean) { this.$accessor.settings.setSound(v) }
 
+    get keyboard_layout()    { return this.$accessor.settings.keyboard_layout }
+    set keyboard_layout(v: string) { this.$accessor.settings.setKeyboardLayout(v) }
+
     get keyboard_layouts_list() { return this.$accessor.settings.keyboard_layouts_list }
-    get keyboard_layout()       { return this.$accessor.settings.keyboard_layout }
-    set keyboard_layout(v: string) {
-      this.$accessor.settings.setKeyboardLayout(v)
-      this.$accessor.remote.changeKeyboard()
+
+    get broadcast_is_active() { return this.$accessor.settings.broadcast_is_active }
+    get broadcast_url()       { return this.$accessor.settings.broadcast_url }
+    set broadcast_url(v: string) { this.$accessor.settings.setBroadcastStatus({ url: v, isActive: this.broadcast_is_active }) }
+
+    get connected()   { return this.$accessor.connected }
+
+    // ── Resolution helpers ────────────────────────────────────────────
+    get resConfigurations() {
+      return this.$accessor.video.configurations
     }
-
-    get broadcast_is_active()   { return this.$accessor.settings.broadcast_is_active }
-    get broadcast_url_remote()  { return this.$accessor.settings.broadcast_url }
-
-    @Watch('broadcast_url_remote', { immediate: true })
-    onBroadcastUrlChange() { this.broadcast_url = this.broadcast_url_remote }
-
-    // ── Display / Resolution (R6) ───────────────────────────────────
-    // Accessor values are reactive; the select v-model key is
-    // "WxH@R" so Vue can compare it against the option :value.
-    get resConfigurations(): ScreenResolution[] { return this.$accessor.video.configurations }
-    get resValue(): string {
-      const { width, height, rate } = this.$accessor.video
-      return `${width}x${height}@${rate}`
+    get resValue() {
+      const v = this.$accessor.video
+      return `${v.width}x${v.height}@${v.rate}`
     }
     set resValue(v: string) {
-      const conf = this.resConfigurations.find(
-        (c) => `${c.width}x${c.height}@${c.rate}` === v
-      )
-      if (conf) this.$accessor.video.screenSet(conf)
+      const [res, rate] = v.split('@')
+      const [width, height] = res.split('x').map(Number)
+      this.$accessor.video.changeResolution({ width, height, rate: Number(rate) })
     }
 
-    logout() { this.$accessor.logout() }
+    logout() {
+      this.$accessor.disconnect()
+    }
   }
 </script>
