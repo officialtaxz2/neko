@@ -55,9 +55,9 @@
         <neko-settings v-if="activeSettings && !isFilesActive" key="settings" />
       </transition>
 
-      <!-- Chat panel: toggleable -->
+      <!-- Users panel: now on TOP (was below chat) -->
       <transition name="panel-grow">
-        <neko-chat v-if="activeChat && !isFilesActive" key="chat" />
+        <neko-userlist v-if="activeUsers && !isFilesActive" key="users" class="panel-slot" />
       </transition>
 
       <!-- Split divider: visible only when both panels are active -->
@@ -67,9 +67,9 @@
         aria-hidden="true"
       />
 
-      <!-- Users panel: userlist.vue fills this slot -->
+      <!-- Chat panel: now on BOTTOM (was above users) -->
       <transition name="panel-grow">
-        <neko-userlist v-if="activeUsers && !isFilesActive" key="users" />
+        <neko-chat v-if="activeChat && !isFilesActive" key="chat" class="panel-slot" />
       </transition>
     </div>
   </aside>
@@ -187,7 +187,16 @@
       overflow: hidden;
     }
 
-    // ── Split divider between Chat and Users ────────────────────────────────
+    // ── Each toggleable panel (chat / users) gets equal share of space ──────
+    // flex: 1 + min-height: 0 ensures neither panel can grow beyond its half
+    // and both scroll internally when content overflows.
+    .panel-slot {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    // ── Split divider between Users and Chat ────────────────────────────────
     .panel-divider {
       height: 1px;
       flex-shrink: 0;
