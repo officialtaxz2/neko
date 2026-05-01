@@ -231,7 +231,11 @@
   @media only screen and (max-width: 1024px) {
     html,
     body {
+      // overflow-x:hidden prevents any sub-pixel horizontal bleed that
+      // causes mobile browsers to reserve a scrollbar gutter on the right.
+      overflow-x: hidden !important;
       overflow-y: auto !important;
+      // width/height auto — let the browser calculate naturally
       width: auto !important;
       height: auto !important;
     }
@@ -242,12 +246,20 @@
 
     #neko {
       position: relative;
+      // Use width/max-width 100% instead of 100vw.
+      // On mobile, 100vw can include the scrollbar gutter width,
+      // producing a dead strip on the right side of the screen.
+      width: 100% !important;
+      max-width: 100% !important;
       max-height: initial !important;
     }
 
     .neko-room-wrapper {
       position: relative;
       flex-direction: column;
+      // Ensure the wrapper never exceeds the viewport width
+      width: 100%;
+      max-width: 100%;
 
       .neko-main {
         height: 100vh;
