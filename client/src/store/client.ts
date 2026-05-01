@@ -3,11 +3,14 @@ import { get, set } from '~/utils/localstorage'
 
 export const namespaced = true
 
+export type SystemDialogType = 'info' | 'error' | 'warning' | null
+
 export const state = () => ({
   side: get<boolean>('side', false),
   tab: get<string>('tab', 'chat'),
   about: false,
   about_page: '',
+  systemDialog: null as { type: SystemDialogType; title: string; text?: string } | null,
 })
 
 export const getters = getterTree(state, {})
@@ -30,6 +33,9 @@ export const mutations = mutationTree(state, {
   setSide(state, side: boolean) {
     state.side = side
     set('side', side)
+  },
+  setSystemDialog(state, dialog: { type: SystemDialogType; title: string; text?: string } | null) {
+    state.systemDialog = dialog
   },
 })
 

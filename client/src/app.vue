@@ -1,5 +1,5 @@
 <template>
-  <div id="neko" :class="[!videoOnly && side ? 'expanded' : '']">
+  <div id="neko" :class="[!videoOnly && connected && side ? 'expanded' : '']">
     <template v-if="!$client.supported">
       <neko-unsupported />
     </template>
@@ -31,9 +31,9 @@
           </div>
         </div>
       </main>
-      <!-- Sidebar: wrapped in <transition> for slide-in/out animation -->
+      <!-- Sidebar: only mounted when connected — prevents layout-width bleed on disconnect -->
       <transition name="side">
-        <neko-side v-if="!videoOnly && side" />
+        <neko-side v-if="!videoOnly && connected && side" />
       </transition>
       <neko-connect v-if="!connected" />
       <neko-about v-if="about" />

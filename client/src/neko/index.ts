@@ -64,10 +64,10 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   logout() {
     this.disconnect()
     this.cleanup()
-    this.$vue.$swal({
-      title: this.$vue.$t('connection.logged_out'),
-      icon: 'info',
-      confirmButtonText: this.$vue.$t('connection.button_confirm') as string,
+    // In-app system dialog replaces $swal for design-system consistency
+    this.$accessor.client.setSystemDialog({
+      type: 'info',
+      title: this.$vue.$t('connection.logged_out') as string,
     })
   }
 
@@ -160,20 +160,20 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
 
     this.onDisconnected(new Error(message))
 
-    this.$vue.$swal({
-      title: this.$vue.$t('connection.disconnected'),
+    // In-app system dialog replaces $swal for design-system consistency
+    this.$accessor.client.setSystemDialog({
+      type: 'error',
+      title: this.$vue.$t('connection.disconnected') as string,
       text: message,
-      icon: 'error',
-      confirmButtonText: this.$vue.$t('connection.button_confirm') as string,
     })
   }
 
   protected [EVENT.SYSTEM.ERROR]({ title, message }: SystemMessagePayload) {
-    this.$vue.$swal({
+    // In-app system dialog replaces $swal for design-system consistency
+    this.$accessor.client.setSystemDialog({
+      type: 'error',
       title,
       text: message,
-      icon: 'error',
-      confirmButtonText: this.$vue.$t('connection.button_confirm') as string,
     })
   }
 
