@@ -94,9 +94,58 @@ $side-width:      400px;
 
 > ⬜ = Geplant · 🔄 = In Arbeit · ✅ = Fertig
 
-| # | Feature | Betroffene Dateien | Status |
+### Virtueller Trackpad-Modus (Mobile)
+
+**Ziel:** Touch-Events werden im Trackpad-Modus relativ interpretiert — wie ein Laptop-Touchpad. Tippen = Linksklick, Lang-halten (600ms) = Rechtsklick, Zwei Finger = Scroll. Der originale absolute Modus (1:1 Touch → Mausposition) bleibt als Default und wird nicht angetastet.
+
+**Schwierigkeit:** Niedrig–Mittel · **Aufwand:** ~3–5h
+
+| # | Aufgabe | Datei(en) | Status |
 |---|---|---|---|
-| — | *(Neue Features hier eintragen)* | — | ⬜ |
+| M1 | `trackpad_mode: boolean`-State + Mutation + Getter in Settings-Store | `client/src/store/settings.ts` | ⬜ |
+| M2 | `virtualTrackpad.ts` anlegen — isoliertes Utility-Modul (State, Init, Touch-Handlers, Clamp-Logik) | `client/src/utils/virtualTrackpad.ts` *(neu)* | ⬜ |
+| M3 | `onTouchHandler` in `video.vue` um Trackpad-Zweig erweitern; Original-Zweig bleibt unverändert | `client/src/components/video.vue` | ⬜ |
+| M4 | Toggle-Switch in Settings-Panel einfügen (nach Scroll-Invert); Badge signalisiert Touch-Only | `client/src/components/settings.vue` | ⬜ |
+| M5 | i18n-Strings (`trackpad_mode`, `trackpad_mode_description`, `trackpad_mode_mobile_hint`, `mobile`, `desktop_only_inactive`) in alle 15 Locale-Dateien | `client/src/locale/*.ts` (15 Dateien) | ⬜ |
+
+#### Implementierungsdetails
+
+**Store (M1)** — analog zu `scroll_invert`; accessor-Pattern: `this.$accessor.settings.trackpad_mode`. LocalStorage-Persistenz prüfen.
+
+**`virtualTrackpad.ts` (M2)** — exportiert:
+- `initVirtualCursor(srcW, srcH)` — setzt virtuellen Cursor in Quellauflösungs-Mitte (lazy, beim ersten `touchstart`)
+- `handleVirtualTouchStart(touch, sensitivity, onMouseMove)`
+- `handleVirtualTouchMove(touch, sensitivity, onMouseMove)` — Delta dx/dy berechnen, Position clamp auf `[0, srcW] / [0, srcH]`, `touchTotalDistance` akkumulieren
+- `handleVirtualTouchEnd(onMouseDown, onMouseUp)` — Tap (<10px) → Linksklick; Long-Press (600ms, kein Move >10px) → Rechtsklick; Drag → nur MouseUp
+- `resetVirtualTrackpad()`, `getVirtualCursorPosition()` — für späteres Cursor-Overlay
+- Konstanten: `LONG_PRESS_DELAY_MS = 600`, `CLICK_THRESHOLD_PX = 10`
+
+**`video.vue` (M3)** — Guard-Reihenfolge im neuen `onTouchHandler`:
+```
+1. !hosting || locked → return
+2. trackpad_mode && is_touch_device → Trackpad-Zweig (sendData direkt in Quellkoordinaten)
+3. else → original absoluter Zweig (unverändert)
+```
+Zwei-Finger-Scroll im Trackpad-Zweig: `touchmove` mit `e.touches.length === 2` → `sendData('wheel', { x:0, y:±1 })`. Klassenfeld `_lastTwoFingerY = 0` nötig.
+
+> **Koordinaten:** Im Trackpad-Modus wird `$client.sendData('mousemove', {x, y})` direkt aufgerufen (virtuelle Cursor-Koordinaten liegen bereits in Quellauflösung). Kein `sendMousePos`-Umweg.
+
+**Settings-UI (M4)** — Toggle nach dem Scroll-Invert-Block; `is_touch_device`-Getter via `'ontouchstart' in window && navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches`; bei Desktop: `opacity: 0.75`, grauer "Nur Mobil"-Badge; bei Touch: grüner "Mobil"-Badge.
+
+**Nicht in Scope (absichtlich):** Visueller Cursor-Overlay, einstellbare Sensitivität-Slider, Pinch-to-Zoom, PointerEvent-Refactoring — alle als optionale Follow-ups definiert.
+
+#### Testfälle
+
+| Szenario | Erwartetes Verhalten |
+|---|---|
+| Desktop, Toggle OFF | Maus funktioniert unverändert |
+| Desktop, Toggle ON | Keine Auswirkung (Guard `!is_touch_device`) |
+| Mobil, Toggle OFF | Touch 1:1 auf Position gemappt (Original) |
+| Mobil, Toggle ON — Wischen | Cursor bewegt sich relativ; startet mittig |
+| Mobil, Toggle ON — Tap | Linksklick an virtueller Cursor-Position |
+| Mobil, Toggle ON — Lang-Halten (600ms) | Rechtsklick wird gesendet |
+| Mobil, Toggle ON — Zwei Finger | Scroll-Event wird gesendet |
+| Mobil, Toggle ON — über Rand wischen | Cursor stoppt am Rand (Clamp) |
 
 ---
 
