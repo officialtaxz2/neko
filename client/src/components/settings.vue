@@ -29,6 +29,18 @@
               <span />
             </label>
           </div>
+          <div class="row" :class="{ 'row--dimmed': !is_touch_device }">
+            <div class="row-label">
+              <span>{{ $t('setting.trackpad_mode') }}</span>
+              <span class="badge" :class="is_touch_device ? 'badge--mobile' : 'badge--desktop'">
+                {{ is_touch_device ? $t('setting.mobile') : $t('setting.desktop_only_inactive') }}
+              </span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" v-model="trackpad_mode" :disabled="!is_touch_device" />
+              <span />
+            </label>
+          </div>
         </div>
       </div>
 
@@ -267,7 +279,23 @@
           font-size: var(--text-sm);
         }
 
+        // Dimmed state for desktop: toggle visible but visually inactive
+        &.row--dimmed {
+          opacity: 0.75;
+
+          .switch { cursor: not-allowed; }
+        }
+
         &.row-full { padding: var(--space-3) var(--space-4); }
+
+        // Row label wrapper: stacks label text + badge horizontally
+        .row-label {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: var(--space-2);
+          flex-wrap: wrap;
+        }
 
         // Rows containing a select stack label above select so neither
         // clips in half-width cards where row inner-width < 120px.
@@ -292,6 +320,33 @@
             }
           }
         }
+      }
+    }
+
+    // ── Touch-mode badge ────────────────────────────────────────────
+    // Green on real touch devices, neutral gray on desktop.
+    // Intentionally small (text-xs) — secondary information, not a CTA.
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px var(--space-2);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      line-height: 1.6;
+
+      &--mobile {
+        background: color-mix(in srgb, var(--color-success) 15%, transparent);
+        color: var(--color-success);
+        border: 1px solid color-mix(in srgb, var(--color-success) 35%, transparent);
+      }
+
+      &--desktop {
+        background: color-mix(in srgb, var(--color-text-muted) 12%, transparent);
+        color: var(--color-text-muted);
+        border: 1px solid color-mix(in srgb, var(--color-text-muted) 25%, transparent);
       }
     }
 
@@ -369,6 +424,13 @@
         &::before { transform: translateX(18px); }
       }
       &:checked + span:hover { background-color: var(--color-primary-hover); }
+
+      // Disabled state: muted toggle, no pointer interaction
+      &:disabled + span {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
+      }
     }
 
     // ── Scroll sensitivity slider ─────────────────────────────────────
@@ -500,11 +562,21 @@
     get admin()     { return this.$accessor.user.admin }
     get connected() { return this.$accessor.connected }
 
+    get is_touch_device(): boolean {
+      return (
+        ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
+        window.matchMedia('(pointer: coarse)').matches
+      )
+    }
+
     get scroll()    { return this.$accessor.settings.scroll.toString() }
     set scroll(v: string) { this.$accessor.settings.setScroll(parseInt(v)) }
 
     get scroll_invert()    { return this.$accessor.settings.scroll_invert }
     set scroll_invert(v: boolean) { this.$accessor.settings.setInvert(v) }
+
+    get trackpad_mode()    { return this.$accessor.settings.trackpad_mode }
+    set trackpad_mode(v: boolean) { this.$accessor.settings.setTrackpadMode(v) }
 
     get autoplay()    { return this.$accessor.settings.autoplay }
     set autoplay(v: boolean) { this.$accessor.settings.setAutoplay(v) }
