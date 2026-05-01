@@ -85,7 +85,7 @@
           <span class="card-title">Input</span>
         </div>
         <div class="card-body">
-          <div class="row">
+          <div class="row row--select">
             <span>{{ $t('setting.keyboard_layout') }}</span>
             <label class="select">
               <select v-model="keyboard_layout">
@@ -104,7 +104,7 @@
           <span class="card-title">Display</span>
         </div>
         <div class="card-body">
-          <div class="row">
+          <div class="row row--select">
             <span>Resolution</span>
             <label class="select">
               <select v-model="resValue">
@@ -287,6 +287,26 @@
         }
 
         &.row-full { padding: var(--space-3) var(--space-4); }
+
+        // Stack label above select so the dropdown gets full card width
+        // in half-width bento cards — prevents overflow clipping.
+        &.row--select {
+          flex-direction: column;
+          align-items: stretch;
+          justify-content: center;
+          padding-top: var(--space-2);
+          padding-bottom: var(--space-2);
+          gap: var(--space-2);
+
+          > span { flex: none; }
+
+          .select {
+            width: 100%;
+            min-height: unset;
+
+            select { width: 100%; }
+          }
+        }
 
         .row-label {
           flex: 1;
