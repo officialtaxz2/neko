@@ -1,54 +1,85 @@
 <template>
-  <div id="neko" :class="[!videoOnly && connected && side ? 'expanded' : '']">
+  <div id="neko">
     <template v-if="!$client.supported">
       <neko-unsupported />
     </template>
     <template v-else>
-      <!-- ref="mainContainer" used for scroll-listener (sticky header state) -->
-      <main class="neko-main" ref="mainContainer">
-        <div v-if="!videoOnly" class="header-container" :class="{ 'is-scrolled': headerScrolled }">
-          <neko-header :currentTheme="currentTheme" @toggle-theme="toggleTheme" />
-        </div>
-        <div class="video-container">
-          <neko-video
-            ref="video"
-            :hideControls="hideControls"
-            :extraControls="isEmbedMode"
-            @control-attempt="controlAttempt"
+      <!-- Login-Page / Room toggle: page-fade out-in prevents any layout bleed -->
+      <transition name="page-fade" mode="out-in">
+        <!-- Login-Page: only rendered when not connected — zero Room DOM -->
+        <neko-login-page v-if="!connected" key="login" />
+
+        <!-- Room: only rendered after successful login -->
+        <div
+          v-else
+          key="room"
+          class="neko-room-wrapper"
+          :class="[!videoOnly && side ? 'expanded' : '']"
+        >
+          <!-- ref="mainContainer" used for scroll-listener (sticky header state) -->
+          <main class="neko-main" ref="mainContainer">
+            <div v-if="!videoOnly" class="header-container" :class="{ 'is-scrolled': headerScrolled }">
+              <neko-header :currentTheme="currentTheme" @toggle-theme="toggleTheme" />
+            </div>
+            <div class="video-container">
+              <neko-video
+                ref="video"
+                :hideControls="hideControls"
+                :extraControls="isEmbedMode"
+                @control-attempt="controlAttempt"
+              />
+            </div>
+            <div v-if="!videoOnly" class="room-container">
+              <div class="room-menu">
+                <div class="settings">
+                  <neko-menu />
+                </div>
+                <div class="controls">
+                  <neko-controls :shakeKbd="shakeKbd" />
+                </div>
+                <div class="emotes">
+                  <neko-emotes />
+                </div>
+              </div>
+            </div>
+          </main>
+          <!-- Sidebar: implicit within connected branch — no extra connected check needed -->
+          <transition name="side">
+            <neko-side v-if="!videoOnly && side" />
+          </transition>
+          <neko-about v-if="about" />
+          <notifications
+            v-if="!videoOnly"
+            group="neko"
+            position="top left"
+            style="top: 50px; pointer-events: none"
+            :ignoreDuplicates="true"
           />
         </div>
-        <div v-if="!videoOnly" class="room-container">
-          <div class="room-menu">
-            <div class="settings">
-              <neko-menu />
-            </div>
-            <div class="controls">
-              <neko-controls :shakeKbd="shakeKbd" />
-            </div>
-            <div class="emotes">
-              <neko-emotes />
-            </div>
-          </div>
-        </div>
-      </main>
-      <!-- Sidebar: only mounted when connected — prevents layout-width bleed on disconnect -->
-      <transition name="side">
-        <neko-side v-if="!videoOnly && connected && side" />
       </transition>
-      <neko-connect v-if="!connected" />
-      <neko-about v-if="about" />
-      <notifications
-        v-if="!videoOnly"
-        group="neko"
-        position="top left"
-        style="top: 50px; pointer-events: none"
-        :ignoreDuplicates="true"
-      />
     </template>
   </div>
 </template>
 
 <style lang="scss">
+  // Login-Page ↔ Room fade
+  .page-fade-enter-active,
+  .page-fade-leave-active {
+    transition: opacity var(--transition-slow);
+  }
+  .page-fade-enter,
+  .page-fade-leave-to {
+    opacity: 0;
+  }
+
+  // prefers-reduced-motion: skip page-fade entirely
+  @media (prefers-reduced-motion: reduce) {
+    .page-fade-enter-active,
+    .page-fade-leave-active {
+      transition: none;
+    }
+  }
+
   #neko {
     position: absolute;
     top: 0;
@@ -57,12 +88,24 @@
     bottom: 0;
     max-width: 100vw;
     max-height: 100vh;
-    flex-direction: row;
     display: flex;
     background: var(--color-bg);
-    // Clip sidebar during slide animation
     overflow: hidden;
     transition: background-color var(--transition-slow);
+  }
+
+  // Room wrapper: carries .expanded when sidebar is open
+  .neko-room-wrapper {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+
+    // When sidebar is open: right-edge glow on main as visual split separator
+    &.expanded .neko-main {
+      box-shadow: 4px 0 20px color-mix(in srgb, var(--color-primary) 10%, transparent);
+    }
 
     .neko-main {
       min-width: 360px;
@@ -71,18 +114,14 @@
       flex-direction: column;
       display: flex;
       overflow: auto;
-      // Native smooth scrolling for all scroll events within this container
       scroll-behavior: smooth;
-      // Transition for the split-separator glow
       transition: box-shadow var(--transition-slow);
 
       .header-container {
-        // Transparent baseline: lets header.vue gradient show through
         background: transparent;
         height: $menu-height;
         flex-shrink: 0;
         display: flex;
-        // Sticky: stays at top when neko-main is scrolled (mobile)
         position: sticky;
         top: 0;
         z-index: 10;
@@ -91,8 +130,6 @@
           backdrop-filter  var(--transition-slow),
           box-shadow       var(--transition-slow);
 
-        // Elevated state: active when user has scrolled down > 4px
-        // Adds glassmorphism blur + shadow to visually lift the header
         &.is-scrolled {
           background: color-mix(in srgb, var(--color-surface) 92%, transparent);
           backdrop-filter: blur(8px);
@@ -104,7 +141,6 @@
       }
 
       .video-container {
-        // Token-based bg (replaces hardcoded rgba(0,0,0,0.4))
         background: var(--color-bg);
         max-width: 100%;
         flex-grow: 1;
@@ -113,36 +149,25 @@
       }
 
       .room-container {
-        // Gradient background — semi-transparent at top to let blur show through
         background: linear-gradient(
           to top,
           var(--color-bg) 0%,
           color-mix(in srgb, var(--color-surface) 85%, transparent) 100%
         );
-        // NOTE: backdrop-filter intentionally NOT on this element.
-        // backdrop-filter creates a new containing block for position:fixed
-        // descendants (CSS spec). vue-context (emoji picker) uses position:fixed
-        // and is a child of this element — if backdrop-filter were here, the
-        // picker's viewport coordinates would be mis-interpreted as local coords,
-        // causing it to overflow .neko-main and trigger scrollbars.
-        // Glass blur is applied via ::before pseudo-element instead, which has
-        // no children and therefore does not affect any fixed-position descendants.
+        // backdrop-filter intentionally NOT here — see original comment re: vue-context
+        // (backdrop-filter creates a new containing block for position:fixed descendants)
         height: $controls-height;
         max-width: 100%;
         flex-shrink: 0;
         flex-direction: column;
         display: flex;
-        // Teal-tinted top border as split accent between video and controls
         border-top: 1px solid color-mix(in srgb, var(--color-primary) 14%, var(--color-border));
         transition: background-color var(--transition-slow);
-        // Sticky: stays at bottom when neko-main is scrolled (mobile)
         position: sticky;
         bottom: 0;
         z-index: 10;
 
-        // Glass blur via pseudo-element — same visual result as backdrop-filter
-        // on the element, but without the containing-block side effect for
-        // position:fixed children (vue-context emoji picker).
+        // Glass blur via pseudo-element — avoids containing-block side effect on fixed children
         &::before {
           content: '';
           position: absolute;
@@ -183,11 +208,6 @@
         }
       }
     }
-
-    // When sidebar is open: right-edge glow on main as visual split separator
-    &.expanded .neko-main {
-      box-shadow: 4px 0 20px color-mix(in srgb, var(--color-primary) 10%, transparent);
-    }
   }
 
   // ------------------------------------------------------------------
@@ -199,7 +219,6 @@
     transition:
       transform var(--transition-slow),
       opacity   var(--transition-slow);
-    // Prevent layout overflow during animation
     overflow: hidden;
   }
 
@@ -223,8 +242,12 @@
 
     #neko {
       position: relative;
-      flex-direction: column;
       max-height: initial !important;
+    }
+
+    .neko-room-wrapper {
+      position: relative;
+      flex-direction: column;
 
       .neko-main {
         height: 100vh;
@@ -235,13 +258,13 @@
         width: 100% !important;
       }
 
-      // No split glow on mobile — sidebar slides up, not beside
+      // No split glow on mobile
       &.expanded .neko-main {
         box-shadow: none;
       }
     }
 
-    // On mobile: sidebar slides up from the bottom instead
+    // On mobile: sidebar slides up from bottom
     .side-enter,
     .side-leave-to {
       transform: translateY(100%);
@@ -250,7 +273,7 @@
   }
 
   @media only screen and (max-width: 1024px) and (orientation: portrait) {
-    #neko {
+    .neko-room-wrapper {
       &.expanded .neko-main {
         height: 40vh;
       }
@@ -263,7 +286,7 @@
   }
 
   @media only screen and (max-width: 768px) {
-    #neko .neko-main .room-container {
+    .neko-room-wrapper .neko-main .room-container {
       display: none;
     }
   }
@@ -272,7 +295,7 @@
 <script lang="ts">
   import { Vue, Component, Ref, Watch } from 'vue-property-decorator'
 
-  import Connect from '~/components/connect.vue'
+  import LoginPage from '~/components/login.vue'
   import Video from '~/components/video.vue'
   import Menu from '~/components/menu.vue'
   import Side from '~/components/side.vue'
@@ -287,7 +310,7 @@
   @Component({
     name: 'neko',
     components: {
-      'neko-connect': Connect,
+      'neko-login-page': LoginPage,
       'neko-video': Video,
       'neko-menu': Menu,
       'neko-side': Side,
@@ -305,7 +328,6 @@
     shakeKbd = false
     currentTheme: Theme = 'dark'
 
-    // Tracks whether the main container has been scrolled — drives .is-scrolled on header
     headerScrolled = false
     private mainScrollHandler: (() => void) | null = null
 
@@ -321,7 +343,6 @@
         }
       })
 
-      // Attach passive scroll listener to detect header elevation state
       this.$nextTick(() => {
         if (this.mainContainer) {
           this.mainScrollHandler = () => {
