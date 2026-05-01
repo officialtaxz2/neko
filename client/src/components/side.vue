@@ -55,8 +55,8 @@
         <neko-settings v-if="activeSettings && !isFilesActive" key="settings" />
       </transition>
 
-      <!-- Users panel: now on TOP (was below chat) -->
-      <transition name="panel-grow">
+      <!-- Users panel: TOP position → slides in from the top -->
+      <transition name="panel-from-top">
         <neko-userlist v-if="activeUsers && !isFilesActive" key="users" class="panel-slot" />
       </transition>
 
@@ -67,8 +67,8 @@
         aria-hidden="true"
       />
 
-      <!-- Chat panel: now on BOTTOM (was above users) -->
-      <transition name="panel-grow">
+      <!-- Chat panel: BOTTOM position → slides in from the bottom -->
+      <transition name="panel-from-bottom">
         <neko-chat v-if="activeChat && !isFilesActive" key="chat" class="panel-slot" />
       </transition>
     </div>
@@ -78,7 +78,6 @@
 <style lang="scss">
   .neko-menu {
     width: $side-width;
-    // Glassmorphism: semi-transparent surface + blur
     background-color: color-mix(in srgb, var(--color-surface) 80%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -178,18 +177,16 @@
     }
 
     // ── Tab content area ────────────────────────────────────────────────────
-    // overflow hidden: each panel handles its own scroll
     .page-container {
       max-height: 100%;
       flex-grow: 1;
       display: flex;
       flex-direction: column;
+      // clip overflow so sliding panels don't bleed outside the sidebar
       overflow: hidden;
     }
 
     // ── Each toggleable panel (chat / users) gets equal share of space ──────
-    // flex: 1 + min-height: 0 ensures neither panel can grow beyond its half
-    // and both scroll internally when content overflows.
     .panel-slot {
       flex: 1;
       min-height: 0;
@@ -204,7 +201,7 @@
     }
   }
 
-  // ── Tab fade+slide transition (files / settings exclusive panels) ──────────
+  // ── Tab fade+slide (files / settings exclusive panels) ───────────────────
   .tab-fade-enter-active,
   .tab-fade-leave-active {
     transition:
@@ -222,27 +219,56 @@
     transform: translateY(-4px);
   }
 
-  // ── Panel-grow transition (chat / users toggleable panels) ────────────────
-  // max-height trick: smooth height expand/collapse without JS measurements
-  .panel-grow-enter-active,
-  .panel-grow-leave-active {
+  // ── Users panel: slides in/out from the TOP ─────────────────────────────
+  // transform+opacity only — GPU-composited, no layout thrash
+  .panel-from-top-enter-active,
+  .panel-from-top-leave-active {
     transition:
-      max-height var(--transition-slow),
-      opacity    var(--transition-interactive);
-    overflow: hidden;
+      opacity   250ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+    // prevent the sliding element from overflowing outside the sidebar during animation
+    will-change: transform, opacity;
   }
 
-  .panel-grow-enter,
-  .panel-grow-leave-to {
-    max-height: 0;
+  .panel-from-top-enter {
     opacity: 0;
+    transform: translateY(-10px);
   }
 
-  .panel-grow-enter-to,
-  .panel-grow-leave {
-    // large enough to cover any realistic panel height
-    max-height: 100vh;
-    opacity: 1;
+  .panel-from-top-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  // ── Chat panel: slides in/out from the BOTTOM ─────────────────────────
+  .panel-from-bottom-enter-active,
+  .panel-from-bottom-leave-active {
+    transition:
+      opacity   250ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
+  }
+
+  .panel-from-bottom-enter {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  .panel-from-bottom-leave-to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  // ── Respect prefers-reduced-motion (DesignSystem.md UX-Pflicht) ──────────
+  @media (prefers-reduced-motion: reduce) {
+    .panel-from-top-enter-active,
+    .panel-from-top-leave-active,
+    .panel-from-bottom-enter-active,
+    .panel-from-bottom-leave-active,
+    .tab-fade-enter-active,
+    .tab-fade-leave-active {
+      transition-duration: 0.01ms !important;
+    }
   }
 </style>
 
@@ -275,7 +301,6 @@
       )
     }
 
-    // Store tab is used exclusively to track the Files panel state
     get tab() {
       return this.$accessor.client.tab
     }
@@ -287,7 +312,6 @@
     @Watch('tab', { immediate: true })
     @Watch('filetransferAllowed', { immediate: true })
     onTabChange() {
-      // Fall back out of files if file transfer gets disabled
       if (this.tab === 'files' && !this.filetransferAllowed) {
         this.change('chat')
       }
@@ -300,7 +324,6 @@
       }
     }
 
-    // Chat: toggle; exit exclusive modes; prevent deactivating last active panel
     toggleChat() {
       if (this.isFilesActive) this.change('chat')
       if (this.activeSettings) {
@@ -312,7 +335,6 @@
       this.activeChat = !this.activeChat
     }
 
-    // Users: toggle; exit exclusive modes; prevent deactivating last active panel
     toggleUsers() {
       if (this.isFilesActive) this.change('chat')
       if (this.activeSettings) {
@@ -324,7 +346,6 @@
       this.activeUsers = !this.activeUsers
     }
 
-    // Settings: exclusive — deactivates Chat + Users; restores Chat on exit
     toggleSettings() {
       if (this.activeSettings) {
         this.activeSettings = false
@@ -337,7 +358,6 @@
       }
     }
 
-    // Files: store-managed; clears settings state on activation
     activateFiles() {
       this.activeSettings = false
       this.change('files')
