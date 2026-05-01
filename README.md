@@ -33,13 +33,13 @@ docker compose up --force-recreate
 
 ## Implementierter Stand
 
-Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · **R1–R6 vollständig abgeschlossen** ✅ · Bugfix-Session abgeschlossen ✅ (30.04.2026)
+Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · **R1–R6 vollständig abgeschlossen** ✅ · Bugfix-Session abgeschlossen ✅ (01.05.2026)
 
 | Datei | Wichtigste Änderungen | Status |
 |---|---|---|
 | `_variables.scss` | Discord-Palette entfernt; Blue-Akzent `hsl(213,90%,62/44%)` Dark/Light; Fluid Type `clamp()`; 8pt-Grid; Shadow/Radius/Transition-Tokens; **R4:** `$controls-height` 125px → 64px (Avatar-Row entfernt) | ✅ |
 | `main.scss` | Fontshare CDN (Satoshi + Cabinet Grotesk); globale Resets; `:focus-visible`; `prefers-reduced-motion` | ✅ |
-| `app.vue` | Theme-Toggle (`data-theme`); Sidebar-Transition slide+fade; Split-Screen Blue-Glow; room-container Glassmorphism; Sticky Header + Controls (`position:sticky`); `.is-scrolled`-Elevation; **R4:** `neko-members` aus Controls-Bar entfernt (Import + Registrierung bereinigt) | ✅ |
+| `app.vue` | Theme-Toggle (`data-theme`); Sidebar-Transition slide+fade; Split-Screen Blue-Glow; room-container Glassmorphism; Sticky Header + Controls (`position:sticky`); `.is-scrolled`-Elevation; **R4:** `neko-members` aus Controls-Bar entfernt (Import + Registrierung bereinigt); **Bugfix:** `.expanded` + `neko-side v-if` an `connected && side` gebunden | ✅ |
 | `header.vue` | Theme-Toggle-Button (SVG); Icon Micro-Animations (`scale`); funktionierender Glassmorphism-Diagonal-Gradient; CSS Tokens durchgehend | ✅ |
 | `side.vue` | Glassmorphism (`backdrop-filter:blur(12px)`); Pill-Tabs; Tab-Inhalt-Transition `out-in`; **R1+R3:** 4-Tab-Leiste (Chat · Users · Files · Settings); Toggle-Logik (Chat+Users unabhängig, Settings exklusiv); 50/50-Split mit `panel-divider` wenn beide aktiv; `panel-grow`-Transition (max-height); **R2:** `<neko-userlist>` ersetzt Placeholder | ✅ |
 | `userlist.vue` | **R2 + Bugfix:** Card-Layout (Avatar 32px links; Zeile 1: Name + Crown; Zeile 2: Buttons dauerhaft sichtbar); **Alle User:** Ignore/Unignore (`fa-eye-slash/fa-eye`); **Admin:** Mute/Unmute · Release Controls (`fa-times-circle`) · Force Take Controls (`fa-hand-paper`) · Give Controls (`fa-gamepad`); **Host (non-admin):** Give Controls; **Admin, non-admin Target:** Kick · Ban; Controls-Buttons nur bei `!implicitHosting`; Skeleton Loading 2-zeilig (Name + Actions); `isCurrentHost`-Getter; kein Right-Click-Kontextmenü (alle Aktionen inline) | ✅ |
@@ -49,7 +49,9 @@ Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · **R1–R6 voll
 | `controls.vue` | Touch-Targets ≥44px; Micro-Animations; `.faded` → `--color-text-muted`; `fa-pause`/`fa-play` (Outline); Animated Counters FPS/Bitrate via `getStats()`+Lerp+`requestAnimationFrame` | ✅ |
 | `settings.vue` | Bento Grid (2-Spalten); Custom Toggle Switches; LOG OUT Ghost-Button; **R6:** neue „Display"-Card (admin-only) mit Resolution-`<select>` (`W × H @ R fps`); `resValue` getter/setter → `$accessor.video.screenSet()` | ✅ |
 | `video.vue` | WebRTC-Video + Maus/Tastatur/Touch-Event-Handler unberührt; **R5:** `fa-desktop`-Overlay-Button entfernt; `<neko-resolution>` entfernt; `Resolution`-Import, `@Ref` + `openResolution()` bereinigt | ✅ |
-| `connect.vue` | Glassmorphism-Dialog; radialer Spotlight-Gradient; Dot-Grid-Hintergrund; Touch-Targets ≥44px | ✅ |
+| `connect.vue` | Glassmorphism-Dialog; radialer Spotlight-Gradient; Dot-Grid-Hintergrund; Touch-Targets ≥44px; **Bugfix:** `$swal` durch In-App `SystemDialog`-Overlay ersetzt; store-gesteuert via `client.systemDialog` | ✅ |
+| `store/client.ts` | **Bugfix:** `systemDialog`-State + `setSystemDialog`-Mutation hinzugefügt | ✅ |
+| `neko/index.ts` | **Bugfix:** alle 3 `$swal`-Calls (`logout`, `SYSTEM.DISCONNECT`, `SYSTEM.ERROR`) → `$accessor.client.setSystemDialog(...)` | ✅ |
 | `neko/base.ts` | Public getter `peerConnection` auf `BaseClient` (exponiert `protected _peer` sauber für Stats-Polling) | ✅ |
 | `client/src/locale/*.ts` | **R1 i18n:** `side.users` Key in allen 15 Locale-Dateien ergänzt | ✅ |
 
@@ -69,7 +71,7 @@ Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · **R1–R6 voll
 | R4 | User-Avatare aus Controls-Bar entfernen + Höhe reduzieren | `app.vue`, `_variables.scss` | ✅ |
 | R5 | Resolution-Button aus Video-Player entfernen | `video.vue` | ✅ |
 | R6 | Resolution-Dropdown in Settings ergänzen | `settings.vue` | ✅ |
-| R7 | *(Platzhalter — noch zu definieren)* | — | ⬜ |
+| R7 | Dedizierte Login-Page — `connect.vue` als Vollbild-Route, kein Popup mehr | `connect.vue`, `app.vue`, `store/client.ts` (opt.) | ⬜ |
 | R8 | *(Platzhalter — noch zu definieren)* | — | ⬜ |
 | R9 | *(Platzhalter — noch zu definieren)* | — | ⬜ |
 
@@ -186,6 +188,225 @@ In R1-Commit enthalten — siehe R1+R3 oben.
 - `resValue` getter: `"${width}x${height}@${rate}"` — zeigt aktive Auflösung automatisch
 - `resValue` setter: `$accessor.video.screenSet(conf)` bei Auswahl
 - `ScreenResolution`-Type aus `~/neko/types` importiert
+
+---
+
+### R7 — Dedizierte Login-Page ⬜
+
+**Ziel:** `connect.vue` wird von einem modalen Overlay (das über dem Room-Layout schwimmt) zu einer eigenständigen Vollbild-Seite umgebaut. Der User sieht den Room **niemals**, solange er nicht eingeloggt ist — keine Layout-Bleed-Artefakte, keine Hintergrund-UI.
+
+#### Motivation & Problem-Analyse
+
+Aktuell (`connect.vue` als `position: fixed`-Overlay über `app.vue`):
+
+- Der gesamte Room wird im DOM gerendert und geladen, auch wenn niemand eingeloggt ist
+- Sidebar-State (`side = true` im Store/LocalStorage) beeinflusst das Layout hinter dem Overlay — sichtbar als Breiten-Artefakt in Header und Controls-Bar (bereits in Bugfix-Commit 01.05.2026 entschärft, aber nicht vollständig gelöst, da DOM-Struktur identisch bleibt)
+- Das Login-Overlay schwimmt über einem bereits initialisierten Room — konzeptuell falsch und potenziell sicherheitsrelevant (DOM-Inspektion ermöglicht Einblick in Room-Struktur vor Login)
+- `$swal`-Dialoge (Logged Out, Disconnected, Error) wurden durch In-App `SystemDialog` ersetzt — die Basis für eine saubere Entkopplung ist damit gelegt
+
+**Gewünschter Zielzustand:** Solange `!connected`, rendert `app.vue` **ausschließlich** `<neko-login-page>` — kein Room-DOM, kein Header, keine Controls, keine Sidebar. Nach erfolgreichem Login wird `<neko-login-page>` ausgeblendet und der Room vollständig eingeblendet.
+
+---
+
+#### Architektur-Entscheidung: kein Vue Router
+
+neko verwendet **keinen Vue Router** — das gesamte App-State-Management läuft über den Vuex-Store (`$accessor`). R7 folgt diesem Pattern: Der Login-Zustand wird ausschließlich über `$accessor.connected` gesteuert. Kein `vue-router`, keine Hash-Routing-Änderungen, keine neuen Abhängigkeiten.
+
+---
+
+#### Betroffene Dateien
+
+| Datei | Aktion | Beschreibung |
+|---|---|---|
+| `client/src/components/connect.vue` | **Rewrite** | Vollbild-Login-Page (kein Overlay mehr); `position: fixed; inset: 0` bleibt, aber konzeptuell ist es jetzt die einzige Seite |
+| `client/src/app.vue` | **Patch** | Bedingte Render-Logik: `v-if="connected"` auf gesamte Room-Struktur; `<neko-login-page>` als Ersatz wenn `!connected` |
+| `client/src/store/client.ts` | **Keine Änderung nötig** | `systemDialog`-State bereits vorhanden (Bugfix 01.05.2026) |
+| `client/src/neko/index.ts` | **Keine Änderung nötig** | `setSystemDialog`-Calls bereits implementiert (Bugfix 01.05.2026) |
+
+> **Hinweis:** `connect.vue` kann umbenannt werden zu `login.vue` für semantische Klarheit — dann muss der Import in `app.vue` und die Komponenten-Registrierung (`'neko-connect'` → `'neko-login'`) entsprechend angepasst werden. Optional, aber empfohlen.
+
+---
+
+#### Schritt-für-Schritt-Implementierung
+
+##### Schritt 1 — `app.vue`: Room hinter `v-if="connected"` legen
+
+**Aktueller Stand in `app.vue` (vereinfacht):**
+
+```html
+<template>
+  <div id="neko" :class="[!videoOnly && connected && side ? 'expanded' : '']">
+    <template v-else>  <!-- v-if="!$client.supported" ... -->
+      <main class="neko-main">       <!-- Header + Video + Controls -->
+        ...
+      </main>
+      <transition name="side">
+        <neko-side v-if="!videoOnly && connected && side" />
+      </transition>
+      <neko-connect v-if="!connected" />   <!-- Overlay über dem Room -->
+      <neko-about v-if="about" />
+      <notifications ... />
+    </template>
+  </div>
+</template>
+```
+
+**Ziel-Stand nach R7:**
+
+```html
+<template>
+  <div id="neko">
+    <template v-if="!$client.supported">
+      <neko-unsupported />
+    </template>
+
+    <!-- Login-Page: exklusiv wenn nicht verbunden -->
+    <template v-else-if="!connected">
+      <neko-login-page />
+    </template>
+
+    <!-- Room: nur wenn verbunden -->
+    <template v-else>
+      <div
+        class="neko-room-wrapper"
+        :class="[!videoOnly && side ? 'expanded' : '']"
+      >
+        <main class="neko-main">  <!-- Header + Video + Controls unverändert -->
+          ...
+        </main>
+        <transition name="side">
+          <neko-side v-if="!videoOnly && side" />
+        </transition>
+      </div>
+      <neko-about v-if="about" />
+      <notifications ... />
+    </template>
+  </div>
+</template>
+```
+
+**Wichtige Detail-Änderungen in `app.vue`:**
+
+- `id="neko"` bleibt auf dem Root-Div — CSS-Selektoren bleiben stabil
+- Die `.expanded`-Klasse wandert auf einen neuen inneren Wrapper `.neko-room-wrapper` (oder bleibt auf `#neko` — je nach SCSS-Struktur, Konsistenz prüfen)
+- `<neko-connect v-if="!connected" />` wird **entfernt**
+- `<neko-login-page />` ersetzt es als eigener `v-else-if`-Branch — kein Overlay mehr
+- `connected`-Checks auf `neko-side v-if` können vereinfacht werden (sind im `v-else`-Branch, also implizit `connected`)
+- Import: `import LoginPage from '~/components/login.vue'` (oder `connect.vue` wenn nicht umbenannt)
+- Komponenten-Registrierung: `'neko-login-page': LoginPage`
+
+**SCSS-Anpassung in `app.vue`:**
+
+```scss
+// Wrapper für den Room — trägt .expanded wenn Sidebar offen
+.neko-room-wrapper {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  background: var(--color-bg);
+  transition: background-color var(--transition-slow);
+
+  // Sidebar-Glow bleibt identisch
+  &.expanded .neko-main {
+    box-shadow: 4px 0 20px color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+}
+
+// #neko Root: nur noch ein leerer Flex-Container
+#neko {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  max-width: 100vw;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  background: var(--color-bg);
+  overflow: hidden;
+  transition: background-color var(--transition-slow);
+}
+```
+
+> **Alternativ (minimal invasiv):** `#neko` behält seine bestehende SCSS-Struktur identisch. Nur die `.expanded`-Klasse-Bedingung und das Template werden geändert. Kein neuer Wrapper nötig, wenn `#neko` direkt die `flex-direction: row` und `overflow: hidden` bereits trägt.
+
+---
+
+##### Schritt 2 — `connect.vue` → `login.vue` Rewrite
+
+Die Datei wird von einem Overlay-Pattern zu einer **eigenständigen Vollbild-Page** umgebaut. Die visuelle Sprache (Glassmorphism, Spotlight-Gradient, Dot-Grid) bleibt erhalten — nur die strukturelle Rolle ändert sich.
+
+**Was bleibt:**
+
+- `position: fixed; inset: 0` (oder `position: absolute; inset: 0` — beides funktioniert, da Parent jetzt `position: relative / absolute` ist)
+- Spotlight-Gradient + Dot-Grid-Hintergrund (`.connect`-Klasse)
+- Glassmorphism `.window` Login-Card
+- `SystemDialog`-Overlay (aus Bugfix 01.05.2026 bereits implementiert) — bleibt unverändert
+- `autoPassword`/`autoUser`-URL-Param-Logik — bleibt unverändert
+- Loader-Animation (Bounce-Bubbles) — bleibt unverändert
+- i18n-Keys (`connect.login_title`, `connect.displayname`, etc.) — alle unverändert
+
+**Was sich ändert:**
+
+- Dateiname: `connect.vue` → `login.vue` (empfohlen)
+- Komponenten-Name: `neko-connect` → `neko-login-page` (in Template + `@Component`-Decorator)
+- Konzeptuell: kein Overlay mehr — die Komponente **ist** die Seite
+- `backdrop-filter: blur(4px)` auf `.connect` kann entfernt werden (war für Overlay-Tiefenwirkung; als eigenständige Page nicht mehr nötig — kann aber behalten werden für visuellen Effekt auf dem Dot-Grid)
+- Der `systemDialog`-Branch in der Komponente bleibt vollständig erhalten
+
+**Transition zwischen Login-Page und Room (in `app.vue`):**
+
+Da `v-else-if` / `v-else` verwendet werden, kann Vue's `<transition>` auf den umschließenden Block angewendet werden:
+
+```html
+<transition name="page-fade" mode="out-in">
+  <neko-login-page v-if="!connected" key="login" />
+  <div class="neko-room-wrapper" v-else key="room" :class="[!videoOnly && side ? 'expanded' : '']">
+    ...
+  </div>
+</transition>
+```
+
+```scss
+// Sanfter Fade zwischen Login-Page und Room
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity var(--transition-slow);
+}
+.page-fade-enter,
+.page-fade-leave-to {
+  opacity: 0;
+}
+```
+
+> **Hinweis `mode="out-in"`:** Die Login-Page fährt erst aus (Fade-Out), dann fährt der Room ein (Fade-In). Verhindert Layout-Überlappung während der Transition.
+
+---
+
+##### Schritt 3 — Verifikation & Abnahme
+
+Nach Implementierung folgende Szenarien manuell testen:
+
+| Szenario | Erwartetes Verhalten |
+|---|---|
+| Frischer Seitenaufruf (nicht eingeloggt) | Nur Login-Page sichtbar; kein Room-DOM im Inspector |
+| Login erfolgreich | Sanfter Fade-Out Login → Fade-In Room |
+| Sidebar war offen (LocalStorage `side=true`), dann ausgeloggt | Login-Page füllt **100% Breite** — kein Layout-Bleed |
+| Logout via Settings | `systemDialog` (info) erscheint auf Login-Page; OK → Login-Card zurück |
+| Server-Disconnect / Kick | `systemDialog` (error) erscheint auf Login-Page; OK → Login-Card zurück |
+| `?pwd=xxx&usr=yyy` URL-Params | Auto-Login funktioniert weiterhin (Logik in `mounted()` unverändert) |
+| Light Mode | Login-Page in Light-Mode korrekt (`[data-theme="light"]` auf `<html>`) |
+| Mobile (375px) | Login-Card zentriert, kein Overflow |
+
+---
+
+#### Abgrenzung: Was R7 **nicht** ist
+
+- **Kein eigener URL-Pfad / Route** (`/login` o.ä.) — neko hat keinen Router; bleibt so
+- **Kein Server-Side Rendering / Auth-Guard** — der Login-State bleibt rein client-seitig über WebSocket
+- **Keine Änderung am Backend** — nur Frontend
+- **Keine Änderung an i18n-Keys** — bestehende Schlüssel werden weiterverwendet
+- **Kein Redesign des Login-Formulars** — visuelles Design bleibt (Glassmorphism, Spotlight-Gradient), nur strukturelle Rolle ändert sich
 
 ---
 
