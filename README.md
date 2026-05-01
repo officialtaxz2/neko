@@ -19,7 +19,7 @@ Das Original-Frontend war ein **Discord-Klon** (`#36393f`-Palette, Whitney-Font,
 | **Sidebar** | 4-Tab-Leiste (Users · Chat · Files · Settings); Users + Chat gleichzeitig (50/50-Split); beide Panels standardmäßig offen; exklusive Settings/Files-Logik | ✅ |
 | **Userlist** | Card-Layout mit Avatar + Name + dauerhaft sichtbaren Aktions-Buttons; vollständige Admin-Moderation (Kick/Ban/Mute/Give/Release/Take Controls); Ignore für alle User | ✅ |
 | **Controls-Bar** | Höhe 125px → 64px; Member-Avatare entfernt; Touch-Targets ≥44px; Animated FPS/Bitrate-Counters | ✅ |
-| **Settings** | Bento Grid (2-Spalten); Custom Toggles; Resolution-Dropdown (admin-only) direkt in Settings; Scroll-Sensitivity Range auf 1–50 reduziert (war 1–100) für mehr Präzision im niedrigen Bereich; Drag-Tooltip zeigt aktuellen Wert live über dem Slider-Thumb | ✅ |
+| **Settings** | Bento Grid (2-Spalten); Custom Toggles; Resolution-Dropdown (admin-only) direkt in Settings; Scroll-Sensitivity Range 1–20 (war 1–100), Default 5; Drag-Tooltip zeigt aktuellen Wert live über dem Slider-Thumb | ✅ |
 | **Video-Player** | Resolution-Button aus Player entfernt (→ Settings); alle WebRTC/Event-Handler unberührt | ✅ |
 | **Notifications** | Floating Card-Design (ersetzt Vollfarb-Banner); typ-spezifische Accent-Border + FA-Icon | ✅ |
 | **SweetAlert2** | Vollständig auf CSS Custom Properties migriert — Dark/Light-Mode-Tokens wirken zur Laufzeit | ✅ |
