@@ -3,15 +3,7 @@
     <!-- Tab navigation -->
     <div class="tabs-container">
       <ul role="tablist">
-        <li
-          role="tab"
-          :aria-selected="activeChat"
-          :class="{ active: activeChat }"
-          @click.stop.prevent="toggleChat"
-        >
-          <i class="fas fa-comment-alt" aria-hidden="true" />
-          <span>{{ $t('side.chat') }}</span>
-        </li>
+        <!-- Users tab now first (left) -->
         <li
           role="tab"
           :aria-selected="activeUsers"
@@ -20,6 +12,16 @@
         >
           <i class="fas fa-users" aria-hidden="true" />
           <span>{{ $t('side.users') }}</span>
+        </li>
+        <!-- Chat tab now second (right of Users) -->
+        <li
+          role="tab"
+          :aria-selected="activeChat"
+          :class="{ active: activeChat }"
+          @click.stop.prevent="toggleChat"
+        >
+          <i class="fas fa-comment-alt" aria-hidden="true" />
+          <span>{{ $t('side.chat') }}</span>
         </li>
         <li
           v-if="filetransferAllowed"
@@ -226,7 +228,6 @@
     transition:
       opacity   250ms cubic-bezier(0.16, 1, 0.3, 1),
       transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
-    // prevent the sliding element from overflowing outside the sidebar during animation
     will-change: transform, opacity;
   }
 
@@ -290,8 +291,9 @@
     },
   })
   export default class extends Vue {
+    // Both Chat and Users open by default after login
     activeChat = true
-    activeUsers = false
+    activeUsers = true
     activeSettings = false
 
     get filetransferAllowed() {
@@ -331,6 +333,7 @@
         this.activeChat = true
         return
       }
+      // Prevent closing the last active panel
       if (this.activeChat && !this.activeUsers) return
       this.activeChat = !this.activeChat
     }
@@ -342,6 +345,7 @@
         this.activeUsers = true
         return
       }
+      // Prevent closing the last active panel
       if (this.activeUsers && !this.activeChat) return
       this.activeUsers = !this.activeUsers
     }
