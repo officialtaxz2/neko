@@ -652,11 +652,13 @@
     set resValue(v: string) {
       const [res, rate] = v.split('@')
       const [width, height] = res.split('x').map(Number)
-      this.$accessor.video.changeResolution({ width, height, rate: Number(rate) })
+      // screenSet dispatches EVENT.SCREEN.SET via the video store action
+      this.$accessor.video.screenSet({ width, height, rate: Number(rate) })
     }
 
     logout() {
-      this.$accessor.disconnect()
+      // Root store action — clears credentials and calls $client.logout()
+      this.$accessor.logout()
     }
   }
 </script>
