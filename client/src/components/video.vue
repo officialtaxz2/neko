@@ -218,8 +218,17 @@
 
   // @ts-ignore
   import GuacamoleKeyboard from '~/utils/guacamole-keyboard.ts'
+  import {
+    initVirtualCursor,
+    handleVirtualTouchStart,
+    handleVirtualTouchMove,
+    handleVirtualTouchEnd,
+    resetVirtualTrackpad,
+  } from '~/utils/virtualTrackpad'
 
   const WHEEL_LINE_HEIGHT = 19
+  // Sensitivity factor for trackpad relative movement (pixels of delta per source pixel)
+  const TRACKPAD_SENSITIVITY = 2.5
 
   @Component({
     name: 'neko-video',
@@ -248,6 +257,8 @@
     private fullscreen = false
     private mutedOverlay = true
     private lastTextAreaValue = ''
+    // last Y position of a two-finger touch for scroll detection in trackpad mode
+    private _lastTwoFingerY = 0
 
     get admin() {
       return this.$accessor.user.admin
@@ -320,6 +331,10 @@
 
     get scroll_invert() {
       return this.$accessor.settings.scroll_invert
+    }
+
+    get trackpad_mode() {
+      return this.$accessor.settings.trackpad_mode
     }
 
     get pip_available() {
@@ -532,6 +547,7 @@
     beforeDestroy() {
       this.observer.disconnect()
       this.$accessor.video.setPlayable(false)
+      resetVirtualTrackpad()
       /* Guacamole Keyboard does not provide destroy functions */
     }
 
@@ -722,6 +738,60 @@
     }
 
     onTouchHandler(e: TouchEvent) {
+      // Guard 1: only process when hosting and not locked
+      if (!this.hosting || this.locked) {
+        return
+      }
+
+      // Guard 2: trackpad branch — relative cursor mode, touch device only
+      if (this.trackpad_mode && this.is_touch_device) {
+        const { w, h } = this.$accessor.video.resolution
+
+        // Two-finger scroll
+        if (e.touches.length === 2 && e.type === 'touchmove') {
+          const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+          const deltaY = currentY - this._lastTwoFingerY
+          this._lastTwoFingerY = currentY
+          // Only send when delta is meaningful to avoid noise
+          if (Math.abs(deltaY) > 1) {
+            this.$client.sendData('wheel', { x: 0, y: deltaY > 0 ? -1 : 1 })
+          }
+          return
+        }
+
+        if (e.type === 'touchstart' && e.touches.length === 2) {
+          this._lastTwoFingerY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+          return
+        }
+
+        const touch = e.changedTouches[0]
+        if (!touch) return
+
+        if (e.type === 'touchstart') {
+          // Lazy-init virtual cursor at source resolution centre on first touch
+          initVirtualCursor(w, h)
+          handleVirtualTouchStart(
+            touch,
+            (x, y) => this.$client.sendData('mousemove', { x: Math.round(x), y: Math.round(y) }),
+            (button) => this.$client.sendData('mousedown', { key: button + 1 }),
+            (button) => this.$client.sendData('mouseup', { key: button + 1 }),
+          )
+        } else if (e.type === 'touchmove') {
+          handleVirtualTouchMove(
+            touch,
+            TRACKPAD_SENSITIVITY,
+            (x, y) => this.$client.sendData('mousemove', { x: Math.round(x), y: Math.round(y) }),
+          )
+        } else if (e.type === 'touchend') {
+          handleVirtualTouchEnd(
+            (button) => this.$client.sendData('mousedown', { key: button + 1 }),
+            (button) => this.$client.sendData('mouseup', { key: button + 1 }),
+          )
+        }
+        return
+      }
+
+      // Guard 3: original absolute touch branch — unchanged
       let first = e.changedTouches[0]
       let type = ''
       switch (e.type) {
