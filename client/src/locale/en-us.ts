@@ -88,6 +88,11 @@ export const locks = {
 export const setting = {
   scroll: 'Scroll Sensitivity',
   scroll_invert: 'Invert Scroll',
+  trackpad_mode: 'Trackpad Mode',
+  trackpad_mode_description: 'Move cursor relatively like a touchpad',
+  trackpad_mode_mobile_hint: 'Two fingers to scroll, tap to click, hold to right-click',
+  mobile: 'Mobile',
+  desktop_only_inactive: 'Touch only',
   autoplay: 'Autoplay Video',
   ignore_emotes: 'Ignore Emotes',
   chat_sound: 'Play Chat Sound',

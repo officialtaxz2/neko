@@ -13,46 +13,49 @@ export const side = {
 }
 
 export const connect = {
-  login_title: 'Logga in',
+  login_title: 'Vänligen logga in',
   invitation_title: 'Du har blivit inbjuden till detta rum',
   displayname: 'Ange ditt visningsnamn',
   password: 'Lösenord',
   connect: 'Anslut',
   error: 'Inloggningsfel',
-  empty_displayname: 'Visningsnamnet kan inte vara tomt.',
+  empty_displayname: 'Visningsnamnet får inte vara tomt.',
 }
 
 export const context = {
   ignore: 'Ignorera',
   unignore: 'Sluta ignorera',
   mute: 'Tysta',
-  unmute: 'Avtysta',
-  release: 'Tvinga frigöring av kontroller',
+  unmute: 'Sluta tysta',
+  release: 'Tvinga frigivning av kontroller',
   take: 'Tvinga ta kontroller',
   give: 'Ge kontroller',
-  kick: 'Sparka',
+  kick: 'Kicka',
   ban: 'Bannlys IP',
   confirm: {
-    kick_title: 'Sparka {name}?',
-    kick_text: 'Är du säker på att du vill sparka {name}?',
-    ban_title: 'Bannlysa {name}?',
+    kick_title: 'Kicka {name}?',
+    kick_text: 'Är du säker på att du vill kicka {name}?',
+    ban_title: 'Bannlys {name}?',
     ban_text: 'Vill du bannlysa {name}? Du måste starta om servern för att ångra detta.',
     mute_title: 'Tysta {name}?',
     mute_text: 'Är du säker på att du vill tysta {name}?',
-    unmute_title: 'Avtysta {name}?',
-    unmute_text: 'Vill du avtysta {name}?',
+    unmute_title: 'Sluta tysta {name}?',
+    unmute_text: 'Vill du sluta tysta {name}?',
     button_yes: 'Ja',
     button_cancel: 'Avbryt',
   },
 }
 
 export const controls = {
-  release: 'Frigör kontroller',
+  release: 'Frigiv kontroller',
   request: 'Begär kontroller',
   lock: 'Lås kontroller',
   unlock: 'Lås upp kontroller',
   has: 'Du har kontroll',
   hasnot: 'Du har inte kontroll',
+  mic_on: 'Aktivera mikrofon',
+  mic_off: 'Inaktivera mikrofon',
+  mic_error: 'Mikrofonfel',
 }
 
 export const locks = {
@@ -73,10 +76,10 @@ export const locks = {
     notif_unlocked: 'låste upp rummet',
   },
   file_transfer: {
-    lock: 'Lås överföring (för användare)',
-    unlock: 'Lås upp överföring (för användare)',
-    locked: 'Överföring låst (för användare)',
-    unlocked: 'Överföring upplåst (för användare)',
+    lock: 'Lås filöverföring (för användare)',
+    unlock: 'Lås upp filöverföring (för användare)',
+    locked: 'Filöverföring låst (för användare)',
+    unlocked: 'Filöverföring upplåst (för användare)',
     notif_locked: 'låste filöverföring',
     notif_unlocked: 'låste upp filöverföring',
   },
@@ -85,6 +88,11 @@ export const locks = {
 export const setting = {
   scroll: 'Scrollkänslighet',
   scroll_invert: 'Invertera scroll',
+  trackpad_mode: 'Styrplattläge',
+  trackpad_mode_description: 'Flytta markören relativt som en styrplatta',
+  trackpad_mode_mobile_hint: 'Två fingrar för att scrolla, tryck för att klicka, håll för högerklick',
+  mobile: 'Mobil',
+  desktop_only_inactive: 'Endast touch',
   autoplay: 'Spela upp video automatiskt',
   ignore_emotes: 'Ignorera emotes',
   chat_sound: 'Spela chattljud',
@@ -103,22 +111,22 @@ export const connection = {
 
 export const notifications = {
   connected: '{name} anslöt',
-  disconnected: '{name} frånkopplades',
+  disconnected: '{name} kopplades från',
   controls_taken: '{name} tog kontrollerna',
   controls_taken_force: 'tog kontrollerna med tvång',
   controls_taken_steal: 'tog kontrollerna från {name}',
-  controls_released: '{name} släppte kontrollerna',
-  controls_released_force: 'släppte kontrollerna med tvång',
-  controls_released_steal: 'släppte kontrollerna från {name}',
+  controls_released: '{name} frigjorde kontrollerna',
+  controls_released_force: 'frigjorde kontrollerna med tvång',
+  controls_released_steal: 'frigjorde kontrollerna från {name}',
   controls_given: 'gav kontrollerna till {name}',
   controls_has: '{name} har kontrollerna',
-  controls_has_alt: 'Men jag lät personen veta att du ville ha dem',
+  controls_has_alt: 'Men jag informerade personen om att du ville ha det',
   controls_requesting: '{name} begär kontrollerna',
   resolution: 'ändrade upplösningen till {width}x{height}@{rate}',
   banned: 'bannlyste {name}',
-  kicked: 'sparkade {name}',
+  kicked: 'kickade {name}',
   muted: 'tystade {name}',
-  unmuted: 'avtystade {name}',
+  unmuted: 'slutade tysta {name}',
 }
 
 export const files = {

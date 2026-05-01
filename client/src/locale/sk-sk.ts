@@ -1,5 +1,5 @@
 export const logout = 'Odhlásiť sa'
-export const unsupported = 'Tento prehliačač nepodporuje WebRTC'
+export const unsupported = 'Tento webový prehliadač nepodporuje WebRTC'
 export const admin_loggedin = 'Ste prihlásený ako správca'
 export const you = 'Vy'
 export const somebody = 'Niekto'
@@ -13,34 +13,34 @@ export const side = {
 }
 
 export const connect = {
-  login_title: 'Prihláste sa',
+  login_title: 'Prihláste sa prosím',
   invitation_title: 'Boli ste pozvaný do tejto miestnosti',
-  displayname: 'Zadajte svoje zobrazovacie meno',
+  displayname: 'Zadajte svoje zobrazované meno',
   password: 'Heslo',
   connect: 'Pripojiť',
   error: 'Chyba prihlásenia',
-  empty_displayname: 'Zobrazovacie meno nemôže byť prázdne.',
+  empty_displayname: 'Zobrazované meno nemôže byť prázdne.',
 }
 
 export const context = {
   ignore: 'Ignorovať',
   unignore: 'Prestať ignorovať',
-  mute: 'Stíšiť',
-  unmute: 'Zrušiť stíšenie',
+  mute: 'Stlmiť',
+  unmute: 'Zrušiť stlmenie',
   release: 'Vynútiť uvoľnenie ovládania',
   take: 'Vynútiť prevzatie ovládania',
-  give: 'Dať ovládanie',
-  kick: 'Vyhoдиť',
+  give: 'Odovzdať ovládanie',
+  kick: 'Vyhodiť',
   ban: 'Zablokovať IP',
   confirm: {
-    kick_title: 'Vyhoдиť {name}?',
-    kick_text: 'Naozaj chcete vyhoдиť {name}?',
+    kick_title: 'Vyhodiť {name}?',
+    kick_text: 'Ste si istý, že chcete vyhodiť {name}?',
     ban_title: 'Zablokovať {name}?',
-    ban_text: 'Chcete zablokovať {name}? Na zrušenie budete musieť reštartovať server.',
-    mute_title: 'Stíšiť {name}?',
-    mute_text: 'Naozaj chcete stíšiť {name}?',
-    unmute_title: 'Zrušiť stíšenie {name}?',
-    unmute_text: 'Chcete zrušiť stíšenie {name}?',
+    ban_text: 'Chcete zablokovať {name}? Budete musieť reštartovať server, aby ste to vrátili.',
+    mute_title: 'Stlmiť {name}?',
+    mute_text: 'Ste si istý, že chcete stlmiť {name}?',
+    unmute_title: 'Zrušiť stlmenie {name}?',
+    unmute_text: 'Chcete zrušiť stlmenie {name}?',
     button_yes: 'Áno',
     button_cancel: 'Zrušiť',
   },
@@ -48,11 +48,14 @@ export const context = {
 
 export const controls = {
   release: 'Uvoľniť ovládanie',
-  request: 'Požиадаť o ovládanie',
+  request: 'Požiadať o ovládanie',
   lock: 'Zamknúť ovládanie',
   unlock: 'Odomknúť ovládanie',
   has: 'Máte ovládanie',
   hasnot: 'Nemáte ovládanie',
+  mic_on: 'Zapnúť mikrofón',
+  mic_off: 'Vypnúť mikrofón',
+  mic_error: 'Chyba mikrofónu',
 }
 
 export const locks = {
@@ -65,12 +68,12 @@ export const locks = {
     notif_unlocked: 'odomkol ovládanie pre používateľov',
   },
   login: {
-    lock: 'Zamknúť miestnostť (pre používateľov)',
-    unlock: 'Odomknúť miestnostť (pre používateľov)',
-    locked: 'Miestnostť zamknutá (pre používateľov)',
-    unlocked: 'Miestnostť odomknutá (pre používateľov)',
-    notif_locked: 'zamkol miestnostť',
-    notif_unlocked: 'odomkol miestnostť',
+    lock: 'Zamknúť miestnosť (pre používateľov)',
+    unlock: 'Odomknúť miestnosť (pre používateľov)',
+    locked: 'Miestnosť zamknutá (pre používateľov)',
+    unlocked: 'Miestnosť odomknutá (pre používateľov)',
+    notif_locked: 'zamkol miestnosť',
+    notif_unlocked: 'odomkol miestnosť',
   },
   file_transfer: {
     lock: 'Zamknúť prenos súborov (pre používateľov)',
@@ -85,6 +88,11 @@ export const locks = {
 export const setting = {
   scroll: 'Citlivosť posúvania',
   scroll_invert: 'Invertovať posúvanie',
+  trackpad_mode: 'Režim touchpadu',
+  trackpad_mode_description: 'Pohybovať kurzorom relatívne ako touchpad',
+  trackpad_mode_mobile_hint: 'Dva prsty na rolovanie, klepnutie na klik, podržanie na pravý klik',
+  mobile: 'Mobil',
+  desktop_only_inactive: 'Len dotyk',
   autoplay: 'Automatické prehrávanie videa',
   ignore_emotes: 'Ignorovať emotikony',
   chat_sound: 'Prehrávať zvuk chatu',
@@ -105,24 +113,24 @@ export const notifications = {
   connected: '{name} sa pripojil',
   disconnected: '{name} sa odpojil',
   controls_taken: '{name} prevzal ovládanie',
-  controls_taken_force: 'násilne prevzal ovládanie',
+  controls_taken_force: 'vynútene prevzal ovládanie',
   controls_taken_steal: 'prevzal ovládanie od {name}',
   controls_released: '{name} uvoľnil ovládanie',
-  controls_released_force: 'násilne uvoľnil ovládanie',
+  controls_released_force: 'vynútene uvoľnil ovládanie',
   controls_released_steal: 'uvoľnil ovládanie od {name}',
-  controls_given: 'dal ovládanie {name}',
+  controls_given: 'odovzdal ovládanie {name}',
   controls_has: '{name} má ovládanie',
-  controls_has_alt: 'Ale dal som tej osobe vedieť, že ste to chceli',
+  controls_has_alt: 'Ale informoval som danú osobu, že ste to chceli',
   controls_requesting: '{name} žiada o ovládanie',
   resolution: 'zmenil rozlíšenie na {width}x{height}@{rate}',
   banned: 'zablokoval {name}',
   kicked: 'vyhodil {name}',
-  muted: 'stíšil {name}',
-  unmuted: 'zrušil stíšenie {name}',
+  muted: 'stlmil {name}',
+  unmuted: 'zrušil stlmenie {name}',
 }
 
 export const files = {
   downloads: 'Stiahnuté',
-  uploads: 'Nahraté',
-  upload_here: 'Kliknite alebo potiáhnite súbory sem na nahranie',
+  uploads: 'Nahrané',
+  upload_here: 'Kliknite alebo presuňte súbory sem na nahranie',
 }

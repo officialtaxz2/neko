@@ -1,46 +1,46 @@
-export const logout = 'Ausloggen'
-export const unsupported = 'Dieser Webbrowser unterstützt kein Web-RTC.'
-export const admin_loggedin = 'Du bist eingeloggt als Admin.'
+export const logout = 'Abmelden'
+export const unsupported = 'Dieser Browser unterstützt WebRTC nicht'
+export const admin_loggedin = 'Du bist als Admin eingeloggt'
 export const you = 'Du'
 export const somebody = 'Jemand'
-export const send_a_message = 'Sende eine Nachricht'
+export const send_a_message = 'Nachricht senden'
 
 export const side = {
   chat: 'Chat',
   files: 'Dateien',
   settings: 'Einstellungen',
-  users: 'Nutzer',
+  users: 'Benutzer',
 }
 
 export const connect = {
-  login_title: 'Bitte Anmelden',
-  invitation_title: 'Du wurdest zu diesem Raum eingeladen',
-  displayname: 'Gebe deinen Benutzernamen an',
+  login_title: 'Bitte einloggen',
+  invitation_title: 'Du wurdest in diesen Raum eingeladen',
+  displayname: 'Gib deinen Anzeigenamen ein',
   password: 'Passwort',
   connect: 'Verbinden',
-  error: 'Login Fehler',
-  empty_displayname: 'Benutzername kann nicht leer sein.',
+  error: 'Anmeldefehler',
+  empty_displayname: 'Der Anzeigename darf nicht leer sein.',
 }
 
 export const context = {
   ignore: 'Ignorieren',
-  unignore: 'Nicht Ignorieren',
+  unignore: 'Nicht mehr ignorieren',
   mute: 'Stummschalten',
-  unmute: 'Nicht Stummschalten',
-  release: 'Freigabesteuerung freigeben',
-  take: 'Steuerung erzwingen',
-  give: 'Steuerung geben',
+  unmute: 'Stummschaltung aufheben',
+  release: 'Steuerung erzwungen freigeben',
+  take: 'Steuerung erzwungen übernehmen',
+  give: 'Steuerung übergeben',
   kick: 'Rauswerfen',
-  ban: 'IP-Sperren',
+  ban: 'IP sperren',
   confirm: {
-    kick_title: 'Kick {name}?',
-    kick_text: 'Bist du sicher das du {name} rauswerfen willst?',
-    ban_title: '{name} Sperren?',
-    ban_text: 'Willst du {name} Sperren? Du musst den Server neustarten um es rückgängig zu machen.',
+    kick_title: '{name} rauswerfen?',
+    kick_text: 'Bist du sicher, dass du {name} rauswerfen möchtest?',
+    ban_title: '{name} sperren?',
+    ban_text: 'Möchtest du {name} sperren? Du musst den Server neu starten, um dies rückgängig zu machen.',
     mute_title: '{name} stummschalten?',
-    mute_text: 'Bist du sicher das du {name} stummschalten willst?',
-    unmute_title: '{name} stummschaltung aufheben?',
-    unmute_text: 'Bist du sicher das du von {name} die stummschaltung aufheben willst?',
+    mute_text: 'Bist du sicher, dass du {name} stummschalten möchtest?',
+    unmute_title: '{name} Stummschaltung aufheben?',
+    unmute_text: 'Möchtest du die Stummschaltung von {name} aufheben?',
     button_yes: 'Ja',
     button_cancel: 'Abbrechen',
   },
@@ -48,43 +48,51 @@ export const context = {
 
 export const controls = {
   release: 'Steuerung freigeben',
-  request: 'Steuerung anfordern',
+  request: 'Steuerung anfragen',
   lock: 'Steuerung sperren',
   unlock: 'Steuerung entsperren',
-  has: 'Du hast die Kontrolle', // TODO: prüfen Übersetzung
-  hasnot: 'Du hast keine Kontrolle', // TODO: prüfen Übersetzung
+  has: 'Du hast die Steuerung',
+  hasnot: 'Du hast keine Steuerung',
+  mic_on: 'Mikrofon aktivieren',
+  mic_off: 'Mikrofon deaktivieren',
+  mic_error: 'Mikrofonfehler',
 }
 
 export const locks = {
   control: {
-    lock: 'Steuerung sperren (für Nutzer)',
-    unlock: 'Steuerung entsperren (für Nutzer)',
-    locked: 'Steuerung gesperrt (für Nutzer)',
-    unlocked: 'Steuerung entsperrt (für Nutzer)',
-    notif_locked: 'Steuerung sperren für Nutzer',
-    notif_unlocked: 'Steuerung entsperren für Nutzer',
+    lock: 'Steuerung sperren (für Benutzer)',
+    unlock: 'Steuerung entsperren (für Benutzer)',
+    locked: 'Steuerung gesperrt (für Benutzer)',
+    unlocked: 'Steuerung entsperrt (für Benutzer)',
+    notif_locked: 'hat die Steuerung für Benutzer gesperrt',
+    notif_unlocked: 'hat die Steuerung für Benutzer entsperrt',
   },
   login: {
-    lock: 'Raum sperren (für Nutzer)',
-    unlock: 'Raum entsperren (für Nutzer)',
-    locked: 'Raum gesperrt (für Nutzer)',
-    unlocked: 'Raum entsperrt (für Nutzer)',
-    notif_locked: 'Raum gesperrt',
-    notif_unlocked: 'Raum entsperrt',
+    lock: 'Raum sperren (für Benutzer)',
+    unlock: 'Raum entsperren (für Benutzer)',
+    locked: 'Raum gesperrt (für Benutzer)',
+    unlocked: 'Raum entsperrt (für Benutzer)',
+    notif_locked: 'hat den Raum gesperrt',
+    notif_unlocked: 'hat den Raum entsperrt',
   },
   file_transfer: {
-    lock: 'Dateiübertragung sperren (für Nutzer)',
-    unlock: 'Dateiübertragung entsperren (für Nutzer)',
-    locked: 'Dateiübertragung gesperrt (für Nutzer)',
-    unlocked: 'Dateiübertragung entsperrt (für Nutzer)',
-    notif_locked: 'Dateiübertragung gesperrt',
-    notif_unlocked: 'Dateiübertragung entsperrt',
+    lock: 'Dateiübertragung sperren (für Benutzer)',
+    unlock: 'Dateiübertragung entsperren (für Benutzer)',
+    locked: 'Dateiübertragung gesperrt (für Benutzer)',
+    unlocked: 'Dateiübertragung entsperrt (für Benutzer)',
+    notif_locked: 'hat die Dateiübertragung gesperrt',
+    notif_unlocked: 'hat die Dateiübertragung entsperrt',
   },
 }
 
 export const setting = {
   scroll: 'Scroll-Empfindlichkeit',
   scroll_invert: 'Bildlauf umkehren',
+  trackpad_mode: 'Trackpad-Modus',
+  trackpad_mode_description: 'Cursor relativ bewegen wie ein Touchpad',
+  trackpad_mode_mobile_hint: 'Zwei Finger zum Scrollen, Tippen zum Klicken, Halten für Rechtsklick',
+  mobile: 'Mobil',
+  desktop_only_inactive: 'Nur Touch',
   autoplay: 'Autoplay Video',
   ignore_emotes: 'Emotes ignorieren',
   chat_sound: 'Chat-Sound abspielen',
@@ -103,26 +111,26 @@ export const connection = {
 
 export const notifications = {
   connected: '{name} hat sich verbunden',
-  disconnected: '{name} hat sich getrennt',
-  controls_taken: '{name} hat die Steuerung genommen',
-  controls_taken_force: 'nahm die Steuerung gewaltsam von',
-  controls_taken_steal: 'nahm die Steuerung von {name}',
+  disconnected: '{name} hat die Verbindung getrennt',
+  controls_taken: '{name} hat die Steuerung übernommen',
+  controls_taken_force: 'hat die Steuerung erzwungen übernommen',
+  controls_taken_steal: 'hat die Steuerung von {name} übernommen',
   controls_released: '{name} hat die Steuerung freigegeben',
-  controls_released_force: 'hat die Steuerung gewaltsam losgelassen',
-  controls_released_steal: 'hat die Steuerung freigegeben von {name}',
-  controls_given: 'hat die Steuerung übergeben an {name}',
-  controls_has: '{name} hat die Sterung',
-  controls_has_alt: 'Aber ich habe die Person wissen lassen, dass du es wolltest',
-  controls_requesting: '{name} fordert die Kontrollen an',
-  resolution: 'die Auflösung geändert zu {width}x{height}@{rate}',
-  banned: 'sperrte {name}',
-  kicked: '{name} wurde rausgeworfen',
-  muted: '{name} stummgeschaltet',
-  unmuted: '{name} stummschaltung aufgehoben',
+  controls_released_force: 'hat die Steuerung erzwungen freigegeben',
+  controls_released_steal: 'hat die Steuerung von {name} freigegeben',
+  controls_given: 'hat die Steuerung an {name} übergeben',
+  controls_has: '{name} hat die Steuerung',
+  controls_has_alt: 'Aber ich habe der Person mitgeteilt, dass du sie wolltest',
+  controls_requesting: '{name} fragt nach der Steuerung',
+  resolution: 'hat die Auflösung auf {width}x{height}@{rate} geändert',
+  banned: 'hat {name} gesperrt',
+  kicked: 'hat {name} rausgeworfen',
+  muted: 'hat {name} stummgeschaltet',
+  unmuted: 'hat die Stummschaltung von {name} aufgehoben',
 }
 
 export const files = {
-  downloads: 'Herunterladen',
-  uploads: 'Hochladen',
-  upload_here: 'Klicken oder ziehen Sie Dateien zum Hochladen hierher',
+  downloads: 'Downloads',
+  uploads: 'Uploads',
+  upload_here: 'Hier klicken oder Dateien ziehen zum Hochladen',
 }
