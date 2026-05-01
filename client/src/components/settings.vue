@@ -13,13 +13,13 @@
             <span>{{ $t('setting.scroll') }}</span>
             <label class="slider">
               <!--
-                max is 50 (was 100). --fill formula updated accordingly.
+                max is 20 (was 50). --fill formula updated accordingly.
                 The tooltip bubble shows the live value while dragging.
               -->
               <div class="slider-wrap">
                 <input
-                  type="range" min="1" max="50" v-model="scroll"
-                  :style="{ '--fill': ((+scroll - 1) / 49 * 100) + '%' }"
+                  type="range" min="1" max="20" v-model="scroll"
+                  :style="{ '--fill': ((+scroll - 1) / 19 * 100) + '%' }"
                   @mousedown="showTooltip"
                   @touchstart="showTooltip"
                   @mouseup="hideTooltip"
@@ -28,7 +28,7 @@
                 <span
                   class="slider-tooltip"
                   :class="{ 'slider-tooltip--visible': tooltipVisible }"
-                  :style="{ left: ((+scroll - 1) / 49 * 100) + '%' }"
+                  :style="{ left: ((+scroll - 1) / 19 * 100) + '%' }"
                   aria-hidden="true"
                 >{{ scroll }}</span>
               </div>
@@ -127,10 +127,6 @@
         <div class="card-header">
           <i class="fas fa-broadcast-tower" aria-hidden="true" />
           <span class="card-title">{{ $t('setting.broadcast_title') }}</span>
-          <!--
-            Start button: outlined ghost style when inactive (no solid teal fill).
-            Hover reveals the solid teal background. Stop button stays solid red.
-          -->
           <button
             v-if="!broadcast_is_active"
             @click.stop.prevent="$accessor.settings.broadcastCreate(broadcast_url)"
@@ -222,10 +218,6 @@
         color: var(--color-text-muted);
       }
 
-      // ── Broadcast control buttons ──────────────────────────────────
-      // btn-icon--ghost: outlined, no background fill at rest.
-      // Teal only appears on hover so the card header stays neutral
-      // when no broadcast is running.
       .btn-icon {
         min-width: 28px;
         min-height: 28px;
@@ -241,7 +233,6 @@
           border-color var(--transition-interactive),
           transform   var(--transition-fast);
 
-        // Default (solid teal) — kept as fallback
         border: 1px solid var(--color-primary);
         background: var(--color-primary);
         color: var(--color-text-inverse);
@@ -249,7 +240,6 @@
         &:hover  { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
         &:active { transform: scale(0.92); }
 
-        // Ghost variant: transparent at rest, teal on hover
         &.btn-icon--ghost {
           background: transparent;
           color: var(--color-primary);
@@ -291,16 +281,13 @@
           font-size: var(--text-sm);
         }
 
-        // Dimmed state for desktop: toggle visible but visually inactive
         &.row--dimmed {
           opacity: 0.75;
-
           .switch { cursor: not-allowed; }
         }
 
         &.row-full { padding: var(--space-3) var(--space-4); }
 
-        // Row label wrapper: stacks label text + badge horizontally
         .row-label {
           flex: 1;
           display: flex;
@@ -308,7 +295,6 @@
           gap: var(--space-2);
         }
 
-        // Touch-only badge
         .badge {
           display: inline-flex;
           align-items: center;
@@ -335,13 +321,10 @@
     }
 
     // ── Scroll sensitivity slider ─────────────────────────────────────
-    // --fill is set via :style on the <input> from the Vue scroll computed.
-    // The track uses a split gradient: filled = teal, unfilled = surface-dynamic.
     .slider {
       display: flex;
       align-items: center;
 
-      // ── Slider wrap: positions tooltip relative to the thumb ──────
       .slider-wrap {
         position: relative;
         display: flex;
@@ -349,13 +332,9 @@
         width: 120px;
       }
 
-      // ── Tooltip bubble ────────────────────────────────────────────
-      // Appears above the thumb while dragging, fades out after release.
       .slider-tooltip {
         position: absolute;
         top: -28px;
-        // Translate centres the bubble over its left anchor.
-        // We subtract half the thumb width (6px) so it tracks the thumb centre.
         transform: translateX(-50%);
         background: var(--color-surface-offset);
         border: 1px solid var(--color-border);
@@ -365,11 +344,9 @@
         color: var(--color-text);
         white-space: nowrap;
         pointer-events: none;
-        // Hidden by default
         opacity: 0;
         transition: opacity 150ms ease;
 
-        // Tiny arrow pointing down to the thumb
         &::after {
           content: '';
           position: absolute;
@@ -380,9 +357,7 @@
           border-top-color: var(--color-border);
         }
 
-        &.slider-tooltip--visible {
-          opacity: 1;
-        }
+        &.slider-tooltip--visible { opacity: 1; }
       }
 
       input[type='range'] {
@@ -400,8 +375,8 @@
           border-radius: var(--radius-full);
           background: linear-gradient(
             to right,
-            var(--color-primary)         0% var(--fill, 20%),
-            var(--color-surface-dynamic) var(--fill, 20%) 100%
+            var(--color-primary)         0% var(--fill, 21%),
+            var(--color-surface-dynamic) var(--fill, 21%) 100%
           );
         }
 
@@ -419,8 +394,8 @@
           border-radius: var(--radius-full);
           background: linear-gradient(
             to right,
-            var(--color-primary)         0% var(--fill, 20%),
-            var(--color-surface-dynamic) var(--fill, 20%) 100%
+            var(--color-primary)         0% var(--fill, 21%),
+            var(--color-surface-dynamic) var(--fill, 21%) 100%
           );
         }
 
@@ -451,21 +426,10 @@
         height: 0;
         position: absolute;
 
-        // Checked: teal background
         &:checked + span { background: var(--color-primary); }
         &:checked + span::before { transform: translateX(18px); }
-
-        // Disabled: muted appearance
-        &:disabled + span {
-          opacity: 0.45;
-          cursor: not-allowed;
-        }
-
-        // Focus ring for keyboard nav
-        &:focus-visible + span {
-          outline: 2px solid var(--color-primary);
-          outline-offset: 2px;
-        }
+        &:disabled + span { opacity: 0.45; cursor: not-allowed; }
+        &:focus-visible + span { outline: 2px solid var(--color-primary); outline-offset: 2px; }
       }
 
       span {
@@ -514,17 +478,13 @@
         &:disabled { opacity: 0.5; cursor: not-allowed; }
       }
 
-      // Custom dropdown chevron via pseudo-element
       span {
         position: absolute;
         right: var(--space-3);
         pointer-events: none;
         color: var(--color-text-muted);
 
-        &::after {
-          content: '▾';
-          font-size: var(--text-xs);
-        }
+        &::after { content: '▾'; font-size: var(--text-xs); }
       }
     }
 
@@ -652,12 +612,10 @@
     set resValue(v: string) {
       const [res, rate] = v.split('@')
       const [width, height] = res.split('x').map(Number)
-      // screenSet dispatches EVENT.SCREEN.SET via the video store action
       this.$accessor.video.screenSet({ width, height, rate: Number(rate) })
     }
 
     logout() {
-      // Root store action — clears credentials and calls $client.logout()
       this.$accessor.logout()
     }
   }

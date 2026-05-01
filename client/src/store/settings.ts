@@ -11,9 +11,9 @@ interface KeyboardLayouts {
 
 export const state = () => {
   return {
-    // Clamp persisted scroll to the new max of 50 so users who had a
-    // value > 50 saved from the old range don't end up out-of-bounds.
-    scroll: Math.min(get<number>('scroll', 10), 50),
+    // Clamp persisted scroll to the new max of 20 so users who had a
+    // value > 20 saved from the old range don't end up out-of-bounds.
+    scroll: Math.min(get<number>('scroll', 5), 20),
     scroll_invert: get<boolean>('scroll_invert', true),
     trackpad_mode: get<boolean>('trackpad_mode', false),
     autoplay: get<boolean>('autoplay', true),
@@ -34,8 +34,8 @@ export const getters = getterTree(state, {
 
 export const mutations = mutationTree(state, {
   setScroll(state, scroll: number) {
-    // Enforce range 1-50 at mutation level
-    const clamped = Math.max(1, Math.min(scroll, 50))
+    // Enforce range 1-20 at mutation level
+    const clamped = Math.max(1, Math.min(scroll, 20))
     state.scroll = clamped
     set('scroll', clamped)
   },
