@@ -102,11 +102,11 @@ $side-width:      400px;
 
 | # | Aufgabe | Datei(en) | Status |
 |---|---|---|---|
-| M1 | `trackpad_mode: boolean`-State + Mutation + Getter in Settings-Store | `client/src/store/settings.ts` | ⬜ |
-| M2 | `virtualTrackpad.ts` anlegen — isoliertes Utility-Modul (State, Init, Touch-Handlers, Clamp-Logik) | `client/src/utils/virtualTrackpad.ts` *(neu)* | ⬜ |
-| M3 | `onTouchHandler` in `video.vue` um Trackpad-Zweig erweitern; Original-Zweig bleibt unverändert | `client/src/components/video.vue` | ⬜ |
-| M4 | Toggle-Switch in Settings-Panel einfügen (nach Scroll-Invert); Badge signalisiert Touch-Only | `client/src/components/settings.vue` | ⬜ |
-| M5 | i18n-Strings (`trackpad_mode`, `trackpad_mode_description`, `trackpad_mode_mobile_hint`, `mobile`, `desktop_only_inactive`) in alle 15 Locale-Dateien | `client/src/locale/*.ts` (15 Dateien) | ⬜ |
+| M1 | `trackpad_mode: boolean`-State + Mutation + Getter in Settings-Store | `client/src/store/settings.ts` | ✅ |
+| M2 | `virtualTrackpad.ts` anlegen — isoliertes Utility-Modul (State, Init, Touch-Handlers, Clamp-Logik) | `client/src/utils/virtualTrackpad.ts` *(neu)* | ✅ |
+| M3 | `onTouchHandler` in `video.vue` um Trackpad-Zweig erweitern; Original-Zweig bleibt unverändert | `client/src/components/video.vue` | ✅ |
+| M4 | Toggle-Switch in Settings-Panel einfügen (nach Scroll-Invert); Badge signalisiert Touch-Only | `client/src/components/settings.vue` | ✅ |
+| M5 | i18n-Strings (`trackpad_mode`, `trackpad_mode_description`, `trackpad_mode_mobile_hint`, `mobile`, `desktop_only_inactive`) in alle 15 Locale-Dateien | `client/src/locale/*.ts` (15 Dateien) | ✅ |
 
 #### Implementierungsdetails
 
