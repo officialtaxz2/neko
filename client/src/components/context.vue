@@ -51,22 +51,23 @@
 
 <style lang="scss" scoped>
   .context {
-    background-color: $background-floating;
-    background-clip: padding-box;
-    border-radius: 0.25rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
     display: block;
     margin: 0;
-    padding: 5px;
-    min-width: 150px;
+    padding: var(--space-1);
+    min-width: 160px;
     z-index: 1500;
     position: fixed;
     list-style: none;
     box-sizing: border-box;
     max-height: calc(100% - 50px);
     overflow-y: auto;
-    color: $interactive-normal;
+    color: var(--color-text);
     user-select: none;
-    box-shadow: $elevation-high;
+    font-family: var(--font-body);
 
     > li {
       margin: 0;
@@ -77,20 +78,25 @@
         .user {
           display: flex;
           flex-direction: row;
-          align-content: center;
-          padding: 5px 0;
+          align-items: center;
+          padding: var(--space-2) var(--space-2);
+          gap: var(--space-2);
 
           .avatar {
             width: 25px;
             height: 25px;
-            border-radius: 50%;
-            margin-right: 5px;
+            border-radius: var(--radius-full);
+            flex-shrink: 0;
           }
 
           strong {
-            line-height: 25px;
-            font-weight: 700;
+            line-height: 1.3;
+            font-weight: 600;
+            font-size: var(--text-sm);
+            color: var(--color-text);
             max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
             text-overflow: ellipsis;
           }
         }
@@ -98,25 +104,30 @@
 
       &.seperator {
         height: 1px;
-        background: $background-secondary;
-        margin: 3px 0;
+        background: var(--color-divider);
+        margin: var(--space-1) 0;
       }
 
       > span {
         cursor: pointer;
         display: block;
-        padding: 5px;
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--text-sm);
         font-weight: 400;
+        color: var(--color-text-muted);
         text-decoration: none;
         white-space: nowrap;
-        background-color: transparent;
-        border-radius: 3px;
+        background: transparent;
+        border-radius: var(--radius-sm);
+        transition:
+          background-color var(--transition-interactive),
+          color var(--transition-interactive);
 
         &:hover,
         &:focus {
           text-decoration: none;
-          background-color: $background-modifier-hover;
-          color: $interactive-hover;
+          background: var(--color-surface-offset);
+          color: var(--color-text);
         }
 
         &:focus {
@@ -170,7 +181,7 @@
     }
 
     async kick(member: Member) {
-      const value = await this.$swal({
+      const result = await this.$swal({
         title: this.$t('context.confirm.kick_title', { name: member.displayname }) as string,
         text: this.$t('context.confirm.kick_text', { name: member.displayname }) as string,
         icon: 'warning',
@@ -178,14 +189,14 @@
         confirmButtonText: this.$t('context.confirm.button_yes') as string,
         cancelButtonText: this.$t('context.confirm.button_cancel') as string,
       })
-
-      if (value) {
+      // Only act on explicit confirmation — Cancel/ESC return isDismissed:true
+      if (result?.isConfirmed) {
         this.$accessor.user.kick(member)
       }
     }
 
     async ban(member: Member) {
-      const value = await this.$swal({
+      const result = await this.$swal({
         title: this.$t('context.confirm.ban_title', { name: member.displayname }) as string,
         text: this.$t('context.confirm.ban_text', { name: member.displayname }) as string,
         icon: 'warning',
@@ -193,14 +204,13 @@
         confirmButtonText: this.$t('context.confirm.button_yes') as string,
         cancelButtonText: this.$t('context.confirm.button_cancel') as string,
       })
-
-      if (value) {
+      if (result?.isConfirmed) {
         this.$accessor.user.ban(member)
       }
     }
 
     async mute(member: Member) {
-      const value = await this.$swal({
+      const result = await this.$swal({
         title: this.$t('context.confirm.mute_title', { name: member.displayname }) as string,
         text: this.$t('context.confirm.mute_text', { name: member.displayname }) as string,
         icon: 'warning',
@@ -208,14 +218,13 @@
         confirmButtonText: this.$t('context.confirm.button_yes') as string,
         cancelButtonText: this.$t('context.confirm.button_cancel') as string,
       })
-
-      if (value) {
+      if (result?.isConfirmed) {
         this.$accessor.user.mute(member)
       }
     }
 
     async unmute(member: Member) {
-      const value = await this.$swal({
+      const result = await this.$swal({
         title: this.$t('context.confirm.unmute_title', { name: member.displayname }) as string,
         text: this.$t('context.confirm.unmute_text', { name: member.displayname }) as string,
         icon: 'warning',
@@ -223,8 +232,7 @@
         confirmButtonText: this.$t('context.confirm.button_yes') as string,
         cancelButtonText: this.$t('context.confirm.button_cancel') as string,
       })
-
-      if (value) {
+      if (result?.isConfirmed) {
         this.$accessor.user.unmute(member)
       }
     }

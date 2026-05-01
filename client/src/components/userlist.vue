@@ -447,7 +447,7 @@
 
     async toggleMute(member: Member) {
       if (member.muted) {
-        const ok = await this.$swal({
+        const result = await this.$swal({
           title: this.$t('context.confirm.unmute_title', { name: member.displayname }) as string,
           text: this.$t('context.confirm.unmute_text', { name: member.displayname }) as string,
           icon: 'warning',
@@ -455,9 +455,10 @@
           confirmButtonText: this.$t('context.confirm.button_yes') as string,
           cancelButtonText: this.$t('context.confirm.button_cancel') as string,
         })
-        if (ok) this.$accessor.user.unmute(member)
+        // Only act on explicit confirmation — Cancel/ESC return isDismissed:true
+        if (result?.isConfirmed) this.$accessor.user.unmute(member)
       } else {
-        const ok = await this.$swal({
+        const result = await this.$swal({
           title: this.$t('context.confirm.mute_title', { name: member.displayname }) as string,
           text: this.$t('context.confirm.mute_text', { name: member.displayname }) as string,
           icon: 'warning',
@@ -465,7 +466,7 @@
           confirmButtonText: this.$t('context.confirm.button_yes') as string,
           cancelButtonText: this.$t('context.confirm.button_cancel') as string,
         })
-        if (ok) this.$accessor.user.mute(member)
+        if (result?.isConfirmed) this.$accessor.user.mute(member)
       }
     }
 
@@ -488,7 +489,7 @@
     }
 
     async kick(member: Member) {
-      const ok = await this.$swal({
+      const result = await this.$swal({
         title: this.$t('context.confirm.kick_title', { name: member.displayname }) as string,
         text: this.$t('context.confirm.kick_text', { name: member.displayname }) as string,
         icon: 'warning',
@@ -496,11 +497,12 @@
         confirmButtonText: this.$t('context.confirm.button_yes') as string,
         cancelButtonText: this.$t('context.confirm.button_cancel') as string,
       })
-      if (ok) this.$accessor.user.kick(member)
+      // Only act on explicit confirmation — Cancel/ESC return isDismissed:true
+      if (result?.isConfirmed) this.$accessor.user.kick(member)
     }
 
     async ban(member: Member) {
-      const ok = await this.$swal({
+      const result = await this.$swal({
         title: this.$t('context.confirm.ban_title', { name: member.displayname }) as string,
         text: this.$t('context.confirm.ban_text', { name: member.displayname }) as string,
         icon: 'warning',
@@ -508,7 +510,7 @@
         confirmButtonText: this.$t('context.confirm.button_yes') as string,
         cancelButtonText: this.$t('context.confirm.button_cancel') as string,
       })
-      if (ok) this.$accessor.user.ban(member)
+      if (result?.isConfirmed) this.$accessor.user.ban(member)
     }
   }
 </script>

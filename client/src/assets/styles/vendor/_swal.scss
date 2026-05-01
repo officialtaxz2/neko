@@ -1,70 +1,202 @@
-@import '~sweetalert2/src/variables';
+// ── SweetAlert2 — Design-System Override ────────────────────────────────────
+// All SCSS variable overrides MUST come before the sweetalert2 import.
+// We replace legacy $background-* refs with CSS custom properties via
+// a transparent SCSS shim — SweetAlert2 supports arbitrary CSS for popup/buttons.
 
 $swal2-outline-color: transparent;
 
-// POPUP
-$swal2-padding: 1.25em;
-$swal2-border-radius: .3125em;
+// Popup geometry
+$swal2-padding:       1.5em;
+$swal2-border-radius: var(--radius-xl, 1rem);
 
-// BACKGROUND
-$swal2-background: $background-secondary;
+// Backgrounds → design tokens
+$swal2-background:    var(--color-surface);
 
-// ICONS
-$swal2-icon-margin: 1.25em auto 1.875em;
+// Overlay
+$swal2-backdrop: rgba(0, 0, 0, 0.6);
 
-// IMAGE
-$swal2-image-margin: 1.25em auto;
+// Icons
+$swal2-icon-margin: 1.25em auto 1.5em;
 
-// TITLE
-$swal2-title-margin: 0 0 .4em;
-$swal2-title-color: $interactive-hover;
+// Title
+$swal2-title-margin: 0 0 .35em;
+$swal2-title-color:  var(--color-text);
+$swal2-title-font-size: 1.125rem;
 
-// HTML CONTAINER
+// Body text
 $swal2-html-container-margin: 0;
-$swal2-html-container-color: $interactive-hover;
+$swal2-html-container-color:  var(--color-text-muted);
+$swal2-html-container-font-size: 0.9375rem;
 
-// INPUT
-$swal2-input-margin: 1em auto;
-$swal2-input-width: 100%;
-$swal2-input-box-shadow: inset 0 1px 1px rgba($swal2-black, .06);
-$swal2-input-focus-box-shadow: 0 0 3px #c4e6f5;
+// Input
+$swal2-input-margin:          1em auto;
+$swal2-input-width:           100%;
+$swal2-input-box-shadow:      none;
+$swal2-input-focus-box-shadow: 0 0 0 2px var(--color-primary);
 
-// PROGRESS STEPS
-$swal2-progress-steps-background: inherit;
-$swal2-progress-steps-margin: 0 0 1.25em;
-$swal2-active-step-background: #3085d6;
-
-// FOOTER
-$swal2-footer-margin: 1.25em 0 0;
-$swal2-footer-padding: 1em 0 0;
-$swal2-footer-color: lighten($swal2-black, 33);
-
-// CLOSE BUTTON
-$swal2-close-button-transition: color .1s ease-out;
-$swal2-close-button-border-radius: 0;
-$swal2-close-button-outline: initial;
-$swal2-close-button-color: lighten($swal2-black, 80);
-
-// ACTIONS
+// Actions
 $swal2-actions-width: 100%;
 
-// COMMON VARIABLES FOR CONFIRM AND CANCEL BUTTONS
-$swal2-button-focus-box-shadow: 0 0 0 1px $swal2-background, 0 0 0 3px $swal2-outline-color;
+// Shared button focus shadow
+$swal2-button-focus-box-shadow: 0 0 0 2px var(--color-primary);
 
-// CONFIRM BUTTON
-$swal2-confirm-button-background-color: $background-tertiary;
-$swal2-confirm-button-font-size: 1.0625em;
-$swal2-confirm-button-focus-box-shadow: 0 0 0 3px rgba($swal2-confirm-button-background-color, .5);
+// Confirm button
+$swal2-confirm-button-background-color: var(--color-primary);
+$swal2-confirm-button-color:            var(--color-text-inverse);
+$swal2-confirm-button-font-size:        0.9375rem;
+$swal2-confirm-button-focus-box-shadow: 0 0 0 3px var(--color-primary-highlight);
 
-// CANCEL BUTTON
-$swal2-cancel-button-background-color: $background-floating;
-$swal2-cancel-button-font-size: 1.0625em;
-$swal2-cancel-button-focus-box-shadow: 0 0 0 3px rgba($swal2-cancel-button-background-color, .5);
+// Cancel button
+$swal2-cancel-button-background-color: var(--color-surface-offset);
+$swal2-cancel-button-color:            var(--color-text-muted);
+$swal2-cancel-button-font-size:        0.9375rem;
+$swal2-cancel-button-focus-box-shadow: 0 0 0 3px var(--color-border);
 
-// TOASTS
-$swal2-toast-box-shadow: 0 0 .625em #d9d9d9;
-$swal2-toast-width: auto;
-$swal2-toast-padding: .625em;
+// Footer
+$swal2-footer-margin:  1.25em 0 0;
+$swal2-footer-padding: 1em 0 0;
+$swal2-footer-color:   var(--color-text-faint);
+
+// Close button
+$swal2-close-button-transition:    color .15s ease-out;
+$swal2-close-button-border-radius: var(--radius-sm);
+$swal2-close-button-outline:       initial;
+$swal2-close-button-color:         var(--color-text-faint);
+
+// Progress steps
+$swal2-progress-steps-background: transparent;
+$swal2-progress-steps-margin:     0 0 1.25em;
+$swal2-active-step-background:    var(--color-primary);
+
+// Toasts
+$swal2-toast-box-shadow: var(--shadow-md);
+$swal2-toast-width:      auto;
+$swal2-toast-padding:    .625em;
 $swal2-toast-title-margin: 0 .6em;
 
-@import "~sweetalert2/src/sweetalert2.scss";
+@import '~sweetalert2/src/sweetalert2.scss';
+
+// ── Post-import overrides (CSS custom properties, not SCSS vars) ─────────────
+// SweetAlert2 compiles SCSS vars to static values — CSS vars applied here
+// override at runtime so dark/light theme tokens work correctly.
+.swal2-popup {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--shadow-lg) !important;
+  font-family: var(--font-body) !important;
+  padding: var(--space-8) !important;
+}
+
+.swal2-title {
+  color: var(--color-text) !important;
+  font-family: var(--font-display) !important;
+  font-size: var(--text-lg) !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  margin: 0 0 var(--space-2) !important;
+}
+
+.swal2-html-container {
+  color: var(--color-text-muted) !important;
+  font-size: var(--text-sm) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1.55 !important;
+}
+
+.swal2-actions {
+  margin: var(--space-6) 0 0 !important;
+  gap: var(--space-3) !important;
+  flex-wrap: wrap;
+}
+
+.swal2-confirm {
+  background: var(--color-primary) !important;
+  color: var(--color-text-inverse) !important;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  padding: var(--space-2) var(--space-6) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 600 !important;
+  font-family: var(--font-body) !important;
+  box-shadow: none !important;
+  transition: background-color var(--transition-interactive) !important;
+
+  &:hover {
+    background: var(--color-primary-hover) !important;
+  }
+
+  &:active {
+    background: var(--color-primary-active) !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary) !important;
+    outline-offset: 2px !important;
+  }
+}
+
+.swal2-cancel {
+  background: var(--color-surface-offset) !important;
+  color: var(--color-text-muted) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: var(--space-2) var(--space-6) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 500 !important;
+  font-family: var(--font-body) !important;
+  box-shadow: none !important;
+  transition:
+    background-color var(--transition-interactive),
+    color var(--transition-interactive) !important;
+
+  &:hover {
+    background: var(--color-surface-dynamic) !important;
+    color: var(--color-text) !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary) !important;
+    outline-offset: 2px !important;
+  }
+}
+
+// Warning icon — use design-system warning color
+.swal2-icon.swal2-warning {
+  border-color: var(--color-warning) !important;
+  color:        var(--color-warning) !important;
+}
+
+// Error icon
+.swal2-icon.swal2-error {
+  border-color: var(--color-error) !important;
+  color:        var(--color-error) !important;
+
+  [class^='swal2-x-mark-line'] {
+    background-color: var(--color-error) !important;
+  }
+}
+
+// Success icon
+.swal2-icon.swal2-success {
+  border-color: var(--color-success) !important;
+  color:        var(--color-success) !important;
+
+  .swal2-success-ring       { border-color: color-mix(in srgb, var(--color-success) 30%, transparent) !important; }
+  [class^='swal2-success-line'] { background-color: var(--color-success) !important; }
+}
+
+// Info icon
+.swal2-icon.swal2-info {
+  border-color: var(--color-primary) !important;
+  color:        var(--color-primary) !important;
+}
+
+// Backdrop
+.swal2-backdrop-show {
+  background: oklch(0 0 0 / 0.55) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
