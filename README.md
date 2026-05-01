@@ -71,7 +71,7 @@ Design Overhaul **Phase 1–5 vollständig abgeschlossen** ✅ · **R1–R6 voll
 | R4 | User-Avatare aus Controls-Bar entfernen + Höhe reduzieren | `app.vue`, `_variables.scss` | ✅ |
 | R5 | Resolution-Button aus Video-Player entfernen | `video.vue` | ✅ |
 | R6 | Resolution-Dropdown in Settings ergänzen | `settings.vue` | ✅ |
-| R7 | Dedizierte Login-Page — `connect.vue` als Vollbild-Route, kein Popup mehr | `connect.vue`, `app.vue`, `store/client.ts` (opt.) | ⬜ |
+| R7 | Dedizierte Login-Page — `connect.vue` als Vollbild-Route gemäß DesignSystem.md | `connect.vue` → `login.vue`, `app.vue` | ⬜ |
 | R8 | *(Platzhalter — noch zu definieren)* | — | ⬜ |
 | R9 | *(Platzhalter — noch zu definieren)* | — | ⬜ |
 
@@ -214,16 +214,34 @@ neko verwendet **keinen Vue Router** — das gesamte App-State-Management läuft
 
 ---
 
+#### Design-Anforderung: DesignSystem.md Prioritätsmatrix Kat. 1–5
+
+> **Verbindlich:** Die Login-Page wird gemäß `DesignSystem.md` — **PriorityMatrix Kategorien 1–5** — vollständig umgesetzt. Kein Abweichen von diesen Vorgaben ohne explizite Freigabe.
+
+Die fünf Kategorien der PriorityMatrix sind bei der Implementierung von `login.vue` **in dieser Reihenfolge** abzuarbeiten und zu gewährleisten:
+
+| Kat. | Thema | Verbindliche Anforderungen für `login.vue` |
+|---|---|---|
+| **1** | **Farbe & Oberflächen** | Ausschließlich CSS Custom Properties aus `_variables.scss` (`--color-bg`, `--color-surface`, `--color-border`, etc.). Kein einziger hardcodierter Hex-/RGB-Wert. Dark Mode (Standard) + Light Mode via `[data-theme="light"]` — beide Zustände vollständig und korrekt. Glassmorphism-Card (`.window`) nutzt `--color-surface` + `backdrop-filter` + `--shadow-lg`. Spotlight-Gradient und Dot-Grid-Hintergrund ebenfalls token-basiert. |
+| **2** | **Typografie** | `--font-display` (Cabinet Grotesk) für den Login-Titel (≥ `--text-xl`). `--font-body` (Satoshi) für Labels, Inputs, Buttons. Fluid Type Scale via `clamp()` — alle Größen referenzieren `--text-*`-Tokens. Keine hardcodierten `px`-Werte für Schriftgrößen. Mindestens 12px Floor (`--text-xs`). |
+| **3** | **Spacing & Layout** | Alle Abstände über `--space-*`-Tokens (8pt-Grid). Kein `margin: 20px` o.ä. Die Login-Card ist vertikal + horizontal zentriert (`display: flex; align-items: center; justify-content: center` auf dem `.login-page`-Root). Auf Mobile (375px) füllt die Card maximal `calc(100vw - 2 × --space-4)` Breite ohne Overflow. |
+| **4** | **Interaktion & Transitions** | Alle Hover-/Focus-States via `--transition-interactive` (180ms). `:focus-visible` mit `outline: 2px solid var(--color-primary)` sichtbar. Touch-Targets ≥ 44×44px (Buttons, Inputs). `prefers-reduced-motion`: alle Animationen (Bounce-Loader, Spotlight-Pulse, Dot-Grid-Fade) deaktivieren auf `@media (prefers-reduced-motion: reduce)`. Page-Transition (`page-fade`) zwischen Login-Page und Room ebenfalls motion-safe. |
+| **5** | **Zugänglichkeit & Semantik** | Semantisches HTML: `<form>`, `<label>`, `<input>`, `<button type="submit">`. Jedes `<input>` hat ein assoziiertes `<label>` (kein `placeholder` als Ersatz). WCAG AA: Kontrast ≥ 4.5:1 für alle Texte auf allen Surfaces (Dark + Light). Fehlermeldungen (`--color-error`) inline unter dem betroffenen Feld. Keyboard-Navigation: Tab-Reihenfolge logisch (Displayname → Passwort → Submit). `aria-label` auf Icon-Buttons (Theme-Toggle falls vorhanden). |
+
+> **Hinweis für Implementierer:** Die `DesignSystem.md` liegt nicht im Repository, sondern wird separat als Projekt-Referenz geführt. Bei Widerspruch zwischen dieser Spec und `DesignSystem.md` gilt stets `DesignSystem.md` als Primat-Dokument. Im Zweifelsfall vor der Implementierung klären.
+
+---
+
 #### Betroffene Dateien
 
 | Datei | Aktion | Beschreibung |
 |---|---|---|
-| `client/src/components/connect.vue` | **Rewrite** | Vollbild-Login-Page (kein Overlay mehr); `position: fixed; inset: 0` bleibt, aber konzeptuell ist es jetzt die einzige Seite |
+| `client/src/components/connect.vue` | **Rewrite** | Vollbild-Login-Page (kein Overlay mehr); gemäß PriorityMatrix Kat. 1–5 |
 | `client/src/app.vue` | **Patch** | Bedingte Render-Logik: `v-if="connected"` auf gesamte Room-Struktur; `<neko-login-page>` als Ersatz wenn `!connected` |
 | `client/src/store/client.ts` | **Keine Änderung nötig** | `systemDialog`-State bereits vorhanden (Bugfix 01.05.2026) |
 | `client/src/neko/index.ts` | **Keine Änderung nötig** | `setSystemDialog`-Calls bereits implementiert (Bugfix 01.05.2026) |
 
-> **Hinweis:** `connect.vue` kann umbenannt werden zu `login.vue` für semantische Klarheit — dann muss der Import in `app.vue` und die Komponenten-Registrierung (`'neko-connect'` → `'neko-login'`) entsprechend angepasst werden. Optional, aber empfohlen.
+> **Umbenennung (empfohlen):** `connect.vue` → `login.vue`; Komponenten-Name `neko-connect` → `neko-login-page`; Import in `app.vue` entsprechend anpassen.
 
 ---
 
@@ -261,13 +279,13 @@ neko verwendet **keinen Vue Router** — das gesamte App-State-Management läuft
     </template>
 
     <!-- Login-Page: exklusiv wenn nicht verbunden -->
-    <template v-else-if="!connected">
-      <neko-login-page />
-    </template>
+    <transition name="page-fade" mode="out-in">
+      <neko-login-page v-if="!connected" key="login" />
 
-    <!-- Room: nur wenn verbunden -->
-    <template v-else>
+      <!-- Room: nur wenn verbunden -->
       <div
+        v-else
+        key="room"
         class="neko-room-wrapper"
         :class="[!videoOnly && side ? 'expanded' : '']"
       >
@@ -277,10 +295,10 @@ neko verwendet **keinen Vue Router** — das gesamte App-State-Management läuft
         <transition name="side">
           <neko-side v-if="!videoOnly && side" />
         </transition>
+        <neko-about v-if="about" />
+        <notifications ... />
       </div>
-      <neko-about v-if="about" />
-      <notifications ... />
-    </template>
+    </transition>
   </div>
 </template>
 ```
@@ -288,87 +306,16 @@ neko verwendet **keinen Vue Router** — das gesamte App-State-Management läuft
 **Wichtige Detail-Änderungen in `app.vue`:**
 
 - `id="neko"` bleibt auf dem Root-Div — CSS-Selektoren bleiben stabil
-- Die `.expanded`-Klasse wandert auf einen neuen inneren Wrapper `.neko-room-wrapper` (oder bleibt auf `#neko` — je nach SCSS-Struktur, Konsistenz prüfen)
 - `<neko-connect v-if="!connected" />` wird **entfernt**
-- `<neko-login-page />` ersetzt es als eigener `v-else-if`-Branch — kein Overlay mehr
-- `connected`-Checks auf `neko-side v-if` können vereinfacht werden (sind im `v-else`-Branch, also implizit `connected`)
-- Import: `import LoginPage from '~/components/login.vue'` (oder `connect.vue` wenn nicht umbenannt)
+- `<neko-login-page />` tritt als eigenständige Branch an (kein Overlay)
+- `connected`-Checks auf `neko-side v-if` entfallen (implizit im `v-else`-Branch)
+- Import: `import LoginPage from '~/components/login.vue'`
 - Komponenten-Registrierung: `'neko-login-page': LoginPage`
 
-**SCSS-Anpassung in `app.vue`:**
+**SCSS in `app.vue` — Page-Transition + Room-Wrapper:**
 
 ```scss
-// Wrapper für den Room — trägt .expanded wenn Sidebar offen
-.neko-room-wrapper {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  display: flex;
-  flex-direction: row;
-  overflow: hidden;
-  background: var(--color-bg);
-  transition: background-color var(--transition-slow);
-
-  // Sidebar-Glow bleibt identisch
-  &.expanded .neko-main {
-    box-shadow: 4px 0 20px color-mix(in srgb, var(--color-primary) 10%, transparent);
-  }
-}
-
-// #neko Root: nur noch ein leerer Flex-Container
-#neko {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  max-width: 100vw;
-  max-height: 100vh;
-  display: flex;
-  flex-direction: row;
-  background: var(--color-bg);
-  overflow: hidden;
-  transition: background-color var(--transition-slow);
-}
-```
-
-> **Alternativ (minimal invasiv):** `#neko` behält seine bestehende SCSS-Struktur identisch. Nur die `.expanded`-Klasse-Bedingung und das Template werden geändert. Kein neuer Wrapper nötig, wenn `#neko` direkt die `flex-direction: row` und `overflow: hidden` bereits trägt.
-
----
-
-##### Schritt 2 — `connect.vue` → `login.vue` Rewrite
-
-Die Datei wird von einem Overlay-Pattern zu einer **eigenständigen Vollbild-Page** umgebaut. Die visuelle Sprache (Glassmorphism, Spotlight-Gradient, Dot-Grid) bleibt erhalten — nur die strukturelle Rolle ändert sich.
-
-**Was bleibt:**
-
-- `position: fixed; inset: 0` (oder `position: absolute; inset: 0` — beides funktioniert, da Parent jetzt `position: relative / absolute` ist)
-- Spotlight-Gradient + Dot-Grid-Hintergrund (`.connect`-Klasse)
-- Glassmorphism `.window` Login-Card
-- `SystemDialog`-Overlay (aus Bugfix 01.05.2026 bereits implementiert) — bleibt unverändert
-- `autoPassword`/`autoUser`-URL-Param-Logik — bleibt unverändert
-- Loader-Animation (Bounce-Bubbles) — bleibt unverändert
-- i18n-Keys (`connect.login_title`, `connect.displayname`, etc.) — alle unverändert
-
-**Was sich ändert:**
-
-- Dateiname: `connect.vue` → `login.vue` (empfohlen)
-- Komponenten-Name: `neko-connect` → `neko-login-page` (in Template + `@Component`-Decorator)
-- Konzeptuell: kein Overlay mehr — die Komponente **ist** die Seite
-- `backdrop-filter: blur(4px)` auf `.connect` kann entfernt werden (war für Overlay-Tiefenwirkung; als eigenständige Page nicht mehr nötig — kann aber behalten werden für visuellen Effekt auf dem Dot-Grid)
-- Der `systemDialog`-Branch in der Komponente bleibt vollständig erhalten
-
-**Transition zwischen Login-Page und Room (in `app.vue`):**
-
-Da `v-else-if` / `v-else` verwendet werden, kann Vue's `<transition>` auf den umschließenden Block angewendet werden:
-
-```html
-<transition name="page-fade" mode="out-in">
-  <neko-login-page v-if="!connected" key="login" />
-  <div class="neko-room-wrapper" v-else key="room" :class="[!videoOnly && side ? 'expanded' : '']">
-    ...
-  </div>
-</transition>
-```
-
-```scss
-// Sanfter Fade zwischen Login-Page und Room
+// Sanfter Fade: Login-Page ↔ Room
 .page-fade-enter-active,
 .page-fade-leave-active {
   transition: opacity var(--transition-slow);
@@ -377,9 +324,47 @@ Da `v-else-if` / `v-else` verwendet werden, kann Vue's `<transition>` auf den um
 .page-fade-leave-to {
   opacity: 0;
 }
+
+// Room-Wrapper (trägt .expanded wenn Sidebar offen)
+.neko-room-wrapper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+
+  &.expanded .neko-main {
+    box-shadow: 4px 0 20px color-mix(in srgb, var(--color-primary) 10%, transparent);
+  }
+}
 ```
 
-> **Hinweis `mode="out-in"`:** Die Login-Page fährt erst aus (Fade-Out), dann fährt der Room ein (Fade-In). Verhindert Layout-Überlappung während der Transition.
+> **Alternativ (minimal invasiv):** `#neko` behält seine bestehende SCSS-Struktur identisch. Nur Template und `.expanded`-Bedingung ändern. Kein neuer Wrapper nötig wenn `#neko` bereits `flex-direction: row` + `overflow: hidden` trägt.
+
+---
+
+##### Schritt 2 — `connect.vue` → `login.vue` Rewrite
+
+Die Datei wird von einem Overlay-Pattern zu einer **eigenständigen Vollbild-Page** umgebaut. Visuelle Sprache (Glassmorphism, Spotlight-Gradient, Dot-Grid) bleibt erhalten. Die PriorityMatrix Kat. 1–5 ist vollständig umzusetzen.
+
+**Was bleibt (unverändert übernehmen):**
+
+- `position: fixed; inset: 0` auf `.login-page` (Root-Element)
+- Spotlight-Gradient + Dot-Grid-Hintergrund — token-basiert
+- Glassmorphism `.window`-Card — `--color-surface`, `backdrop-filter`, `--shadow-lg`
+- `SystemDialog`-Overlay (aus Bugfix 01.05.2026) — bleibt vollständig
+- `autoPassword`/`autoUser`-URL-Param-Logik in `mounted()` — bleibt vollständig
+- Bounce-Loader-Animation — bleibt; `prefers-reduced-motion` ergänzen falls fehlend
+- i18n-Keys (`connect.login_title`, `connect.displayname`, etc.) — alle unverändert
+
+**Was sich ändert:**
+
+- Dateiname: `connect.vue` → `login.vue`
+- Komponenten-Name: `neko-connect` → `neko-login-page` (Template + `@Component`-Decorator)
+- Konzeptuell: kein Overlay mehr — die Komponente **ist** die einzige sichtbare Seite
+- Alle Farben, Abstände, Schriftgrößen auf Token-Compliance prüfen (PriorityMatrix Kat. 1–2–3)
+- Semantisches HTML verifizieren: `<form>`, `<label for>`, `<input id>`, `<button type="submit">` (Kat. 5)
+- `backdrop-filter: blur(4px)` auf `.login-page`-Root optional (war Overlay-Effekt; als Page beibehalten oder entfernen)
 
 ---
 
@@ -389,24 +374,27 @@ Nach Implementierung folgende Szenarien manuell testen:
 
 | Szenario | Erwartetes Verhalten |
 |---|---|
-| Frischer Seitenaufruf (nicht eingeloggt) | Nur Login-Page sichtbar; kein Room-DOM im Inspector |
-| Login erfolgreich | Sanfter Fade-Out Login → Fade-In Room |
+| Frischer Seitenaufruf (nicht eingeloggt) | Nur Login-Page sichtbar; kein Room-DOM im DevTools Inspector |
+| Login erfolgreich | Sanfter Fade-Out Login → Fade-In Room (`page-fade`, 300ms) |
 | Sidebar war offen (LocalStorage `side=true`), dann ausgeloggt | Login-Page füllt **100% Breite** — kein Layout-Bleed |
-| Logout via Settings | `systemDialog` (info) erscheint auf Login-Page; OK → Login-Card zurück |
-| Server-Disconnect / Kick | `systemDialog` (error) erscheint auf Login-Page; OK → Login-Card zurück |
-| `?pwd=xxx&usr=yyy` URL-Params | Auto-Login funktioniert weiterhin (Logik in `mounted()` unverändert) |
-| Light Mode | Login-Page in Light-Mode korrekt (`[data-theme="light"]` auf `<html>`) |
-| Mobile (375px) | Login-Card zentriert, kein Overflow |
+| Logout via Settings | `systemDialog` (info) über Login-Page; OK → Login-Card zurück |
+| Server-Disconnect / Kick | `systemDialog` (error) über Login-Page; OK → Login-Card zurück |
+| `?pwd=xxx&usr=yyy` URL-Params | Auto-Login funktioniert (Logik in `mounted()` unverändert) |
+| Light Mode | Login-Page in `[data-theme="light"]` korrekt — alle Tokens greifen |
+| Mobile (375px) | Login-Card zentriert, kein Overflow, Touch-Targets ≥44px |
+| `prefers-reduced-motion` aktiv | Bounce-Loader + Spotlight-Pulse statisch; `page-fade` sofort |
+| WCAG-Kontrast | Alle Texte ≥ 4.5:1 auf ihren Surfaces (Dark + Light) |
+| Keyboard-Navigation | Tab: Displayname → Passwort → Submit; Enter löst Submit aus |
 
 ---
 
 #### Abgrenzung: Was R7 **nicht** ist
 
 - **Kein eigener URL-Pfad / Route** (`/login` o.ä.) — neko hat keinen Router; bleibt so
-- **Kein Server-Side Rendering / Auth-Guard** — der Login-State bleibt rein client-seitig über WebSocket
+- **Kein Server-Side Rendering / Auth-Guard** — Login-State bleibt rein client-seitig über WebSocket
 - **Keine Änderung am Backend** — nur Frontend
 - **Keine Änderung an i18n-Keys** — bestehende Schlüssel werden weiterverwendet
-- **Kein Redesign des Login-Formulars** — visuelles Design bleibt (Glassmorphism, Spotlight-Gradient), nur strukturelle Rolle ändert sich
+- **Kein visuelles Redesign des Formulars** — Glassmorphism, Spotlight-Gradient, Dot-Grid bleiben; nur Token-Compliance + Semantik sicherstellen
 
 ---
 
