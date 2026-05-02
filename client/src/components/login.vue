@@ -1,121 +1,291 @@
 <template>
-  <div class="login-page" ref="loginPage">
-    <!-- System Dialog Overlay: shown above login card when a system event fires -->
-    <transition name="dialog-fade">
-      <div
-        v-if="systemDialog"
-        class="system-dialog"
-        role="dialog"
-        aria-modal="true"
-        :aria-label="systemDialog.title"
-      >
-        <div class="system-dialog__card">
-          <div
-            class="system-dialog__icon"
-            :class="`system-dialog__icon--${systemDialog.type}`"
-          >
-            <svg v-if="systemDialog.type === 'info'" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M12 8v1M12 11v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M12 8v5M12 16v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <h2 class="system-dialog__title">{{ systemDialog.title }}</h2>
-          <p v-if="systemDialog.text" class="system-dialog__text">{{ systemDialog.text }}</p>
-          <button class="system-dialog__btn" type="button" @click="dismissDialog" autofocus>
-            {{ $t('connection.button_confirm') }}
-          </button>
-        </div>
-      </div>
-    </transition>
-
-    <!-- Login card: hidden while system dialog is visible -->
-    <transition name="card-fade">
-      <div class="window" v-if="!systemDialog">
-        <!-- Logo / About trigger -->
-        <button
-          type="button"
-          class="logo"
-          @click.stop.prevent="about"
-          :title="$t('connect.login_title')"
-          aria-label="About n.eko"
-        >
-          <img src="@/assets/images/logo.svg" alt="n.eko" width="90" height="90" loading="lazy" />
-          <!-- Kinetic wordmark: each character wrapped for staggered weight-pulse -->
-          <span class="neko-logo" aria-hidden="true">
+  <div class="login-layout">
+    <!-- Left: Branding Panel (desktop only) -->
+    <div class="login-branding-panel" aria-hidden="true">
+      <!-- Spotlight + dot grid via ::before / ::after pseudo-elements in CSS -->
+      <div class="branding-content">
+        <!-- Wordmark (non-interactive copy — purely decorative) -->
+        <div class="branding-wordmark">
+          <img src="@/assets/images/logo.svg" alt="" width="64" height="64" loading="lazy" />
+          <span class="branding-logo" aria-hidden="true">
             <span>n</span><span>.</span><span>e</span><span>k</span><span>o</span>
           </span>
-        </button>
-
-        <!-- Connecting: bounce loader -->
-        <div v-if="connecting" class="loader" role="status" :aria-label="$t('connect.connect')">
-          <div class="bounce1"></div>
-          <div class="bounce2"></div>
         </div>
 
-        <!-- Login form -->
-        <form v-else class="form" @submit.stop.prevent="login" novalidate>
-          <p class="form__title">
-            <span v-if="!autoPassword">{{ $t('connect.login_title') }}</span>
-            <span v-else>{{ $t('connect.invitation_title') }}</span>
-          </p>
+        <p class="branding-tagline">
+          Your browser.<br />Your session.
+        </p>
 
-          <!-- Displayname field -->
-          <div class="form__field">
-            <label for="login-displayname" class="form__label">{{ $t('connect.displayname') }}</label>
-            <input
-              id="login-displayname"
-              type="text"
-              class="form__input"
-              v-model="displayname"
-              autocomplete="username"
-              :aria-describedby="fieldError === 'displayname' ? 'error-displayname' : undefined"
-              :aria-invalid="fieldError === 'displayname'"
-            />
-            <p
-              v-if="fieldError === 'displayname'"
-              id="error-displayname"
-              class="form__error"
-              role="alert"
-            >
-              {{ $t('connect.empty_displayname') }}
-            </p>
-          </div>
-
-          <!-- Password field -->
-          <div v-if="!autoPassword" class="form__field">
-            <label for="login-password" class="form__label">{{ $t('connect.password') }}</label>
-            <input
-              id="login-password"
-              type="password"
-              class="form__input"
-              v-model="password"
-              autocomplete="current-password"
-            />
-          </div>
-
-          <button type="submit" class="form__submit">
-            {{ $t('connect.connect') }}
-          </button>
-        </form>
+        <ul class="branding-pills" role="list">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="14" height="14">
+              <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Self-hosted
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="14" height="14">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Open Source
+          </li>
+        </ul>
       </div>
-    </transition>
+    </div>
+
+    <!-- Right: Login page (existing, unchanged logic) -->
+    <div class="login-page" ref="loginPage">
+      <!-- System Dialog Overlay: shown above login card when a system event fires -->
+      <transition name="dialog-fade">
+        <div
+          v-if="systemDialog"
+          class="system-dialog"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="systemDialog.title"
+        >
+          <div class="system-dialog__card">
+            <div
+              class="system-dialog__icon"
+              :class="`system-dialog__icon--${systemDialog.type}`"
+            >
+              <svg v-if="systemDialog.type === 'info'" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M12 8v1M12 11v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M12 8v5M12 16v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h2 class="system-dialog__title">{{ systemDialog.title }}</h2>
+            <p v-if="systemDialog.text" class="system-dialog__text">{{ systemDialog.text }}</p>
+            <button class="system-dialog__btn" type="button" @click="dismissDialog" autofocus>
+              {{ $t('connection.button_confirm') }}
+            </button>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Login card: hidden while system dialog is visible -->
+      <transition name="card-fade">
+        <div class="window" v-if="!systemDialog">
+          <!-- Logo / About trigger -->
+          <button
+            type="button"
+            class="logo"
+            @click.stop.prevent="about"
+            :title="$t('connect.login_title')"
+            aria-label="About n.eko"
+          >
+            <img src="@/assets/images/logo.svg" alt="n.eko" width="90" height="90" loading="lazy" />
+            <!-- Kinetic wordmark: each character wrapped for staggered weight-pulse -->
+            <span class="neko-logo" aria-hidden="true">
+              <span>n</span><span>.</span><span>e</span><span>k</span><span>o</span>
+            </span>
+          </button>
+
+          <!-- Connecting: bounce loader -->
+          <div v-if="connecting" class="loader" role="status" :aria-label="$t('connect.connect')">
+            <div class="bounce1"></div>
+            <div class="bounce2"></div>
+          </div>
+
+          <!-- Login form -->
+          <form v-else class="form" @submit.stop.prevent="login" novalidate>
+            <p class="form__title">
+              <span v-if="!autoPassword">{{ $t('connect.login_title') }}</span>
+              <span v-else>{{ $t('connect.invitation_title') }}</span>
+            </p>
+
+            <!-- Displayname field -->
+            <div class="form__field">
+              <label for="login-displayname" class="form__label">{{ $t('connect.displayname') }}</label>
+              <input
+                id="login-displayname"
+                type="text"
+                class="form__input"
+                v-model="displayname"
+                autocomplete="username"
+                :aria-describedby="fieldError === 'displayname' ? 'error-displayname' : undefined"
+                :aria-invalid="fieldError === 'displayname'"
+              />
+              <p
+                v-if="fieldError === 'displayname'"
+                id="error-displayname"
+                class="form__error"
+                role="alert"
+              >
+                {{ $t('connect.empty_displayname') }}
+              </p>
+            </div>
+
+            <!-- Password field -->
+            <div v-if="!autoPassword" class="form__field">
+              <label for="login-password" class="form__label">{{ $t('connect.password') }}</label>
+              <input
+                id="login-password"
+                type="password"
+                class="form__input"
+                v-model="password"
+                autocomplete="current-password"
+              />
+            </div>
+
+            <button type="submit" class="form__submit">
+              {{ $t('connect.connect') }}
+            </button>
+          </form>
+        </div>
+      </transition>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
   // -----------------------------------------------
-  // Root: Vollbild-Page (kein Overlay mehr)
+  // Split-screen layout (Phase 3.1)
+  // -----------------------------------------------
+  .login-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 100dvh;
+  }
+
+  @media (max-width: 768px) {
+    .login-layout { grid-template-columns: 1fr; }
+    .login-branding-panel { display: none; }
+  }
+
+  // -----------------------------------------------
+  // Left: Branding Panel
+  // -----------------------------------------------
+  .login-branding-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-16);
+    background: var(--color-surface);
+    position: relative;
+    overflow: hidden;
+
+    // Layer 1: spotlight gradient centred on panel
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(
+          ellipse 80% 70% at 50% 50%,
+          color-mix(in srgb, var(--color-primary) 10%, transparent) 0%,
+          transparent 70%
+        );
+      pointer-events: none;
+    }
+
+    // Layer 2: dot grid
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(
+        circle,
+        color-mix(in srgb, var(--color-primary) 20%, transparent) 1.5px,
+        transparent 1.5px
+      );
+      background-size: 28px 28px;
+      opacity: 0.04;
+      pointer-events: none;
+    }
+  }
+
+  .branding-content {
+    position: relative; // above pseudo-elements
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .branding-wordmark {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+
+    img {
+      width: 64px;
+      height: 64px;
+    }
+  }
+
+  // Decorative wordmark on branding panel — same weight-pulse as login card
+  @keyframes weight-pulse {
+    0%   { font-variation-settings: 'wght' 900; }
+    100% { font-variation-settings: 'wght' 400; }
+  }
+
+  .branding-logo {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    line-height: 1;
+    color: var(--color-text);
+
+    span {
+      display: inline-block;
+      animation: weight-pulse 600ms ease-out both;
+
+      &:nth-child(1) { animation-delay:   0ms; }
+      &:nth-child(2) { animation-delay:  40ms; }
+      &:nth-child(3) { animation-delay:  80ms; }
+      &:nth-child(4) { animation-delay: 120ms; }
+      &:nth-child(5) { animation-delay: 160ms; }
+    }
+  }
+
+  .branding-tagline {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--color-text);
+    line-height: 1.25;
+    max-width: 16ch;
+  }
+
+  .branding-pills {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--color-surface-offset) 80%, transparent);
+      border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+      font-family: var(--font-body);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+
+      svg { flex-shrink: 0; }
+    }
+  }
+
+  // -----------------------------------------------
+  // Right: Login page wrapper
   // -----------------------------------------------
   .login-page {
-    position: fixed;
-    inset: 0;
+    position: relative;
     background-color: var(--color-bg);
-    // Layer 1: radial Spotlight-Gradient
-    // Layer 2: dot-grid pattern
+    // Spotlight + dot grid (right panel only)
     background-image:
       radial-gradient(
         ellipse 80% 70% at 50% 50%,
@@ -128,7 +298,6 @@
         transparent 1.5px
       );
     background-size: auto, 28px 28px;
-    // Dot grid shifts with parallax via custom properties
     background-position:
       center,
       calc(50% + var(--mx, 0) * 12px) calc(50% + var(--my, 0) * 12px);
@@ -228,9 +397,7 @@
         background-color var(--transition-interactive),
         transform var(--transition-interactive);
 
-      &:hover {
-        background: var(--color-primary-hover);
-      }
+      &:hover { background: var(--color-primary-hover); }
 
       &:active {
         background: var(--color-primary-active);
@@ -257,7 +424,6 @@
     border-top-color: color-mix(in srgb, var(--color-text) 15%, transparent);
     padding: var(--space-3);
     box-shadow: var(--shadow-lg);
-    // Perspective container for 3-D tilt
     perspective: 1000px;
     transform:
       rotateY(calc(var(--mx, 0) * 4deg))
@@ -298,13 +464,8 @@
   }
 
   // -----------------------------------------------
-  // Kinetic wordmark
+  // Kinetic wordmark (login card)
   // -----------------------------------------------
-  @keyframes weight-pulse {
-    0%   { font-variation-settings: 'wght' 900; }
-    100% { font-variation-settings: 'wght' 400; }
-  }
-
   .neko-logo {
     font-family: var(--font-display);
     font-size: var(--text-xl);
@@ -475,13 +636,12 @@
       transition: none;
     }
 
-    // Static weight — no animation
-    .neko-logo span {
+    .neko-logo span,
+    .branding-logo span {
       animation: none;
       font-variation-settings: 'wght' 400;
     }
 
-    // Parallax disabled — card & dot grid stay flat
     .window {
       transform: none !important;
       transition: none !important;
@@ -546,7 +706,7 @@
         this.autoPassword = null
       }
 
-      // Parallax: only when user has no motion preference
+      // Parallax on right panel only — guarded by prefers-reduced-motion
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       if (!prefersReduced) {
         const el = this.$refs.loginPage as HTMLElement
