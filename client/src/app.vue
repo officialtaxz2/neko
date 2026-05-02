@@ -35,7 +35,13 @@
                   <neko-menu />
                 </div>
                 <div class="controls">
-                  <neko-controls :shakeKbd="shakeKbd" />
+                  <!--
+                    open-mobile-keyboard: emitted by neko-controls when the
+                    virtual-keyboard button (touch devices only) is tapped.
+                    Forwarded to video.openMobileKeyboard() which focuses
+                    the overlay textarea, triggering the OS keyboard.
+                  -->
+                  <neko-controls :shakeKbd="shakeKbd" @open-mobile-keyboard="openMobileKeyboard" />
                 </div>
                 <div class="emotes">
                   <neko-emotes />
@@ -297,11 +303,12 @@
     }
   }
 
-  @media only screen and (max-width: 768px) {
-    .neko-room-wrapper .neko-main .room-container {
-      display: none;
-    }
-  }
+  /*
+   * The room-container (controls bar) was previously hidden below 768px.
+   * Removed: touch devices (phones + iPads) now always show the bar.
+   * Mouse-toggle + keyboard buttons are rendered inside the bar via
+   * pointer:coarse detection in controls.vue — not as video overlays.
+   */
 </style>
 
 <script lang="ts">
@@ -381,6 +388,11 @@
 
     private applyTheme(theme: Theme) {
       document.documentElement.setAttribute('data-theme', theme)
+    }
+
+    /** Forwards the open-mobile-keyboard event from controls.vue to the video component. */
+    openMobileKeyboard() {
+      this.video?.openMobileKeyboard()
     }
 
     get volume() {
