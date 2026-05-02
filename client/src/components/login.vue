@@ -44,7 +44,10 @@
           aria-label="About n.eko"
         >
           <img src="@/assets/images/logo.svg" alt="n.eko" width="90" height="90" loading="lazy" />
-          <span><b>n</b>.eko</span>
+          <!-- Kinetic wordmark: each character wrapped for staggered weight-pulse -->
+          <span class="neko-logo" aria-hidden="true">
+            <span>n</span><span>.</span><span>e</span><span>k</span><span>o</span>
+          </span>
         </button>
 
         <!-- Connecting: bounce loader -->
@@ -128,7 +131,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    // z-index unnecessary — this component is the only rendered root when !connected
   }
 
   // -----------------------------------------------
@@ -263,20 +265,14 @@
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    // Touch target: logo area ~90px — exceeds 44px
     padding: var(--space-2) 0;
     background: none;
     border: none;
     border-radius: var(--radius-md);
     transition: opacity var(--transition-interactive);
 
-    &:hover {
-      opacity: 0.8;
-    }
-
-    &:active {
-      opacity: 0.6;
-    }
+    &:hover  { opacity: 0.8; }
+    &:active { opacity: 0.6; }
 
     &:focus-visible {
       outline: 2px solid var(--color-primary);
@@ -288,16 +284,33 @@
       width: auto;
       margin-right: var(--space-2);
     }
+  }
+
+  // -----------------------------------------------
+  // Kinetic wordmark
+  // -----------------------------------------------
+  @keyframes weight-pulse {
+    0%   { font-variation-settings: 'wght' 900; }
+    100% { font-variation-settings: 'wght' 400; }
+  }
+
+  .neko-logo {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    line-height: 1;
+    color: var(--color-text);
+    // Prevent the wordmark from being read as 5 separate letters by AT
+    // (aria-hidden="true" on the parent handles this)
 
     span {
-      font-family: var(--font-display);
-      font-size: var(--text-xl);
-      line-height: 1;
-      color: var(--color-text);
+      display: inline-block;
+      animation: weight-pulse 600ms ease-out both;
 
-      b {
-        font-weight: 900;
-      }
+      &:nth-child(1) { animation-delay:   0ms; }
+      &:nth-child(2) { animation-delay:  40ms; }
+      &:nth-child(3) { animation-delay:  80ms; }
+      &:nth-child(4) { animation-delay: 120ms; }
+      &:nth-child(5) { animation-delay: 160ms; }
     }
   }
 
@@ -337,7 +350,6 @@
     }
 
     &__input {
-      // Touch target ≥ 44px
       min-height: 44px;
       border: 1px solid transparent;
       padding: var(--space-2) var(--space-3);
@@ -358,17 +370,11 @@
         box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
       }
 
-      &[aria-invalid="true"] {
-        border-color: var(--color-error);
-      }
+      &[aria-invalid="true"] { border-color: var(--color-error); }
 
-      &::placeholder {
-        color: var(--color-text-faint);
-      }
+      &::placeholder { color: var(--color-text-faint); }
 
-      &::selection {
-        background: var(--color-primary-highlight);
-      }
+      &::selection { background: var(--color-primary-highlight); }
     }
 
     &__error {
@@ -379,7 +385,6 @@
     }
 
     &__submit {
-      // Touch target ≥ 44px
       min-height: 44px;
       cursor: pointer;
       border-radius: var(--radius-md);
@@ -399,9 +404,7 @@
         background-color var(--transition-interactive),
         transform        var(--transition-fast);
 
-      &:hover {
-        background: var(--color-primary-hover);
-      }
+      &:hover  { background: var(--color-primary-hover); }
 
       &:active {
         background: var(--color-primary-active);
@@ -437,18 +440,17 @@
       animation: bounce 2s infinite ease-in-out;
     }
 
-    .bounce2 {
-      animation-delay: -1s;
-    }
+    .bounce2 { animation-delay: -1s; }
   }
 
   @keyframes bounce {
-    0%,
-    100% { transform: scale(0); }
-    50%   { transform: scale(1); }
+    0%, 100% { transform: scale(0); }
+    50%       { transform: scale(1); }
   }
 
-  // prefers-reduced-motion: disable all animations
+  // -----------------------------------------------
+  // prefers-reduced-motion
+  // -----------------------------------------------
   @media (prefers-reduced-motion: reduce) {
     .bounce1,
     .bounce2 {
@@ -462,6 +464,12 @@
     .card-fade-enter-active,
     .card-fade-leave-active {
       transition: none;
+    }
+
+    // Static weight — no animation
+    .neko-logo span {
+      animation: none;
+      font-variation-settings: 'wght' 400;
     }
   }
 
@@ -497,18 +505,15 @@
 
     displayname = ''
     password = ''
-    // Tracks which field has a validation error ('displayname' | null)
     fieldError: string | null = null
 
     mounted() {
-      // Auto-password fill from URL param
       let password = this.$accessor.password
       if (this.autoPassword !== null) {
         this.removeUrlParam('pwd')
         password = this.autoPassword
       }
 
-      // Auto-user fill from URL param
       let displayname = this.$accessor.displayname
       const usr = new URL(location.href).searchParams.get('usr')
       if (usr) {
@@ -535,7 +540,6 @@
     }
 
     login() {
-      // Clear previous error
       this.fieldError = null
 
       if (this.displayname.trim() === '') {
