@@ -1,6 +1,6 @@
 <template>
   <div class="chat">
-    <!-- ── Skeleton: connecting ──────────────────────────────────────── -->
+    <!-- ── Skeleton: connecting ────────────────────────────────────────── -->
     <ul
       v-if="loading"
       class="chat-history chat-history--skeleton"
@@ -16,7 +16,7 @@
       </li>
     </ul>
 
-    <!-- ── Real messages ─────────────────────────────────────────────── -->
+    <!-- ── Real messages ───────────────────────────────────────────── -->
     <ul v-else class="chat-history" ref="history" @click="onClick">
       <template v-for="(message, index) in history">
         <!-- Text message -->
@@ -26,17 +26,28 @@
           v-if="message.type === 'text'"
           :class="{
             bulk: index > 0 && history[index - 1].id == message.id && history[index - 1].type === 'text',
+            'is-self': message.id === id,
           }"
         >
-          <div class="author" @contextmenu.stop.prevent="onContext($event, { member: member(message.id) })">
+          <div
+            v-if="!(index > 0 && history[index - 1].id == message.id && history[index - 1].type === 'text')"
+            class="author"
+            @contextmenu.stop.prevent="onContext($event, { member: member(message.id) })"
+          >
             <neko-avatar class="avatar" :seed="member(message.id).displayname" :size="40" />
           </div>
+          <div v-else class="author author--placeholder"></div>
           <div class="content">
-            <div class="content-head">
+            <div
+              v-if="!(index > 0 && history[index - 1].id == message.id && history[index - 1].type === 'text')"
+              class="content-head"
+            >
               <span class="username">{{ member(message.id).displayname }}</span>
               <span class="timestamp">{{ timestamp(message.created) }}</span>
             </div>
-            <neko-markdown class="content-body" :source="message.content" />
+            <div class="bubble">
+              <neko-markdown class="content-body" :source="message.content" />
+            </div>
           </div>
         </li>
         <!-- Event message -->
@@ -76,7 +87,7 @@
 </template>
 
 <style lang="scss" scoped>
-  // ── Shimmer animation ────────────────────────────────────────────────────
+  // ── Shimmer animation ────────────────────────────────────────────────
   @keyframes shimmer {
     0%   { background-position: -200% 0; }
     100% { background-position:  200% 0; }
@@ -165,7 +176,7 @@
 
         &:hover { background-color: var(--color-surface-offset); }
 
-        // ── Text message ────────────────────────────────────────────
+        // ── Text message ─────────────────────────────────────────────
         &.message {
           padding-top: var(--space-4);
           font-size: var(--text-base);
@@ -177,8 +188,6 @@
             width: 40px;
             height: 40px;
             border-radius: var(--radius-full);
-            // Neutral gray background instead of --color-primary-highlight (mint/teal).
-            // Eliminates the "light green ring" around avatars in light mode.
             background: var(--color-surface-offset);
             margin-right: var(--space-3);
             transition: transform var(--transition-interactive);
@@ -187,6 +196,12 @@
             &:hover { transform: scale(1.08); }
 
             .avatar { width: 100%; }
+
+            // Invisible spacer for bulk messages (preserves column alignment)
+            &.author--placeholder {
+              visibility: hidden;
+              pointer-events: none;
+            }
           }
 
           .content {
@@ -205,10 +220,6 @@
               align-items: baseline;
               gap: var(--space-2);
 
-              // Username badge: neutral pill — was teal-highlight bg + teal text.
-              // --color-primary-highlight in light mode = hsl(174,40%,90%) = mint green.
-              // New: neutral surface-offset bg + regular text + bold weight.
-              // Pill shape preserved for UX; color is now theme-agnostic.
               .username {
                 display: inline-flex;
                 align-items: center;
@@ -241,13 +252,26 @@
               }
             }
 
+            // ── Bubble ─────────────────────────────────────────────────
+            .bubble {
+              display: inline-block;
+              max-width: 100%;
+              border-radius: var(--radius-lg);
+              padding: var(--space-2) var(--space-3);
+              margin-bottom: var(--space-2);
+              // Default: others
+              background: color-mix(in srgb, var(--color-surface-2) 80%, transparent);
+              backdrop-filter: blur(8px);
+              -webkit-backdrop-filter: blur(8px);
+              border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+            }
+
             ::v-deep .content-body {
               color: var(--color-text);
               font-size: var(--text-sm);
               line-height: 1.55;
               word-wrap: break-word;
               overflow-wrap: break-word;
-              padding-bottom: var(--space-2);
 
               a {
                 color: var(--color-link);
@@ -313,14 +337,18 @@
             }
           }
 
+          // ── Self bubble (primary tint) ──────────────────────────────
+          &.is-self .content .bubble {
+            background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+            border-color: color-mix(in srgb, var(--color-primary) 25%, transparent);
+          }
+
           &.bulk {
             padding-top: 0;
-            .author         { visibility: hidden; height: 0; }
-            .content-head   { display: none; }
           }
         }
 
-        // ── Event message ───────────────────────────────────────────
+        // ── Event message ─────────────────────────────────────────────
         &.event {
           color: var(--color-text-muted);
           font-size: var(--text-sm);
@@ -333,6 +361,10 @@
             display: inline-block;
             vertical-align: baseline;
             line-height: 1.5;
+            // System/event messages: flat, no blur, no border
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
 
             strong { font-weight: 600; color: var(--color-text); }
             i      { font-style: italic; font-size: var(--text-xs); }
@@ -341,7 +373,20 @@
       }
     }
 
-    // ── Send input area ──────────────────────────────────────────────────
+    // ── Light mode: slightly higher bubble opacity ─────────────────────
+    // (Sidebar has blur(12px); increase opacity to keep bubbles readable)
+    [data-theme='light'] &,
+    :root:not([data-theme='dark']) & {
+      .chat-history li.message .content .bubble {
+        background: color-mix(in srgb, var(--color-surface-2) 90%, transparent);
+      }
+
+      .chat-history li.message.is-self .content .bubble {
+        background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+      }
+    }
+
+    // ── Send input area ──────────────────────────────────────────────
     .chat-send {
       flex-shrink: 0;
       padding: 0 var(--space-3) var(--space-3);
@@ -355,12 +400,15 @@
         margin: var(--space-2) 0;
       }
 
+      // Glassmorphism input wrapper
       .text-container {
         flex: 1;
         width: 100%;
         min-height: 60px;
-        background-color: var(--color-surface-offset);
-        border: 1px solid var(--color-border);
+        background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
         border-radius: var(--radius-lg);
         position: relative;
         display: flex;
@@ -371,7 +419,7 @@
 
         &:focus-within {
           border-color: var(--color-primary);
-          background-color: var(--color-surface-2);
+          background: color-mix(in srgb, var(--color-surface-2) 85%, transparent);
         }
 
         .emoji-menu {
@@ -431,6 +479,10 @@
         }
       }
     }
+
+    // ── prefers-reduced-motion: keep blur, skip transitions ─────────────
+    // backdrop-filter is a static visual effect, not an animation — keep it.
+    // Only CSS transitions are suppressed by base.css globally.
   }
 </style>
 
