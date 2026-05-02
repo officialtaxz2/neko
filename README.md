@@ -12,12 +12,14 @@
 |---|---|---|
 | **Design System** | CSS Custom Properties throughout; fluid type `clamp()`; 8pt spacing; shadow/radius/transition tokens; dark & light mode with theme toggle | ✅ |
 | **Typography** | Fontshare CDN — Cabinet Grotesk (display) + Satoshi (body) + JetBrains Mono; Whitney fully removed | ✅ |
-| **Glassmorphism** | Sidebar, header, login card, notifications — `backdrop-filter: blur()` + token-based surfaces | ✅ |
+| **Glassmorphism** | Sidebar, header, login card, notifications, chat bubbles — `backdrop-filter: blur()` + token-based surfaces | ✅ |
 | **Login Page** | Full-screen page; glassmorphism card; spotlight gradient + dot grid; inline error display; SystemDialog overlay; auto-login via URL params | ✅ |
-| **Sidebar** | 4-tab bar (Users · Chat · Files · Settings); Users + Chat simultaneously (50/50 split); exclusive Settings/Files logic | ✅ |
+| **Sidebar** | 4-tab bar (Users · Chat · Files · Settings); Users + Chat simultaneously (animated 50/50 split via `grid-template-rows`); exclusive Settings/Files logic | ✅ |
 | **User List** | Card layout; permanently visible action buttons; full admin moderation (Kick/Ban/Mute/Give/Release/Take Controls); Ignore | ✅ |
 | **Controls Bar** | Height 125px → 64px; member avatars removed; touch targets ≥44px; animated FPS/bitrate counters | ✅ |
-| **Settings** | Bento grid (2-column); custom toggles; resolution dropdown (admin-only); scroll sensitivity 1–20 (default 5); live tooltip on slider | ✅ |
+| **Settings** | Bento grid (2-column); collapsible groups (Video & Audio · Input & Controls · Admin); custom toggles; resolution dropdown (admin-only); scroll sensitivity 1–20 (default 5); live tooltip on slider | ✅ |
+| **Chat** | Glassmorphism bubbles — self: primary-tinted + blur; others: surface-2 + blur; system messages: flat, no blur | ✅ |
+| **Header** | Kinetic typography — room name animates `letter-spacing: -0.05em → 0` on every room join | ✅ |
 | **Video Player** | Resolution button removed from player (→ Settings); WebRTC/event handlers untouched | ✅ |
 | **Notifications** | Floating card design; type-specific accent border + FA icon | ✅ |
 | **SweetAlert2** | Fully migrated to CSS Custom Properties | ✅ |
@@ -215,16 +217,16 @@ login.addEventListener('mousemove', (e) => {
 
 ---
 
-### Phase 2 — Core Features ⬜
+### Phase 2 — Core Features ✅
 
-All decisions finalized. Implement in order: 2.1 → 2.2 → 2.3 → 2.4.
+All features shipped. Each was committed independently.
 
-| # | Feature | File | Effort | Notes |
+| # | Feature | File | Status | Notes |
 |---|---------|------|--------|-------|
-| 2.1 | Collapsible Sections — Settings | `settings.vue` | M | ~20 bento cards grouped into 4 collapsible sections: **Video & Audio**, **Input & Controls**, **Appearance**, **Admin** (admin-only). Default: all open. State persisted in `localStorage` per group (`neko_settings_group_video`, etc.). Chevron icon on each header. |
-| 2.2 | Glassmorphism — Chat Bubbles | `chat.vue` | M | Self-bubbles: `--color-primary` 15% tint + `backdrop-filter: blur(8px)`. Others: `--color-surface-2` 80% + blur. System messages (join/leave): flat, `--color-text-muted`, no blur. Sidebar already has `blur(12px)` — increase bubble opacity slightly to avoid readability issues. |
-| 2.3 | Split-Screen Sidebar — Transition Animation | `app.vue` | M | Animate the Chat/Users height split via `grid-template-rows: 0fr/1fr` transition (280ms, spring easing). Replaces the current instant size switch. |
-| 2.4 | Kinetic Typography — Header | `header.vue` | S | `letter-spacing: -0.05em → 0` animation (600ms ease-out) on the room name. Triggers on every room join via `@Watch('roomName')` — add/remove CSS class with `$nextTick`. |
+| 2.1 | Collapsible Sections — Settings | `settings.vue` | ✅ | ~20 bento cards grouped into 3 collapsible sections: **Video & Audio**, **Input & Controls**, **Admin** (admin-only). Default: all open. State persisted in `localStorage` per group (`neko_settings_group_video`, etc.). Chevron icon on each header, rotates on collapse. `grid-template-rows: 1fr → 0fr` animation (280ms spring). |
+| 2.2 | Glassmorphism — Chat Bubbles | `chat.vue` | ✅ | Self-bubbles: `--color-primary` 15% tint + `backdrop-filter: blur(8px)`. Others: `--color-surface-2` 80% + blur. System messages (join/leave/event): flat, `--color-text-muted`, no blur. Light mode: self 20%, others 90% opacity. Input wrapper also glassmorphic. |
+| 2.3 | Split-Screen Sidebar — Transition Animation | `side.vue` | ✅ | `display: grid` on `.page-container`. Computed class `split` / `users-only` / `chat-only` / `exclusive` drives `grid-template-rows` (280ms spring). Panel-row wrappers with `min-height: 0` prevent overflow bleed. Existing `panel-from-top/bottom` transitions preserved. |
+| 2.4 | Kinetic Typography — Header | `header.vue` | ✅ | Room name displayed centred in header. `@keyframes letter-open`: `letter-spacing: -0.05em → 0` + `opacity: 0.6 → 1` (600ms ease-out). Triggers on every room join via `@Watch('roomName')` — `roomNameKey++` forces re-render even if name is unchanged. `prefers-reduced-motion` guarded. |
 
 <details>
 <summary>Phase 2 — CSS/JS snippets</summary>
@@ -280,27 +282,29 @@ localStorage.setItem(key, String(!isOpen));
   display: grid;
   transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.page-container.chat-only  { grid-template-rows: 0fr 1fr; }
-.page-container.split       { grid-template-rows: 1fr 1fr; }
-.page-container.users-only  { grid-template-rows: 1fr 0fr; }
-.page-container > * { min-height: 0; overflow: hidden; }
+.page-container.split      { grid-template-rows: 1fr auto 1fr; }
+.page-container.users-only { grid-template-rows: 1fr auto 0fr; }
+.page-container.chat-only  { grid-template-rows: 0fr auto 1fr; }
+.page-container.exclusive  { display: flex; flex-direction: column; }
+.panel-row { min-height: 0; overflow: hidden; }
 ```
 
 **2.4 — Letter-open keyframe**
 ```css
 @keyframes letter-open {
-  0%   { letter-spacing: -0.05em; opacity: 0.7; }
+  0%   { letter-spacing: -0.05em; opacity: 0.6; }
   100% { letter-spacing: 0;       opacity: 1; }
 }
 .room-name.animate {
   animation: letter-open 600ms ease-out both;
 }
 ```
-```js
+```ts
 @Watch('roomName')
 onRoomNameChange() {
-  this.animating = false;
-  this.$nextTick(() => { this.animating = true; });
+  this.roomNameAnimating = false;
+  this.roomNameKey++;
+  this.$nextTick(() => { this.roomNameAnimating = true; });
 }
 ```
 </details>
@@ -314,8 +318,8 @@ Larger structural changes. Implement in order: 3.1 → 3.2 → 3.3. Feature 3.3 
 | # | Feature | File | Effort | Notes |
 |---|---------|------|--------|-------|
 | 3.1 | Split-Screen Login | `login.vue` | L | Desktop: 50/50 CSS Grid — left branding panel (`--color-surface` bg + `n.eko` wordmark + tagline "Your browser. Your session." + "Self-hosted · Open Source"), right: existing glassmorphism card unchanged. Spotlight gradient + dot grid on left panel only. Mobile ≤768px: single column, branding panel hidden. |
-| 3.2 | User-Count Badge — Tab Bar | `sidebar.vue` | M | Pill badge next to the "Users" tab label. Background `--color-surface-offset`, text `--color-text-muted`, `--radius-full`. On user join/leave: `scale(1.3) → scale(1)` bump animation (300ms spring). |
-| 3.3 | Animated Counter — User Count | `sidebar.vue` | S | **Requires 3.2.** Lerp-interpolation (factor 0.18) on the badge count, consistent with FPS counters in `controls.vue`. Fallback: `scale` bump via `.bump` class is acceptable for small numbers. `prefers-reduced-motion` → instant jump. |
+| 3.2 | User-Count Badge — Tab Bar | `side.vue` | M | Pill badge next to the "Users" tab label. Background `--color-surface-offset`, text `--color-text-muted`, `--radius-full`. On user join/leave: `scale(1.3) → scale(1)` bump animation (300ms spring). |
+| 3.3 | Animated Counter — User Count | `side.vue` | S | **Requires 3.2.** Lerp-interpolation (factor 0.18) on the badge count, consistent with FPS counters in `controls.vue`. Fallback: `scale` bump via `.bump` class is acceptable for small numbers. `prefers-reduced-motion` → instant jump. |
 
 <details>
 <summary>Phase 3 — CSS/JS snippets</summary>
