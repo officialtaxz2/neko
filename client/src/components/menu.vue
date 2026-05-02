@@ -1,7 +1,8 @@
 <template>
   <ul>
-    <li><i @click.stop.prevent="about" class="fas fa-question-circle" /></li>
-    <li>
+    <!-- ? and shield hidden on touch devices — controls bar is already space-constrained -->
+    <li v-if="!isTouchDevice"><i @click.stop.prevent="about" class="fas fa-question-circle" /></li>
+    <li v-if="admin && !isTouchDevice">
       <i
         class="fas fa-shield-alt"
         v-tooltip="{
@@ -10,7 +11,6 @@
           offset: 5,
           boundariesElement: 'body',
         }"
-        v-if="admin"
       />
     </li>
     <li>
@@ -47,9 +47,6 @@
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    // Adapts to both modes via CSS custom properties.
-    // Previously used hardcoded dark SCSS vars ($background-tertiary,
-    // color: white) which made text invisible in light mode.
     background-color: var(--color-surface-offset);
     border: 1px solid var(--color-border);
     color: var(--color-text);
@@ -90,6 +87,14 @@
 
     get langs() {
       return Object.keys(messages)
+    }
+
+    /** True on touch-primary devices (phone/tablet). Matches controls.vue logic. */
+    get isTouchDevice(): boolean {
+      return (
+        ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
+        window.matchMedia('(pointer: coarse)').matches
+      )
     }
 
     about() {

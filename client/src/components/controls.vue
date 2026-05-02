@@ -1,31 +1,18 @@
 <template>
   <ul>
-    <!-- Touch-device: mouse-toggle button in bar (replaces video-overlay button) -->
-    <li v-if="isTouchDevice && !controlLocked && !implicitHosting">
-      <i
-        :class="[
-          hosted && !hosting ? 'disabled' : '',
-          !hosted && !hosting ? 'faded' : '',
-          'fas',
-          'fa-computer-mouse',
-        ]"
-        v-tooltip="{
-          content: hosting
-            ? $t('controls.release')
-            : (hosted ? $t('controls.hasnot') : $t('controls.request')),
-          placement: 'top', offset: 5, boundariesElement: 'body',
-          delay: { show: 300, hide: 100 },
-        }"
-        @click.stop.prevent="toggleControl"
-      />
-    </li>
+    <!--
+      Single control-request button — always fa-computer-mouse.
+      On touch: always visible (replaces the old separate touch li).
+      On desktop: visible unless implicitHosting / controlLocked.
+      Icon is unified to fa-computer-mouse on all screen sizes.
+    -->
     <li v-if="!implicitHosting && (!controlLocked || hosting)">
       <i
         :class="[
           !disabeld && shakeKbd ? 'shake' : '',
           disabeld && !hosting ? 'disabled' : '',
           !disabeld && !hosting ? 'faded' : '',
-          'fas', 'fa-keyboard', 'request',
+          'fas', 'fa-computer-mouse', 'request',
         ]"
         v-tooltip="{
           content: !disabeld || hosting ? (hosting ? $t('controls.release') : $t('controls.request')) : '',
@@ -59,11 +46,6 @@
       </label>
     </li>
     <li>
-      <!--
-        fa-pause / fa-play (outline) instead of fa-pause-circle / fa-play-circle (solid filled).
-        Filled circle icons render as a teal disc — visually indistinguishable from a teal button.
-        Outline icons match all other controls-bar icons (fa-keyboard, fa-volume-up, etc.).
-      -->
       <i
         :class="[{ disabled: !playable }, playing ? 'fa-pause' : 'fa-play', 'fas', 'play']"
         @click.stop.prevent="toggleMedia"
@@ -86,23 +68,28 @@
       />
     </li>
     <li>
-      <div class="volume">
+      <!--
+        Volume: speaker icon tap toggles the slider open/closed.
+        On desktop the slider is always expanded.
+        On touch the slider starts collapsed and expands on tap.
+        Transition: smooth width + opacity (no layout reflow on neighbours).
+      -->
+      <div class="volume" :class="{ 'volume--expanded': volumeExpanded }">
         <i
           :class="[volume === 0 || muted ? 'fa-volume-mute' : 'fa-volume-up', 'fas']"
-          @click.stop.prevent="toggleMute"
+          @click.stop.prevent="handleVolumeIconClick"
         />
-        <!--
-          :style --fill drives the split track gradient.
-          volume range is 0–100, so fill % = volume directly.
-        -->
-        <input
-          type="range" min="0" max="100" v-model="volume"
-          :style="{ '--fill': volume + '%' }"
-        />
+        <div class="volume-slider-wrap">
+          <input
+            type="range" min="0" max="100" v-model="volume"
+            :style="{ '--fill': volume + '%' }"
+            :tabindex="volumeExpanded ? 0 : -1"
+          />
+        </div>
       </div>
     </li>
 
-    <!-- Touch-device: virtual keyboard button in bar (replaces video-overlay button) -->
+    <!-- Touch-device: virtual keyboard button in bar -->
     <li v-if="isTouchDevice && hosting" @click.stop.prevent="openMobileKeyboard">
       <i
         class="fas fa-keyboard"
@@ -196,9 +183,26 @@
         gap: var(--space-2);
         white-space: nowrap;
 
+        // Collapsible slider wrapper — animates width + opacity.
+        // On desktop always expanded; on touch collapsed until speaker tap.
+        .volume-slider-wrap {
+          overflow: hidden;
+          // Collapsed by default — JS sets volumeExpanded which toggles .volume--expanded
+          max-width: 0;
+          opacity: 0;
+          transition:
+            max-width 300ms cubic-bezier(0.16, 1, 0.3, 1),
+            opacity   220ms cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        &.volume--expanded .volume-slider-wrap {
+          max-width: 160px;
+          opacity: 1;
+        }
+
         // Split track: --fill CSS var is set via :style on the input (volume %).
-        // Filled = primary; unfilled = surface-dynamic (visible gray in both modes).
         input[type='range'] {
+          display: block;
           width: 150px;
           height: 20px;
           background: transparent;
@@ -349,6 +353,10 @@
     displayFps = 0
     displayBitrateKbps = 0
 
+    // Volume slider expand/collapse state.
+    // On touch: starts collapsed; on desktop: starts expanded.
+    volumeExpanded = false
+
     get statsVisible(): boolean { return this.displayFps > 0 || this.displayBitrateKbps > 0 }
 
     get displayBitrateLabel(): string {
@@ -359,7 +367,11 @@
 
     get bitrateUnit(): string { return this.targetBitrateKbps >= 1000 ? 'Mbps' : 'Kbps' }
 
-    mounted() { this.statsInterval = window.setInterval(() => void this.pollStats(), 2000) }
+    mounted() {
+      // Desktop: slider always visible; touch: collapsed until first tap.
+      this.volumeExpanded = !this.isTouchDevice
+      this.statsInterval = window.setInterval(() => void this.pollStats(), 2000)
+    }
 
     beforeDestroy() {
       if (this.statsInterval !== null) clearInterval(this.statsInterval)
@@ -424,6 +436,20 @@
       )
     }
 
+    /**
+     * Speaker icon click:
+     * - On desktop: toggles mute (standard behaviour).
+     * - On touch: first tap opens the slider; subsequent taps toggle mute.
+     *   This way the slider is always reachable even if it was closed.
+     */
+    handleVolumeIconClick() {
+      if (this.isTouchDevice && !this.volumeExpanded) {
+        this.volumeExpanded = true
+        return
+      }
+      this.toggleMute()
+    }
+
     get controlLocked()   { return 'control' in this.$accessor.locked && this.$accessor.locked['control'] && !this.$accessor.user.admin }
     get disabeld()        { return this.$accessor.remote.hosted }
     get hosting()         { return this.$accessor.remote.hosting }
@@ -443,9 +469,6 @@
     toggleMedia()   { if (!this.playable) return; this.$accessor.video.togglePlay() }
     toggleMute()    { this.$accessor.video.toggleMute() }
 
-    // Opens the virtual keyboard on touch devices by emitting to the parent (app.vue / video.vue)
-    // which holds the overlay textarea ref. The event bubbles up via $emit so the parent
-    // can call openMobileKeyboard() on the video component.
     openMobileKeyboard() {
       this.$emit('open-mobile-keyboard')
     }
