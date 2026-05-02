@@ -1,5 +1,24 @@
 <template>
   <ul>
+    <!-- Touch-device: mouse-toggle button in bar (replaces video-overlay button) -->
+    <li v-if="isTouchDevice && !controlLocked && !implicitHosting">
+      <i
+        :class="[
+          hosted && !hosting ? 'disabled' : '',
+          !hosted && !hosting ? 'faded' : '',
+          'fas',
+          'fa-computer-mouse',
+        ]"
+        v-tooltip="{
+          content: hosting
+            ? $t('controls.release')
+            : (hosted ? $t('controls.hasnot') : $t('controls.request')),
+          placement: 'top', offset: 5, boundariesElement: 'body',
+          delay: { show: 300, hide: 100 },
+        }"
+        @click.stop.prevent="toggleControl"
+      />
+    </li>
     <li v-if="!implicitHosting && (!controlLocked || hosting)">
       <i
         :class="[
@@ -81,6 +100,18 @@
           :style="{ '--fill': volume + '%' }"
         />
       </div>
+    </li>
+
+    <!-- Touch-device: virtual keyboard button in bar (replaces video-overlay button) -->
+    <li v-if="isTouchDevice && hosting" @click.stop.prevent="openMobileKeyboard">
+      <i
+        class="fas fa-keyboard"
+        v-tooltip="{
+          content: $t('controls.keyboard'),
+          placement: 'top', offset: 5, boundariesElement: 'body',
+          delay: { show: 300, hide: 100 },
+        }"
+      />
     </li>
 
     <li class="stats-badge no-pointer" v-if="playing && statsVisible">
@@ -382,11 +413,23 @@
       }
     }
 
+    /**
+     * True on any touch-primary device (phone OR tablet).
+     * Uses pointer:coarse — reliable on iPad regardless of viewport width.
+     */
+    get isTouchDevice(): boolean {
+      return (
+        ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
+        window.matchMedia('(pointer: coarse)').matches
+      )
+    }
+
     get controlLocked()   { return 'control' in this.$accessor.locked && this.$accessor.locked['control'] && !this.$accessor.user.admin }
     get disabeld()        { return this.$accessor.remote.hosted }
     get hosting()         { return this.$accessor.remote.hosting }
     get controlling()     { return this.$accessor.remote.controlling }
     get implicitHosting() { return this.$accessor.remote.implicitHosting }
+    get hosted()          { return this.$accessor.remote.hosted }
     get micAllowed()      { return this.controlling }
     get volume()          { return this.$accessor.video.volume }
     set volume(v: number) { this.$accessor.video.setVolume(v) }
@@ -399,6 +442,13 @@
     toggleControl() { if (!this.playable) return; this.$accessor.remote.toggle() }
     toggleMedia()   { if (!this.playable) return; this.$accessor.video.togglePlay() }
     toggleMute()    { this.$accessor.video.toggleMute() }
+
+    // Opens the virtual keyboard on touch devices by emitting to the parent (app.vue / video.vue)
+    // which holds the overlay textarea ref. The event bubbles up via $emit so the parent
+    // can call openMobileKeyboard() on the video component.
+    openMobileKeyboard() {
+      this.$emit('open-mobile-keyboard')
+    }
 
     microphoneActive = false
 

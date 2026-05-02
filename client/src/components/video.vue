@@ -37,19 +37,9 @@
         </div>
         <div ref="aspect" class="player-aspect" />
       </div>
+      <!-- Fullscreen + PiP overlay buttons — always visible, touch-device-agnostic -->
       <ul v-if="!fullscreen && !hideControls" class="video-menu top">
         <li><i @click.stop.prevent="requestFullscreen" class="fas fa-expand"></i></li>
-        <li v-if="!controlLocked && !implicitHosting" :class="extraControls || 'extra-control'">
-          <i
-            :class="[
-              hosted && !hosting ? 'disabled' : '',
-              !hosted && !hosting ? 'faded' : '',
-              'fas',
-              'fa-computer-mouse',
-            ]"
-            @click.stop.prevent="toggleControl"
-          />
-        </li>
       </ul>
       <ul v-if="!fullscreen && !hideControls" class="video-menu bottom">
         <li v-if="hosting && (!clipboard_read_available || !clipboard_write_available)">
@@ -63,13 +53,12 @@
             class="fas fa-external-link-alt"
           />
         </li>
-        <li
-          v-if="hosting && is_touch_device"
-          :class="extraControls || 'extra-control'"
-          @click.stop.prevent="openMobileKeyboard"
-        >
-          <i class="fas fa-keyboard" />
-        </li>
+        <!--
+          Mouse-toggle + Keyboard buttons removed from overlay on touch devices.
+          They are now rendered inside controls.vue (the bottom bar) via
+          the touchMouseButton / touchKeyboardButton props, so they are always
+          accessible without obscuring the stream.
+        -->
       </ul>
       <neko-clipboard ref="clipboard" v-if="hosting && (!clipboard_read_available || !clipboard_write_available)" />
     </div>
@@ -120,16 +109,6 @@
 
             &.disabled {
               color: rgba($color: $style-error, $alpha: 0.4);
-            }
-          }
-
-          /* usually extra controls are only shown on mobile */
-          &.extra-control {
-            display: none;
-          }
-          @media (max-width: 768px) {
-            &.extra-control {
-              display: block;
             }
           }
 
@@ -382,12 +361,14 @@
       return this.$accessor.video.horizontal
     }
 
+    /**
+     * True on any touch-primary device (phone OR tablet).
+     * Uses pointer:coarse instead of a width breakpoint so that iPads
+     * with large viewports are correctly treated as touch devices.
+     */
     get is_touch_device() {
       return (
-        // detect if the device has touch support
         ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
-        // the primary input mechanism includes a pointing device of
-        // limited accuracy, such as a finger on a touchscreen.
         window.matchMedia('(pointer: coarse)').matches
       )
     }
