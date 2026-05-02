@@ -3,7 +3,6 @@
     <!-- Tab navigation -->
     <div class="tabs-container">
       <ul role="tablist">
-        <!-- Users tab now first (left) -->
         <li
           role="tab"
           :aria-selected="activeUsers"
@@ -13,7 +12,6 @@
           <i class="fas fa-users" aria-hidden="true" />
           <span>{{ $t('side.users') }}</span>
         </li>
-        <!-- Chat tab now second (right of Users) -->
         <li
           role="tab"
           :aria-selected="activeChat"
@@ -46,7 +44,7 @@
     </div>
 
     <!-- Tab content -->
-    <div class="page-container" role="tabpanel">
+    <div class="page-container" :class="splitClass" role="tabpanel">
       <!-- Files panel: exclusive, store-managed -->
       <transition name="tab-fade" mode="out-in">
         <neko-files v-if="isFilesActive" key="files" />
@@ -57,22 +55,26 @@
         <neko-settings v-if="activeSettings && !isFilesActive" key="settings" />
       </transition>
 
-      <!-- Users panel: TOP position → slides in from the top -->
-      <transition name="panel-from-top">
-        <neko-userlist v-if="activeUsers && !isFilesActive" key="users" class="panel-slot" />
-      </transition>
+      <!-- Users slot (row 1) -->
+      <div class="panel-row panel-row--users" v-if="!isFilesActive && !activeSettings">
+        <transition name="panel-from-top">
+          <neko-userlist v-if="activeUsers" key="users" class="panel-slot" />
+        </transition>
+      </div>
 
-      <!-- Split divider: visible only when both panels are active -->
+      <!-- Split divider: only when both panels are active -->
       <div
-        v-if="activeChat && activeUsers && !isFilesActive"
+        v-if="activeChat && activeUsers && !isFilesActive && !activeSettings"
         class="panel-divider"
         aria-hidden="true"
       />
 
-      <!-- Chat panel: BOTTOM position → slides in from the bottom -->
-      <transition name="panel-from-bottom">
-        <neko-chat v-if="activeChat && !isFilesActive" key="chat" class="panel-slot" />
-      </transition>
+      <!-- Chat slot (row 2) -->
+      <div class="panel-row panel-row--chat" v-if="!isFilesActive && !activeSettings">
+        <transition name="panel-from-bottom">
+          <neko-chat v-if="activeChat" key="chat" class="panel-slot" />
+        </transition>
+      </div>
     </div>
   </aside>
 </template>
@@ -91,7 +93,7 @@
     border-left: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
     transition: background-color var(--transition-slow);
 
-    // ── Tab navigation bar ──────────────────────────────────────────────────
+    // ── Tab navigation bar ──────────────────────────────────────────
     .tabs-container {
       background: color-mix(in srgb, var(--color-bg) 75%, transparent);
       backdrop-filter: blur(12px);
@@ -144,9 +146,7 @@
             i { transform: scale(1.12); }
           }
 
-          &:active {
-            transform: scale(0.95);
-          }
+          &:active { transform: scale(0.95); }
 
           &.active {
             color: var(--color-primary);
@@ -178,24 +178,46 @@
       }
     }
 
-    // ── Tab content area ────────────────────────────────────────────────────
+    // ── Tab content area ───────────────────────────────────────────
     .page-container {
       max-height: 100%;
       flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      // clip overflow so sliding panels don't bleed outside the sidebar
+      // Grid layout drives the animated height split
+      display: grid;
+      grid-template-rows: 1fr auto 1fr; // users | divider | chat
       overflow: hidden;
+      transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1);
+
+      // Users-only: chat row collapses to 0
+      &.users-only  { grid-template-rows: 1fr auto 0fr; }
+      // Chat-only: users row collapses to 0
+      &.chat-only   { grid-template-rows: 0fr auto 1fr; }
+      // Both open: equal 50/50
+      &.split        { grid-template-rows: 1fr auto 1fr; }
+      // Exclusive panels (files/settings): rows irrelevant, display:flex fallback
+      &.exclusive    {
+        display: flex;
+        flex-direction: column;
+        transition: none;
+      }
     }
 
-    // ── Each toggleable panel (chat / users) gets equal share of space ──────
+    // Panel row wrappers — required for grid-template-rows collapse trick
+    .panel-row {
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    // Each toggleable panel fills its row
     .panel-slot {
       flex: 1;
       min-height: 0;
       overflow: hidden;
     }
 
-    // ── Split divider between Users and Chat ────────────────────────────────
+    // ── Split divider between Users and Chat ──────────────────────────
     .panel-divider {
       height: 1px;
       flex-shrink: 0;
@@ -203,7 +225,7 @@
     }
   }
 
-  // ── Tab fade+slide (files / settings exclusive panels) ───────────────────
+  // ── Tab fade+slide (files / settings exclusive panels) ─────────────────
   .tab-fade-enter-active,
   .tab-fade-leave-active {
     transition:
@@ -221,8 +243,7 @@
     transform: translateY(-4px);
   }
 
-  // ── Users panel: slides in/out from the TOP ─────────────────────────────
-  // transform+opacity only — GPU-composited, no layout thrash
+  // ── Users panel: slides in/out from the TOP ─────────────────────────
   .panel-from-top-enter-active,
   .panel-from-top-leave-active {
     transition:
@@ -241,7 +262,7 @@
     transform: translateY(-10px);
   }
 
-  // ── Chat panel: slides in/out from the BOTTOM ─────────────────────────
+  // ── Chat panel: slides in/out from the BOTTOM ──────────────────────
   .panel-from-bottom-enter-active,
   .panel-from-bottom-leave-active {
     transition:
@@ -260,8 +281,10 @@
     transform: translateY(10px);
   }
 
-  // ── Respect prefers-reduced-motion (DesignSystem.md UX-Pflicht) ──────────
+  // ── prefers-reduced-motion ────────────────────────────────────────
   @media (prefers-reduced-motion: reduce) {
+    .page-container { transition: none; }
+
     .panel-from-top-enter-active,
     .panel-from-top-leave-active,
     .panel-from-bottom-enter-active,
@@ -291,10 +314,17 @@
     },
   })
   export default class extends Vue {
-    // Both Chat and Users open by default after login
-    activeChat = true
-    activeUsers = true
+    activeChat     = true
+    activeUsers    = true
     activeSettings = false
+
+    /** CSS class driving the grid-template-rows animation. */
+    get splitClass(): string {
+      if (this.isFilesActive || this.activeSettings) return 'exclusive'
+      if (this.activeUsers && this.activeChat)       return 'split'
+      if (this.activeUsers)                          return 'users-only'
+      return 'chat-only'
+    }
 
     get filetransferAllowed() {
       return (
@@ -333,7 +363,6 @@
         this.activeChat = true
         return
       }
-      // Prevent closing the last active panel
       if (this.activeChat && !this.activeUsers) return
       this.activeChat = !this.activeChat
     }
@@ -345,7 +374,6 @@
         this.activeUsers = true
         return
       }
-      // Prevent closing the last active panel
       if (this.activeUsers && !this.activeChat) return
       this.activeUsers = !this.activeUsers
     }
@@ -356,8 +384,8 @@
         this.activeChat = true
       } else {
         if (this.isFilesActive) this.change('chat')
-        this.activeChat = false
-        this.activeUsers = false
+        this.activeChat     = false
+        this.activeUsers    = false
         this.activeSettings = true
       }
     }
