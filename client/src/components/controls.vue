@@ -68,12 +68,6 @@
       />
     </li>
     <li>
-      <!--
-        Volume: speaker icon tap toggles the slider open/closed.
-        On desktop the slider is always expanded.
-        On touch the slider starts collapsed and expands on tap.
-        Transition: smooth width + opacity (no layout reflow on neighbours).
-      -->
       <div class="volume" :class="{ 'volume--expanded': volumeExpanded }">
         <i
           :class="[volume === 0 || muted ? 'fa-volume-mute' : 'fa-volume-up', 'fas']"
@@ -101,7 +95,8 @@
       />
     </li>
 
-    <li class="stats-badge no-pointer" v-if="playing && statsVisible">
+    <!-- Stats badge: shown only when playing AND user enabled the toggle -->
+    <li class="stats-badge no-pointer" v-if="playing && showStats && statsHasData">
       <div class="stats-inner">
         <span class="stat">
           <span class="stat-val" :key="'f' + statsKey">{{ displayFps }}</span>
@@ -183,11 +178,8 @@
         gap: var(--space-2);
         white-space: nowrap;
 
-        // Collapsible slider wrapper — animates width + opacity.
-        // On desktop always expanded; on touch collapsed until speaker tap.
         .volume-slider-wrap {
           overflow: hidden;
-          // Collapsed by default — JS sets volumeExpanded which toggles .volume--expanded
           max-width: 0;
           opacity: 0;
           transition:
@@ -200,7 +192,6 @@
           opacity: 1;
         }
 
-        // Split track: --fill CSS var is set via :style on the input (volume %).
         input[type='range'] {
           display: block;
           width: 150px;
@@ -338,6 +329,19 @@
 <script lang="ts">
   import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 
+  const STATS_STORAGE_KEY = 'neko_show_stats'
+
+  // RTCPeerConnection property names tried in order (varies by neko client version)
+  const PC_PROPS = ['peerConnection', '_pc', 'peer_connection', '_peerConnection'] as const
+
+  function resolvePeerConnection(client: any): RTCPeerConnection | undefined {
+    for (const prop of PC_PROPS) {
+      const pc = client[prop]
+      if (pc && typeof pc.getStats === 'function') return pc as RTCPeerConnection
+    }
+    return undefined
+  }
+
   @Component({ name: 'neko-controls' })
   export default class extends Vue {
     @Prop(Boolean) readonly shakeKbd!: boolean
@@ -348,16 +352,18 @@
     private lastStatsTime = 0
     private targetFps = 0
     private targetBitrateKbps = 0
+    private statsToggleListener: ((e: Event) => void) | null = null
 
     statsKey = 0
     displayFps = 0
     displayBitrateKbps = 0
+    showStats = false
 
     // Volume slider expand/collapse state.
-    // On touch: starts collapsed; on desktop: starts expanded.
     volumeExpanded = false
 
-    get statsVisible(): boolean { return this.displayFps > 0 || this.displayBitrateKbps > 0 }
+    // True once at least one valid stats sample has been received.
+    get statsHasData(): boolean { return this.displayFps > 0 || this.displayBitrateKbps > 0 }
 
     get displayBitrateLabel(): string {
       return this.targetBitrateKbps >= 1000
@@ -368,14 +374,27 @@
     get bitrateUnit(): string { return this.targetBitrateKbps >= 1000 ? 'Mbps' : 'Kbps' }
 
     mounted() {
-      // Desktop: slider always visible; touch: collapsed until first tap.
       this.volumeExpanded = !this.isTouchDevice
+
+      // Read persisted toggle preference
+      this.showStats = localStorage.getItem(STATS_STORAGE_KEY) === 'true'
+
+      // React to settings-panel toggle without a page reload
+      this.statsToggleListener = (e: Event) => {
+        this.showStats = (e as CustomEvent<boolean>).detail
+      }
+      window.addEventListener('neko:stats-toggle', this.statsToggleListener)
+
+      // Always poll so data is ready the moment the user enables the toggle
       this.statsInterval = window.setInterval(() => void this.pollStats(), 2000)
     }
 
     beforeDestroy() {
       if (this.statsInterval !== null) clearInterval(this.statsInterval)
       cancelAnimationFrame(this.animRafId)
+      if (this.statsToggleListener) {
+        window.removeEventListener('neko:stats-toggle', this.statsToggleListener)
+      }
     }
 
     @Watch('playing')
@@ -388,24 +407,54 @@
     }
 
     private async pollStats(): Promise<void> {
-      const pc = (this.$client as any).peerConnection as RTCPeerConnection | undefined
-      if (!pc) return
-      try {
-        const now = performance.now()
-        const stats = await pc.getStats()
-        stats.forEach((r: any) => {
-          if (r.type !== 'inbound-rtp' || r.kind !== 'video') return
-          if (typeof r.framesPerSecond === 'number') this.targetFps = Math.round(r.framesPerSecond)
-          if (typeof r.bytesReceived === 'number' && this.lastStatsTime > 0) {
-            const dt = (now - this.lastStatsTime) / 1000
-            if (dt > 0) this.targetBitrateKbps = Math.round(((r.bytesReceived - this.lastBytesReceived) * 8) / dt / 1000)
+      // 1. Try RTCPeerConnection.getStats() via robust property lookup
+      const pc = resolvePeerConnection(this.$client as any)
+      if (pc) {
+        try {
+          const now = performance.now()
+          const stats = await pc.getStats()
+          let gotFrame = false
+          stats.forEach((r: any) => {
+            if (r.type !== 'inbound-rtp' || r.kind !== 'video') return
+            if (typeof r.framesPerSecond === 'number') {
+              this.targetFps = Math.round(r.framesPerSecond)
+              gotFrame = true
+            }
+            if (typeof r.bytesReceived === 'number' && this.lastStatsTime > 0) {
+              const dt = (now - this.lastStatsTime) / 1000
+              if (dt > 0) {
+                this.targetBitrateKbps = Math.round(
+                  ((r.bytesReceived - this.lastBytesReceived) * 8) / dt / 1000
+                )
+              }
+            }
+            this.lastBytesReceived = r.bytesReceived ?? this.lastBytesReceived
+            this.lastStatsTime = now
+          })
+          if (gotFrame || this.targetBitrateKbps > 0) {
+            this.statsKey++
+            this.scheduleAnimate()
+            return
           }
-          this.lastBytesReceived = r.bytesReceived ?? this.lastBytesReceived
-          this.lastStatsTime = now
-        })
-        this.statsKey++
-        this.scheduleAnimate()
-      } catch { /* PC not yet connected */ }
+        } catch { /* PC not yet connected — fall through to video element fallback */ }
+      }
+
+      // 2. Fallback: HTMLVideoElement.getVideoPlaybackQuality()
+      //    Works when RTCPeerConnection is not accessible but a <video> is playing.
+      const video = document.querySelector<HTMLVideoElement>('video')
+      if (video && typeof video.getVideoPlaybackQuality === 'function') {
+        const q = video.getVideoPlaybackQuality()
+        if (q.totalVideoFrames > 0) {
+          // Derive FPS from frame delta between polls (2s interval)
+          const frameDelta = q.totalVideoFrames - (this as any)._lastTotalFrames
+          ;(this as any)._lastTotalFrames = q.totalVideoFrames
+          if (frameDelta > 0 && (this as any)._lastTotalFrames > 0) {
+            this.targetFps = Math.round(frameDelta / 2)
+          }
+          this.statsKey++
+          this.scheduleAnimate()
+        }
+      }
     }
 
     private scheduleAnimate(): void {
@@ -425,10 +474,6 @@
       }
     }
 
-    /**
-     * True on any touch-primary device (phone OR tablet).
-     * Uses pointer:coarse — reliable on iPad regardless of viewport width.
-     */
     get isTouchDevice(): boolean {
       return (
         ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
@@ -436,12 +481,6 @@
       )
     }
 
-    /**
-     * Speaker icon click:
-     * - On desktop: toggles mute (standard behaviour).
-     * - On touch: first tap opens the slider; subsequent taps toggle mute.
-     *   This way the slider is always reachable even if it was closed.
-     */
     handleVolumeIconClick() {
       if (this.isTouchDevice && !this.volumeExpanded) {
         this.volumeExpanded = true

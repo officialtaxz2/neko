@@ -12,10 +12,6 @@
           <div class="row">
             <span>{{ $t('setting.scroll') }}</span>
             <label class="slider">
-              <!--
-                max is 20 (was 50). --fill formula updated accordingly.
-                The tooltip bubble shows the live value while dragging.
-              -->
               <div class="slider-wrap">
                 <input
                   type="range" min="1" max="20" v-model="scroll"
@@ -50,6 +46,23 @@
             </div>
             <label class="switch">
               <input type="checkbox" v-model="trackpad_mode" :disabled="!is_touch_device" />
+              <span />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video card -->
+      <div class="bento-card">
+        <div class="card-header">
+          <i class="fas fa-film" aria-hidden="true" />
+          <span class="card-title">Video</span>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <span>Show FPS / Bitrate stats</span>
+            <label class="switch">
+              <input type="checkbox" v-model="show_stats" />
               <span />
             </label>
           </div>
@@ -288,8 +301,6 @@
 
         &.row-full { padding: var(--space-3) var(--space-4); }
 
-        // Stack label above select so the dropdown gets full card width
-        // in half-width bento cards — prevents overflow clipping.
         &.row--select {
           flex-direction: column;
           align-items: stretch;
@@ -555,6 +566,8 @@
   import { Vue, Component } from 'vue-property-decorator'
   import Resolution from '~/components/resolution.vue'
 
+  const STATS_STORAGE_KEY = 'neko_show_stats'
+
   @Component({
     name: 'neko-settings',
     components: {
@@ -575,11 +588,20 @@
     }
 
     hideTooltip() {
-      // Keep visible briefly after release so user can read the final value
       this._tooltipTimer = setTimeout(() => {
         this.tooltipVisible = false
         this._tooltipTimer = null
       }, 900)
+    }
+
+    // ── Stats toggle (localStorage, default: false) ───────────────────
+    get show_stats(): boolean {
+      return localStorage.getItem(STATS_STORAGE_KEY) === 'true'
+    }
+    set show_stats(v: boolean) {
+      localStorage.setItem(STATS_STORAGE_KEY, String(v))
+      // Notify controls.vue via a global custom event so it reacts immediately
+      window.dispatchEvent(new CustomEvent('neko:stats-toggle', { detail: v }))
     }
 
     // ── Computed: settings store bindings ─────────────────────────────
