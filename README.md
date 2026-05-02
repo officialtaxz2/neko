@@ -131,17 +131,17 @@ docker compose up --force-recreate
 
 ---
 
-### Phase 1 — Quick Wins ⬜
+### Phase 1 — Quick Wins ✅
 
-All decisions finalized. No open questions. Each feature is independently committable.
+All features shipped. Each was committed independently.
 
-| # | Feature | File | Effort | Notes |
+| # | Feature | File | Status | Notes |
 |---|---------|------|--------|-------|
-| 1.1 | Animated Counters FPS/Bitrate — Verify & Debug | `controls.vue` | ~0 | Already implemented. Diagnose only: verify counters appear when `playing === true` and `displayFps > 0`. Some browsers hide them without an active video track — no code fix needed. |
-| 1.2 | Kinetic Typography — Login | `login.vue` | S | One-time weight-pulse animation on the `n.eko` wordmark at pageload. Cabinet Grotesk variable font already loaded. Wrap each letter in `<span>`, staggered `animation-delay` (40ms each), `font-variation-settings: 'wght' 900 → 400`, 600ms ease-out. Trigger: on-mount only. |
-| 1.3 | Dot Grid Background — Settings Panel | `settings.vue` | S | SVG dot grid via `::before` pseudo-element on `.neko-settings`. `opacity: 0.04` — keep it subtle. No screen-wide grid. |
-| 1.4 | Parallax / Depth — Login Screen | `login.vue` | S | `mousemove` on `.login` container → normalised `{ x, y }` (−0.5 to 0.5) written as `--mx` / `--my`. Dot grid translates 12px, login card tilts max ±4° via `perspective: 1000px`. |
-| 1.5 | Gamification — Controls Handoff | `controls.vue` | S | On receive (`hosting: false → true`): `burst` keyframe on keyboard icon + 2s inline badge "You have the controls" fades out. On release: opacity flash `1 → 0.4 → 1`. Do **not** reuse the existing `shake` keyframe. |
+| 1.1 | Animated Counters FPS/Bitrate — Verify & Debug | `controls.vue` | ✅ | Already implemented pre-phase. Verified: counters appear when `playing === true` and `displayFps > 0`. No code fix needed. |
+| 1.2 | Kinetic Typography — Login | `login.vue` | ✅ | Weight-pulse on `n.eko` wordmark at pageload. Staggered `animation-delay` (40ms/letter), `font-variation-settings: 'wght' 900 → 400`, 600ms ease-out. |
+| 1.3 | Dot Grid Background — Settings Panel | `settings.vue` | ✅ | SVG dot grid via `::before` on `.neko-settings`. `opacity: 0.04`, `pointer-events: none`. |
+| 1.4 | Parallax / Depth — Login Screen | `login.vue` | ✅ | `mousemove` → normalised `--mx`/`--my`. Dot grid translates 12px, login card tilts max ±4° via `perspective: 1000px`. `prefers-reduced-motion` guard in JS + CSS. |
+| 1.5 | Gamification — Controls Handoff | `controls.vue` | ✅ | `@Watch('hosting')`: receive → `burst` keyframe on icon + 2s badge "You have the controls" (`badge-float-out`). Release → opacity `flash` keyframe. `prefers-reduced-motion` guarded. i18n key: `controls.you_have_controls`. |
 
 <details>
 <summary>Phase 1 — CSS/JS snippets</summary>
@@ -201,9 +201,14 @@ login.addEventListener('mousemove', (e) => {
   40%  { transform: scale(1.4); filter: drop-shadow(0 0 8px  var(--color-primary)); }
   100% { transform: scale(1);   filter: drop-shadow(0 0 0px  var(--color-primary)); }
 }
-@keyframes fade-out {
+@keyframes badge-float-out {
   0%   { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes flash {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
 }
 ```
 </details>
