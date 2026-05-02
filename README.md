@@ -22,7 +22,31 @@
 | **Notifications** | Floating card design; type-specific accent border + FA icon | ✅ |
 | **SweetAlert2** | Fully migrated to CSS Custom Properties | ✅ |
 | **Trackpad Mode** | Relative touch cursor for mobile; tap = left click, long-press (600ms) = right click, two fingers = scroll; toggle in Settings with touch-only badge; i18n in all 15 locales | ✅ |
-| **Bug Fixes** | Kick/Ban/Mute cancel bug; i18n `side.users` in all 15 locales; mobile right dead-space strip; TS2339 (`changeResolution→screenSet`, `disconnect→logout`); clipped select dropdowns in bento half-width cards | ✅ |
+
+---
+
+## Bug Fixes
+
+| # | Bug | File(s) | Status |
+|---|-----|---------|--------|
+| B-1 | Kick/Ban/Mute cancel dialog did not close correctly | `side.vue` | ✅ |
+| B-2 | i18n key `side.users` missing in all 15 locales | locale files | ✅ |
+| B-3 | Mobile right dead-space strip (100vw including scrollbar gutter) | `app.vue` | ✅ |
+| B-4 | TS2339 — `changeResolution` → `screenSet`, `disconnect` → `logout` | multiple | ✅ |
+| B-5 | Clipped select dropdowns in bento half-width cards | `settings.vue` | ✅ |
+| B-6 | Controls bar hidden on mobile (≤768px `display:none`) — bar now always visible on touch devices | `app.vue` | ✅ |
+| B-7 | `open-mobile-keyboard` event not wired — virtual keyboard button had no effect | `app.vue` | ✅ |
+| B-8 | Duplicate control-request buttons on mobile (mouse icon + keyboard icon both called `toggleControl`) | `controls.vue` | ✅ |
+
+---
+
+## Quality of Life
+
+| # | Change | File(s) | Status |
+|---|--------|---------|--------|
+| Q-1 | Control-request button unified to `fa-computer-mouse` icon on all screen sizes (desktop + touch); shake animation retained | `controls.vue` | ✅ |
+| Q-2 | `?` (About) and shield (Admin) icons hidden on touch devices — prevents controls bar overflow and horizontal scrolling | `menu.vue` | ✅ |
+| Q-3 | Volume slider tap-to-expand — speaker icon tap opens/collapses the slider with a smooth `max-width` + `opacity` transition (300ms); on desktop always expanded; on touch collapsed by default | `controls.vue` | ✅ |
 
 ---
 
