@@ -8,6 +8,7 @@
     -->
     <li v-if="!implicitHosting && (!controlLocked || hosting)">
       <i
+        ref="controlIcon"
         :class="[
           !disabeld && shakeKbd ? 'shake' : '',
           disabeld && !hosting ? 'disabled' : '',
@@ -21,6 +22,12 @@
         }"
         @click.stop.prevent="toggleControl"
       />
+      <!-- Inline badge: shown for 2 s after receiving controls -->
+      <transition name="badge-fade">
+        <span v-if="showControlsBadge" class="controls-badge" aria-live="polite">
+          {{ $t('controls.you_have_controls') }}
+        </span>
+      </transition>
     </li>
     <li class="no-pointer" v-if="implicitHosting">
       <i
@@ -129,6 +136,54 @@
     100% { transform: scale(1)    translate(0,    0)    rotate(0deg);   }
   }
 
+  // ── Gamification: burst (receive controls) ────────────────────────────────
+  .burst { animation: burst 480ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  @keyframes burst {
+    0%   { transform: scale(1);   filter: drop-shadow(0 0 0px  var(--color-primary)); }
+    40%  { transform: scale(1.4); filter: drop-shadow(0 0 8px  var(--color-primary)); }
+    100% { transform: scale(1);   filter: drop-shadow(0 0 0px  var(--color-primary)); }
+  }
+
+  // ── Gamification: flash (release controls) ────────────────────────────────
+  .flash { animation: flash 600ms ease-out both; }
+
+  @keyframes flash {
+    0%   { opacity: 1; }
+    40%  { opacity: 0.4; }
+    100% { opacity: 1; }
+  }
+
+  // ── Inline "You have the controls" badge ──────────────────────────────────
+  .controls-badge {
+    position: absolute;
+    bottom: calc(100% + var(--space-2));
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    pointer-events: none;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    background: color-mix(in srgb, var(--color-primary) 18%, var(--color-surface));
+    border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+    color: var(--color-primary);
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    animation: badge-float-out 2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes badge-float-out {
+    0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    70%  { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  }
+
+  // Badge Vue transition (entry only — exit handled by badge-float-out keyframe)
+  .badge-fade-enter-active { transition: opacity 120ms ease; }
+  .badge-fade-enter        { opacity: 0; }
+
   @keyframes stat-flip {
     0%   { opacity: 0.3; transform: translateY(-4px) scale(0.88); }
     100% { opacity: 1;   transform: translateY(0)    scale(1); }
@@ -149,6 +204,8 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      // Required for absolute-positioned badge
+      position: relative;
 
       &.no-pointer { cursor: default; }
 
@@ -324,12 +381,20 @@
       }
     }
   }
+
+  // ── prefers-reduced-motion ────────────────────────────────────────────────
+  @media (prefers-reduced-motion: reduce) {
+    .burst, .flash { animation: none; }
+    .controls-badge { animation: none; opacity: 1; }
+    .badge-fade-enter-active { transition: none; }
+  }
 </style>
 
 <script lang="ts">
   import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 
   const STATS_STORAGE_KEY = 'neko_show_stats'
+  const BADGE_DURATION_MS = 2000
 
   // RTCPeerConnection property names tried in order (varies by neko client version)
   const PC_PROPS = ['peerConnection', '_pc', 'peer_connection', '_peerConnection'] as const
@@ -353,11 +418,13 @@
     private targetFps = 0
     private targetBitrateKbps = 0
     private statsToggleListener: ((e: Event) => void) | null = null
+    private badgeTimer: number | null = null
 
     statsKey = 0
     displayFps = 0
     displayBitrateKbps = 0
     showStats = false
+    showControlsBadge = false
 
     // Volume slider expand/collapse state.
     volumeExpanded = false
@@ -395,6 +462,7 @@
       if (this.statsToggleListener) {
         window.removeEventListener('neko:stats-toggle', this.statsToggleListener)
       }
+      if (this.badgeTimer !== null) clearTimeout(this.badgeTimer)
     }
 
     @Watch('playing')
@@ -403,6 +471,42 @@
         this.targetFps = 0; this.targetBitrateKbps = 0
         this.lastBytesReceived = 0; this.lastStatsTime = 0
         this.scheduleAnimate()
+      }
+    }
+
+    // ── Gamification: react to hosting state changes ──────────────────────
+    @Watch('hosting')
+    onHostingChanged(isHosting: boolean, wasHosting: boolean) {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const icon = this.$refs.controlIcon as HTMLElement | undefined
+
+      if (isHosting && !wasHosting) {
+        // Received controls
+        if (icon && !prefersReduced) {
+          // Burst keyframe: forcefully re-trigger by removing and re-adding the class
+          icon.classList.remove('burst')
+          void icon.offsetWidth  // force reflow
+          icon.classList.add('burst')
+          icon.addEventListener('animationend', () => icon.classList.remove('burst'), { once: true })
+        }
+        // Show inline badge for BADGE_DURATION_MS
+        if (this.badgeTimer !== null) clearTimeout(this.badgeTimer)
+        this.showControlsBadge = true
+        this.badgeTimer = window.setTimeout(() => {
+          this.showControlsBadge = false
+          this.badgeTimer = null
+        }, BADGE_DURATION_MS)
+      } else if (!isHosting && wasHosting) {
+        // Released controls
+        if (icon && !prefersReduced) {
+          icon.classList.remove('flash')
+          void icon.offsetWidth  // force reflow
+          icon.classList.add('flash')
+          icon.addEventListener('animationend', () => icon.classList.remove('flash'), { once: true })
+        }
+        // Dismiss badge immediately on release
+        this.showControlsBadge = false
+        if (this.badgeTimer !== null) { clearTimeout(this.badgeTimer); this.badgeTimer = null }
       }
     }
 
