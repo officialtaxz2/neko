@@ -2,174 +2,222 @@
   <div class="settings">
     <div class="bento-grid" ref="grid">
 
-      <!-- Scrolling card (full width) -->
-      <div class="bento-card bento-full">
-        <div class="card-header">
-          <i class="fas fa-mouse" aria-hidden="true" />
-          <span class="card-title">{{ $t('setting.scroll') }}</span>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <span>{{ $t('setting.scroll') }}</span>
-            <label class="slider">
-              <div class="slider-wrap">
-                <input
-                  type="range" min="1" max="20" v-model="scroll"
-                  :style="{ '--fill': ((+scroll - 1) / 19 * 100) + '%' }"
-                  @mousedown="showTooltip"
-                  @touchstart="showTooltip"
-                  @mouseup="hideTooltip"
-                  @touchend="hideTooltip"
-                />
-                <span
-                  class="slider-tooltip"
-                  :class="{ 'slider-tooltip--visible': tooltipVisible }"
-                  :style="{ left: ((+scroll - 1) / 19 * 100) + '%' }"
-                  aria-hidden="true"
-                >{{ scroll }}</span>
-              </div>
-            </label>
-          </div>
-          <div class="row">
-            <span>{{ $t('setting.scroll_invert') }}</span>
-            <label class="switch">
-              <input type="checkbox" v-model="scroll_invert" />
-              <span />
-            </label>
-          </div>
-          <div class="row" :class="{ 'row--dimmed': !is_touch_device }">
-            <div class="row-label">
-              <span>{{ $t('setting.trackpad_mode') }}</span>
-              <span class="badge" :class="is_touch_device ? 'badge--mobile' : 'badge--desktop'">
-                {{ is_touch_device ? $t('setting.mobile') : $t('setting.desktop_only_inactive') }}
-              </span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" v-model="trackpad_mode" :disabled="!is_touch_device" />
-              <span />
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Video card -->
-      <div class="bento-card">
-        <div class="card-header">
+      <!-- ── GROUP: Video & Audio ───────────────────────────────────── -->
+      <div class="settings-group bento-full">
+        <button class="settings-group-header" @click="toggle('video')" :aria-expanded="isOpen('video')">
           <i class="fas fa-film" aria-hidden="true" />
-          <span class="card-title">Video</span>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <span>Show FPS / Bitrate stats</span>
-            <label class="switch">
-              <input type="checkbox" v-model="show_stats" />
-              <span />
-            </label>
+          <span class="group-title">Video &amp; Audio</span>
+          <i class="fas fa-chevron-down group-chevron" :class="{ 'group-chevron--open': isOpen('video') }" aria-hidden="true" />
+        </button>
+        <div class="settings-group-content" :class="{ collapsed: !isOpen('video') }">
+          <div class="settings-group-inner">
+            <div class="bento-grid bento-grid--inner">
+
+              <!-- Scrolling card -->
+              <div class="bento-card bento-full">
+                <div class="card-header">
+                  <i class="fas fa-mouse" aria-hidden="true" />
+                  <span class="card-title">{{ $t('setting.scroll') }}</span>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <span>{{ $t('setting.scroll') }}</span>
+                    <label class="slider">
+                      <div class="slider-wrap">
+                        <input
+                          type="range" min="1" max="20" v-model="scroll"
+                          :style="{ '--fill': ((+scroll - 1) / 19 * 100) + '%' }"
+                          @mousedown="showTooltip"
+                          @touchstart="showTooltip"
+                          @mouseup="hideTooltip"
+                          @touchend="hideTooltip"
+                        />
+                        <span
+                          class="slider-tooltip"
+                          :class="{ 'slider-tooltip--visible': tooltipVisible }"
+                          :style="{ left: ((+scroll - 1) / 19 * 100) + '%' }"
+                          aria-hidden="true"
+                        >{{ scroll }}</span>
+                      </div>
+                    </label>
+                  </div>
+                  <div class="row">
+                    <span>{{ $t('setting.scroll_invert') }}</span>
+                    <label class="switch">
+                      <input type="checkbox" v-model="scroll_invert" />
+                      <span />
+                    </label>
+                  </div>
+                  <div class="row" :class="{ 'row--dimmed': !is_touch_device }">
+                    <div class="row-label">
+                      <span>{{ $t('setting.trackpad_mode') }}</span>
+                      <span class="badge" :class="is_touch_device ? 'badge--mobile' : 'badge--desktop'">
+                        {{ is_touch_device ? $t('setting.mobile') : $t('setting.desktop_only_inactive') }}
+                      </span>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" v-model="trackpad_mode" :disabled="!is_touch_device" />
+                      <span />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Video card -->
+              <div class="bento-card">
+                <div class="card-header">
+                  <i class="fas fa-film" aria-hidden="true" />
+                  <span class="card-title">Video</span>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <span>Show FPS / Bitrate stats</span>
+                    <label class="switch">
+                      <input type="checkbox" v-model="show_stats" />
+                      <span />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chat card -->
+              <div class="bento-card">
+                <div class="card-header">
+                  <i class="fas fa-comment-alt" aria-hidden="true" />
+                  <span class="card-title">Chat</span>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <span>{{ $t('setting.autoplay') }}</span>
+                    <label class="switch"><input type="checkbox" v-model="autoplay" /><span /></label>
+                  </div>
+                  <div class="row">
+                    <span>{{ $t('setting.ignore_emotes') }}</span>
+                    <label class="switch"><input type="checkbox" v-model="ignore_emotes" /><span /></label>
+                  </div>
+                  <div class="row">
+                    <span>{{ $t('setting.chat_sound') }}</span>
+                    <label class="switch"><input type="checkbox" v-model="chat_sound" /><span /></label>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Chat card -->
-      <div class="bento-card">
-        <div class="card-header">
-          <i class="fas fa-comment-alt" aria-hidden="true" />
-          <span class="card-title">Chat</span>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <span>{{ $t('setting.autoplay') }}</span>
-            <label class="switch"><input type="checkbox" v-model="autoplay" /><span /></label>
-          </div>
-          <div class="row">
-            <span>{{ $t('setting.ignore_emotes') }}</span>
-            <label class="switch"><input type="checkbox" v-model="ignore_emotes" /><span /></label>
-          </div>
-          <div class="row">
-            <span>{{ $t('setting.chat_sound') }}</span>
-            <label class="switch"><input type="checkbox" v-model="chat_sound" /><span /></label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Input / Keyboard card -->
-      <div class="bento-card">
-        <div class="card-header">
+      <!-- ── GROUP: Input & Controls ───────────────────────────────── -->
+      <div class="settings-group bento-full">
+        <button class="settings-group-header" @click="toggle('input')" :aria-expanded="isOpen('input')">
           <i class="fas fa-keyboard" aria-hidden="true" />
-          <span class="card-title">Input</span>
-        </div>
-        <div class="card-body">
-          <div class="row row--select">
-            <span>{{ $t('setting.keyboard_layout') }}</span>
-            <label class="select">
-              <select v-model="keyboard_layout">
-                <option v-for="(name, code) in keyboard_layouts_list" :key="code" :value="code">{{ name }}</option>
-              </select>
-              <span />
-            </label>
+          <span class="group-title">Input &amp; Controls</span>
+          <i class="fas fa-chevron-down group-chevron" :class="{ 'group-chevron--open': isOpen('input') }" aria-hidden="true" />
+        </button>
+        <div class="settings-group-content" :class="{ collapsed: !isOpen('input') }">
+          <div class="settings-group-inner">
+            <div class="bento-grid bento-grid--inner">
+
+              <!-- Input / Keyboard card -->
+              <div class="bento-card bento-full">
+                <div class="card-header">
+                  <i class="fas fa-keyboard" aria-hidden="true" />
+                  <span class="card-title">Input</span>
+                </div>
+                <div class="card-body">
+                  <div class="row row--select">
+                    <span>{{ $t('setting.keyboard_layout') }}</span>
+                    <label class="select">
+                      <select v-model="keyboard_layout">
+                        <option v-for="(name, code) in keyboard_layouts_list" :key="code" :value="code">{{ name }}</option>
+                      </select>
+                      <span />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Display card (admin only) -->
-      <div class="bento-card" v-if="admin">
-        <div class="card-header">
-          <i class="fas fa-desktop" aria-hidden="true" />
-          <span class="card-title">Display</span>
-        </div>
-        <div class="card-body">
-          <div class="row row--select">
-            <span>Resolution</span>
-            <label class="select">
-              <select v-model="resValue">
-                <option
-                  v-for="(conf, i) in resConfigurations"
-                  :key="i"
-                  :value="`${conf.width}x${conf.height}@${conf.rate}`"
-                >
-                  {{ conf.width }} × {{ conf.height }} @ {{ conf.rate }} fps
-                </option>
-              </select>
-              <span />
-            </label>
+      <!-- ── GROUP: Admin (admin-only) ─────────────────────────────── -->
+      <div class="settings-group bento-full" v-if="admin">
+        <button class="settings-group-header" @click="toggle('admin')" :aria-expanded="isOpen('admin')">
+          <i class="fas fa-shield-alt" aria-hidden="true" />
+          <span class="group-title">Admin</span>
+          <i class="fas fa-chevron-down group-chevron" :class="{ 'group-chevron--open': isOpen('admin') }" aria-hidden="true" />
+        </button>
+        <div class="settings-group-content" :class="{ collapsed: !isOpen('admin') }">
+          <div class="settings-group-inner">
+            <div class="bento-grid bento-grid--inner">
+
+              <!-- Display card -->
+              <div class="bento-card">
+                <div class="card-header">
+                  <i class="fas fa-desktop" aria-hidden="true" />
+                  <span class="card-title">Display</span>
+                </div>
+                <div class="card-body">
+                  <div class="row row--select">
+                    <span>Resolution</span>
+                    <label class="select">
+                      <select v-model="resValue">
+                        <option
+                          v-for="(conf, i) in resConfigurations"
+                          :key="i"
+                          :value="`${conf.width}x${conf.height}@${conf.rate}`"
+                        >
+                          {{ conf.width }} × {{ conf.height }} @ {{ conf.rate }} fps
+                        </option>
+                      </select>
+                      <span />
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Broadcast card (full width) -->
+              <div class="bento-card bento-full">
+                <div class="card-header">
+                  <i class="fas fa-broadcast-tower" aria-hidden="true" />
+                  <span class="card-title">{{ $t('setting.broadcast_title') }}</span>
+                  <button
+                    v-if="!broadcast_is_active"
+                    @click.stop.prevent="$accessor.settings.broadcastCreate(broadcast_url)"
+                    class="btn-icon btn-icon--ghost"
+                    :aria-label="$t('setting.broadcast_title')"
+                  >
+                    <i class="fas fa-play" aria-hidden="true" />
+                  </button>
+                  <button
+                    v-else
+                    @click.stop.prevent="$accessor.settings.broadcastDestroy()"
+                    class="btn-icon btn-red"
+                    :aria-label="$t('setting.broadcast_title')"
+                  >
+                    <i class="fas fa-stop" aria-hidden="true" />
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="row row-full">
+                    <input
+                      v-model="broadcast_url"
+                      :disabled="broadcast_is_active"
+                      class="input"
+                      placeholder="rtmp://a.rtmp.youtube.com/live2/<stream-key>"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Broadcast card (admin only, full width) -->
-      <div class="bento-card bento-full" v-if="admin">
-        <div class="card-header">
-          <i class="fas fa-broadcast-tower" aria-hidden="true" />
-          <span class="card-title">{{ $t('setting.broadcast_title') }}</span>
-          <button
-            v-if="!broadcast_is_active"
-            @click.stop.prevent="$accessor.settings.broadcastCreate(broadcast_url)"
-            class="btn-icon btn-icon--ghost"
-            :aria-label="$t('setting.broadcast_title')"
-          >
-            <i class="fas fa-play" aria-hidden="true" />
-          </button>
-          <button
-            v-else
-            @click.stop.prevent="$accessor.settings.broadcastDestroy()"
-            class="btn-icon btn-red"
-            :aria-label="$t('setting.broadcast_title')"
-          >
-            <i class="fas fa-stop" aria-hidden="true" />
-          </button>
-        </div>
-        <div class="card-body">
-          <div class="row row-full">
-            <input
-              v-model="broadcast_url"
-              :disabled="broadcast_is_active"
-              class="input"
-              placeholder="rtmp://a.rtmp.youtube.com/live2/<stream-key>"
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- Session card (full width, only when connected) -->
+      <!-- ── Session card (standalone, always visible) ─────────────── -->
       <div class="bento-card bento-full" v-if="connected">
         <div class="card-body">
           <div class="row">
@@ -197,6 +245,11 @@
       align-items: start;
     }
 
+    // Inner grids inside group content reset gap slightly
+    .bento-grid--inner {
+      gap: var(--space-3);
+    }
+
     .bento-card {
       position: relative;
       overflow: hidden;
@@ -208,7 +261,7 @@
       &:hover { box-shadow: var(--shadow-md); }
       &.bento-full { grid-column: 1 / -1; }
 
-      // Cursor-shine overlay — tracks pointer via --cursor-x / --cursor-y
+      // Cursor-shine overlay
       &::before {
         content: '';
         position: absolute;
@@ -227,8 +280,78 @@
 
       &:hover::before { opacity: 1; }
 
-      // All direct children sit above the shine layer
       > * { position: relative; z-index: 1; }
+    }
+
+    // ── Collapsible group ─────────────────────────────────────────────
+    .settings-group {
+      grid-column: 1 / -1;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+    }
+
+    .settings-group-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-surface);
+      border: none;
+      border-bottom: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+      cursor: pointer;
+      text-align: left;
+      transition: background var(--transition-interactive);
+
+      &:hover { background: var(--color-surface-2); }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: -2px;
+      }
+
+      i:first-child {
+        color: var(--color-text-muted);
+        font-size: var(--text-xs);
+        flex-shrink: 0;
+      }
+
+      .group-title {
+        flex: 1;
+        font-size: var(--text-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-text-muted);
+      }
+
+      .group-chevron {
+        color: var(--color-text-muted);
+        font-size: var(--text-xs);
+        flex-shrink: 0;
+        // Collapsed state: chevron points right (default); open: points down
+        transform: rotate(-90deg);
+        transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+
+        &.group-chevron--open { transform: rotate(0deg); }
+      }
+    }
+
+    .settings-group-content {
+      display: grid;
+      grid-template-rows: 1fr;
+      overflow: hidden;
+      transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1);
+
+      &.collapsed { grid-template-rows: 0fr; }
+    }
+
+    .settings-group-inner {
+      // Required for grid-template-rows collapse trick
+      min-height: 0;
+      padding: var(--space-3);
     }
 
     .card-header {
@@ -583,9 +706,12 @@
       &:active { transform: scale(0.98); }
     }
 
-    // ── prefers-reduced-motion: disable shine ─────────────────────────
+    // ── prefers-reduced-motion ────────────────────────────────────────
     @media (prefers-reduced-motion: reduce) {
       .bento-card::before { display: none; }
+
+      .settings-group-content,
+      .group-chevron { transition: none; }
     }
   }
 </style>
@@ -596,6 +722,13 @@
 
   const STATS_STORAGE_KEY = 'neko_show_stats'
 
+  // Group IDs mapped to localStorage keys
+  const GROUP_KEYS: Record<string, string> = {
+    video:  'neko_settings_group_video',
+    input:  'neko_settings_group_input',
+    admin:  'neko_settings_group_admin',
+  }
+
   @Component({
     name: 'neko-settings',
     components: {
@@ -603,6 +736,35 @@
     },
   })
   export default class extends Vue {
+    // ── Collapsible group state ───────────────────────────────────────
+    // Reactive map; all groups default open (true)
+    private groupOpen: Record<string, boolean> = {
+      video: true,
+      input: true,
+      admin: true,
+    }
+
+    created() {
+      // Restore per-group state from localStorage (default: open)
+      for (const [id, key] of Object.entries(GROUP_KEYS)) {
+        const stored = localStorage.getItem(key)
+        if (stored !== null) {
+          this.$set(this.groupOpen, id, stored !== 'false')
+        }
+      }
+    }
+
+    isOpen(id: string): boolean {
+      return this.groupOpen[id] !== false
+    }
+
+    toggle(id: string): void {
+      const next = !this.isOpen(id)
+      this.$set(this.groupOpen, id, next)
+      const key = GROUP_KEYS[id]
+      if (key) localStorage.setItem(key, String(next))
+    }
+
     // ── Tooltip state ─────────────────────────────────────────────────
     tooltipVisible = false
     private _tooltipTimer: ReturnType<typeof setTimeout> | null = null
@@ -611,14 +773,12 @@
     private _onMouseMove: ((e: MouseEvent) => void) | null = null
 
     mounted() {
-      // Skip if user prefers reduced motion
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
       const grid = this.$refs.grid as HTMLElement | undefined
       if (!grid) return
 
       this._onMouseMove = (e: MouseEvent) => {
-        // Update --cursor-x / --cursor-y relative to each hovered card
         const cards = grid.querySelectorAll<HTMLElement>('.bento-card')
         cards.forEach((card) => {
           const rect = card.getBoundingClientRect()
