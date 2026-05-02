@@ -72,21 +72,6 @@
       <!-- Login card: hidden while system dialog is visible -->
       <transition name="card-fade">
         <div class="window" v-if="!systemDialog">
-          <!-- Logo / About trigger -->
-          <button
-            type="button"
-            class="logo"
-            @click.stop.prevent="about"
-            :title="$t('connect.login_title')"
-            aria-label="About n.eko"
-          >
-            <img src="@/assets/images/logo.svg" alt="n.eko" width="90" height="90" loading="lazy" />
-            <!-- Kinetic wordmark: each character wrapped for staggered weight-pulse -->
-            <span class="neko-logo" aria-hidden="true">
-              <span>n</span><span>.</span><span>e</span><span>k</span><span>o</span>
-            </span>
-          </button>
-
           <!-- Connecting: bounce loader -->
           <div v-if="connecting" class="loader" role="status" :aria-label="$t('connect.connect')">
             <div class="bounce1"></div>
@@ -138,6 +123,15 @@
               {{ $t('connect.connect') }}
             </button>
           </form>
+
+          <!-- About link (replaces the logo button that was above the form) -->
+          <button
+            type="button"
+            class="about-link"
+            @click.stop.prevent="about"
+            :title="$t('connect.login_title')"
+            aria-label="About n.eko"
+          >n.eko</button>
         </div>
       </transition>
     </div>
@@ -150,7 +144,9 @@
   // -----------------------------------------------
   .login-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    // Left branding panel takes half; right login panel is sized to its content
+    // so no dead empty space appears to the right of the card.
+    grid-template-columns: 1fr auto;
     min-height: 100dvh;
   }
 
@@ -284,6 +280,9 @@
   // -----------------------------------------------
   .login-page {
     position: relative;
+    // Ensure the right panel is at least wide enough for the card + generous padding.
+    // Without a min-width the "auto" column would hug the card tightly on narrow viewports.
+    min-width: min(460px, 50vw);
     background-color: var(--color-bg);
     // Spotlight + dot grid (right panel only)
     background-image:
@@ -433,58 +432,6 @@
   }
 
   // -----------------------------------------------
-  // Logo button
-  // -----------------------------------------------
-  .logo {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    padding: var(--space-2) 0;
-    background: none;
-    border: none;
-    border-radius: var(--radius-md);
-    transition: opacity var(--transition-interactive);
-
-    &:hover  { opacity: 0.8; }
-    &:active { opacity: 0.6; }
-
-    &:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 3px;
-    }
-
-    img {
-      height: 90px;
-      width: auto;
-      margin-right: var(--space-2);
-    }
-  }
-
-  // -----------------------------------------------
-  // Kinetic wordmark (login card)
-  // -----------------------------------------------
-  .neko-logo {
-    font-family: var(--font-display);
-    font-size: var(--text-xl);
-    line-height: 1;
-    color: var(--color-text);
-
-    span {
-      display: inline-block;
-      animation: weight-pulse 600ms ease-out both;
-
-      &:nth-child(1) { animation-delay:   0ms; }
-      &:nth-child(2) { animation-delay:  40ms; }
-      &:nth-child(3) { animation-delay:  80ms; }
-      &:nth-child(4) { animation-delay: 120ms; }
-      &:nth-child(5) { animation-delay: 160ms; }
-    }
-  }
-
-  // -----------------------------------------------
   // Login form
   // -----------------------------------------------
   .form {
@@ -589,6 +536,32 @@
   }
 
   // -----------------------------------------------
+  // About link (replaces the removed logo button)
+  // -----------------------------------------------
+  .about-link {
+    display: block;
+    width: 100%;
+    margin-top: var(--space-3);
+    padding: var(--space-1) 0;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color var(--transition-interactive);
+
+    &:hover { color: var(--color-text-muted); }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 3px;
+      border-radius: var(--radius-sm);
+    }
+  }
+
+  // -----------------------------------------------
   // Bounce loader
   // -----------------------------------------------
   .loader {
@@ -636,7 +609,6 @@
       transition: none;
     }
 
-    .neko-logo span,
     .branding-logo span {
       animation: none;
       font-variation-settings: 'wght' 400;
