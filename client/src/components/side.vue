@@ -11,6 +11,12 @@
         >
           <i class="fas fa-users" aria-hidden="true" />
           <span>{{ $t('side.users') }}</span>
+          <!-- User-count badge (Phase 3.2) -->
+          <span
+            class="tab-badge"
+            :class="{ bump: userCountBumping }"
+            aria-hidden="true"
+          >{{ memberCount }}</span>
         </li>
         <li
           role="tab"
@@ -178,23 +184,47 @@
       }
     }
 
+    // ── User-count badge ────────────────────────────────────────────
+    .tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 var(--space-1);
+      border-radius: var(--radius-full);
+      background: var(--color-surface-offset);
+      color: var(--color-text-muted);
+      font-size: var(--text-xs);
+      font-family: var(--font-body);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      // Don't inherit the parent li's active/hover colour
+      transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+
+      &.bump {
+        animation: badge-bump 300ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+    }
+
+    @keyframes badge-bump {
+      0%   { transform: scale(1);   }
+      40%  { transform: scale(1.3); }
+      100% { transform: scale(1);   }
+    }
+
     // ── Tab content area ───────────────────────────────────────────
     .page-container {
       max-height: 100%;
       flex-grow: 1;
-      // Grid layout drives the animated height split
       display: grid;
       grid-template-rows: 1fr auto 1fr; // users | divider | chat
       overflow: hidden;
       transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1);
 
-      // Users-only: chat row collapses to 0
       &.users-only  { grid-template-rows: 1fr auto 0fr; }
-      // Chat-only: users row collapses to 0
       &.chat-only   { grid-template-rows: 0fr auto 1fr; }
-      // Both open: equal 50/50
       &.split        { grid-template-rows: 1fr auto 1fr; }
-      // Exclusive panels (files/settings): rows irrelevant, display:flex fallback
       &.exclusive    {
         display: flex;
         flex-direction: column;
@@ -202,7 +232,6 @@
       }
     }
 
-    // Panel row wrappers — required for grid-template-rows collapse trick
     .panel-row {
       min-height: 0;
       overflow: hidden;
@@ -210,7 +239,6 @@
       flex-direction: column;
     }
 
-    // Each toggleable panel fills its row
     .panel-slot {
       flex: 1;
       min-height: 0;
@@ -285,6 +313,9 @@
   @media (prefers-reduced-motion: reduce) {
     .page-container { transition: none; }
 
+    // Badge: no animation — instant count update only
+    .tab-badge.bump { animation: none; }
+
     .panel-from-top-enter-active,
     .panel-from-top-leave-active,
     .panel-from-bottom-enter-active,
@@ -317,6 +348,39 @@
     activeChat     = true
     activeUsers    = true
     activeSettings = false
+
+    // Bump state for badge animation (Phase 3.2)
+    userCountBumping = false
+    private _bumpTimer: ReturnType<typeof setTimeout> | null = null
+
+    // Connected member count (self + others)
+    get memberCount(): number {
+      return Object.values(this.$accessor.user.members).filter((m: any) => m.connected).length
+    }
+
+    // Watch member count changes to trigger bump animation
+    @Watch('memberCount')
+    onMemberCountChange() {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (prefersReduced) return
+
+      // Remove then re-add .bump to re-trigger animation even for back-to-back changes
+      if (this._bumpTimer !== null) {
+        clearTimeout(this._bumpTimer)
+        this.userCountBumping = false
+      }
+      this.$nextTick(() => {
+        this.userCountBumping = true
+        this._bumpTimer = setTimeout(() => {
+          this.userCountBumping = false
+          this._bumpTimer = null
+        }, 350)
+      })
+    }
+
+    beforeDestroy() {
+      if (this._bumpTimer !== null) clearTimeout(this._bumpTimer)
+    }
 
     /** CSS class driving the grid-template-rows animation. */
     get splitClass(): string {
