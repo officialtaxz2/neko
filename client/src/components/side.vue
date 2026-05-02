@@ -11,12 +11,12 @@
         >
           <i class="fas fa-users" aria-hidden="true" />
           <span>{{ $t('side.users') }}</span>
-          <!-- User-count badge (Phase 3.2) -->
+          <!-- User-count badge: lerp-animated count (Phase 3.2 + 3.3) -->
           <span
             class="tab-badge"
             :class="{ bump: userCountBumping }"
             aria-hidden="true"
-          >{{ memberCount }}</span>
+          >{{ displayedCount }}</span>
         </li>
         <li
           role="tab"
@@ -199,7 +199,6 @@
       font-family: var(--font-body);
       font-variant-numeric: tabular-nums;
       line-height: 1;
-      // Don't inherit the parent li's active/hover colour
       transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
 
       &.bump {
@@ -218,7 +217,7 @@
       max-height: 100%;
       flex-grow: 1;
       display: grid;
-      grid-template-rows: 1fr auto 1fr; // users | divider | chat
+      grid-template-rows: 1fr auto 1fr;
       overflow: hidden;
       transition: grid-template-rows 280ms cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -245,7 +244,7 @@
       overflow: hidden;
     }
 
-    // ── Split divider between Users and Chat ──────────────────────────
+    // ── Split divider ────────────────────────────────────────────────
     .panel-divider {
       height: 1px;
       flex-shrink: 0;
@@ -253,25 +252,17 @@
     }
   }
 
-  // ── Tab fade+slide (files / settings exclusive panels) ─────────────────
+  // ── Tab fade+slide ────────────────────────────────────────────────────
   .tab-fade-enter-active,
   .tab-fade-leave-active {
     transition:
       opacity   var(--transition-interactive),
       transform var(--transition-interactive);
   }
+  .tab-fade-enter      { opacity: 0; transform: translateY(4px);  }
+  .tab-fade-leave-to   { opacity: 0; transform: translateY(-4px); }
 
-  .tab-fade-enter {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  .tab-fade-leave-to {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-
-  // ── Users panel: slides in/out from the TOP ─────────────────────────
+  // ── Users panel: slides from TOP ─────────────────────────────────
   .panel-from-top-enter-active,
   .panel-from-top-leave-active {
     transition:
@@ -279,18 +270,10 @@
       transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform, opacity;
   }
+  .panel-from-top-enter    { opacity: 0; transform: translateY(-10px); }
+  .panel-from-top-leave-to { opacity: 0; transform: translateY(-10px); }
 
-  .panel-from-top-enter {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  .panel-from-top-leave-to {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-
-  // ── Chat panel: slides in/out from the BOTTOM ──────────────────────
+  // ── Chat panel: slides from BOTTOM ─────────────────────────────
   .panel-from-bottom-enter-active,
   .panel-from-bottom-leave-active {
     transition:
@@ -298,23 +281,13 @@
       transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform, opacity;
   }
-
-  .panel-from-bottom-enter {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  .panel-from-bottom-leave-to {
-    opacity: 0;
-    transform: translateY(10px);
-  }
+  .panel-from-bottom-enter    { opacity: 0; transform: translateY(10px); }
+  .panel-from-bottom-leave-to { opacity: 0; transform: translateY(10px); }
 
   // ── prefers-reduced-motion ────────────────────────────────────────
   @media (prefers-reduced-motion: reduce) {
     .page-container { transition: none; }
-
-    // Badge: no animation — instant count update only
-    .tab-badge.bump { animation: none; }
+    .tab-badge.bump  { animation: none; }
 
     .panel-from-top-enter-active,
     .panel-from-top-leave-active,
@@ -335,12 +308,17 @@
   import Files from '~/components/files.vue'
   import Userlist from '~/components/userlist.vue'
 
+  // Lerp factor: consistent with FPS/bitrate counters in controls.vue
+  const LERP_FACTOR = 0.18
+  // rAF runs at ~60fps; snap to target when within this threshold to avoid infinite micro-steps
+  const LERP_SNAP_THRESHOLD = 0.5
+
   @Component({
     name: 'neko',
     components: {
       'neko-settings': Settings,
-      'neko-chat': Chat,
-      'neko-files': Files,
+      'neko-chat':     Chat,
+      'neko-files':    Files,
       'neko-userlist': Userlist,
     },
   })
@@ -349,37 +327,80 @@
     activeUsers    = true
     activeSettings = false
 
-    // Bump state for badge animation (Phase 3.2)
+    // Badge animation state (Phase 3.2)
     userCountBumping = false
     private _bumpTimer: ReturnType<typeof setTimeout> | null = null
 
-    // Connected member count (self + others)
+    // Lerp state (Phase 3.3)
+    displayedCount = 0
+    private _lerpValue  = 0
+    private _lerpRafId: number | null = null
+    private _prefersReduced = false
+
+    // True count from store
     get memberCount(): number {
       return Object.values(this.$accessor.user.members).filter((m: any) => m.connected).length
     }
 
-    // Watch member count changes to trigger bump animation
-    @Watch('memberCount')
-    onMemberCountChange() {
-      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      if (prefersReduced) return
-
-      // Remove then re-add .bump to re-trigger animation even for back-to-back changes
-      if (this._bumpTimer !== null) {
-        clearTimeout(this._bumpTimer)
-        this.userCountBumping = false
-      }
-      this.$nextTick(() => {
-        this.userCountBumping = true
-        this._bumpTimer = setTimeout(() => {
-          this.userCountBumping = false
-          this._bumpTimer = null
-        }, 350)
-      })
+    mounted() {
+      this._prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      // Initialise without animation on mount
+      this._lerpValue    = this.memberCount
+      this.displayedCount = this.memberCount
     }
 
     beforeDestroy() {
       if (this._bumpTimer !== null) clearTimeout(this._bumpTimer)
+      if (this._lerpRafId !== null) cancelAnimationFrame(this._lerpRafId)
+    }
+
+    @Watch('memberCount')
+    onMemberCountChange(next: number) {
+      // --- Bump animation (3.2) ---
+      if (!this._prefersReduced) {
+        if (this._bumpTimer !== null) {
+          clearTimeout(this._bumpTimer)
+          this.userCountBumping = false
+        }
+        this.$nextTick(() => {
+          this.userCountBumping = true
+          this._bumpTimer = setTimeout(() => {
+            this.userCountBumping = false
+            this._bumpTimer = null
+          }, 350)
+        })
+      }
+
+      // --- Lerp counter (3.3) ---
+      if (this._prefersReduced) {
+        // Instant jump — no rAF
+        this._lerpValue    = next
+        this.displayedCount = next
+        return
+      }
+
+      // Cancel any running lerp before starting a new one
+      if (this._lerpRafId !== null) {
+        cancelAnimationFrame(this._lerpRafId)
+        this._lerpRafId = null
+      }
+
+      const step = () => {
+        this._lerpValue += (next - this._lerpValue) * LERP_FACTOR
+
+        if (Math.abs(next - this._lerpValue) < LERP_SNAP_THRESHOLD) {
+          // Snap to final integer — no more stepping needed
+          this._lerpValue    = next
+          this.displayedCount = next
+          this._lerpRafId    = null
+          return
+        }
+
+        this.displayedCount = Math.round(this._lerpValue)
+        this._lerpRafId     = requestAnimationFrame(step)
+      }
+
+      this._lerpRafId = requestAnimationFrame(step)
     }
 
     /** CSS class driving the grid-template-rows animation. */
