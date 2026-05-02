@@ -1,5 +1,5 @@
 <template>
-  <div class="login-page">
+  <div class="login-page" ref="loginPage">
     <!-- System Dialog Overlay: shown above login card when a system event fires -->
     <transition name="dialog-fade">
       <div
@@ -128,6 +128,10 @@
         transparent 1.5px
       );
     background-size: auto, 28px 28px;
+    // Dot grid shifts with parallax via custom properties
+    background-position:
+      center,
+      calc(50% + var(--mx, 0) * 12px) calc(50% + var(--my, 0) * 12px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -241,7 +245,7 @@
   }
 
   // -----------------------------------------------
-  // Login card (Glassmorphism)
+  // Login card (Glassmorphism + parallax tilt)
   // -----------------------------------------------
   .window {
     width: min(300px, calc(100vw - var(--space-8)));
@@ -253,6 +257,13 @@
     border-top-color: color-mix(in srgb, var(--color-text) 15%, transparent);
     padding: var(--space-3);
     box-shadow: var(--shadow-lg);
+    // Perspective container for 3-D tilt
+    perspective: 1000px;
+    transform:
+      rotateY(calc(var(--mx, 0) * 4deg))
+      rotateX(calc(var(--my, 0) * -4deg));
+    transition: transform 80ms linear;
+    will-change: transform;
   }
 
   // -----------------------------------------------
@@ -299,8 +310,6 @@
     font-size: var(--text-xl);
     line-height: 1;
     color: var(--color-text);
-    // Prevent the wordmark from being read as 5 separate letters by AT
-    // (aria-hidden="true" on the parent handles this)
 
     span {
       display: inline-block;
@@ -471,6 +480,16 @@
       animation: none;
       font-variation-settings: 'wght' 400;
     }
+
+    // Parallax disabled — card & dot grid stay flat
+    .window {
+      transform: none !important;
+      transition: none !important;
+    }
+
+    .login-page {
+      background-position: center, center !important;
+    }
   }
 
   // -----------------------------------------------
@@ -502,6 +521,7 @@
   @Component({ name: 'neko-login-page' })
   export default class extends Vue {
     private autoPassword: string | null = new URL(location.href).searchParams.get('pwd')
+    private _parallaxHandler: ((e: MouseEvent) => void) | null = null
 
     displayname = ''
     password = ''
@@ -524,6 +544,27 @@
       if (displayname !== '' && password !== '') {
         this.$accessor.login({ displayname, password })
         this.autoPassword = null
+      }
+
+      // Parallax: only when user has no motion preference
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (!prefersReduced) {
+        const el = this.$refs.loginPage as HTMLElement
+        this._parallaxHandler = (e: MouseEvent) => {
+          const x = e.clientX / window.innerWidth  - 0.5
+          const y = e.clientY / window.innerHeight - 0.5
+          el.style.setProperty('--mx', String(x))
+          el.style.setProperty('--my', String(y))
+        }
+        el.addEventListener('mousemove', this._parallaxHandler)
+      }
+    }
+
+    beforeDestroy() {
+      if (this._parallaxHandler) {
+        const el = this.$refs.loginPage as HTMLElement
+        el.removeEventListener('mousemove', this._parallaxHandler)
+        this._parallaxHandler = null
       }
     }
 
