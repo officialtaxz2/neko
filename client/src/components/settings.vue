@@ -1,6 +1,6 @@
 <template>
   <div class="settings">
-    <div class="bento-grid">
+    <div class="bento-grid" ref="grid">
 
       <!-- Scrolling card (full width) -->
       <div class="bento-card bento-full">
@@ -198,14 +198,37 @@
     }
 
     .bento-card {
+      position: relative;
+      overflow: hidden;
       background: color-mix(in srgb, var(--color-surface-2) 90%, transparent);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
-      overflow: hidden;
       transition: box-shadow var(--transition-interactive);
 
       &:hover { box-shadow: var(--shadow-md); }
       &.bento-full { grid-column: 1 / -1; }
+
+      // Cursor-shine overlay — tracks pointer via --cursor-x / --cursor-y
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        background: radial-gradient(
+          320px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+          color-mix(in srgb, var(--color-primary) 10%, transparent) 0%,
+          transparent 70%
+        );
+        opacity: 0;
+        transition: opacity 220ms ease;
+        z-index: 0;
+      }
+
+      &:hover::before { opacity: 1; }
+
+      // All direct children sit above the shine layer
+      > * { position: relative; z-index: 1; }
     }
 
     .card-header {
@@ -559,6 +582,11 @@
 
       &:active { transform: scale(0.98); }
     }
+
+    // ── prefers-reduced-motion: disable shine ─────────────────────────
+    @media (prefers-reduced-motion: reduce) {
+      .bento-card::before { display: none; }
+    }
   }
 </style>
 
@@ -578,6 +606,39 @@
     // ── Tooltip state ─────────────────────────────────────────────────
     tooltipVisible = false
     private _tooltipTimer: ReturnType<typeof setTimeout> | null = null
+
+    // ── Cursor-shine: track pointer per card ──────────────────────────
+    private _onMouseMove: ((e: MouseEvent) => void) | null = null
+
+    mounted() {
+      // Skip if user prefers reduced motion
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+      const grid = this.$refs.grid as HTMLElement | undefined
+      if (!grid) return
+
+      this._onMouseMove = (e: MouseEvent) => {
+        // Update --cursor-x / --cursor-y relative to each hovered card
+        const cards = grid.querySelectorAll<HTMLElement>('.bento-card')
+        cards.forEach((card) => {
+          const rect = card.getBoundingClientRect()
+          const x = ((e.clientX - rect.left) / rect.width  * 100).toFixed(2) + '%'
+          const y = ((e.clientY - rect.top)  / rect.height * 100).toFixed(2) + '%'
+          card.style.setProperty('--cursor-x', x)
+          card.style.setProperty('--cursor-y', y)
+        })
+      }
+
+      grid.addEventListener('mousemove', this._onMouseMove, { passive: true })
+    }
+
+    beforeDestroy() {
+      const grid = this.$refs.grid as HTMLElement | undefined
+      if (grid && this._onMouseMove) {
+        grid.removeEventListener('mousemove', this._onMouseMove)
+      }
+      this._onMouseMove = null
+    }
 
     showTooltip() {
       if (this._tooltipTimer !== null) {
@@ -600,7 +661,6 @@
     }
     set show_stats(v: boolean) {
       localStorage.setItem(STATS_STORAGE_KEY, String(v))
-      // Notify controls.vue via a global custom event so it reacts immediately
       window.dispatchEvent(new CustomEvent('neko:stats-toggle', { detail: v }))
     }
 
