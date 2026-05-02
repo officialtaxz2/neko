@@ -4,6 +4,16 @@
       <img src="@/assets/images/logo.svg" alt="n.eko" />
       <span><b>n</b>.eko</span>
     </a>
+
+    <!-- Room name: animates letter-spacing on every room join -->
+    <span
+      v-if="roomName"
+      class="room-name"
+      :class="{ animate: roomNameAnimating }"
+      :key="roomNameKey"
+      aria-label="Room name"
+    >{{ roomName }}</span>
+
     <ul class="menu">
       <li>
         <i
@@ -59,12 +69,10 @@
             delay: { show: 300, hide: 100 },
           }"
         >
-          <!-- Sun icon (shown in dark mode → switch to light) -->
           <svg v-if="currentTheme === 'dark'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="5"/>
             <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
           </svg>
-          <!-- Moon icon (shown in light mode → switch to dark) -->
           <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
           </svg>
@@ -80,16 +88,21 @@
 </template>
 
 <style lang="scss" scoped>
+  // Letter-open keyframe: compressed → natural spacing
+  @keyframes letter-open {
+    0%   { letter-spacing: -0.05em; opacity: 0.6; }
+    100% { letter-spacing: 0;       opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .room-name.animate { animation: none !important; }
+  }
+
   .header {
     flex: 1;
     display: flex;
     flex-direction: row;
     align-items: center;
-    // Glassmorphism fix: both stops use transparent as the mix base so the
-    // background has actual alpha — this is what allows backdrop-filter:blur(8px)
-    // to function at rest (not just in the .is-scrolled state).
-    // Left stop: teal-tinted glass edge at the logo side.
-    // Right stop: near-opaque frosted surface (82% bg) that still lets blur through.
     background: linear-gradient(
       135deg,
       color-mix(in srgb, var(--color-primary) 12%, transparent) 0%,
@@ -100,7 +113,7 @@
     border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
 
     .neko {
-      flex: 1;
+      flex-shrink: 0;
       display: flex;
       justify-content: flex-start;
       align-items: center;
@@ -110,9 +123,7 @@
       text-decoration: none;
       transition: color var(--transition-interactive);
 
-      &:hover {
-        color: var(--color-primary);
-      }
+      &:hover { color: var(--color-primary); }
 
       img {
         display: block;
@@ -126,13 +137,31 @@
         line-height: 30px;
         font-family: var(--font-display);
 
-        b {
-          font-weight: 900;
-        }
+        b { font-weight: 900; }
+      }
+    }
+
+    // Room name — centred between logo and menu
+    .room-name {
+      flex: 1;
+      text-align: center;
+      font-family: var(--font-display);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      letter-spacing: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 var(--space-4);
+      // Entrance animation applied via .animate class
+      &.animate {
+        animation: letter-open 600ms ease-out both;
       }
     }
 
     .menu {
+      flex-shrink: 0;
       justify-self: flex-end;
       margin-right: var(--space-3);
       white-space: nowrap;
@@ -153,7 +182,6 @@
           border-radius: var(--radius-md);
           cursor: pointer;
           color: var(--color-text-muted);
-          // Micro-animation: smooth color + scale on hover (Kat. 1)
           transition:
             color            var(--transition-interactive),
             background-color var(--transition-interactive),
@@ -165,22 +193,13 @@
             transform: scale(1.08);
           }
 
-          &:active:not(.disabled) {
-            transform: scale(0.95);
-          }
+          &:active:not(.disabled) { transform: scale(0.95); }
         }
 
-        .disabled {
-          cursor: default;
-          opacity: 0.5;
-        }
+        .disabled { cursor: default; opacity: 0.5; }
 
-        .locked {
-          color: var(--color-error);
-          opacity: 0.7;
-        }
+        .locked { color: var(--color-error); opacity: 0.7; }
 
-        // Hamburger menu toggle
         .toggle {
           background: color-mix(in srgb, var(--color-surface-2) 80%, transparent);
           border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
@@ -193,7 +212,6 @@
           }
         }
 
-        // Dark / Light theme toggle button
         .theme-toggle {
           display: inline-flex;
           align-items: center;
@@ -206,7 +224,6 @@
           color: var(--color-text-muted);
           cursor: pointer;
           padding: 0;
-          // Micro-animation (Kat. 1)
           transition:
             color            var(--transition-interactive),
             background-color var(--transition-interactive),
@@ -220,13 +237,9 @@
             transform: scale(1.08);
           }
 
-          &:active {
-            transform: scale(0.92);
-          }
+          &:active { transform: scale(0.92); }
 
-          svg {
-            pointer-events: none;
-          }
+          svg { pointer-events: none; }
         }
 
         .badge {
@@ -247,18 +260,9 @@
         }
 
         @keyframes badger-pulse {
-          0% {
-            transform: translate(-50%, -25%) scale(0.85);
-            box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7);
-          }
-          70% {
-            transform: translate(-50%, -25%) scale(1);
-            box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
-          }
-          100% {
-            transform: translate(-50%, -25%) scale(0.85);
-            box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
-          }
+          0%   { transform: translate(-50%, -25%) scale(0.85); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7); }
+          70%  { transform: translate(-50%, -25%) scale(1);    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
+          100% { transform: translate(-50%, -25%) scale(0.85); box-shadow: 0 0 0 0  rgba(0, 0, 0, 0); }
         }
       }
     }
@@ -266,31 +270,43 @@
 </style>
 
 <script lang="ts">
-  import { Component, Vue, Prop } from 'vue-property-decorator'
+  import { Component, Vue, Prop, Watch } from 'vue-property-decorator'
   import { AdminLockResource } from '~/neko/messages'
 
   @Component({ name: 'neko-header' })
   export default class extends Vue {
     @Prop({ type: String, default: 'dark' }) readonly currentTheme!: string
 
-    get admin() {
-      return this.$accessor.user.admin
+    // Drives the .animate class toggle — reset then re-add via $nextTick
+    // so the animation fires on every room join, not just the first.
+    roomNameAnimating = false
+    // Incremented on each room join to force Vue to re-create the span,
+    // resetting the animation even if the room name stays identical.
+    roomNameKey = 0
+
+    get roomName(): string {
+      // room.name is the canonical store path in neko-rooms / neko-server
+      return (this.$accessor as any).room?.name ?? ''
     }
 
-    get locked() {
-      return this.$accessor.locked
+    @Watch('roomName')
+    onRoomNameChange(val: string) {
+      if (!val) return
+      // Drop .animate so the animation can restart
+      this.roomNameAnimating = false
+      this.roomNameKey++
+      this.$nextTick(() => {
+        this.roomNameAnimating = true
+      })
     }
 
-    get side() {
-      return this.$accessor.client.side
-    }
-
-    get texts() {
-      return this.$accessor.chat.texts
-    }
+    get admin() { return this.$accessor.user.admin }
+    get locked() { return this.$accessor.locked }
+    get side()   { return this.$accessor.client.side }
+    get texts()  { return this.$accessor.chat.texts }
 
     get showBadge() {
-      return !this.side && this.readTexts != this.texts
+      return !this.side && this.readTexts !== this.texts
     }
 
     get fileTransfer() {
