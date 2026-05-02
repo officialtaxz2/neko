@@ -13,8 +13,8 @@
 | **Design System** | CSS Custom Properties throughout; fluid type `clamp()`; 8pt spacing; shadow/radius/transition tokens; dark & light mode with theme toggle | ✅ |
 | **Typography** | Fontshare CDN — Cabinet Grotesk (display) + Satoshi (body) + JetBrains Mono; Whitney fully removed | ✅ |
 | **Glassmorphism** | Sidebar, header, login card, notifications, chat bubbles — `backdrop-filter: blur()` + token-based surfaces | ✅ |
-| **Login Page** | Full-screen page; glassmorphism card; spotlight gradient + dot grid; inline error display; SystemDialog overlay; auto-login via URL params | ✅ |
-| **Sidebar** | 4-tab bar (Users · Chat · Files · Settings); Users + Chat simultaneously (animated 50/50 split via `grid-template-rows`); exclusive Settings/Files logic | ✅ |
+| **Login Page** | Split-screen layout (50/50 CSS Grid); left branding panel (wordmark, tagline, pills); glassmorphism card; spotlight gradient + dot grid; inline error display; SystemDialog overlay; auto-login via URL params | ✅ |
+| **Sidebar** | 4-tab bar (Users · Chat · Files · Settings); Users + Chat simultaneously (animated 50/50 split via `grid-template-rows`); exclusive Settings/Files logic; user-count badge with lerp-animated counter | ✅ |
 | **User List** | Card layout; permanently visible action buttons; full admin moderation (Kick/Ban/Mute/Give/Release/Take Controls); Ignore | ✅ |
 | **Controls Bar** | Height 125px → 64px; member avatars removed; touch targets ≥44px; animated FPS/bitrate counters | ✅ |
 | **Settings** | Bento grid (2-column); collapsible groups (Video & Audio · Input & Controls · Admin); custom toggles; resolution dropdown (admin-only); scroll sensitivity 1–20 (default 5); live tooltip on slider | ✅ |
@@ -118,7 +118,7 @@ docker compose up --force-recreate
 > **Status legend:** ⬜ Planned · 🔄 In Progress · ✅ Done · ⏳ Needs decision
 >
 > **Implementation order:** Phase 1 → Phase 2 → Phase 3 → Phase 4.
-> Each phase is atomic: commit every feature separately. Phase 3.3 requires 3.2. Phase 4.2 requires an architecture decision (see below).
+> Each phase is atomic: commit every feature separately. Phase 4.2 requires an architecture decision (see below).
 >
 > **Ground rules for agents & developers:**
 > - All styles **must** use existing CSS Custom Properties (`var(--color-*)`, `var(--space-*)`, `var(--radius-*)`, `var(--transition-interactive)`). No hardcoded hex, px, or rem values.
@@ -311,15 +311,15 @@ onRoomNameChange() {
 
 ---
 
-### Phase 3 — Layout Rewrites ⬜
+### Phase 3 — Layout Rewrites ✅
 
-Larger structural changes. Implement in order: 3.1 → 3.2 → 3.3. Feature 3.3 depends on 3.2.
+All features shipped. Each was committed independently.
 
-| # | Feature | File | Effort | Notes |
-|---|---------|------|--------|-------|
-| 3.1 | Split-Screen Login | `login.vue` | L | Desktop: 50/50 CSS Grid — left branding panel (`--color-surface` bg + `n.eko` wordmark + tagline "Your browser. Your session." + "Self-hosted · Open Source"), right: existing glassmorphism card unchanged. Spotlight gradient + dot grid on left panel only. Mobile ≤768px: single column, branding panel hidden. |
-| 3.2 | User-Count Badge — Tab Bar | `side.vue` | M | Pill badge next to the "Users" tab label. Background `--color-surface-offset`, text `--color-text-muted`, `--radius-full`. On user join/leave: `scale(1.3) → scale(1)` bump animation (300ms spring). |
-| 3.3 | Animated Counter — User Count | `side.vue` | S | **Requires 3.2.** Lerp-interpolation (factor 0.18) on the badge count, consistent with FPS counters in `controls.vue`. Fallback: `scale` bump via `.bump` class is acceptable for small numbers. `prefers-reduced-motion` → instant jump. |
+| # | Feature | File | Effort | Status | Notes |
+|---|---------|------|--------|--------|-------|
+| 3.1 | Split-Screen Login | `login.vue` | L | ✅ | Desktop: 50/50 CSS Grid — left branding panel (`--color-surface` bg + `n.eko` wordmark with `weight-pulse` + tagline "Your browser. Your session." + Self-hosted · Open Source pills via inline SVG icons), right: existing glassmorphism card + parallax unchanged. Spotlight gradient + dot grid on left panel via `::before`/`::after`. Mobile ≤768px: single column, branding panel hidden. |
+| 3.2 | User-Count Badge — Tab Bar | `side.vue` | M | ✅ | Pill badge next to the "Users" tab label. Background `--color-surface-offset`, text `--color-text-muted`, `--radius-full`, `font-variant-numeric: tabular-nums`. On user join/leave: `scale(1.3) → scale(1)` bump animation (300ms spring). `prefers-reduced-motion` → no animation. |
+| 3.3 | Animated Counter — User Count | `side.vue` | S | ✅ | Lerp-interpolation (factor 0.18) on `displayedCount` via `requestAnimationFrame`, consistent with FPS/bitrate counters in `controls.vue`. Snaps to target integer at `< 0.5` delta. `prefers-reduced-motion` → instant jump, no rAF. rAF + timer cleaned up in `beforeDestroy`. |
 
 <details>
 <summary>Phase 3 — CSS/JS snippets</summary>
@@ -379,6 +379,25 @@ Your session.
   40%  { transform: scale(1.3); }
   100% { transform: scale(1); }
 }
+```
+
+**3.3 — Lerp counter**
+```ts
+const LERP_FACTOR = 0.18
+const LERP_SNAP_THRESHOLD = 0.5
+
+// On memberCount change:
+const step = () => {
+  this._lerpValue += (next - this._lerpValue) * LERP_FACTOR
+  if (Math.abs(next - this._lerpValue) < LERP_SNAP_THRESHOLD) {
+    this._lerpValue = next
+    this.displayedCount = next
+    return
+  }
+  this.displayedCount = Math.round(this._lerpValue)
+  this._lerpRafId = requestAnimationFrame(step)
+}
+this._lerpRafId = requestAnimationFrame(step)
 ```
 </details>
 
