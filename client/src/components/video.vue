@@ -226,8 +226,12 @@
         }
       }
 
-      /* Fullscreen: strip all cosmetic styling so video truly fills the screen */
-      &.fullscreen {
+      /* Fullscreen: strip all cosmetic styling so video truly fills the screen.
+       * Uses BOTH the native :fullscreen pseudo-class (automatic, no JS needed)
+       * AND the .fullscreen class (JS-driven) for maximum reliability.
+       * IMPORTANT: Selectors MUST be kept separate because browsers discard the entire
+       * comma-separated selector block if any single selector in it is unrecognized (e.g. Firefox discarding -webkit prefixed rules). */
+      @mixin fullscreen-active {
         width: 100% !important;
         height: 100% !important;
         background: #000 !important;
@@ -242,6 +246,23 @@
           box-shadow: none !important;
           animation: none !important;
         }
+
+        .video-menu {
+          display: none !important;
+        }
+      }
+
+      &:fullscreen {
+        @include fullscreen-active;
+      }
+      &:-webkit-full-screen {
+        @include fullscreen-active;
+      }
+      &:-moz-full-screen {
+        @include fullscreen-active;
+      }
+      &.fullscreen {
+        @include fullscreen-active;
       }
 
       .player-container {

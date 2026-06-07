@@ -46,7 +46,7 @@ export function elementRequestFullscreen(el: HTMLElement) {
 }
 
 export function isFullscreen(): boolean {
-  return (
+  return !!(
     document.fullscreenElement ||
     //@ts-ignore
     document.msFullscreenElement ||
