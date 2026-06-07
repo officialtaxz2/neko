@@ -30,6 +30,7 @@
           @touchmove.stop.prevent="onTouchHandler"
           @touchstart.stop.prevent="onTouchHandler"
           @touchend.stop.prevent="onTouchHandler"
+          @touchcancel.stop.prevent="onTouchHandler"
           @compositionstart="onCompositionStartHandler"
           @compositionend="onCompositionEndHandler"
         />
@@ -41,7 +42,7 @@
         </div>
         <div
           v-if="trackpadActive && hosting && !locked"
-          class="trackpad-cursor"
+          :class="['trackpad-cursor', { active: trackpadTouching }]"
           :style="{ left: cursorX + 'px', top: cursorY + 'px' }"
         />
         <div ref="aspect" class="player-aspect" />
@@ -371,33 +372,33 @@
 
         .trackpad-cursor {
           position: absolute;
-          width: 16px;
-          height: 16px;
+          width: 12px;
+          height: 12px;
           border: 1.5px solid var(--color-cyber-mint);
           background: rgba(12, 13, 18, 0.45);
           border-radius: 50%;
           pointer-events: none;
           transform: translate(-50%, -50%);
           z-index: 20;
-          box-shadow: 0 0 10px var(--color-cyber-mint-glow);
-          transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+          box-shadow: 0 0 8px var(--color-cyber-mint-glow);
+          transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
           
           &::after {
             content: '';
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 6px;
-            height: 6px;
+            width: 4px;
+            height: 4px;
             background: var(--color-cyber-mint);
             border-radius: 50%;
             transform: translate(-50%, -50%);
-            box-shadow: 0 0 6px var(--color-cyber-mint);
+            box-shadow: 0 0 4px var(--color-cyber-mint);
           }
           
           &:active, &.active {
-            transform: translate(-50%, -50%) scale(0.85);
-            box-shadow: 0 0 15px var(--color-cyber-mint);
+            transform: translate(-50%, -50%) scale(0.8);
+            box-shadow: 0 0 12px var(--color-cyber-mint);
           }
         }
       }
@@ -459,6 +460,10 @@
     private longPressTimer: any = null
     private hasMoved = false
     private didLongPress = false
+    private trackpadTouching = false
+    private trackpadTouchId: number | null = null
+    private lastRectWidth = 0
+    private lastRectHeight = 0
 
     private onVideoCanPlayThrough = () => {
       if (!this._video) return
@@ -635,6 +640,18 @@
 
     get trackpadActive() {
       return this.trackpad_mode && this.is_touch_device
+    }
+
+    @Watch('trackpadActive')
+    onTrackpadActiveChanged(active: boolean) {
+      if (!active) {
+        this.trackpadTouching = false
+        this.trackpadTouchId = null
+        if (this.longPressTimer !== null) {
+          window.clearTimeout(this.longPressTimer)
+          this.longPressTimer = null
+        }
+      }
     }
 
     @Watch('width')
@@ -1011,9 +1028,12 @@
       const { w, h } = this.$accessor.video.resolution
       const rect = this._overlay.getBoundingClientRect()
 
+      this.cursorX = Math.max(0, Math.min(rect.width, e.clientX - rect.left))
+      this.cursorY = Math.max(0, Math.min(rect.height, e.clientY - rect.top))
+
       this.$client.sendData('mousemove', {
-        x: Math.round((w / rect.width) * (e.clientX - rect.left)),
-        y: Math.round((h / rect.height) * (e.clientY - rect.top)),
+        x: Math.round((w / rect.width) * this.cursorX),
+        y: Math.round((h / rect.height) * this.cursorY),
       })
     }
 
@@ -1072,6 +1092,7 @@
           type = 'mousemove'
           break
         case 'touchend':
+        case 'touchcancel':
           type = 'mouseup'
           break
         default:
@@ -1096,13 +1117,23 @@
       }
 
       const rect = this._overlay.getBoundingClientRect()
-      const touch = e.changedTouches[0]
 
       if (e.type === 'touchstart') {
+        // If we are already tracking a touch, ignore subsequent touches
+        if (this.trackpadTouchId !== null) {
+          return
+        }
+
+        const touch = e.changedTouches[0]
+        this.trackpadTouchId = touch.identifier
+        this.trackpadTouching = true
         this.touchLastX = touch.clientX
         this.touchLastY = touch.clientY
         this.hasMoved = false
         this.didLongPress = false
+
+        // Instantly align the remote cursor with our local indicator upon touching
+        this.sendTrackpadMousePos()
 
         if (this.longPressTimer !== null) {
           window.clearTimeout(this.longPressTimer)
@@ -1118,6 +1149,23 @@
         }, 600)
 
       } else if (e.type === 'touchmove') {
+        if (this.trackpadTouchId === null) {
+          return
+        }
+
+        // Find the tracked touch in changedTouches
+        let touch: Touch | null = null
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === this.trackpadTouchId) {
+            touch = e.changedTouches[i]
+            break
+          }
+        }
+
+        if (!touch) {
+          return
+        }
+
         const dx = touch.clientX - this.touchLastX
         const dy = touch.clientY - this.touchLastY
 
@@ -1137,13 +1185,33 @@
 
         this.sendTrackpadMousePos()
 
-      } else if (e.type === 'touchend') {
+      } else if (e.type === 'touchend' || e.type === 'touchcancel') {
+        if (this.trackpadTouchId === null) {
+          return
+        }
+
+        // Check if our tracked touch has ended/cancelled
+        let touchEnded = false
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          if (e.changedTouches[i].identifier === this.trackpadTouchId) {
+            touchEnded = true
+            break
+          }
+        }
+
+        if (!touchEnded) {
+          return
+        }
+
+        this.trackpadTouchId = null
+        this.trackpadTouching = false
+
         if (this.longPressTimer !== null) {
           window.clearTimeout(this.longPressTimer)
           this.longPressTimer = null
         }
 
-        if (!this.hasMoved && !this.didLongPress) {
+        if (e.type === 'touchend' && !this.hasMoved && !this.didLongPress) {
           this.triggerTrackpadClick(1) // Left-click (key 1)
         }
       }
@@ -1315,10 +1383,15 @@
           if (this.cursorX === 0 && this.cursorY === 0) {
             this.cursorX = rect.width / 2
             this.cursorY = rect.height / 2
+          } else if (this.lastRectWidth > 0 && this.lastRectHeight > 0) {
+            this.cursorX = Math.max(0, Math.min(rect.width, (this.cursorX / this.lastRectWidth) * rect.width))
+            this.cursorY = Math.max(0, Math.min(rect.height, (this.cursorY / this.lastRectHeight) * rect.height))
           } else {
             this.cursorX = Math.max(0, Math.min(rect.width, this.cursorX))
             this.cursorY = Math.max(0, Math.min(rect.height, this.cursorY))
           }
+          this.lastRectWidth = rect.width
+          this.lastRectHeight = rect.height
         }
       })
     }
