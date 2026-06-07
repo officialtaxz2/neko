@@ -40,7 +40,7 @@
           <li v-for="(item, index) in history" :key="index" class="history-item">
             <span class="item-text" :title="item">{{ truncate(item) }}</span>
             <div class="item-actions">
-              <!-- Copy to Host -->
+              <!-- Copy & Sync to Local + VM -->
               <button
                 class="action-btn"
                 v-tooltip="{ content: $t('clipboard_manager.copy_to_host'), placement: 'top', offset: 5 }"
@@ -48,14 +48,6 @@
               >
                 <i :class="['fas', copiedText === item ? 'fa-check success-check' : 'fa-copy']" />
                 <span class="toast-indicator" v-if="copiedText === item">Copied</span>
-              </button>
-              <!-- Send back to VM -->
-              <button
-                class="action-btn send-btn"
-                v-tooltip="{ content: $t('clipboard_manager.send_to_vm'), placement: 'top', offset: 5 }"
-                @click.stop.prevent="sendToVM(item)"
-              >
-                <i class="fas fa-upload" />
               </button>
             </div>
           </li>
@@ -385,13 +377,13 @@
       document.body.removeEventListener('click', this.close)
     }
 
-    sendToVM(text: string) {
-      this.$accessor.remote.setClipboard(text)
-      this.$accessor.remote.sendClipboard(text)
-    }
-
     async copyToHost(text: string) {
       try {
+        // Automatically sync to VM's clipboard store first
+        this.$accessor.remote.setClipboard(text)
+        this.$accessor.remote.sendClipboard(text)
+
+        // Then copy to native client's system clipboard
         await navigator.clipboard.writeText(text)
         this.copiedText = text
         setTimeout(() => {

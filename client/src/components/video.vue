@@ -111,42 +111,47 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #000;
+      background: transparent;
       overflow: visible; // Allows the beautiful glow to expand elegantly beyond the video player borders!
 
-      &::before {
-        content: '';
-        position: absolute;
-        top: -15px;
-        left: -15px;
-        right: -15px;
-        bottom: -15px;
-        border-radius: var(--radius-outer);
-        z-index: -1;
-        opacity: 0.15;
-        filter: blur(40px);
-        transition: var(--transition-fluid);
-        pointer-events: none;
-      }
-
-      &.no-control::before {
-        background: radial-gradient(circle, oklch(62% 0.015 260) 0%, transparent 70%);
+      &.no-control .player-container {
+        border-color: rgba(124, 58, 237, 0.35);
         animation: breathGlowNeutral 6s ease-in-out infinite;
       }
 
-      &.has-control::before {
-        background: radial-gradient(circle, var(--color-cyber-mint) 0%, transparent 70%);
+      &.has-control .player-container {
+        border-color: rgba(38, 230, 180, 0.45);
         animation: breathGlowCyber 4s ease-in-out infinite;
       }
 
       @keyframes breathGlowNeutral {
-        0%, 100% { opacity: 0.12; transform: scale(0.98); }
-        50% { opacity: 0.22; transform: scale(1.02); }
+        0%, 100% {
+          box-shadow: 
+            0 0 15px rgba(124, 58, 237, 0.25),
+            0 0 40px rgba(99, 102, 241, 0.3),
+            0 0 80px rgba(99, 102, 241, 0.15);
+        }
+        50% {
+          box-shadow: 
+            0 0 25px rgba(124, 58, 237, 0.4),
+            0 0 60px rgba(99, 102, 241, 0.45),
+            0 0 110px rgba(99, 102, 241, 0.22);
+        }
       }
 
       @keyframes breathGlowCyber {
-        0%, 100% { opacity: 0.18; transform: scale(0.96); }
-        50% { opacity: 0.32; transform: scale(1.04); }
+        0%, 100% {
+          box-shadow: 
+            0 0 15px rgba(38, 230, 180, 0.3),
+            0 0 40px rgba(38, 230, 180, 0.3),
+            0 0 80px rgba(38, 230, 180, 0.15);
+        }
+        50% {
+          box-shadow: 
+            0 0 30px rgba(38, 230, 180, 0.5),
+            0 0 65px rgba(38, 230, 180, 0.5),
+            0 0 110px rgba(38, 230, 180, 0.25);
+        }
       }
 
       .video-menu {
@@ -225,6 +230,11 @@
         position: relative;
         width: 100%;
         max-width: calc(16 / 9 * 100vh);
+        border-radius: var(--radius-outer);
+        overflow: hidden;
+        border: 1.5px solid rgba(255, 255, 255, 0.08);
+        transition: border-color var(--transition-fluid), box-shadow var(--transition-fluid);
+        isolation: isolate;
 
         video {
           position: absolute;
@@ -405,6 +415,47 @@
     private longPressTimer: any = null
     private hasMoved = false
     private didLongPress = false
+
+    private onVideoCanPlayThrough = () => {
+      if (!this._video) return
+      this.$accessor.video.setPlayable(true)
+      if (this.autoplay) {
+        this.$nextTick(() => {
+          if (this._video) {
+            this.$accessor.video.play()
+          }
+        })
+      }
+    }
+
+    private onVideoEnded = () => {
+      this.$accessor.video.setPlayable(false)
+    }
+
+    private onVideoError = (event: ErrorEvent) => {
+      this.$log.error(event.error)
+      this.$accessor.video.setPlayable(false)
+    }
+
+    private onVideoVolumeChange = () => {
+      if (!this._video) return
+      this.$accessor.video.setMuted(this._video.muted)
+      this.$accessor.video.setVolume(this._video.volume * 100)
+    }
+
+    private onVideoPlaying = () => {
+      this.$accessor.video.play()
+    }
+
+    private onVideoPause = () => {
+      this.$accessor.video.pause()
+    }
+
+    private onFullscreenChangeHandler = () => {
+      this.fullscreen = isFullscreen()
+      this.fullscreen ? lockKeyboard() : unlockKeyboard()
+      this.onResize()
+    }
 
     get admin() {
       return this.$accessor.user.admin
@@ -642,42 +693,14 @@
 
       this.observer.observe(this._component)
 
-      onFullscreenChange(this._player, () => {
-        this.fullscreen = isFullscreen()
-        this.fullscreen ? lockKeyboard() : unlockKeyboard()
-        this.onResize()
-      })
+      onFullscreenChange(this._player, this.onFullscreenChangeHandler)
 
-      this._video.addEventListener('canplaythrough', () => {
-        this.$accessor.video.setPlayable(true)
-        if (this.autoplay) {
-          this.$nextTick(() => {
-            this.$accessor.video.play()
-          })
-        }
-      })
-
-      this._video.addEventListener('ended', () => {
-        this.$accessor.video.setPlayable(false)
-      })
-
-      this._video.addEventListener('error', (event) => {
-        this.$log.error(event.error)
-        this.$accessor.video.setPlayable(false)
-      })
-
-      this._video.addEventListener('volumechange', () => {
-        this.$accessor.video.setMuted(this._video.muted)
-        this.$accessor.video.setVolume(this._video.volume * 100)
-      })
-
-      this._video.addEventListener('playing', () => {
-        this.$accessor.video.play()
-      })
-
-      this._video.addEventListener('pause', () => {
-        this.$accessor.video.pause()
-      })
+      this._video.addEventListener('canplaythrough', this.onVideoCanPlayThrough)
+      this._video.addEventListener('ended', this.onVideoEnded)
+      this._video.addEventListener('error', this.onVideoError)
+      this._video.addEventListener('volumechange', this.onVideoVolumeChange)
+      this._video.addEventListener('playing', this.onVideoPlaying)
+      this._video.addEventListener('pause', this.onVideoPause)
 
       /* Initialize Guacamole Keyboard */
       this.keyboard.onkeydown = (key: number) => {
@@ -701,6 +724,34 @@
     beforeDestroy() {
       this.observer.disconnect()
       this.$accessor.video.setPlayable(false)
+
+      if (this._container) {
+        this._container.removeEventListener('resize', this.onResize)
+      }
+
+      if (this._video) {
+        this._video.removeEventListener('canplaythrough', this.onVideoCanPlayThrough)
+        this._video.removeEventListener('ended', this.onVideoEnded)
+        this._video.removeEventListener('error', this.onVideoError)
+        this._video.removeEventListener('volumechange', this.onVideoVolumeChange)
+        this._video.removeEventListener('playing', this.onVideoPlaying)
+        this._video.removeEventListener('pause', this.onVideoPause)
+      }
+
+      if (this._player) {
+        this._player.onfullscreenchange = null
+        // @ts-ignore
+        this._player.onwebkitfullscreenchange = null
+        // @ts-ignore
+        this._player.onmozfullscreenchange = null
+        // @ts-ignore
+        this._player.onmsfullscreenchange = null
+      }
+
+      if (this.longPressTimer !== null) {
+        window.clearTimeout(this.longPressTimer)
+        this.longPressTimer = null
+      }
       /* Guacamole Keyboard does not provide destroy functions */
     }
 
@@ -800,7 +851,11 @@
         return
       }
 
-      this.$accessor.remote.toggle()
+      if (this.admin && this.hosted && !this.hosting) {
+        this.$accessor.remote.adminControl()
+      } else {
+        this.$accessor.remote.toggle()
+      }
     }
 
     requestControl() {

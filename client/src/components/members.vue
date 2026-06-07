@@ -16,6 +16,7 @@
             <div
               :class="[{ host: member.id === host, admin: member.admin }, 'member']"
               @contextmenu.stop.prevent="onContext($event, { member })"
+              @click.stop.prevent="onContext($event, { member })"
             >
               <neko-avatar class="avatar" :seed="member.displayname" :size="50" />
             </div>

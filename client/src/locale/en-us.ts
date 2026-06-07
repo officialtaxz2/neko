@@ -9,6 +9,7 @@ export const side = {
   chat: 'Chat',
   files: 'Files',
   settings: 'Settings',
+  members: 'Members',
 }
 
 export const connect = {
@@ -135,11 +136,11 @@ export const clipboard_manager = {
   clear: 'Clear History',
   empty: 'No items copied yet.',
   send_to_vm: 'Send to VM',
-  copy_to_host: 'Copy to native PC',
+  copy_to_host: 'Copy to PC & VM',
   manual_placeholder: 'Type or edit text to send to VM...',
-  copied: 'Copied to native clipboard!',
+  copied: 'Copied and Synced!',
   mic_active: 'Microphone Active',
   mic_connecting: 'Initializing Microphone...',
   keyboard_helper_title: 'Mobile Keyboard Modifier',
-  sync_hint: 'Tip: \'Send to VM\' updates the VM\'s clipboard. To paste, click inside the VM and press Ctrl+V.',
+  sync_hint: 'Tip: Copying an item updates both your host computer and the VM clipboard. To paste inside the VM, press Ctrl+V.',
 }

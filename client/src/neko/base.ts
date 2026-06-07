@@ -31,6 +31,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   protected _micStream?: MediaStream
   protected _micSender?: RTCRtpSender
   protected _micActive = false
+  protected _disconnecting = false
 
   get id() {
     return this._id
@@ -72,8 +73,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       )
       this.emit('debug', `connecting to ${this._ws.url}`)
       this._ws.onmessage = this.onMessage.bind(this)
-      this._ws.onerror = () => this.onError.bind(this)
-      this._ws.onclose = () => this.onDisconnected.bind(this, new Error('websocket closed'))
+      this._ws.onerror = this.onError.bind(this)
+      this._ws.onclose = this.onDisconnected.bind(this, new Error('websocket closed'))
       this._timeout = window.setTimeout(this.onTimeout.bind(this), 15000)
     } catch (err: any) {
       this.onDisconnected(err)
@@ -81,61 +82,67 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   protected disconnect() {
-    if (this._timeout) {
-      clearTimeout(this._timeout)
-      this._timeout = undefined
+    this._disconnecting = true
+
+    try {
+      if (this._timeout) {
+        clearTimeout(this._timeout)
+        this._timeout = undefined
+      }
+
+      if (this._ws_heartbeat) {
+        clearInterval(this._ws_heartbeat)
+        this._ws_heartbeat = undefined
+      }
+
+      if (this._ws) {
+        // reset all events
+        this._ws.onmessage = () => {}
+        this._ws.onerror = () => {}
+        this._ws.onclose = () => {}
+
+        try {
+          this._ws.close()
+        } catch (err) {}
+
+        this._ws = undefined
+      }
+
+      if (this._channel) {
+        // reset all events
+        this._channel.onmessage = () => {}
+        this._channel.onerror = () => {}
+        this._channel.onclose = () => {}
+
+        try {
+          this._channel.close()
+        } catch (err) {}
+
+        this._channel = undefined
+      }
+
+      if (this._peer) {
+        // reset all events
+        this._peer.onconnectionstatechange = () => {}
+        this._peer.onsignalingstatechange = () => {}
+        this._peer.oniceconnectionstatechange = () => {}
+        this._peer.ontrack = () => {}
+
+        try {
+          this._peer.close()
+        } catch (err) {}
+
+        this._peer = undefined
+      }
+
+      this.disableMicrophone()
+
+      this._state = 'disconnected'
+      this._displayname = undefined
+      this._id = ''
+    } finally {
+      this._disconnecting = false
     }
-
-    if (this._ws_heartbeat) {
-      clearInterval(this._ws_heartbeat)
-      this._ws_heartbeat = undefined
-    }
-
-    if (this._ws) {
-      // reset all events
-      this._ws.onmessage = () => {}
-      this._ws.onerror = () => {}
-      this._ws.onclose = () => {}
-
-      try {
-        this._ws.close()
-      } catch (err) {}
-
-      this._ws = undefined
-    }
-
-    if (this._channel) {
-      // reset all events
-      this._channel.onmessage = () => {}
-      this._channel.onerror = () => {}
-      this._channel.onclose = () => {}
-
-      try {
-        this._channel.close()
-      } catch (err) {}
-
-      this._channel = undefined
-    }
-
-    if (this._peer) {
-      // reset all events
-      this._peer.onconnectionstatechange = () => {}
-      this._peer.onsignalingstatechange = () => {}
-      this._peer.oniceconnectionstatechange = () => {}
-      this._peer.ontrack = () => {}
-
-      try {
-        this._peer.close()
-      } catch (err) {}
-
-      this._peer = undefined
-    }
-
-    this.disableMicrophone()
-
-    this._state = 'disconnected'
-    this._displayname = undefined
-    this._id = ''
   }
 
   get microphoneActive() {
@@ -354,18 +361,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       )
     }
 
-    this._peer.onnegotiationneeded = async () => {
-      this.emit('warn', `negotiation is needed`)
-
-      const d = await this._peer!.createOffer()
-      await this._peer!.setLocalDescription(d)
-
-      this._ws!.send(
-        JSON.stringify({
-          event: EVENT.SIGNAL.OFFER,
-          sdp: d.sdp,
-        }),
-      )
+    this._peer.onnegotiationneeded = () => {
+      this.emit('debug', `negotiation is needed (no-op)`)
     }
 
     this._channel = this._peer.createDataChannel('data')
@@ -504,6 +501,11 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   protected onDisconnected(reason?: Error) {
+    if (this._disconnecting) {
+      return
+    }
+    this._disconnecting = true
+
     this.disconnect()
     this.emit('debug', `disconnected:`, reason)
     this[EVENT.DISCONNECTED](reason)

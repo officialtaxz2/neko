@@ -441,11 +441,24 @@
       this.$accessor.remote.setLocked(locked)
     }
 
+    get admin() {
+      return this.$accessor.user.admin
+    }
+
+    get hosted() {
+      return this.$accessor.remote.hosted
+    }
+
     toggleControl() {
       if (!this.playable) {
         return
       }
-      this.$accessor.remote.toggle()
+
+      if (this.admin && this.hosted && !this.hosting) {
+        this.$accessor.remote.adminControl()
+      } else {
+        this.$accessor.remote.toggle()
+      }
     }
 
     toggleMedia() {

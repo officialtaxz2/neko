@@ -7,6 +7,10 @@
           <i class="fas fa-comment-alt" />
           <span>{{ $t('side.chat') }}</span>
         </li>
+        <li :class="{ active: tab === 'members' }" @click.stop.prevent="change('members')">
+          <i class="fas fa-users" />
+          <span>{{ $t('side.members') }}</span>
+        </li>
         <li v-if="filetransferAllowed" :class="{ active: tab === 'files' }" @click.stop.prevent="change('files')">
           <i class="fas fa-file" />
           <span>{{ $t('side.files') }}</span>
@@ -19,9 +23,11 @@
     </div>
     <div class="page-container">
       <neko-chat v-if="tab === 'chat'" />
+      <neko-side-members v-if="tab === 'members'" />
       <neko-files v-if="tab === 'files'" />
       <neko-settings v-if="tab === 'settings'" />
     </div>
+    <neko-context ref="context" />
   </aside>
 </template>
 
@@ -117,11 +123,13 @@
 </style>
 
 <script lang="ts">
-  import { Vue, Component, Watch } from 'vue-property-decorator'
+  import { Vue, Component, Watch, Ref } from 'vue-property-decorator'
 
   import Settings from '~/components/settings.vue'
   import Chat from '~/components/chat.vue'
   import Files from '~/components/files.vue'
+  import SideMembers from '~/components/side_members.vue'
+  import Context from '~/components/context.vue'
 
   @Component({
     name: 'neko',
@@ -129,18 +137,50 @@
       'neko-settings': Settings,
       'neko-chat': Chat,
       'neko-files': Files,
+      'neko-side-members': SideMembers,
+      'neko-context': Context,
     },
   })
   export default class NekoSide extends Vue {
+    @Ref('context') readonly _context!: any
+
+    openContext(event: MouseEvent, data: any) {
+      const menuEl = this.$el as HTMLElement
+      if (menuEl) {
+        const rect = menuEl.getBoundingClientRect()
+        const customEvent = new Proxy(event, {
+          get(target, prop) {
+            if (prop === 'clientX') {
+              return event.clientX - rect.left
+            }
+            if (prop === 'clientY') {
+              return event.clientY - rect.top
+            }
+            const value = (target as any)[prop]
+            if (typeof value === 'function') {
+              return value.bind(target)
+            }
+            return value
+          }
+        })
+        this._context.open(customEvent as any, data)
+      } else {
+        this._context.open(event, data)
+      }
+    }
+
     get currentTabIndex() {
-      if (this.tab === 'chat') return 0
-      if (this.tab === 'files') return 1
-      if (this.tab === 'settings') return this.filetransferAllowed ? 2 : 1
-      return 0
+      const order = ['chat', 'members']
+      if (this.filetransferAllowed) {
+        order.push('files')
+      }
+      order.push('settings')
+      const idx = order.indexOf(this.tab)
+      return idx >= 0 ? idx : 0
     }
 
     get totalTabs() {
-      return this.filetransferAllowed ? 3 : 2
+      return this.filetransferAllowed ? 4 : 3
     }
 
     get pillStyle() {

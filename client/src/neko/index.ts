@@ -142,6 +142,8 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       title: this.$vue.$t('connection.logged_out'),
       icon: 'info',
       confirmButtonText: this.$vue.$t('connection.button_confirm') as string,
+    }).then(() => {
+      window.location.reload()
     })
   }
 

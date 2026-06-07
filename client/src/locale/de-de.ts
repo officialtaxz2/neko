@@ -9,6 +9,7 @@ export const side = {
   chat: 'Chat',
   files: 'Dateien',
   settings: 'Einstellungen',
+  members: 'Mitglieder',
 }
 
 export const connect = {
@@ -132,11 +133,11 @@ export const clipboard_manager = {
   clear: 'Verlauf leeren',
   empty: 'Noch nichts kopiert.',
   send_to_vm: 'In VM senden',
-  copy_to_host: 'Lokales Clipboard',
+  copy_to_host: 'Kopieren (PC & VM)',
   manual_placeholder: 'Text zum Senden in die VM eingeben oder bearbeiten...',
-  copied: 'In lokales Clipboard kopiert!',
+  copied: 'Kopiert & Synchronisiert!',
   mic_active: 'Mikrofon Aktiv',
   mic_connecting: 'Mikrofon wird gestartet...',
   keyboard_helper_title: 'Zusatztasten Tastatur',
-  sync_hint: 'Hinweis: \'In VM senden\' aktualisiert die Zwischenablage der VM. Zum Einfügen nutze Strg+V in der VM.',
+  sync_hint: 'Tipp: Das Kopieren eines Eintrags aktualisiert sowohl deinen lokalen PC als auch die VM-Zwischenablage. Nutze Strg+V zum Einfügen in der VM.',
 }

@@ -11,7 +11,7 @@
         <input type="text" :placeholder="$t('connect.displayname')" v-model="displayname" />
         <input type="password" :placeholder="$t('connect.password')" v-model="password" v-if="!autoPassword" />
         
-        <div class="demo-checkbox-container" v-if="!autoPassword">
+        <div class="demo-checkbox-container" v-if="!autoPassword && showDemo">
           <input type="checkbox" id="demo-mode" v-model="demoMode" />
           <label for="demo-mode">Demo- / Testmodus (Lokale Sim)</label>
         </div>
@@ -255,7 +255,23 @@
 
     private displayname: string = ''
     private password: string = ''
-    private demoMode: boolean = true
+    private demoMode: boolean = false
+    private showDemo: boolean = false
+
+    private get isDev(): boolean {
+      try {
+        const meta = import.meta as any
+        if (meta && meta.env) {
+          return !!meta.env.DEV
+        }
+      } catch (e) {}
+      return false
+    }
+
+    created() {
+      this.showDemo = this.isDev
+      this.demoMode = this.isDev
+    }
 
     mounted() {
       const params = new URLSearchParams(location.search)
