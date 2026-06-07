@@ -636,7 +636,14 @@
         this._video.src = window.URL.createObjectURL(this.stream) // for older browsers
       }
 
-      if (this.playing) {
+      // Proactively mark the stream as playable to unlock overlay controls
+      // if browser media events get delayed or blocked by autoplay detection.
+      this.$accessor.video.setPlayable(true)
+
+      // Automatically trigger playback if autoplay is turned on
+      if (this.autoplay) {
+        this.$accessor.video.play()
+      } else if (this.playing) {
         this.$nextTick(() => {
           if (this._video) {
             this._video.play().catch((err) => {

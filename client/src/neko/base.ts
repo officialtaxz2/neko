@@ -298,6 +298,24 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     if (lite !== true) {
       try {
         const cleanServers = (servers || []).filter((s) => s && s.urls)
+        
+        // Append Google's public STUN servers as a fallback so that ICE candidate
+        // NAT traversal succeeds on production servers even if NEKO_ICESERVERS is empty/misconfigured
+        const hasStun = cleanServers.some((s) =>
+          (Array.isArray(s.urls) ? s.urls : [s.urls]).some((u) => u.startsWith('stun:'))
+        )
+        if (!hasStun) {
+          cleanServers.push({
+            urls: [
+              'stun:stun.l.google.com:19302',
+              'stun:stun1.l.google.com:19302',
+              'stun:stun2.l.google.com:19302',
+              'stun:stun3.l.google.com:19302',
+              'stun:stun4.l.google.com:19302',
+            ],
+          })
+        }
+
         this._peer = new RTCPeerConnection({
           iceServers: cleanServers,
         })
@@ -359,12 +377,14 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       const init = event.candidate.toJSON()
       this.emit('debug', `sending local ICE candidate`, init)
 
-      this._ws!.send(
-        JSON.stringify({
-          event: EVENT.SIGNAL.CANDIDATE,
-          data: JSON.stringify(init),
-        }),
-      )
+      if (this.socketOpen && this._ws) {
+        this._ws.send(
+          JSON.stringify({
+            event: EVENT.SIGNAL.CANDIDATE,
+            data: JSON.stringify(init),
+          }),
+        )
+      }
     }
 
     this._peer.onnegotiationneeded = () => {
@@ -481,12 +501,12 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
 
   private onTrack(event: RTCTrackEvent) {
     this.emit('debug', `received ${event.track.kind} track from peer: ${event.track.id}`, event)
-    const stream = event.streams[0]
+    let stream = event.streams[0]
     if (!stream) {
-      this.emit('warn', `no stream provided for track ${event.track.id}(${event.track.label})`)
-      return
+      this.emit('warn', `no stream provided for track ${event.track.id}(${event.track.label}), creating fallback MediaStream`)
+      stream = new MediaStream([event.track])
     }
-    this[EVENT.TRACK](event)
+    this[EVENT.TRACK]({ ...event, streams: [stream] } as any)
   }
 
   private onError(event: Event) {

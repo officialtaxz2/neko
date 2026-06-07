@@ -79,6 +79,11 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     const wsScheme = isSecure ? 'wss' : 'ws'
     const hostname = location.hostname
 
+    let basePath = location.pathname
+    // strip standard file names if any to avoid invalid ws paths on HTTPS
+    basePath = basePath.replace(/\/(index|login)\.html?$/i, '/')
+    basePath = basePath.replace(/\/$/, '')
+
     let url = ''
     if (isDev) {
       if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
@@ -87,7 +92,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
         url = `${wsScheme}://${location.host}/ws`
       }
     } else {
-      url = `${wsScheme}://${location.host}${location.pathname.replace(/\/$/, '')}/ws`
+      url = `${wsScheme}://${location.host}${basePath}/ws`
     }
 
     this.initWithURL(vue, url)
@@ -695,7 +700,8 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       return
     }
 
-    this.$accessor.video.addTrack([track, streams[0]])
+    const stream = streams[0] || new MediaStream([track])
+    this.$accessor.video.addTrack([track, stream])
     this.$accessor.video.setStream(0)
   }
 
