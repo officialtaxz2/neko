@@ -1,6 +1,6 @@
 <template>
   <div ref="component" class="video">
-    <div ref="player" :class="['player', hosted ? 'has-control' : 'no-control']">
+    <div ref="player" :class="['player', hosted ? 'has-control' : 'no-control', { fullscreen: fullscreen }]">
       <div ref="container" class="player-container">
         <video ref="video" playsinline />
         <div class="emotes">
@@ -227,10 +227,7 @@
       }
 
       /* Fullscreen: strip all cosmetic styling so video truly fills the screen */
-      &:fullscreen,
-      &:-webkit-full-screen,
-      &:-moz-full-screen,
-      &:-ms-fullscreen {
+      &.fullscreen {
         background: #000 !important;
         overflow: hidden !important;
 
@@ -777,13 +774,10 @@
       }
 
       if (this._player) {
-        this._player.onfullscreenchange = null
-        // @ts-ignore
-        this._player.onwebkitfullscreenchange = null
-        // @ts-ignore
-        this._player.onmozfullscreenchange = null
-        // @ts-ignore
-        this._player.onmsfullscreenchange = null
+        const events = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+        for (const event of events) {
+          this._player.removeEventListener(event, this.onFullscreenChangeHandler)
+        }
       }
 
       if (this.longPressTimer !== null) {
