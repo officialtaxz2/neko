@@ -228,15 +228,19 @@
 
       /* Fullscreen: strip all cosmetic styling so video truly fills the screen */
       &.fullscreen {
+        width: 100% !important;
+        height: 100% !important;
         background: #000 !important;
         overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
 
         .player-container {
           border: none !important;
+          border-color: transparent !important;
           border-radius: 0 !important;
           box-shadow: none !important;
           animation: none !important;
-          max-width: none !important;
         }
       }
 
@@ -378,7 +382,7 @@
 <script lang="ts">
   import { Component, Ref, Watch, Vue, Prop } from 'vue-property-decorator'
   import ResizeObserver from 'resize-observer-polyfill'
-  import { elementRequestFullscreen, onFullscreenChange, isFullscreen, lockKeyboard, unlockKeyboard } from '~/utils'
+  import { elementRequestFullscreen, isFullscreen, lockKeyboard, unlockKeyboard } from '~/utils'
 
   import Emote from './emote.vue'
   import Resolution from './resolution.vue'
@@ -724,7 +728,12 @@
 
       this.observer.observe(this._component)
 
-      onFullscreenChange(this._player, this.onFullscreenChangeHandler)
+      // Listen on document because Firefox dispatches fullscreenchange
+      // on the document, not on the element that went fullscreen.
+      const fsEvents = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+      for (const event of fsEvents) {
+        document.addEventListener(event, this.onFullscreenChangeHandler)
+      }
 
       this._video.addEventListener('canplaythrough', this.onVideoCanPlayThrough)
       this._video.addEventListener('canplay', this.onVideoCanPlayThrough)
@@ -773,10 +782,10 @@
         this._video.removeEventListener('pause', this.onVideoPause)
       }
 
-      if (this._player) {
-        const events = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
-        for (const event of events) {
-          this._player.removeEventListener(event, this.onFullscreenChangeHandler)
+      {
+        const fsEvents = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+        for (const event of fsEvents) {
+          document.removeEventListener(event, this.onFullscreenChangeHandler)
         }
       }
 
@@ -1228,9 +1237,23 @@
     }
 
     onResize() {
-      const { offsetWidth, offsetHeight } = !this.fullscreen ? this._component : document.body
-      this._player.style.width = `${offsetWidth}px`
-      this._player.style.height = `${offsetHeight}px`
+      let offsetWidth: number
+      let offsetHeight: number
+
+      if (this.fullscreen) {
+        // In fullscreen, use the actual viewport dimensions.
+        // Clear inline width/height on the player so the browser's
+        // native fullscreen sizing takes effect unobstructed.
+        offsetWidth = window.innerWidth
+        offsetHeight = window.innerHeight
+        this._player.style.width = ''
+        this._player.style.height = ''
+      } else {
+        ;({ offsetWidth, offsetHeight } = this._component)
+        this._player.style.width = `${offsetWidth}px`
+        this._player.style.height = `${offsetHeight}px`
+      }
+
       this._container.style.maxWidth = `${(this.horizontal / this.vertical) * offsetHeight}px`
       this._aspect.style.paddingBottom = `${(this.vertical / this.horizontal) * 100}%`
 
