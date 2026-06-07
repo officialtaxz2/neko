@@ -813,6 +813,7 @@
         this.$client.sendData('keyup', { key: this.keyMap(key) })
       }
       this.keyboard.listenTo(this._overlay)
+      this.$client.on('cursor-position', this.onCursorPosition)
     }
 
     beforeDestroy() {
@@ -846,6 +847,7 @@
         window.clearTimeout(this.longPressTimer)
         this.longPressTimer = null
       }
+      this.$client.off('cursor-position', this.onCursorPosition)
       /* Guacamole Keyboard does not provide destroy functions */
     }
 
@@ -1240,6 +1242,24 @@
         x: Math.max(0, Math.min(w, Math.round((w / rect.width) * this.cursorX) + calX)),
         y: Math.max(0, Math.min(h, Math.round((h / rect.height) * this.cursorY) + calY)),
       })
+    }
+
+    onCursorPosition({ x, y }: { x: number; y: number }) {
+      if (this.trackpadTouching) {
+        return
+      }
+
+      if (!this._overlay) return
+      const rect = this._overlay.getBoundingClientRect()
+      const { w, h } = this.$accessor.video.resolution
+
+      if (rect.width > 0 && rect.height > 0 && w > 0 && h > 0) {
+        const calX = this.trackpad_offset_x
+        const calY = this.trackpad_offset_y
+
+        this.cursorX = Math.max(0, Math.min(rect.width, (x - calX) * (rect.width / w)))
+        this.cursorY = Math.max(0, Math.min(rect.height, (y - calY) * (rect.height / h)))
+      }
     }
 
     triggerTrackpadClick(button: number) {

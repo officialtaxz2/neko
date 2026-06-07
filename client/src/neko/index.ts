@@ -705,7 +705,21 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.$accessor.video.setStream(0)
   }
 
-  protected [EVENT.DATA]() {}
+  protected [EVENT.DATA](data: any) {
+    if (!(data instanceof ArrayBuffer)) return
+    if (data.byteLength < 3) return
+
+    const view = new DataView(data)
+    const event = view.getUint8(0)
+
+    if (event === 0x01) { // OP_CURSOR_POSITION
+      if (data.byteLength < 7) return
+      const x = view.getUint16(3, false) // big endian
+      const y = view.getUint16(5, false) // big endian
+
+      this.emit('cursor-position', { x, y })
+    }
+  }
 
   /////////////////////////////
   // System Events
