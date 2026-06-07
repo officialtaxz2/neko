@@ -638,6 +638,14 @@
       return this.$accessor.settings.trackpad_mode
     }
 
+    get trackpad_offset_x() {
+      return this.$accessor.settings.trackpad_offset_x
+    }
+
+    get trackpad_offset_y() {
+      return this.$accessor.settings.trackpad_offset_y
+    }
+
     get trackpadActive() {
       return this.trackpad_mode && this.is_touch_device
     }
@@ -1031,9 +1039,12 @@
       this.cursorX = Math.max(0, Math.min(rect.width, e.clientX - rect.left))
       this.cursorY = Math.max(0, Math.min(rect.height, e.clientY - rect.top))
 
+      const calX = this.trackpad_offset_x
+      const calY = this.trackpad_offset_y
+
       this.$client.sendData('mousemove', {
-        x: Math.round((w / rect.width) * this.cursorX),
-        y: Math.round((h / rect.height) * this.cursorY),
+        x: Math.max(0, Math.min(w, Math.round((w / rect.width) * this.cursorX) + calX)),
+        y: Math.max(0, Math.min(h, Math.round((h / rect.height) * this.cursorY) + calY)),
       })
     }
 
@@ -1222,9 +1233,12 @@
       if (!this._overlay) return
       const rect = this._overlay.getBoundingClientRect()
 
+      const calX = this.trackpad_offset_x
+      const calY = this.trackpad_offset_y
+
       this.$client.sendData('mousemove', {
-        x: Math.round((w / rect.width) * this.cursorX),
-        y: Math.round((h / rect.height) * this.cursorY),
+        x: Math.max(0, Math.min(w, Math.round((w / rect.width) * this.cursorX) + calX)),
+        y: Math.max(0, Math.min(h, Math.round((h / rect.height) * this.cursorY) + calY)),
       })
     }
 
