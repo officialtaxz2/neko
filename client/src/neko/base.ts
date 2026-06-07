@@ -156,21 +156,47 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     try {
       this._micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const audioTrack = this._micStream.getAudioTracks()[0]
-      this._micSender = this._peer.addTrack(audioTrack, this._micStream)
+      if (typeof this._peer.addTrack === 'function') {
+        this._micSender = this._peer.addTrack(audioTrack, this._micStream)
+      } else if (typeof (this._peer as any).addStream === 'function') {
+        ;(this._peer as any).addStream(this._micStream)
+      } else {
+        throw new Error('RTCPeerConnection.addTrack is not supported by your browser/environment.')
+      }
       this._micActive = true
       this.emit('info', `microphone enabled: ${audioTrack.label}`)
     } catch (err: any) {
-      this.emit('error', err)
+      const errMsg = err ? (err.message || String(err)) : ''
+      const errName = err ? (err.name || '') : ''
+      if (
+        errName === 'NotAllowedError' ||
+        errName === 'SecurityError' ||
+        errMsg.includes('Permission denied') ||
+        errMsg.includes('permission denied') ||
+        errMsg.includes('RTCPeerConnection.addTrack is not supported')
+      ) {
+        this.emit('warn', 'Microphone connection unsupported or restricted in this environment', err)
+      } else {
+        this.emit('error', err)
+      }
       throw err
     }
   }
 
   public disableMicrophone(): void {
-    if (this._micSender && this._peer) {
-      try {
-        this._peer.removeTrack(this._micSender)
-      } catch (err) {
-        this.emit('warn', 'failed to remove mic track from peer', err)
+    if (this._peer) {
+      if (this._micSender && typeof this._peer.removeTrack === 'function') {
+        try {
+          this._peer.removeTrack(this._micSender)
+        } catch (err) {
+          this.emit('warn', 'failed to remove mic track from peer', err)
+        }
+      } else if (typeof (this._peer as any).removeStream === 'function' && this._micStream) {
+        try {
+          ;(this._peer as any).removeStream(this._micStream)
+        } catch (err) {
+          this.emit('warn', 'failed to remove stream from peer', err)
+        }
       }
       this._micSender = undefined
     }

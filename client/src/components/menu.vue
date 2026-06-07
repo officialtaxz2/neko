@@ -25,36 +25,68 @@
 
 <style lang="scss" scoped>
   ul {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
     li {
-      display: inline-block;
-      margin-right: 10px;
+      display: inline-flex;
+      align-items: center;
 
       i {
-        font-size: 24px;
+        font-size: 20px;
         cursor: pointer;
+        color: var(--text-subtle);
+        transition: var(--transition-fluid);
+
+        &:hover {
+          color: var(--color-cyber-mint);
+          filter: drop-shadow(0 0 6px var(--color-cyber-mint-glow));
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
       }
     }
   }
 
   select {
     appearance: none;
-    background-color: $background-tertiary;
-    border: 1px solid $background-primary;
-    color: white;
+    background-color: rgba(12, 13, 18, 0.45);
+    border: 1px solid var(--glass-border);
+    color: var(--text-pure);
     cursor: pointer;
-    border-radius: 5px;
-    height: 24px;
-    vertical-align: text-bottom;
+    border-radius: var(--radius-button);
+    padding: 2px 10px;
+    height: 30px;
+    line-height: 26px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    vertical-align: middle;
     display: inline-block;
+    transition: var(--transition-fluid);
+    outline: none;
 
     option {
       font-weight: normal;
-      color: $text-normal;
-      background-color: $background-tertiary;
+      color: var(--text-pure);
+      background-color: var(--bg-obsidian-floating);
     }
 
     &:hover {
-      border: 1px solid $background-primary;
+      border-color: rgba(38, 230, 180, 0.25);
+      background-color: rgba(12, 13, 18, 0.6);
+    }
+
+    &:focus {
+      border-color: var(--color-cyber-mint);
+      box-shadow: 0 0 0 3px rgba(38, 230, 180, 0.15);
     }
   }
 </style>
@@ -65,7 +97,7 @@
   import { set } from '~/utils/localstorage'
 
   @Component({ name: 'neko-menu' })
-  export default class extends Vue {
+  export default class NekoMenu extends Vue {
     get admin() {
       return this.$accessor.user.admin
     }
@@ -84,15 +116,16 @@
     }
 
     mounted() {
-      const default_lang = new URL(location.href).searchParams.get('lang')
+      const params = new URLSearchParams(location.search)
+      const default_lang = params.get('lang')
       if (default_lang && this.langs.includes(default_lang)) {
         this.$i18n.locale = default_lang
       }
-      const show_side = new URL(location.href).searchParams.get('show_side')
+      const show_side = params.get('show_side')
       if (show_side !== null) {
         this.$accessor.client.setSide(show_side === '1')
       }
-      const mute_chat = new URL(location.href).searchParams.get('mute_chat')
+      const mute_chat = params.get('mute_chat')
       if (mute_chat !== null) {
         this.$accessor.settings.setSound(mute_chat !== '1')
       }

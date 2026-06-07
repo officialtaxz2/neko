@@ -278,8 +278,12 @@
       'neko-context': Content,
     },
   })
-  export default class extends Vue {
+  export default class NekoFiles extends Vue {
     public uploadAreaDrag: boolean = false
+
+    mounted() {
+      this.refresh()
+    }
 
     get cwd() {
       return this.$accessor.files.cwd

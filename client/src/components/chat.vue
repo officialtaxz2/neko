@@ -10,7 +10,7 @@
             bulk: index > 0 && history[index - 1].id == message.id && history[index - 1].type === 'text',
           }"
         >
-          <div class="author" @contextmenu.stop.prevent="onContext($event, { member: member(message.id) })">
+          <div :class="['author', { pilot: activeHostId === message.id }]" @contextmenu.stop.prevent="onContext($event, { member: member(message.id) })">
             <neko-avatar class="avatar" :seed="member(message.id).displayname" :size="40" />
           </div>
           <div class="content">
@@ -58,17 +58,19 @@
     max-height: 100%;
     max-width: 100%;
     overflow-x: hidden;
+    background: transparent;
 
     .chat-history {
       flex: 1;
-      overflow-y: scroll;
+      overflow-y: auto;
       overflow-x: hidden;
       max-width: 100%;
+      padding: 10px 14px;
       scrollbar-width: thin;
-      scrollbar-color: $background-tertiary transparent;
+      scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 
       &::-webkit-scrollbar {
-        width: 8px;
+        width: 6px;
       }
 
       &::-webkit-scrollbar-track {
@@ -76,47 +78,70 @@
       }
 
       &::-webkit-scrollbar-thumb {
-        background-color: $background-tertiary;
-        border: 2px solid $background-primary;
-        border-radius: 4px;
-      }
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        transition: var(--transition-fluid);
 
-      &::-webkit-scrollbar-thumb:hover {
-        background-color: $background-floating;
+        &:hover {
+          background-color: var(--color-cyber-mint);
+        }
       }
 
       ::v-deep *::selection {
-        background: $text-link;
+        background: var(--color-cyber-mint);
+        color: #050508;
       }
 
       li {
         flex: 1;
-        border-top: 1px solid var(--border-color);
-        padding: 10px 5px 0px 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.03);
+        padding: 12px 8px;
         display: flex;
         flex-direction: row;
         flex-wrap: nowrap;
         overflow: hidden;
         user-select: text;
         word-wrap: break-word;
+        animation: messageFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 
         &.message {
-          padding-top: 15px;
-          font-size: 16px;
+          font-size: 15px;
+          border-radius: var(--radius-inner);
+          transition: var(--transition-fluid);
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.02);
+            border-color: rgba(255, 255, 255, 0.05);
+          }
 
           .author {
             flex-grow: 0;
             flex-shrink: 0;
-            overflow: hidden;
-            width: 40px;
-            height: 40px;
+            overflow: visible; // Prevent clipping the beautiful cyber-mint glow
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
-            background: $style-primary;
-            margin-right: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            margin-right: 12px;
+            border: 1px solid var(--glass-border);
+            transition: var(--transition-fluid);
+
+            &.pilot {
+              border-color: var(--color-cyber-mint) !important;
+              box-shadow: 0 0 10px var(--color-cyber-mint-glow);
+              animation: avatarPulse 2s infinite ease-in-out;
+            }
 
             .avatar {
               width: 100%;
+              height: 100%;
+              border-radius: 50%; // Keep avatar rounded since parent is visible
             }
+          }
+
+          @keyframes avatarPulse {
+            0%, 100% { box-shadow: 0 0 4px var(--color-cyber-mint-glow); }
+            50% { box-shadow: 0 0 12px var(--color-cyber-mint); }
           }
 
           .content {
@@ -130,21 +155,24 @@
             .content-head {
               cursor: default;
               width: 100%;
-              margin-bottom: 3px;
-              display: block;
+              margin-bottom: 4px;
+              display: flex;
+              align-items: baseline;
+              gap: 6px;
 
               span {
                 display: inline-block;
-                color: $text-normal;
-                font-weight: 500;
+                color: var(--text-pure);
+                font-size: 14px;
+                font-weight: 600;
               }
 
               .timestamp {
-                color: $text-muted;
-                font-size: 0.7rem;
+                color: var(--text-muted-ok);
+                font-size: 11px;
                 font-weight: 500;
-                margin-left: 0.3rem;
                 line-height: 12px;
+                opacity: 0.75;
 
                 &::first-letter {
                   text-transform: uppercase;
@@ -153,17 +181,26 @@
             }
 
             ::v-deep .content-body {
-              color: $text-normal;
+              color: var(--text-subtle);
               line-height: 22px;
               word-wrap: break-word;
               overflow-wrap: break-word;
+              font-size: 14.5px;
 
               a {
-                color: $text-link;
+                color: var(--color-cyber-mint);
+                text-decoration: none;
+                transition: var(--transition-fluid);
+
+                &:hover {
+                  text-shadow: 0 0 6px var(--color-cyber-mint-glow);
+                  text-decoration: underline;
+                }
               }
 
               strong {
                 font-weight: 800;
+                color: var(--text-pure);
               }
 
               em {
@@ -171,25 +208,34 @@
               }
 
               blockquote {
-                border-left: 3px $background-accent solid;
-                padding-left: 3px;
+                border-left: 3px var(--color-cyber-mint) solid;
+                padding-left: 8px;
+                background: rgba(255, 255, 255, 0.02);
+                margin: 4px 0;
+                border-radius: 0 var(--radius-button) var(--radius-button) 0;
               }
 
               span {
                 &.spoiler {
-                  background: $background-tertiary;
-                  padding: 0 2px;
+                  background: rgba(255, 255, 255, 0.08);
+                  padding: 2px 6px;
                   border-radius: 4px;
                   cursor: pointer;
+                  filter: blur(5px);
+                  transition: filter 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s;
+                  user-select: none;
 
                   span {
-                    opacity: 0;
+                    opacity: 0.1;
+                    transition: opacity 0.4s ease;
                   }
                 }
 
                 &.spoiler.active {
-                  background: $background-secondary;
+                  background: rgba(255, 255, 255, 0.02);
+                  filter: blur(0px);
                   cursor: default;
+                  user-select: text;
 
                   span {
                     opacity: 1;
@@ -198,42 +244,45 @@
               }
 
               code {
-                font-family: Consolas, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter,
-                  DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Monaco, Courier New,
-                  Courier, monospace;
-                background: $background-secondary;
-                border-radius: 3px;
-                padding: 0 3px;
-                font-size: 0.875rem;
-                line-height: 1.125rem;
-                text-indent: 0;
-                white-space: pre-wrap;
+                font-family: inherit;
+                background: rgba(12, 13, 18, 0.45);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 5px;
+                padding: 2px 6px;
+                font-size: 13px;
+                color: var(--color-cyber-mint);
               }
 
               pre {
                 flex: 1;
-                color: $interactive-normal;
-                border: 1px solid $background-tertiary;
-                background: $background-secondary;
-                padding: 8px 6px;
-                margin: 4px 0;
-                border-radius: 4px;
+                color: var(--text-subtle);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                background: rgba(12, 13, 18, 0.45);
+                padding: 10px 12px;
+                margin: 8px 0;
+                border-radius: var(--radius-inner);
                 display: block;
-                flex: 1;
 
                 code {
                   display: block;
+                  background: transparent;
+                  border: none;
+                  padding: 0;
+                  color: inherit;
                 }
               }
             }
           }
 
           &.bulk {
-            padding-top: 0px;
+            padding-top: 2px;
+            padding-bottom: 2px;
 
             .author {
               visibility: hidden;
               height: 0;
+              margin-top: 0;
+              margin-bottom: 0;
             }
 
             .content-head {
@@ -243,8 +292,13 @@
         }
 
         &.event {
-          color: $text-muted;
-          cursor: default;
+          color: var(--text-muted-ok);
+          font-size: 13px;
+          opacity: 0.85;
+          padding: 8px 12px;
+          background: rgba(255, 255, 255, 0.012);
+          border-radius: var(--radius-inner);
+          margin: 4px 0;
 
           .content {
             min-width: 0;
@@ -255,85 +309,114 @@
             line-height: 20px;
 
             strong {
-              font-weight: 600;
+              font-weight: 700;
+              color: var(--text-pure);
             }
 
             i {
               font-style: italic;
-              font-size: 10px;
+              font-size: 11px;
             }
           }
         }
       }
     }
 
+    @keyframes messageFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .chat-send {
       flex-shrink: 0;
-      height: 80px;
-      max-height: 80px;
-      padding: 0 10px 10px 10px;
+      height: auto;
+      min-height: 72px;
+      padding: 10px 14px 14px 14px;
       flex-direction: column;
       display: flex;
+      border-top: 1px solid var(--glass-border);
+      background: rgba(12, 13, 18, 0.35);
 
       .accent {
-        width: 100%;
-        height: 1px;
-        background: rgba($color: #fff, $alpha: 0.05);
-        margin: 5px 0 10px 0;
+        display: none;
       }
 
       .text-container {
         flex: 1;
         width: 100%;
-        height: 100%;
-        background-color: rgba($color: #fff, $alpha: 0.05);
-        border-radius: 5px;
+        background-color: rgba(12, 13, 18, 0.45);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-inner);
         position: relative;
         display: flex;
+        align-items: center;
+        padding: 4px 8px;
+        transition: var(--transition-fluid);
+
+        &:focus-within {
+          border-color: var(--color-cyber-mint);
+          box-shadow: 0 0 0 3px rgba(38, 230, 180, 0.15);
+          background-color: rgba(12, 13, 18, 0.6);
+        }
 
         .emoji-menu {
-          width: 20px;
-          height: 20px;
-          font-size: 20px;
-          margin: 8px 5px 0 0;
+          width: 32px;
+          height: 32px;
+          font-size: 18px;
+          color: var(--text-muted-ok);
           cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          transition: var(--transition-fluid);
+
+          &:hover {
+            color: var(--color-cyber-mint);
+            background: rgba(255, 255, 255, 0.05);
+            transform: scale(1.1);
+          }
         }
 
         textarea {
           flex: 1;
-          font-family: $text-family;
+          font-family: inherit;
+          font-size: 14.5px;
           border: none;
-          caret-color: $text-normal;
-          color: $text-normal;
+          outline: none !important;
+          box-shadow: none !important;
+          caret-color: var(--color-cyber-mint);
+          color: var(--text-pure);
           resize: none;
-          margin: 5px;
+          margin: 6px 4px;
           background-color: transparent;
-          scrollbar-width: thin;
-          scrollbar-color: $background-tertiary transparent;
+          height: 34px;
+          line-height: 20px;
+          scrollbar-width: none;
+
+          &:focus, &:focus-visible {
+            outline: none !important;
+            box-shadow: none !important;
+          }
 
           &::placeholder {
-            color: $text-muted;
+            color: var(--text-muted-ok);
+            opacity: 0.75;
           }
 
           &::-webkit-scrollbar {
-            width: 4px;
-          }
-
-          &::-webkit-scrollbar-track {
-            background-color: transparent;
-          }
-
-          &::-webkit-scrollbar-thumb {
-            background-color: $background-tertiary;
-            border-radius: 4px;
-          }
-
-          &::-webkit-scrollbar-thumb:hover {
-            background-color: $background-floating;
+            display: none;
           }
 
           &::selection {
-            background: $text-link;
+            background: var(--color-cyber-mint);
+            color: #050508;
           }
         }
       }
@@ -363,13 +446,17 @@
       'neko-avatar': Avatar,
     },
   })
-  export default class extends Vue {
+  export default class NekoChat extends Vue {
     @Ref('input') readonly _input!: HTMLTextAreaElement
     @Ref('history') readonly _history!: HTMLElement
     @Ref('context') readonly _context!: any
 
     emoji = false
     content = ''
+
+    get activeHostId() {
+      return this.$accessor.remote.id
+    }
 
     get id() {
       return this.$accessor.user.id

@@ -91,6 +91,7 @@ export const setting = {
   ignore_emotes: 'Ignore Emotes',
   chat_sound: 'Play Chat Sound',
   keyboard_layout: 'Keyboard Layout',
+  trackpad_mode: 'Trackpad Mode',
   broadcast_title: 'Live Broadcast',
 }
 
@@ -127,4 +128,18 @@ export const files = {
   downloads: 'Downloads',
   uploads: 'Uploads',
   upload_here: 'Click or drag files here to upload',
+}
+
+export const clipboard_manager = {
+  history_title: 'Clipboard History',
+  clear: 'Clear History',
+  empty: 'No items copied yet.',
+  send_to_vm: 'Send to VM',
+  copy_to_host: 'Copy to native PC',
+  manual_placeholder: 'Type or edit text to send to VM...',
+  copied: 'Copied to native clipboard!',
+  mic_active: 'Microphone Active',
+  mic_connecting: 'Initializing Microphone...',
+  keyboard_helper_title: 'Mobile Keyboard Modifier',
+  sync_hint: 'Tip: \'Send to VM\' updates the VM\'s clipboard. To paste, click inside the VM and press Ctrl+V.',
 }

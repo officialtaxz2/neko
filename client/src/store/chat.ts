@@ -75,7 +75,9 @@ export const actions = actionTree(
 
     newMessage(store, message: Message) {
       if (accessor.settings.chat_sound) {
-        new Audio('chat.mp3').play().catch(console.error)
+        new Audio('chat.mp3').play().catch(() => {
+          // Ignore autoplay failures for sounds, standard browser behavior
+        })
       }
       accessor.chat.addMessage(message)
     },

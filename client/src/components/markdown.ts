@@ -253,7 +253,7 @@ const htmlOutput = md.outputFor<HtmlOutputRule, 'html'>(rules, 'html')
 @Component({
   name: 'neko-markdown',
 })
-export default class extends Vue {
+export default class NekoMarkdown extends Vue {
   @Prop({ required: true })
   source!: string
 

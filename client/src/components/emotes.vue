@@ -97,7 +97,7 @@
       'vue-context': VueContext,
     },
   })
-  export default class extends Vue {
+  export default class NekoEmotes extends Vue {
     @Ref('context') readonly context!: any
     recent: string[] = JSON.parse(get('emote_recent', '[]'))
 

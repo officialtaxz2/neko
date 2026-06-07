@@ -297,7 +297,7 @@
       onClickaway,
     },
   })
-  export default class extends Vue {
+  export default class NekoEmoji extends Vue {
     @Ref('scroll') readonly _scroll!: HTMLElement
     @Ref('search') readonly _search!: HTMLInputElement
     @Ref('groups') readonly _groups!: HTMLElement[]

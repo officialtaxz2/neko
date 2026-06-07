@@ -56,6 +56,7 @@
     max-height: 100vh;
     flex-direction: row;
     display: flex;
+    background-color: var(--bg-obsidian-deep);
 
     .neko-main {
       min-width: 360px;
@@ -63,29 +64,40 @@
       flex-grow: 1;
       flex-direction: column;
       display: flex;
-      overflow: auto;
+      overflow: hidden;
+      position: relative;
 
       .header-container {
-        background: $background-tertiary;
+        background: rgba(12, 13, 18, 0.65);
+        backdrop-filter: blur(12px);
         height: $menu-height;
         flex-shrink: 0;
         display: flex;
+        border-bottom: 1px solid var(--glass-border);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 100;
       }
 
       .video-container {
-        background: rgba($color: #000, $alpha: 0.4);
+        background: radial-gradient(circle at 50% 50%, rgba(12, 13, 18, 0.2) 0%, rgba(7, 8, 12, 0.7) 100%);
         max-width: 100%;
         flex-grow: 1;
         display: flex;
+        position: relative;
+        overflow: hidden;
       }
 
       .room-container {
-        background: $background-tertiary;
+        background: rgba(18, 21, 30, 0.98);
         height: $controls-height;
         max-width: 100%;
         flex-shrink: 0;
         flex-direction: column;
         display: flex;
+        border-top: 1px solid var(--glass-border);
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+        z-index: 10;
+        padding: 4px 0;
 
         .room-menu {
           max-width: 100%;
@@ -93,7 +105,7 @@
           display: flex;
 
           .settings {
-            margin-left: 10px;
+            margin-left: 15px;
             flex: 1;
             justify-content: flex-start;
             align-items: center;
@@ -101,14 +113,14 @@
           }
 
           .controls {
-            flex: 1;
+            flex: 1.5;
             justify-content: center;
             align-items: center;
             display: flex;
           }
 
           .emotes {
-            margin-right: 10px;
+            margin-right: 15px;
             flex: 1;
             justify-content: flex-end;
             align-items: center;
@@ -125,6 +137,27 @@
       overflow-y: auto !important;
       width: auto !important;
       height: auto !important;
+
+      /* Elegant, modern scrollbar integration */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 3px;
+        transition: background 0.3s ease;
+        
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      }
     }
 
     body > p {
@@ -165,6 +198,110 @@
       display: none;
     }
   }
+
+  /* Premium, modern glassmorphic notification styling */
+  .vue-notification-group {
+    left: 20px !important;
+    top: 60px !important;
+    max-width: 340px !important;
+    z-index: 99999 !important;
+    padding: 0 !important;
+    
+    @media only screen and (max-width: 480px) {
+      left: 10px !important;
+      right: 10px !important;
+      top: 15px !important;
+      max-width: calc(100% - 20px) !important;
+    }
+  }
+
+  .vue-notification {
+    margin: 0 0 10px 0 !important;
+    padding: 14px 16px !important;
+    font-size: 13px !important;
+    font-family: inherit !important;
+    color: #e5e7eb !important; /* Soft white/gray body */
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: rgba(18, 20, 29, 0.85) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 10px 30px -5px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border-left: 4px solid #6366f1 !important; /* Indigo primary glow */
+
+    .notification-title {
+      font-weight: 600 !important;
+      font-size: 13px !important;
+      letter-spacing: -0.0125em;
+      line-height: 1.4 !important;
+      color: #ffffff !important;
+      margin-bottom: 2px !important;
+    }
+
+    .notification-content {
+      font-size: 12px !important;
+      opacity: 0.8 !important;
+      line-height: 1.5 !important;
+      color: #cbd5e1 !important;
+    }
+
+    /* Type overrides for feedback states matching DesignSystem.md */
+    &.success {
+      background: rgba(16, 24, 21, 0.88) !important;
+      border-color: rgba(34, 197, 94, 0.15) !important;
+      border-left: 4px solid #22c55e !important;
+      box-shadow: 
+        0 10px 30px -5px rgba(16, 24, 21, 0.5),
+        inset 0 1px 0 0 rgba(34, 197, 94, 0.1) !important;
+      
+      .notification-title {
+        color: #86efac !important;
+      }
+    }
+
+    &.warn, &.warning {
+      background: rgba(28, 23, 15, 0.88) !important;
+      border-color: rgba(234, 179, 8, 0.15) !important;
+      border-left: 4px solid #eab308 !important;
+      box-shadow: 
+        0 10px 30px -5px rgba(28, 23, 15, 0.5),
+        inset 0 1px 0 0 rgba(234, 179, 8, 0.1) !important;
+
+      .notification-title {
+        color: #fde047 !important;
+      }
+    }
+
+    &.error {
+      background: rgba(28, 15, 15, 0.88) !important;
+      border-color: rgba(239, 68, 68, 0.15) !important;
+      border-left: 4px solid #ef4444 !important;
+      box-shadow: 
+        0 10px 30px -5px rgba(28, 15, 15, 0.5),
+        inset 0 1px 0 0 rgba(239, 68, 68, 0.1) !important;
+
+      .notification-title {
+        color: #fca5a5 !important;
+      }
+    }
+
+    &.info {
+      background: rgba(15, 23, 42, 0.88) !important;
+      border-color: rgba(59, 130, 246, 0.15) !important;
+      border-left: 4px solid #3b82f6 !important;
+      box-shadow: 
+        0 10px 30px -5px rgba(15, 23, 42, 0.4),
+        inset 0 1px 0 0 rgba(59, 130, 246, 0.1) !important;
+
+      .notification-title {
+        color: #93c5fd !important;
+      }
+    }
+  }
 </style>
 
 <script lang="ts">
@@ -196,22 +333,22 @@
       'neko-unsupported': Unsupported,
     },
   })
-  export default class extends Vue {
+  export default class Neko extends Vue {
     @Ref('video') video!: Video
 
     shakeKbd = false
 
     get volume() {
-      const numberParam = parseFloat(new URL(location.href).searchParams.get('volume') || '1.0')
+      const numberParam = parseFloat(new URLSearchParams(location.search).get('volume') || '1.0')
       return Math.max(0.0, Math.min(!isNaN(numberParam) ? numberParam * 100 : 100, 100))
     }
 
     get isCastMode() {
-      return !!new URL(location.href).searchParams.get('cast')
+      return !!new URLSearchParams(location.search).get('cast')
     }
 
     get isEmbedMode() {
-      return !!new URL(location.href).searchParams.get('embed')
+      return !!new URLSearchParams(location.search).get('embed')
     }
 
     get hideControls() {
@@ -224,7 +361,7 @@
 
     @Watch('volume', { immediate: true })
     onVolume(volume: number) {
-      if (new URL(location.href).searchParams.has('volume')) {
+      if (new URLSearchParams(location.search).has('volume')) {
         this.$accessor.video.setVolume(volume)
       }
     }

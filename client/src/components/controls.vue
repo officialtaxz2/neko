@@ -57,7 +57,7 @@
       <i
         :class="[
           { disabled: !playable },
-          microphoneActive ? 'fa-microphone' : 'fa-microphone-slash',
+          microphoneActive ? 'fa-microphone glowing-mic' : 'fa-microphone-slash',
           microphoneActive ? '' : 'faded',
           'fas',
         ]"
@@ -129,86 +129,188 @@
     flex-direction: row;
     justify-content: center;
     align-items: center;
+    gap: 12px;
     list-style: none;
+    padding: 0;
+    margin: 0;
 
     li {
-      font-size: 24px;
+      display: inline-flex;
+      align-items: center;
       cursor: pointer;
 
       &.no-pointer {
         cursor: default;
       }
 
-      i {
-        padding: 0 5px;
+      & > i {
+        width: 38px;
+        height: 38px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-inner);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-subtle);
+        font-size: 15px;
+        transition: var(--transition-fluid);
+
+        &:hover:not(.disabled) {
+          color: var(--color-cyber-mint);
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(38, 230, 180, 0.25);
+          filter: drop-shadow(0 0 6px var(--color-cyber-mint-glow));
+          transform: scale(1.08);
+        }
+
+        &:active:not(.disabled) {
+          transform: scale(0.95);
+        }
 
         &.faded {
-          color: rgba($color: $text-normal, $alpha: 0.4);
+          color: rgba(255, 255, 255, 0.25);
+          border-color: rgba(255, 255, 255, 0.04);
+        }
+
+        &.glowing-mic {
+          color: var(--color-cyber-mint) !important;
+          border-color: var(--color-cyber-mint) !important;
+          background: rgba(38, 230, 180, 0.12) !important;
+          animation: mic-pulse 1.8s infinite ease-in-out;
         }
 
         &.disabled {
-          color: rgba($color: $style-error, $alpha: 0.4);
+          color: var(--style-error);
+          opacity: 0.6;
+          border-color: rgba(255, 74, 90, 0.15);
+          cursor: not-allowed;
+        }
+      }
+
+      @keyframes mic-pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(38, 230, 180, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 8px rgba(38, 230, 180, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(38, 230, 180, 0);
         }
       }
 
       .volume {
         white-space: nowrap;
-        display: block;
         display: flex;
         flex-direction: row;
         justify-content: center;
         align-items: center;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-inner);
+        padding: 0 12px;
+        height: 38px;
         list-style: none;
+        transition: var(--transition-fluid);
+
+        &:hover {
+          border-color: rgba(38, 230, 180, 0.15);
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        i {
+          width: 18px;
+          height: auto;
+          background: none;
+          border: none;
+          padding: 0;
+          color: var(--text-subtle);
+          font-size: 14px;
+
+          &:hover {
+            color: var(--color-cyber-mint);
+            background: none;
+            border: none;
+            transform: none;
+            filter: none;
+          }
+        }
 
         input[type='range'] {
-          width: 100%;
-          background: transparent;
-          width: 150px;
-          height: 20px;
+          width: 90px;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.12);
+          border-radius: 4px;
+          outline: none;
+          transition: var(--transition-fluid);
           -webkit-appearance: none;
-
-          &::-moz-range-thumb {
-            height: 12px;
-            width: 12px;
-            border-radius: 12px;
-            background: #fff;
-            cursor: pointer;
-          }
-
-          &::-moz-range-track {
-            width: 100%;
-            height: 4px;
-            cursor: pointer;
-            background: $style-primary;
-            border-radius: 2px;
-          }
 
           &::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 12px;
             width: 12px;
-            border-radius: 12px;
-            background: #fff;
+            border-radius: 50%;
+            background: var(--color-cyber-mint);
+            box-shadow: 0 0 8px var(--color-cyber-mint-glow);
             cursor: pointer;
+            transition: var(--transition-fluid);
             margin-top: -4px;
+
+            &:hover {
+              transform: scale(1.35);
+              background: #fff;
+              box-shadow: 0 0 12px var(--color-cyber-mint), 0 0 0 4px var(--color-cyber-mint-glow);
+            }
           }
 
           &::-webkit-slider-runnable-track {
             width: 100%;
             height: 4px;
             cursor: pointer;
-            background: $style-primary;
+            background: transparent;
             border-radius: 2px;
+          }
+
+          &::-moz-range-thumb {
+            height: 12px;
+            width: 12px;
+            border: none;
+            border-radius: 50%;
+            background: var(--color-cyber-mint);
+            box-shadow: 0 0 8px var(--color-cyber-mint-glow);
+            cursor: pointer;
+            transition: var(--transition-fluid);
+
+            &:hover {
+              transform: scale(1.35);
+              background: #fff;
+              box-shadow: 0 0 12px var(--color-cyber-mint), 0 0 0 4px var(--color-cyber-mint-glow);
+            }
+          }
+
+          &::-moz-range-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: transparent;
+            border-radius: 2px;
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.22);
+            height: 5px;
           }
         }
       }
 
       .switch {
-        margin: 0 5px;
+        margin: 0;
         display: block;
         position: relative;
-        width: 42px;
-        height: 24px;
+        width: 48px;
+        height: 26px;
 
         input[type='checkbox'] {
           opacity: 0;
@@ -223,25 +325,26 @@
           left: 0;
           right: 0;
           bottom: 0;
-          background-color: $background-secondary;
-          transition: 0.2s;
+          background-color: rgba(255, 255, 255, 0.05);
+          border: 1px solid var(--glass-border);
+          transition: var(--transition-fluid);
           border-radius: 34px;
 
           &:before {
-            color: $background-tertiary;
+            color: #050508;
             font-weight: 900;
             font-family: 'Font Awesome 6 Free';
             content: '\f3c1';
             font-size: 8px;
-            line-height: 18px;
+            line-height: 20px;
             text-align: center;
             position: absolute;
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: 0.3s;
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background-color: var(--text-pure);
+            transition: var(--transition-fluid);
             border-radius: 50%;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
           }
@@ -250,18 +353,23 @@
 
       input[type='checkbox'] {
         &:checked + span {
-          background-color: $style-primary;
+          background-color: var(--color-cyber-mint);
+          border-color: transparent;
+          box-shadow: 0 0 10px var(--color-cyber-mint-glow);
 
           &:before {
             content: '\f023';
-            transform: translateX(18px);
+            transform: translateX(22px) rotate(360deg);
+            background-color: #050508;
+            color: var(--color-cyber-mint);
           }
         }
 
         &:disabled + span {
+          opacity: 0.5;
           &:before {
             content: '';
-            background-color: rgba($color: $text-normal, $alpha: 0.4);
+            background-color: rgba(255, 255, 255, 0.2);
           }
         }
       }
@@ -273,7 +381,7 @@
   import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
 
   @Component({ name: 'neko-controls' })
-  export default class extends Vue {
+  export default class NekoControls extends Vue {
     @Prop(Boolean) readonly shakeKbd!: boolean
 
     get controlLocked() {
@@ -377,9 +485,13 @@
           await this.$client.enableMicrophone()
           this.microphoneActive = true
         } catch (err: any) {
+          let extraText = ''
+          if (window.self !== window.top) {
+            extraText = '\n\nHinweis: Da der Client in einem iframe läuft, öffnen Sie die App am besten in einem neuen Tab (über den Button oben rechts), damit Ihr Browser die Erlaubnis abfragen und erteilen kann.'
+          }
           this.$swal({
             title: this.$t('controls.mic_error') as string,
-            text: err.message,
+            text: (err.message || err.name || String(err)) + extraText,
             icon: 'error',
           })
         }

@@ -1,30 +1,59 @@
-$text-family: Whitney, Helvetica Neue, Helvetica, Arial, sans-serif;;
+:root {
+  /* Obsidian Farbpalette (Tiefschwarz-indigo weiche Schatten) */
+  --bg-obsidian-deep: oklch(14% 0.015 260);      /* #0c0d12 - Tiefstes Obsidian-Schwarz */
+  --bg-obsidian-slate: oklch(18% 0.02 260);     /* #12151e - Etwas helleres Slate für Panels */
+  --bg-obsidian-card: oklch(23% 0.025 260);     /* #1a1e2a - Kacheln / Karten-Hintergründe */
+  --bg-obsidian-floating: oklch(11% 0.01 260);  /* #07080c - Overlay / Menüs */
+
+  /* Transluzente Glasebenen */
+  --glass-surface: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-border-glow: rgba(38, 230, 180, 0.12);
+
+  /* Cyber Mint Akzente */
+  --color-cyber-mint: oklch(76% 0.16 160);       /* #26e6b4 - Hochenergetisches Pastellgrün */
+  --color-cyber-mint-active: oklch(68% 0.18 160);/* #13cda0 - Kräftigeres Mint bei Druck */
+  --color-cyber-mint-glow: rgba(38, 230, 180, 0.25);
+
+  /* Typografie */
+  --text-pure: oklch(98% 0.005 260);             /* Nahezu reines Weiß */
+  --text-subtle: oklch(86% 0.01 260);            /* Weicheres Weiß für Infos */
+  --text-muted-ok: oklch(62% 0.015 260);         /* Abgedunkeltes Grau */
+
+  /* Radien und Motion */
+  --radius-outer: 16px;
+  --radius-inner: 12px;
+  --radius-button: 8px;
+  --transition-fluid: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+$text-family: Whitney, Helvetica Neue, Helvetica, Arial, sans-serif;
 $text-size:   14px;
-$text-normal: #dcddde;
-$text-muted: #72767d;
-$text-link: #00b0f4;
+$text-normal: var(--text-subtle);
+$text-muted: var(--text-muted-ok);
+$text-link: var(--color-cyber-mint);
 
-$interactive-normal: #b9bbbe;
-$interactive-hover: #dcddde;
-$interactive-muted: #4f545c;
+$interactive-normal: oklch(75% 0.01 260);
+$interactive-hover: var(--text-pure);
+$interactive-muted: oklch(42% 0.015 260);
 
-$background-primary: #36393f;
-$background-secondary: #2f3136;
-$background-tertiary: #202225;
-$background-accent: #4f545c;
-$background-floating: #18191c;
-$background-modifier-hover: rgba(79, 84, 92, 0.16);
-$background-modifier-active: rgba(79, 84, 92, 0.24);
-$background-modifier-selected: rgba(79, 84, 92, 0.32);
-$background-modifier-accent: hsla(0, 0%, 100%, 0.06);
+$background-primary: var(--bg-obsidian-card);
+$background-secondary: var(--bg-obsidian-slate);
+$background-tertiary: var(--bg-obsidian-deep);
+$background-accent: oklch(35% 0.015 260);
+$background-floating: var(--bg-obsidian-floating);
+$background-modifier-hover: rgba(255, 255, 255, 0.05);
+$background-modifier-active: rgba(255, 255, 255, 0.08);
+$background-modifier-selected: rgba(38, 230, 180, 0.12);
+$background-modifier-accent: rgba(255, 255, 255, 0.03);
 
-$elevation-low: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
-$elevation-high: 0 8px 16px rgba(0, 0, 0, 0.24);
+$elevation-low: 0 4px 12px rgba(0, 0, 0, 0.35);
+$elevation-high: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--glass-border);
 
-$style-primary: #19bd9c;
-$style-error: #d32f2f;
+$style-primary: var(--color-cyber-mint);
+$style-error: #ff4a5a;
 
-$menu-height: 40px;
-$controls-height: 125px;
-$side-width: 400px;
+$menu-height: 48px;
+$controls-height: 110px;
+$side-width: 360px;
 

@@ -34,7 +34,7 @@
   @Component({
     name: 'neko-avatar',
   })
-  export default class extends Vue {
+  export default class NekoAvatar extends Vue {
     @Prop(String) readonly seed: string | undefined
     @Prop(Number) readonly size: number | undefined
 

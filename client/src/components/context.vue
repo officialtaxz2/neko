@@ -51,25 +51,27 @@
 
 <style lang="scss" scoped>
   .context {
-    background-color: $background-floating;
+    background-color: var(--bg-obsidian-floating);
+    backdrop-filter: blur(16px);
     background-clip: padding-box;
-    border-radius: 0.25rem;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-inner);
     display: block;
     margin: 0;
-    padding: 5px;
-    min-width: 150px;
+    padding: 6px;
+    min-width: 160px;
     z-index: 1500;
     position: fixed;
     list-style: none;
     box-sizing: border-box;
     max-height: calc(100% - 50px);
     overflow-y: auto;
-    color: $interactive-normal;
+    color: var(--text-subtle);
     user-select: none;
-    box-shadow: $elevation-high;
+    box-shadow: var(--elevation-medium);
 
     > li {
-      margin: 0;
+      margin: 2px 0;
       position: relative;
       align-content: center;
 
@@ -77,46 +79,53 @@
         .user {
           display: flex;
           flex-direction: row;
-          align-content: center;
-          padding: 5px 0;
+          align-items: center;
+          padding: 6px 8px;
+          gap: 8px;
 
           .avatar {
-            width: 25px;
-            height: 25px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
-            margin-right: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
           }
 
           strong {
-            line-height: 25px;
+            line-height: normal;
+            font-size: 13.5px;
             font-weight: 700;
+            color: var(--text-pure);
             max-width: 200px;
             text-overflow: ellipsis;
+            overflow: hidden;
           }
         }
       }
 
       &.seperator {
         height: 1px;
-        background: $background-secondary;
-        margin: 3px 0;
+        background: rgba(255, 255, 255, 0.08);
+        margin: 6px 4px;
       }
 
       > span {
         cursor: pointer;
         display: block;
-        padding: 5px;
-        font-weight: 400;
+        padding: 6px 12px;
+        font-size: 13.5px;
+        font-weight: 500;
         text-decoration: none;
         white-space: nowrap;
         background-color: transparent;
-        border-radius: 3px;
+        border-radius: var(--radius-button);
+        transition: var(--transition-fluid);
 
         &:hover,
         &:focus {
           text-decoration: none;
-          background-color: $background-modifier-hover;
-          color: $interactive-hover;
+          background-color: rgba(255, 255, 255, 0.05);
+          color: var(--color-cyber-mint);
+          text-shadow: 0 0 6px var(--color-cyber-mint-glow);
         }
 
         &:focus {
@@ -146,7 +155,7 @@
       'neko-avatar': Avatar,
     },
   })
-  export default class extends Vue {
+  export default class NekoContext extends Vue {
     @Ref('context') readonly context!: any
 
     get admin() {

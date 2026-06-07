@@ -109,7 +109,7 @@
       'vue-context': VueContext,
     },
   })
-  export default class extends Vue {
+  export default class NekoResolution extends Vue {
     @Ref('context') readonly context!: VueContext
 
     get width() {
@@ -128,7 +128,16 @@
       return this.$accessor.video.configurations
     }
 
+    mounted() {
+      if (this.$accessor.connected && this.$accessor.user.admin) {
+        this.$accessor.video.screenConfiguations()
+      }
+    }
+
     open(event: MouseEvent) {
+      if (this.$accessor.connected && this.$accessor.user.admin) {
+        this.$accessor.video.screenConfiguations()
+      }
       this.context.open(event)
     }
 

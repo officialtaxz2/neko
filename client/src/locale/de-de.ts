@@ -88,6 +88,7 @@ export const setting = {
   ignore_emotes: 'Emotes ignorieren',
   chat_sound: 'Chat-Sound abspielen',
   keyboard_layout: 'Tastaturbelegung',
+  trackpad_mode: 'Trackpad Mode',
   broadcast_title: 'Live-Übertragung',
 }
 
@@ -124,4 +125,18 @@ export const files = {
   downloads: 'Herunterladen',
   uploads: 'Hochladen',
   upload_here: 'Klicken oder ziehen Sie Dateien zum Hochladen hierher',
+}
+
+export const clipboard_manager = {
+  history_title: 'Zwischenablagenverlauf',
+  clear: 'Verlauf leeren',
+  empty: 'Noch nichts kopiert.',
+  send_to_vm: 'In VM senden',
+  copy_to_host: 'Lokales Clipboard',
+  manual_placeholder: 'Text zum Senden in die VM eingeben oder bearbeiten...',
+  copied: 'In lokales Clipboard kopiert!',
+  mic_active: 'Mikrofon Aktiv',
+  mic_connecting: 'Mikrofon wird gestartet...',
+  keyboard_helper_title: 'Zusatztasten Tastatur',
+  sync_hint: 'Hinweis: \'In VM senden\' aktualisiert die Zwischenablage der VM. Zum Einfügen nutze Strg+V in der VM.',
 }

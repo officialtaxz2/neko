@@ -161,7 +161,7 @@
   import { AdminLockResource } from '~/neko/messages'
 
   @Component({ name: 'neko-settings' })
-  export default class extends Vue {
+  export default class NekoHeader extends Vue {
     get admin() {
       return this.$accessor.user.admin
     }

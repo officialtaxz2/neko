@@ -1,6 +1,6 @@
 <template>
   <div ref="component" class="video">
-    <div ref="player" class="player">
+    <div ref="player" :class="['player', hosted ? 'has-control' : 'no-control']">
       <div ref="container" class="player-container">
         <video ref="video" playsinline />
         <div class="emotes">
@@ -35,6 +35,11 @@
         <div v-else-if="mutedOverlay && muted" class="player-overlay" @click.stop.prevent="unmute">
           <i class="fas fa-volume-up" />
         </div>
+        <div
+          v-if="trackpadActive && hosting && !locked"
+          class="trackpad-cursor"
+          :style="{ left: cursorX + 'px', top: cursorY + 'px' }"
+        />
         <div ref="aspect" class="player-aspect" />
       </div>
       <ul v-if="!fullscreen && !hideControls" class="video-menu top">
@@ -53,8 +58,12 @@
         </li>
       </ul>
       <ul v-if="!fullscreen && !hideControls" class="video-menu bottom">
-        <li v-if="hosting && (!clipboard_read_available || !clipboard_write_available)">
-          <i @click.stop.prevent="openClipboard" class="fas fa-clipboard"></i>
+        <li v-if="hosting">
+          <i
+            @click.stop.prevent="openClipboard"
+            v-tooltip="{ content: $t('clipboard_manager.history_title'), placement: 'left', offset: 5 }"
+            class="fas fa-clipboard"
+          ></i>
         </li>
         <li>
           <i
@@ -67,13 +76,24 @@
         <li
           v-if="hosting && is_touch_device"
           :class="extraControls || 'extra-control'"
+          @click.stop.prevent="toggleKeyboardHelper"
+        >
+          <i
+            class="fas fa-sliders-h"
+            v-tooltip="{ content: $t('clipboard_manager.keyboard_helper_title'), placement: 'left', offset: 5 }"
+          />
+        </li>
+        <li
+          v-if="hosting && is_touch_device"
+          :class="extraControls || 'extra-control'"
           @click.stop.prevent="openMobileKeyboard"
         >
           <i class="fas fa-keyboard" />
         </li>
       </ul>
       <neko-resolution ref="resolution" v-if="admin" />
-      <neko-clipboard ref="clipboard" v-if="hosting && (!clipboard_read_available || !clipboard_write_available)" />
+      <neko-clipboard ref="clipboard" v-if="hosting" />
+      <neko-keyboard-helper ref="keyboardHelper" :keyboard="keyboard" />
     </div>
   </div>
 </template>
@@ -82,61 +102,121 @@
   .video {
     width: 100%;
     height: 100%;
+    padding: 0;
 
     .player {
       position: absolute;
+      top: 0;
+      left: 0;
       display: flex;
       justify-content: center;
       align-items: center;
       background: #000;
+      overflow: visible; // Allows the beautiful glow to expand elegantly beyond the video player borders!
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: -15px;
+        left: -15px;
+        right: -15px;
+        bottom: -15px;
+        border-radius: var(--radius-outer);
+        z-index: -1;
+        opacity: 0.15;
+        filter: blur(40px);
+        transition: var(--transition-fluid);
+        pointer-events: none;
+      }
+
+      &.no-control::before {
+        background: radial-gradient(circle, oklch(62% 0.015 260) 0%, transparent 70%);
+        animation: breathGlowNeutral 6s ease-in-out infinite;
+      }
+
+      &.has-control::before {
+        background: radial-gradient(circle, var(--color-cyber-mint) 0%, transparent 70%);
+        animation: breathGlowCyber 4s ease-in-out infinite;
+      }
+
+      @keyframes breathGlowNeutral {
+        0%, 100% { opacity: 0.12; transform: scale(0.98); }
+        50% { opacity: 0.22; transform: scale(1.02); }
+      }
+
+      @keyframes breathGlowCyber {
+        0%, 100% { opacity: 0.18; transform: scale(0.96); }
+        50% { opacity: 0.32; transform: scale(1.04); }
+      }
 
       .video-menu {
         position: absolute;
-        right: 20px;
+        right: 18px;
+        background: rgba(12, 13, 18, 0.55);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 30px;
+        padding: 5px 6px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+        list-style: none;
+        z-index: 10;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 
         &.top {
-          top: 15px;
+          top: 18px;
         }
 
         &.bottom {
-          bottom: 15px;
+          bottom: 18px;
         }
 
         li {
-          margin: 0 0 10px 0;
+          margin: 0;
+          display: flex;
 
           i {
-            width: 30px;
-            height: 30px;
-            background: rgba($color: #fff, $alpha: 0.2);
-            border-radius: 5px;
-            line-height: 30px;
-            font-size: 16px;
+            width: 34px;
+            height: 34px;
+            background: transparent;
+            border-radius: 50%;
+            line-height: 34px;
+            font-size: 15px;
             text-align: center;
-            color: rgba($color: #fff, $alpha: 0.6);
+            color: var(--text-subtle);
             cursor: pointer;
+            transition: var(--transition-fluid);
+
+            &:hover {
+              background: rgba(255, 255, 255, 0.08);
+              color: var(--color-cyber-mint);
+              transform: scale(1.1);
+              text-shadow: 0 0 8px rgba(38, 230, 180, 0.4);
+            }
+
+            &:active {
+              transform: scale(0.95);
+            }
 
             &.faded {
-              color: rgba($color: $text-normal, $alpha: 0.4);
+              color: rgba(255, 255, 255, 0.25);
             }
 
             &.disabled {
-              color: rgba($color: $style-error, $alpha: 0.4);
+              color: var(--style-error);
+              opacity: 0.6;
             }
           }
 
-          /* usually extra controls are only shown on mobile */
           &.extra-control {
             display: none;
           }
-          @media (max-width: 768px) {
+          @media (max-width: 1024px) {
             &.extra-control {
               display: block;
             }
-          }
-
-          &:last-child {
-            margin: 0;
           }
         }
       }
@@ -171,19 +251,42 @@
         }
 
         .player-overlay {
-          background: rgba($color: #000, $alpha: 0.2);
+          background: radial-gradient(circle at 50% 50%, rgba(12, 13, 18, 0.7) 0%, rgba(5, 5, 8, 0.95) 100%);
+          backdrop-filter: blur(14px) saturate(120%);
           display: flex;
           justify-content: center;
           align-items: center;
           cursor: pointer;
+          z-index: 5;
+          animation: overlayFadeIn 0.5s ease;
 
           i::before {
-            font-size: 120px;
+            font-size: 96px;
             text-align: center;
+            color: var(--color-cyber-mint);
+            text-shadow: 0 0 25px var(--color-cyber-mint-glow);
+            transition: var(--transition-fluid);
+          }
+
+          &:hover i::before {
+            color: var(--text-pure);
+            transform: scale(1.15) rotate(5deg);
+            filter: drop-shadow(0 0 35px var(--color-cyber-mint));
           }
 
           &.hidden {
             display: none;
+          }
+        }
+
+        @keyframes overlayFadeIn {
+          from {
+            opacity: 0;
+            backdrop-filter: blur(0px);
+          }
+          to {
+            opacity: 1;
+            backdrop-filter: blur(14px);
           }
         }
 
@@ -194,16 +297,54 @@
           width: 100%;
           height: 100%;
           cursor: default;
-          outline: 0;
+          outline: none !important;
           border: 0;
           color: transparent;
           background: transparent;
           resize: none;
+          box-shadow: none !important;
+
+          &:focus, &:focus-visible {
+            outline: none !important;
+            box-shadow: none !important;
+          }
         }
 
         .player-aspect {
           display: block;
           padding-bottom: 56.25%;
+        }
+
+        .trackpad-cursor {
+          position: absolute;
+          width: 16px;
+          height: 16px;
+          border: 1.5px solid var(--color-cyber-mint);
+          background: rgba(12, 13, 18, 0.45);
+          border-radius: 50%;
+          pointer-events: none;
+          transform: translate(-50%, -50%);
+          z-index: 20;
+          box-shadow: 0 0 10px var(--color-cyber-mint-glow);
+          transition: transform 0.1s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+          
+          &::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 6px;
+            background: var(--color-cyber-mint);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 6px var(--color-cyber-mint);
+          }
+          
+          &:active, &.active {
+            transform: translate(-50%, -50%) scale(0.85);
+            box-shadow: 0 0 15px var(--color-cyber-mint);
+          }
         }
       }
     }
@@ -218,6 +359,7 @@
   import Emote from './emote.vue'
   import Resolution from './resolution.vue'
   import Clipboard from './clipboard.vue'
+  import KeyboardHelper from './keyboard_helper.vue'
 
   // @ts-ignore
   import GuacamoleKeyboard from '~/utils/guacamole-keyboard.ts'
@@ -230,9 +372,10 @@
       'neko-emote': Emote,
       'neko-resolution': Resolution,
       'neko-clipboard': Clipboard,
+      'neko-keyboard-helper': KeyboardHelper,
     },
   })
-  export default class extends Vue {
+  export default class NekoVideo extends Vue {
     @Ref('component') readonly _component!: HTMLElement
     @Ref('container') readonly _container!: HTMLElement
     @Ref('overlay') readonly _overlay!: HTMLTextAreaElement
@@ -241,6 +384,7 @@
     @Ref('video') readonly _video!: HTMLVideoElement
     @Ref('resolution') readonly _resolution!: Resolution
     @Ref('clipboard') readonly _clipboard!: Clipboard
+    @Ref('keyboardHelper') readonly _keyboardHelper!: any
 
     // all controls are hidden (e.g. for cast mode)
     @Prop(Boolean) readonly hideControls!: boolean
@@ -253,6 +397,14 @@
     private fullscreen = false
     private mutedOverlay = true
     private lastTextAreaValue = ''
+
+    private cursorX = 0
+    private cursorY = 0
+    private touchLastX = 0
+    private touchLastY = 0
+    private longPressTimer: any = null
+    private hasMoved = false
+    private didLongPress = false
 
     get admin() {
       return this.$accessor.user.admin
@@ -373,13 +525,21 @@
     }
 
     get is_touch_device() {
+      if (typeof window === 'undefined') return false
       return (
-        // detect if the device has touch support
-        ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
-        // the primary input mechanism includes a pointing device of
-        // limited accuracy, such as a finger on a touchscreen.
-        window.matchMedia('(pointer: coarse)').matches
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) ||
+        window.innerWidth <= 1024
       )
+    }
+
+    get trackpad_mode() {
+      return this.$accessor.settings.trackpad_mode
+    }
+
+    get trackpadActive() {
+      return this.trackpad_mode && this.is_touch_device
     }
 
     @Watch('width')
@@ -464,7 +624,11 @@
           await navigator.clipboard.writeText(clipboard)
           this.$accessor.remote.setClipboard(clipboard)
         } catch (err: any) {
-          this.$log.error(err)
+          if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError' || String(err.message).includes('permissions policy'))) {
+            this.$log.debug('Clipboard write blocked by permissions policy:', err.message)
+          } else {
+            this.$log.error(err)
+          }
         }
       }
     }
@@ -594,7 +758,11 @@
         await this._video.play()
         this.onResize()
       } catch (err: any) {
-        this.$log.error(err)
+        if (err && (err.name === 'NotAllowedError' || String(err.message).includes('user didn\'t interact'))) {
+          this.$log.debug('Autoplay prevented by browser security policy. Waiting for user interaction.', err.message)
+        } else {
+          this.$log.error(err)
+        }
       }
     }
 
@@ -667,6 +835,12 @@
       this._clipboard.open()
     }
 
+    toggleKeyboardHelper() {
+      if (this._keyboardHelper) {
+        this._keyboardHelper.toggleExpanded()
+      }
+    }
+
     async syncClipboard() {
       if (this.clipboard_read_available && window.document.hasFocus()) {
         try {
@@ -676,7 +850,11 @@
             this.$accessor.remote.sendClipboard(text)
           }
         } catch (err: any) {
-          this.$log.error(err)
+          if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError' || String(err.message).includes('permissions policy'))) {
+            this.$log.debug('Clipboard read blocked by permissions policy:', err.message)
+          } else {
+            this.$log.error(err)
+          }
         }
       }
     }
@@ -731,6 +909,11 @@
     }
 
     onTouchHandler(e: TouchEvent) {
+      if (this.trackpadActive) {
+        this.onTrackpadTouch(e)
+        return
+      }
+
       let first = e.changedTouches[0]
       let type = ''
       switch (e.type) {
@@ -757,6 +940,91 @@
         clientY: first.clientY,
       })
       first.target.dispatchEvent(simulatedEvent)
+    }
+
+    onTrackpadTouch(e: TouchEvent) {
+      if (!this.hosting || this.locked) {
+        return
+      }
+
+      const rect = this._overlay.getBoundingClientRect()
+      const touch = e.changedTouches[0]
+
+      if (e.type === 'touchstart') {
+        this.touchLastX = touch.clientX
+        this.touchLastY = touch.clientY
+        this.hasMoved = false
+        this.didLongPress = false
+
+        if (this.longPressTimer !== null) {
+          window.clearTimeout(this.longPressTimer)
+        }
+        this.longPressTimer = window.setTimeout(() => {
+          if (!this.hasMoved && !this.didLongPress) {
+            this.didLongPress = true
+            this.triggerTrackpadClick(3) // Right-click (key 3)
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              navigator.vibrate(40)
+            }
+          }
+        }, 600)
+
+      } else if (e.type === 'touchmove') {
+        const dx = touch.clientX - this.touchLastX
+        const dy = touch.clientY - this.touchLastY
+
+        this.touchLastX = touch.clientX
+        this.touchLastY = touch.clientY
+
+        this.cursorX = Math.max(0, Math.min(rect.width, this.cursorX + dx))
+        this.cursorY = Math.max(0, Math.min(rect.height, this.cursorY + dy))
+
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+          this.hasMoved = true
+          if (this.longPressTimer !== null) {
+            window.clearTimeout(this.longPressTimer)
+            this.longPressTimer = null
+          }
+        }
+
+        this.sendTrackpadMousePos()
+
+      } else if (e.type === 'touchend') {
+        if (this.longPressTimer !== null) {
+          window.clearTimeout(this.longPressTimer)
+          this.longPressTimer = null
+        }
+
+        if (!this.hasMoved && !this.didLongPress) {
+          this.triggerTrackpadClick(1) // Left-click (key 1)
+        }
+      }
+    }
+
+    sendTrackpadMousePos() {
+      const { w, h } = this.$accessor.video.resolution
+      if (!this._overlay) return
+      const rect = this._overlay.getBoundingClientRect()
+
+      this.$client.sendData('mousemove', {
+        x: Math.round((w / rect.width) * this.cursorX),
+        y: Math.round((h / rect.height) * this.cursorY),
+      })
+    }
+
+    triggerTrackpadClick(button: number) {
+      if (!this.controlling) {
+        if (this.implicitHosting) {
+          this.$accessor.remote.request()
+        }
+        return
+      }
+
+      this.sendTrackpadMousePos()
+      this.$client.sendData('mousedown', { key: button })
+      window.setTimeout(() => {
+        this.$client.sendData('mouseup', { key: button })
+      }, 50)
     }
 
     onCompositionStartHandler() {
@@ -878,6 +1146,19 @@
       this._player.style.height = `${offsetHeight}px`
       this._container.style.maxWidth = `${(this.horizontal / this.vertical) * offsetHeight}px`
       this._aspect.style.paddingBottom = `${(this.vertical / this.horizontal) * 100}%`
+
+      this.$nextTick(() => {
+        if (this._overlay) {
+          const rect = this._overlay.getBoundingClientRect()
+          if (this.cursorX === 0 && this.cursorY === 0) {
+            this.cursorX = rect.width / 2
+            this.cursorY = rect.height / 2
+          } else {
+            this.cursorX = Math.max(0, Math.min(rect.width, this.cursorX))
+            this.cursorY = Math.max(0, Math.min(rect.height, this.cursorY))
+          }
+        }
+      })
     }
 
     @Watch('focused')

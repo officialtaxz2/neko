@@ -11,6 +11,7 @@ export const namespaced = true
 export const state = () => ({
   id: '',
   clipboard: '',
+  clipboardHistory: [] as string[],
   locked: false,
   implicitHosting: true,
   fileTransfer: true,
@@ -43,6 +44,15 @@ export const mutations = mutationTree(state, {
 
   setClipboard(state, clipboard: string) {
     state.clipboard = clipboard
+    if (clipboard && clipboard.trim() !== '') {
+      const filtered = state.clipboardHistory.filter((item) => item !== clipboard)
+      filtered.unshift(clipboard)
+      state.clipboardHistory = filtered.slice(0, 10)
+    }
+  },
+
+  clearClipboardHistory(state) {
+    state.clipboardHistory = []
   },
 
   setKeyboardModifierState(state, { capsLock, numLock, scrollLock }) {

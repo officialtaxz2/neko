@@ -71,5 +71,5 @@
   import { Component, Vue } from 'vue-property-decorator'
 
   @Component({ name: 'neko-unsupported' })
-  export default class extends Vue {}
+  export default class NekoUnsupported extends Vue {}
 </script>

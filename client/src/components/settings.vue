@@ -35,6 +35,13 @@
           <span />
         </label>
       </li>
+      <li :class="{ 'disabled-setting': !is_touch_device }">
+        <span>{{ $t('setting.trackpad_mode') }}</span>
+        <label class="switch">
+          <input type="checkbox" v-model="trackpad_mode" :disabled="!is_touch_device" />
+          <span />
+        </label>
+      </li>
       <li>
         <span>{{ $t('setting.keyboard_layout') }}</span>
         <label class="select">
@@ -72,20 +79,43 @@
   .settings {
     flex: 1;
     display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background-color: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      transition: var(--transition-fluid);
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+    }
 
     ul {
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 5px 20px;
+      padding: 10px 24px;
 
       li {
         display: flex;
         flex-direction: row;
-        align-content: center;
-        justify-content: center;
-        border-bottom: 1px solid $background-secondary;
-        padding: 5px 0;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid oklch(from var(--text-subtle) l c h / 0.05);
+        padding: 14px 0;
         white-space: nowrap;
 
         &:last-child {
@@ -94,30 +124,47 @@
 
         span {
           margin-right: auto;
-          height: 24px;
-          line-height: 24px;
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--text-subtle);
         }
 
         button {
           cursor: pointer;
-          border-radius: 5px;
-          padding: 4px;
-          background: $style-primary;
-          color: $text-normal;
+          border-radius: 8px;
+          padding: 8px 16px;
+          background: linear-gradient(135deg, var(--color-cyber-mint) 0%, var(--color-cyber-mint-active) 100%);
+          color: #050508;
           text-align: center;
           text-transform: uppercase;
-          font-weight: bold;
-          line-height: 30px;
-          margin: 5px 0;
+          font-weight: 800;
+          font-size: 13px;
+          letter-spacing: 0.5px;
+          transition: var(--transition-fluid);
           border: none;
           display: block;
           width: 100%;
+          box-shadow: 0 4px 12px rgba(38, 230, 180, 0.15);
+
+          &:hover {
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 18px var(--color-cyber-mint-glow);
+            filter: brightness(1.05);
+          }
+
+          &:focus-visible {
+            box-shadow: 0 0 0 3px var(--bg-obsidian-deep), 0 0 0 6px var(--color-cyber-mint);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
         }
 
         .switch {
           justify-self: flex-end;
           position: relative;
-          width: 42px;
+          width: 44px;
           height: 24px;
 
           input {
@@ -133,19 +180,20 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: $background-tertiary;
-            transition: 0.2s;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            transition: var(--transition-fluid);
             border-radius: 34px;
 
             &:before {
               position: absolute;
               content: '';
-              height: 18px;
-              width: 18px;
+              height: 16px;
+              width: 16px;
               left: 3px;
               bottom: 3px;
-              background-color: white;
-              transition: 0.3s;
+              background-color: var(--text-pure);
+              transition: var(--transition-fluid);
               border-radius: 50%;
               box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             }
@@ -154,38 +202,55 @@
 
         input[type='checkbox'] {
           &:checked + span {
-            background-color: $style-primary;
+            background-color: var(--color-cyber-mint);
+            border-color: transparent;
+            box-shadow: 0 0 10px var(--color-cyber-mint-glow);
           }
 
           &:checked + span:before {
-            transform: translateX(18px);
+            transform: translateX(20px);
+            background-color: #050508;
           }
         }
 
         .slider {
           white-space: nowrap;
-          max-width: 120px;
+          max-width: 140px;
+          width: 100%;
+          display: flex;
+          align-items: center;
 
           input[type='range'] {
             display: inline-block;
-            background: transparent;
+            background: rgba(255, 255, 255, 0.12);
             appearance: none;
-            height: 24px;
-            max-width: 120px;
+            height: 4px;
+            width: 100%;
+            border-radius: 4px;
+            outline: none;
+            transition: var(--transition-fluid);
 
             &::-moz-range-thumb {
               height: 12px;
               width: 12px;
-              border-radius: 12px;
-              background: #fff;
+              border-radius: 50%;
+              background: var(--color-cyber-mint);
               cursor: pointer;
+              transition: var(--transition-fluid);
+              box-shadow: 0 0 8px var(--color-cyber-mint-glow);
+              border: none;
+
+              &:hover {
+                transform: scale(1.3);
+                background: #fff;
+                box-shadow: 0 0 12px var(--color-cyber-mint);
+              }
             }
 
             &::-moz-range-track {
               width: 100%;
               height: 4px;
-              cursor: pointer;
-              background: $style-primary;
+              background: transparent;
               border-radius: 2px;
             }
 
@@ -193,29 +258,38 @@
               appearance: none;
               height: 12px;
               width: 12px;
-              border-radius: 12px;
-              background: #fff;
+              border-radius: 50%;
+              background: var(--color-cyber-mint);
               cursor: pointer;
               margin-top: -4px;
+              transition: var(--transition-fluid);
+              box-shadow: 0 0 8px var(--color-cyber-mint-glow);
+
+              &:hover {
+                transform: scale(1.3);
+                background: #fff;
+                box-shadow: 0 0 12px var(--color-cyber-mint);
+              }
             }
 
             &::-webkit-slider-runnable-track {
               width: 100%;
               height: 4px;
-              cursor: pointer;
-              background: $style-primary;
+              background: transparent;
               border-radius: 2px;
+            }
+
+            &:hover {
+              background: rgba(255, 255, 255, 0.22);
+              height: 5px;
             }
           }
         }
 
         .select {
-          max-width: 120px;
-          text-align: right;
-
-          select:hover {
-            border: 1px solid $background-secondary;
-          }
+          width: 100%;
+          max-width: 154px;
+          position: relative;
 
           select {
             -webkit-appearance: none;
@@ -223,71 +297,114 @@
             appearance: none;
             display: block;
             width: 100%;
-            max-width: 100%;
-            height: 30px;
+            height: 34px;
             text-align: right;
-            padding: 0 5px 0 10px;
-            margin: 0;
-            line-height: 30px;
-            font-weight: bold;
-            font-size: 12px;
+            padding: 0 28px 0 12px;
+            line-height: 34px;
+            font-weight: 500;
+            font-size: 13px;
             text-overflow: ellipsis;
-            border: 1px solid transparent;
-            border-radius: 5px;
-            color: white;
-            background-color: $background-tertiary;
-            font-weight: lighter;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--text-pure);
+            background-color: var(--bg-obsidian-floating);
             cursor: pointer;
+            transition: var(--transition-fluid);
+            direction: rtl;
+
+            &:hover, &:focus {
+              border-color: var(--color-cyber-mint);
+              box-shadow: 0 0 8px var(--color-cyber-mint-glow);
+              outline: none;
+            }
 
             option {
-              font-weight: normal;
-              color: $text-normal;
-              background-color: $background-tertiary;
+              background-color: var(--bg-obsidian-floating);
+              color: var(--text-pure);
+              text-align: left;
+              direction: ltr;
             }
+          }
+
+          span {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            width: 7px;
+            height: 7px;
+            border-right: 1.5px solid var(--text-subtle);
+            border-bottom: 1.5px solid var(--text-subtle);
+            transform: translateY(-65%) rotate(45deg);
+            pointer-events: none;
+            transition: var(--transition-fluid);
+          }
+
+          &:focus-within span {
+            border-color: var(--color-cyber-mint);
           }
         }
 
         .input {
           display: block;
-          height: 30px;
+          height: 34px;
           text-align: right;
-          padding: 0 10px;
+          padding: 0 12px;
           margin-left: 10px;
-          line-height: 30px;
+          line-height: 34px;
           text-overflow: ellipsis;
-          border: 1px solid transparent;
-          border-radius: 5px;
-          color: white;
-          background-color: $background-tertiary;
-          font-weight: lighter;
+          border: 1px solid var(--glass-border);
+          border-radius: 8px;
+          color: var(--text-pure);
+          background-color: var(--bg-obsidian-floating);
+          font-weight: 400;
+          font-size: 13px;
+          transition: var(--transition-fluid);
           user-select: auto;
 
+          &:focus {
+            border-color: var(--color-cyber-mint);
+            box-shadow: 0 0 8px var(--color-cyber-mint-glow);
+            outline: none;
+          }
+
           &::selection {
-            background: $text-normal;
+            background: rgba(38, 230, 180, 0.35);
           }
 
           &[disabled] {
-            background: none;
+            background: rgba(255, 255, 255, 0.02);
+            border-color: transparent;
+            color: var(--text-muted-ok);
           }
         }
 
         &.broadcast {
           display: flex;
           flex-direction: column;
+          align-items: stretch;
 
           div {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             display: flex;
+            align-items: center;
             justify-content: space-between;
 
             button {
               flex-shrink: 1;
               width: auto !important;
               margin: 0;
-              padding: 0 10px;
+              padding: 0 16px;
+              height: 34px;
+              line-height: 34px;
 
               &.btn-red {
-                background: #a62626;
+                background: linear-gradient(135deg, #a62626 0%, #801d1d 100%);
+                color: #fff;
+                box-shadow: 0 4px 12px rgba(166, 38, 38, 0.2);
+
+                &:hover {
+                  box-shadow: 0 6px 18px rgba(166, 38, 38, 0.35);
+                }
               }
             }
           }
@@ -296,6 +413,14 @@
             text-align: left;
             width: auto !important;
             margin: 0;
+          }
+        }
+
+        &.disabled-setting {
+          opacity: 0.4;
+
+          .switch span {
+            cursor: not-allowed;
           }
         }
       }
@@ -307,7 +432,7 @@
   import { Component, Watch, Vue } from 'vue-property-decorator'
 
   @Component({ name: 'neko-settings' })
-  export default class extends Vue {
+  export default class NekoSettings extends Vue {
     private broadcast_url: string = ''
 
     get admin() {
@@ -356,6 +481,24 @@
 
     set chat_sound(value: boolean) {
       this.$accessor.settings.setSound(value)
+    }
+
+    get is_touch_device() {
+      if (typeof window === 'undefined') return false
+      return (
+        'ontouchstart' in window ||
+        navigator.maxTouchPoints > 0 ||
+        /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) ||
+        window.innerWidth <= 1024
+      )
+    }
+
+    get trackpad_mode() {
+      return this.$accessor.settings.trackpad_mode
+    }
+
+    set trackpad_mode(value: boolean) {
+      this.$accessor.settings.setTrackpadMode(value)
     }
 
     get keyboard_layouts_list() {

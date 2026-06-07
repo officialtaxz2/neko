@@ -32,11 +32,63 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   private $accessor!: typeof accessor
   private url!: string
 
+  public isDemo = false
+  private demoInterval?: any
+  private simMouseX = 640
+  private simMouseY = 360
+  private simKeys: string[] = []
+  private simRipples: Array<{ x: number; y: number; r: number; max: number }> = []
+  private simMembers: any[] = []
+
+  public setDemoMode(isDemo: boolean) {
+    this.isDemo = isDemo
+  }
+
   init(vue: Vue) {
-    const url =
-      process.env.NODE_ENV === 'development'
-        ? `ws://${location.host.split(':')[0]}:${process.env.VUE_APP_SERVER_PORT}/ws`
-        : location.protocol.replace(/^http/, 'ws') + '//' + location.host + location.pathname.replace(/\/$/, '') + '/ws'
+    let port: string | undefined = undefined
+    try {
+      if (typeof process !== 'undefined' && process.env) {
+        port = process.env.VUE_APP_SERVER_PORT
+      }
+    } catch (e) {}
+
+    try {
+      const meta = import.meta as any
+      if (meta && meta.env) {
+        port = port || (meta.env.VITE_APP_SERVER_PORT as string)
+      }
+    } catch (e) {}
+
+    if (!port || port === 'undefined') {
+      port = location.port || '8080'
+    }
+
+    let isDev = false
+    try {
+      if (typeof process !== 'undefined' && process.env) {
+        isDev = process.env.NODE_ENV === 'development'
+      } else {
+        const meta = import.meta as any
+        if (meta && meta.env) {
+          isDev = meta.env.DEV
+        }
+      }
+    } catch (e) {}
+
+    const isSecure = location.protocol === 'https:'
+    const wsScheme = isSecure ? 'wss' : 'ws'
+    const hostname = location.hostname
+
+    let url = ''
+    if (isDev) {
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+        url = `${wsScheme}://${hostname}:${port}/ws`
+      } else {
+        url = `${wsScheme}://${location.host}/ws`
+      }
+    } else {
+      url = `${wsScheme}://${location.host}${location.pathname.replace(/\/$/, '')}/ws`
+    }
 
     this.initWithURL(vue, url)
   }
@@ -57,11 +109,33 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.$accessor.chat.reset()
   }
 
+  sendData(event: string, data: any) {
+    if (this.isDemo) {
+      if (event === 'mousemove') {
+        this.simMouseX = data.x
+        this.simMouseY = data.y
+      } else if (event === 'mousedown') {
+        this.simRipples.push({ x: this.simMouseX, y: this.simMouseY, r: 1, max: 25 })
+      } else if (event === 'keydown') {
+        const keyName = this.getKeyName(data.key)
+        this.simKeys.push(keyName)
+        if (this.simKeys.length > 5) this.simKeys.shift()
+      }
+      return
+    }
+    super.sendData(event as any, data)
+  }
+
   login(password: string, displayname: string) {
-    this.connect(this.url, password, displayname)
+    if (this.isDemo || password.toLowerCase() === 'demo') {
+      this.startDemo(displayname)
+    } else {
+      this.connect(this.url, password, displayname)
+    }
   }
 
   logout() {
+    this.stopDemo()
     this.disconnect()
     this.cleanup()
     this.$vue.$swal({
@@ -69,6 +143,500 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       icon: 'info',
       confirmButtonText: this.$vue.$t('connection.button_confirm') as string,
     })
+  }
+
+  private startDemo(displayname: string) {
+    this.isDemo = true
+    this._displayname = displayname
+    this[EVENT.CONNECTING]()
+
+    setTimeout(() => {
+      if (!this.isDemo) return
+
+      this._id = 'demo-user-id'
+      this._state = 'connected'
+
+      this._ws = {
+        readyState: WebSocket.OPEN,
+        send: (msg: string) => {
+          this.handleDemoWSMessage(msg)
+        },
+        close: () => {
+          this.stopDemo()
+        }
+      } as any
+
+      this._peer = {
+        close: () => {
+          this.stopDemo()
+        }
+      } as any
+
+      this[EVENT.CONNECTED]()
+
+      // Init system locks & files
+      this[EVENT.SYSTEM.INIT]({
+        implicit_hosting: false,
+        locks: {},
+        file_transfer: true,
+        heartbeat_interval: 10,
+      })
+
+      this.simMembers = [
+        { id: 'demo-user-id', displayname, admin: true, muted: false },
+        { id: 'nekobot', displayname: 'NekoBot 🐱', admin: false, muted: false },
+        { id: 'alice', displayname: 'Alice 🌸', admin: false, muted: false },
+        { id: 'bob', displayname: 'Bob 🚀', admin: true, muted: false },
+      ]
+
+      // Set initial player list
+      this[EVENT.MEMBER.LIST]({
+        members: this.simMembers
+      })
+
+      // Set resolution mapping
+      this[EVENT.SCREEN.RESOLUTION]({
+        id: '',
+        width: 1280,
+        height: 720,
+        rate: 30
+      })
+
+      // Send initial configurations list
+      this[EVENT.SCREEN.CONFIGURATIONS]({
+        configurations: {
+          '0': { width: 1920, height: 1080, rates: { '0': 30, '1': 60 } },
+          '1': { width: 1280, height: 720, rates: { '0': 30, '2': 60 } },
+          '2': { width: 1024, height: 768, rates: { '0': 30, '3': 60 } },
+          '3': { width: 800, height: 600, rates: { '0': 30 } }
+        }
+      })
+
+      // Nice welcoming system chat lines
+      setTimeout(() => {
+        this[EVENT.CHAT.MESSAGE]({
+          id: 'nekobot',
+          content: 'Nyan! Hello ' + displayname + '! Willkommen im n.eko Sandbox-Modus! 🐱',
+        })
+      }, 700)
+
+      setTimeout(() => {
+        this[EVENT.CHAT.MESSAGE]({
+          id: 'alice',
+          content: 'Hi! Du kannst die Steuerung oben rechts (Maus-Symbol) aktivieren und den Cursor im Fenster bewegen!',
+        })
+      }, 1600)
+
+      // Initialize the canvas and streamer
+      this.initDemoStream()
+    }, 600)
+  }
+
+  private stopDemo() {
+    this.isDemo = false
+    if (this.demoInterval) {
+      clearInterval(this.demoInterval)
+      this.demoInterval = undefined
+    }
+    this._ws = undefined
+    this._peer = undefined
+  }
+
+  private handleDemoWSMessage(msgJson: string) {
+    try {
+      const data = JSON.parse(msgJson)
+      const event = data.event
+      const payload = data
+
+      if (event === EVENT.CHAT.MESSAGE) {
+        const text = payload.content
+        setTimeout(() => {
+          this[EVENT.CHAT.MESSAGE]({
+            id: 'demo-user-id',
+            content: text
+          })
+
+          setTimeout(() => {
+            let reply = ''
+            const lower = text.toLowerCase()
+            if (lower.includes('hallo') || lower.includes('hi') || lower.includes('hello')) {
+              reply = 'Hallo! Wie gefällt dir das n.eko Interface? Es läuft alles direkt in-browser!'
+            } else if (lower.includes('maus') || lower.includes('steuerung') || lower.includes('mouse') || lower.includes('control')) {
+              reply = 'Wenn du die Steuerung übernimmst, siehst du den Mauszeiger und Klick-Wellen live auf dem Desktop!'
+            } else if (lower.includes('cat') || lower.includes('neko') || lower.includes('katze')) {
+              reply = 'Miau! 🐱 Katzen sind hier herzlich willkommen!'
+            } else {
+              reply = 'Super! Ich habe deine Nachricht erhalten: "' + text + '". Der Chat funktioniert einwandfrei!'
+            }
+
+            const responders = ['nekobot', 'alice', 'bob']
+            const responder = responders[Math.floor(Math.random() * responders.length)]
+            this[EVENT.CHAT.MESSAGE]({
+              id: responder,
+              content: reply
+            })
+          }, 850)
+        }, 50)
+      } else if (event === EVENT.CONTROL.REQUEST) {
+        setTimeout(() => {
+          this[EVENT.CONTROL.LOCKED]({
+            id: 'demo-user-id'
+          })
+          this[EVENT.CHAT.MESSAGE]({
+            id: 'nekobot',
+            content: 'Du steuerst jetzt den Desktop! Bewege/klicke deine Maus über dem Bildschirm, um Interaktionen zu testen.'
+          })
+        }, 100)
+      } else if (event === EVENT.CONTROL.RELEASE) {
+        setTimeout(() => {
+          this[EVENT.CONTROL.RELEASE]({
+            id: 'demo-user-id'
+          })
+        }, 100)
+      } else if (event === EVENT.CHAT.EMOTE) {
+        setTimeout(() => {
+          this[EVENT.CHAT.EMOTE]({
+            id: 'demo-user-id',
+            emote: payload.emote
+          })
+        }, 50)
+      } else if (event === EVENT.FILETRANSFER.REFRESH) {
+        setTimeout(() => {
+          this[EVENT.FILETRANSFER.LIST]({
+            cwd: '/home/neko/Downloads',
+            files: [
+              { name: 'lustiges_katzenbild.jpg', type: 'file', size: 1048576 },
+              { name: 'neko_simulations_anleitung.txt', type: 'file', size: 2450 },
+              { name: 'Web_Projekte_Ordner', type: 'dir', size: 0 },
+              { name: 'mein_privater_schluessel.pem', type: 'file', size: 1024 }
+            ]
+          })
+        }, 200)
+      } else if (event === EVENT.SCREEN.SET) {
+        setTimeout(() => {
+          this[EVENT.SCREEN.RESOLUTION]({
+            id: 'demo-user-id',
+            width: payload.width,
+            height: payload.height,
+            rate: payload.rate
+          })
+        }, 200)
+      } else if (event === EVENT.SCREEN.CONFIGURATIONS) {
+        setTimeout(() => {
+          this[EVENT.SCREEN.CONFIGURATIONS]({
+            configurations: {
+              '0': { width: 1920, height: 1080, rates: { '0': 30, '1': 60 } },
+              '1': { width: 1280, height: 720, rates: { '0': 30, '2': 60 } },
+              '2': { width: 1024, height: 768, rates: { '0': 30, '3': 60 } },
+              '3': { width: 800, height: 600, rates: { '0': 30 } }
+            }
+          })
+        }, 100)
+      } else if (event === EVENT.ADMIN.LOCK) {
+        setTimeout(() => {
+          this[EVENT.ADMIN.LOCK]({
+            event: EVENT.ADMIN.LOCK,
+            id: 'demo-user-id',
+            resource: payload.resource
+          })
+        }, 100)
+      } else if (event === EVENT.ADMIN.UNLOCK) {
+        setTimeout(() => {
+          this[EVENT.ADMIN.UNLOCK]({
+            event: EVENT.ADMIN.UNLOCK,
+            id: 'demo-user-id',
+            resource: payload.resource
+          })
+        }, 100)
+      } else if (event === EVENT.ADMIN.MUTE) {
+        setTimeout(() => {
+          this.simMembers = this.simMembers.map(m => m.id === payload.id ? { ...m, muted: true } : m)
+          this[EVENT.ADMIN.MUTE]({
+            id: 'demo-user-id',
+            target: payload.id
+          })
+        }, 100)
+      } else if (event === EVENT.ADMIN.UNMUTE) {
+        setTimeout(() => {
+          this.simMembers = this.simMembers.map(m => m.id === payload.id ? { ...m, muted: false } : m)
+          this[EVENT.ADMIN.UNMUTE]({
+            id: 'demo-user-id',
+            target: payload.id
+          })
+        }, 100)
+      } else if (event === EVENT.ADMIN.BAN) {
+        setTimeout(() => {
+          const targetId = payload.id
+          this[EVENT.ADMIN.BAN]({
+            id: 'demo-user-id',
+            target: targetId
+          })
+          this.simMembers = this.simMembers.filter(m => m.id !== targetId)
+          this[EVENT.MEMBER.DISCONNECTED]({
+            id: targetId
+          })
+        }, 100)
+      } else if (event === EVENT.ADMIN.KICK) {
+        setTimeout(() => {
+          const targetId = payload.id
+          this[EVENT.ADMIN.KICK]({
+            id: 'demo-user-id',
+            target: targetId
+          })
+          this.simMembers = this.simMembers.filter(m => m.id !== targetId)
+          this[EVENT.MEMBER.DISCONNECTED]({
+            id: targetId
+          })
+        }, 100)
+      } else if (event === EVENT.CONTROL.GIVE || event === EVENT.ADMIN.GIVE) {
+        setTimeout(() => {
+          const handler = event === EVENT.CONTROL.GIVE ? this[EVENT.CONTROL.GIVE] : this[EVENT.ADMIN.GIVE]
+          handler.call(this, {
+            id: 'demo-user-id',
+            target: payload.id
+          })
+        }, 100)
+      } else if (event === EVENT.ADMIN.CONTROL) {
+        setTimeout(() => {
+          this[EVENT.ADMIN.CONTROL]({
+            id: 'demo-user-id',
+            target: this.$accessor.remote.id
+          })
+        }, 100)
+      } else if (event === EVENT.ADMIN.RELEASE) {
+        setTimeout(() => {
+          this[EVENT.ADMIN.RELEASE]({
+            id: 'demo-user-id',
+            target: this.$accessor.remote.id
+          })
+        }, 100)
+      }
+    } catch (e) {
+      console.error('Demo WebSocket parse/exec error:', e)
+    }
+  }
+
+  private initDemoStream() {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1280
+    canvas.height = 720
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let bounceX = 200
+    let bounceY = 200
+    let bounceDX = 4
+    let bounceDY = 3
+    let gradAngle = 0
+
+    const drawFrame = () => {
+      if (!this.isDemo) return
+
+      ctx.fillStyle = '#000000'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      gradAngle += 0.005
+      const grad = ctx.createLinearGradient(
+        640 + Math.cos(gradAngle) * 300,
+        360 + Math.sin(gradAngle) * 200,
+        640 - Math.cos(gradAngle) * 300,
+        360 - Math.sin(gradAngle) * 200
+      )
+      grad.addColorStop(0, '#101216')
+      grad.addColorStop(0.5, '#171a21')
+      grad.addColorStop(1, '#0c0e12')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      ctx.strokeStyle = 'rgba(114, 137, 218, 0.04)'
+      ctx.lineWidth = 1
+      for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath()
+        ctx.moveTo(x, 0)
+        ctx.lineTo(x, canvas.height)
+        ctx.stroke()
+      }
+      for (let y = 0; y < canvas.height; y += 40) {
+        ctx.beginPath()
+        ctx.moveTo(0, y)
+        ctx.lineTo(canvas.width, y)
+        ctx.stroke()
+      }
+
+      ctx.fillStyle = 'rgba(23, 26, 33, 0.85)'
+      ctx.strokeStyle = 'rgba(114, 137, 218, 0.4)'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      if ((ctx as any).roundRect) {
+        ;(ctx as any).roundRect(80, 80, 1120, 560, 10)
+      } else {
+        ctx.rect(80, 80, 1120, 560)
+      }
+      ctx.fill()
+      ctx.stroke()
+
+      ctx.fillStyle = 'rgba(12, 14, 18, 0.95)'
+      ctx.beginPath()
+      if ((ctx as any).roundRect) {
+        ;(ctx as any).roundRect(80, 80, 1120, 50, [10, 10, 0, 0])
+      } else {
+        ctx.rect(80, 80, 1120, 50)
+      }
+      ctx.fill()
+      ctx.stroke()
+
+      const dotColors = ['#ff5f56', '#ffbd2e', '#27c93f']
+      dotColors.forEach((color, i) => {
+        ctx.fillStyle = color
+        ctx.beginPath()
+        ctx.arc(110 + i * 20, 105, 6, 0, Math.PI * 2)
+        ctx.fill()
+      })
+
+      ctx.fillStyle = '#8e9297'
+      ctx.font = 'bold 15px sans-serif'
+      ctx.fillText('n.eko Workspace - Simulated Environment (AISTUDIO_CONTAINER)', 180, 111)
+
+      ctx.fillStyle = 'rgba(8, 10, 13, 0.6)'
+      ctx.beginPath()
+      if ((ctx as any).roundRect) {
+        ;(ctx as any).roundRect(110, 160, 400, 240, 8)
+      } else {
+        ctx.rect(110, 160, 400, 240)
+      }
+      ctx.fill()
+
+      ctx.fillStyle = '#ffffff'
+      ctx.font = '16px monospace'
+      ctx.fillText('⚡ CPU: ' + (15 + Math.sin(Date.now() / 1500) * 8).toFixed(1) + '%', 140, 200)
+      ctx.fillText('💾 RAM: 4.1 GB / 8.0 GB', 140, 230)
+      ctx.fillText('📡 Ping: ' + (5 + Math.floor(Math.random() * 3)) + ' ms', 140, 260)
+      ctx.fillText('📊 FPS: 30.0 (Smooth)', 140, 290)
+      ctx.fillText('📁 Mount: /home/neko/Downloads', 140, 320)
+      ctx.fillText('⚙️ OS: Alpine Linux x86_64', 140, 350)
+
+      ctx.fillStyle = 'rgba(8, 10, 13, 0.6)'
+      ctx.beginPath()
+      if ((ctx as any).roundRect) {
+        ;(ctx as any).roundRect(870, 160, 290, 80, 8)
+      } else {
+        ctx.rect(870, 160, 290, 80)
+      }
+      ctx.fill()
+
+      ctx.fillStyle = '#7289da'
+      ctx.font = 'bold 14px monospace'
+      ctx.fillText('Live Server-Zeit', 890, 192)
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 22px monospace'
+      ctx.fillText(new Date().toLocaleTimeString(), 890, 222)
+
+      ctx.fillStyle = 'rgba(114, 137, 218, 0.15)'
+      ctx.beginPath()
+      if ((ctx as any).roundRect) {
+        ;(ctx as any).roundRect(110, 420, 1050, 180, 8)
+      } else {
+        ctx.rect(110, 420, 1050, 180)
+      }
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(114, 137, 218, 0.3)'
+      ctx.stroke()
+
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 20px sans-serif'
+      ctx.fillText('🚀 n.eko Client Simulations-Modus Aktiv!', 140, 465)
+      ctx.font = '15px sans-serif'
+      ctx.fillStyle = '#b9bbbe'
+      ctx.fillText('Dieses simulierte WebRTC-Videobild läuft komplett lokal im Browser, um KVM/X11-Containerbeschränkungen zu umgehen.', 140, 495)
+      ctx.fillText('• Du kannst im Chat-Menü rechts Nachrichten schreiben. Unsere Bots antworten dir sofort!', 140, 520)
+      ctx.fillText('• Aktiviere die Steuerung, um Mauszeiger und Klick-Schockwellen live auf dem Bildschirm zu sehen!', 140, 545)
+      ctx.fillText('• Durchsuche Dateien, schalte den Ton stumm, passe das Layout an und verwalte die Benutzerliste.', 140, 570)
+
+      bounceX += bounceDX
+      bounceY += bounceDY
+      if (bounceX < 550 || bounceX > 820) bounceDX = -bounceDX
+      if (bounceY < 180 || bounceY > 370) bounceDY = -bounceDY
+
+      ctx.fillStyle = 'rgba(114, 137, 218, 0.9)'
+      ctx.beginPath()
+      if ((ctx as any).roundRect) {
+        ;(ctx as any).roundRect(bounceX, bounceY, 120, 80, 6)
+      } else {
+        ctx.rect(bounceX, bounceY, 120, 80)
+      }
+      ctx.fill()
+
+      ctx.fillStyle = '#ffffff'
+      ctx.font = 'bold 15px sans-serif'
+      ctx.fillText('🐱 n.eko', bounceX + 15, bounceY + 35)
+      ctx.font = '12px monospace'
+      ctx.fillText('bounce.exe', bounceX + 15, bounceY + 58)
+
+      this.simRipples.forEach((ripple) => {
+        ripple.r += 1.5
+        ctx.beginPath()
+        ctx.arc(ripple.x, ripple.y, ripple.r, 0, Math.PI * 2)
+        ctx.strokeStyle = 'rgba(114, 137, 218, ' + (1 - ripple.r / ripple.max) + ')'
+        ctx.lineWidth = 3
+        ctx.stroke()
+      })
+      this.simRipples = this.simRipples.filter((ripple) => ripple.r < ripple.max)
+
+      ctx.fillStyle = '#ffffff'
+      ctx.strokeStyle = '#000000'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.moveTo(this.simMouseX, this.simMouseY)
+      ctx.lineTo(this.simMouseX + 15, this.simMouseY + 15)
+      ctx.lineTo(this.simMouseX + 6, this.simMouseY + 17)
+      ctx.closePath()
+      ctx.fill()
+      ctx.stroke()
+
+      if (this.simKeys.length > 0) {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)'
+        ctx.beginPath()
+        if ((ctx as any).roundRect) {
+          ;(ctx as any).roundRect(550, 160, 300, 45, 6)
+        } else {
+          ctx.rect(550, 160, 300, 45)
+        }
+        ctx.fill()
+
+        ctx.fillStyle = '#27c93f'
+        ctx.font = 'bold 14px monospace'
+        ctx.fillText('⌨️ Tasten-Input: ' + this.simKeys.join(' '), 565, 187)
+      }
+    }
+
+    this.demoInterval = window.setInterval(drawFrame, 33)
+
+    let stream: MediaStream | null = null
+    const c = canvas as any
+    if (c.captureStream) {
+      stream = c.captureStream(15)
+    } else if (c.mozCaptureStream) {
+      stream = c.mozCaptureStream(15)
+    }
+
+    if (stream) {
+      const track = stream.getVideoTracks()[0]
+      this.$accessor.video.addTrack([track, stream])
+      this.$accessor.video.setStream(0)
+      this.$accessor.video.setPlayable(true)
+      this.$accessor.video.play()
+    }
+  }
+
+  private getKeyName(code: number): string {
+    if (code >= 0x41 && code <= 0x5a) return String.fromCharCode(code)
+    if (code >= 0x61 && code <= 0x7a) return String.fromCharCode(code - 32)
+    if (code === 0xff0d) return 'Enter'
+    if (code === 0xff08) return 'Back'
+    if (code === 0xff09) return 'Tab'
+    if (code === 0xff1b) return 'Esc'
+    if (code === 0x0020) return 'Leertaste'
+    return 'Key' + code.toString(16)
   }
 
   /////////////////////////////

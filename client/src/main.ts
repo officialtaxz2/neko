@@ -1,6 +1,7 @@
 import './assets/styles/main.scss'
 
 import Vue from 'vue'
+import 'vuex'
 
 import Notifications from 'vue-notification'
 import ToolTip from 'v-tooltip'
@@ -32,4 +33,4 @@ new Vue({
     this.$client.init(this)
     this.$accessor.initialise()
   },
-}).$mount('#neko')
+} as any).$mount('#neko')

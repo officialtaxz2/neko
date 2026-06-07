@@ -34,7 +34,7 @@
   import { Component, Ref, Vue, Prop } from 'vue-property-decorator'
 
   @Component({ name: 'neko-emote' })
-  export default class extends Vue {
+  export default class NekoEmote extends Vue {
     @Prop({
       required: true,
     })

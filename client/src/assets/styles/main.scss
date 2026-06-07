@@ -26,3 +26,15 @@ html, body {
   height: 100vh;
   min-width: 320px;
 }
+
+button:focus-visible,
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid var(--color-cyber-mint) !important;
+  outline-offset: 2.5px !important;
+  box-shadow: none !important;
+}
+
