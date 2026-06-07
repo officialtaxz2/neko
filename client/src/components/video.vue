@@ -1,6 +1,10 @@
 <template>
   <div ref="component" class="video">
-    <div ref="player" :class="['player', hosted ? 'has-control' : 'no-control', { fullscreen: fullscreen }]">
+    <div
+      ref="player"
+      :class="['player', hosted ? 'has-control' : 'no-control', { fullscreen: fullscreen }]"
+      :style="{ '--horizontal': horizontal, '--vertical': vertical }"
+    >
       <div ref="container" class="player-container">
         <video ref="video" playsinline />
         <div class="emotes">
@@ -240,6 +244,7 @@
         margin: 0 !important;
 
         .player-container {
+          max-width: calc((var(--horizontal, 16) / var(--vertical, 9)) * 100vh) !important;
           border: none !important;
           border-color: transparent !important;
           border-radius: 0 !important;
@@ -742,6 +747,7 @@
 
     mounted() {
       this._container.addEventListener('resize', this.onResize)
+      window.addEventListener('resize', this.onResize)
       this.onVolumeChanged(this.volume)
       this.onMutedChanged(this.muted)
       this.onStreamChanged(this.stream)
@@ -791,6 +797,7 @@
       if (this._container) {
         this._container.removeEventListener('resize', this.onResize)
       }
+      window.removeEventListener('resize', this.onResize)
 
       if (this._video) {
         this._video.removeEventListener('canplaythrough', this.onVideoCanPlayThrough)
