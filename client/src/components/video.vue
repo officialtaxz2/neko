@@ -904,13 +904,37 @@
     }
 
     requestFullscreen() {
-      // try to fullscreen player element
-      if (elementRequestFullscreen(this._player)) {
-        this.onResize()
+      // Try to fullscreen the player element.
+      // Use the Promise returned by requestFullscreen() to guarantee
+      // state is updated, since the fullscreenchange event may not
+      // fire reliably in all browsers.
+      if (typeof this._player.requestFullscreen === 'function') {
+        this._player.requestFullscreen().then(() => {
+          this.onFullscreenChangeHandler()
+        }).catch(() => {})
+        return
+        //@ts-ignore
+      } else if (typeof this._player.webkitRequestFullscreen === 'function') {
+        //@ts-ignore
+        this._player.webkitRequestFullscreen()
+        // Prefixed variants don't return Promises, use a short delay
+        setTimeout(() => this.onFullscreenChangeHandler(), 100)
+        return
+        //@ts-ignore
+      } else if (typeof this._player.mozRequestFullScreen === 'function') {
+        //@ts-ignore
+        this._player.mozRequestFullScreen()
+        setTimeout(() => this.onFullscreenChangeHandler(), 100)
+        return
+        //@ts-ignore
+      } else if (typeof this._player.msRequestFullScreen === 'function') {
+        //@ts-ignore
+        this._player.msRequestFullScreen()
+        setTimeout(() => this.onFullscreenChangeHandler(), 100)
         return
       }
 
-      // fallback to fullscreen video itself (on mobile devices)
+      // Fallback: fullscreen the video itself (mobile devices)
       if (elementRequestFullscreen(this._video)) {
         this.onResize()
         return
