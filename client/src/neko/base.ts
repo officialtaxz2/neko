@@ -296,9 +296,15 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     }
 
     if (lite !== true) {
-      this._peer = new RTCPeerConnection({
-        iceServers: servers,
-      })
+      try {
+        const cleanServers = (servers || []).filter((s) => s && s.urls)
+        this._peer = new RTCPeerConnection({
+          iceServers: cleanServers,
+        })
+      } catch (err) {
+        this.emit('warn', `failed to create peer connection with iceServers, falling back to clean connection`, err)
+        this._peer = new RTCPeerConnection()
+      }
     } else {
       this._peer = new RTCPeerConnection()
     }
@@ -380,7 +386,11 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     await this._peer.setRemoteDescription({ type: 'offer', sdp })
 
     for (const candidate of this._candidates) {
-      await this._peer.addIceCandidate(candidate)
+      try {
+        await this._peer.addIceCandidate(candidate)
+      } catch (err) {
+        this.emit('warn', 'failed to add buffered rtc ice candidate', err)
+      }
     }
     this._candidates = []
 
@@ -440,11 +450,18 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
 
     if (event === EVENT.SIGNAL.CANDIDATE) {
       const { data } = payload as SignalCandidatePayload
-      const candidate: RTCIceCandidate = JSON.parse(data)
-      if (this._peer) {
-        this._peer.addIceCandidate(candidate)
-      } else {
-        this._candidates.push(candidate)
+      try {
+        const candidateInit = JSON.parse(data)
+        const candidate = new RTCIceCandidate(candidateInit)
+        if (this._peer) {
+          this._peer.addIceCandidate(candidate).catch((err) => {
+            this.emit('warn', 'failed to add rtc ice candidate', err)
+          })
+        } else {
+          this._candidates.push(candidate)
+        }
+      } catch (err) {
+        this.emit('warn', 'failed to parse or add rtc ice candidate', err)
       }
       return
     }

@@ -635,6 +635,16 @@
         // @ts-ignore
         this._video.src = window.URL.createObjectURL(this.stream) // for older browsers
       }
+
+      if (this.playing) {
+        this.$nextTick(() => {
+          if (this._video) {
+            this._video.play().catch((err) => {
+              console.warn('[Neko] Failed to play new stream:', err)
+            })
+          }
+        })
+      }
     }
 
     @Watch('playing')
@@ -696,6 +706,8 @@
       onFullscreenChange(this._player, this.onFullscreenChangeHandler)
 
       this._video.addEventListener('canplaythrough', this.onVideoCanPlayThrough)
+      this._video.addEventListener('canplay', this.onVideoCanPlayThrough)
+      this._video.addEventListener('loadedmetadata', this.onVideoCanPlayThrough)
       this._video.addEventListener('ended', this.onVideoEnded)
       this._video.addEventListener('error', this.onVideoError)
       this._video.addEventListener('volumechange', this.onVideoVolumeChange)
@@ -731,6 +743,8 @@
 
       if (this._video) {
         this._video.removeEventListener('canplaythrough', this.onVideoCanPlayThrough)
+        this._video.removeEventListener('canplay', this.onVideoCanPlayThrough)
+        this._video.removeEventListener('loadedmetadata', this.onVideoCanPlayThrough)
         this._video.removeEventListener('ended', this.onVideoEnded)
         this._video.removeEventListener('error', this.onVideoError)
         this._video.removeEventListener('volumechange', this.onVideoVolumeChange)
