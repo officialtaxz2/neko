@@ -506,7 +506,10 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       this.emit('warn', `no stream provided for track ${event.track.id}(${event.track.label}), creating fallback MediaStream`)
       stream = new MediaStream([event.track])
     }
-    this[EVENT.TRACK]({ ...event, streams: [stream] } as any)
+    this[EVENT.TRACK]({
+      track: event.track,
+      streams: [stream],
+    } as any)
   }
 
   private onError(event: Event) {
