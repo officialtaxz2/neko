@@ -226,6 +226,23 @@
         }
       }
 
+      /* Fullscreen: strip all cosmetic styling so video truly fills the screen */
+      &:fullscreen,
+      &:-webkit-full-screen,
+      &:-moz-full-screen,
+      &:-ms-fullscreen {
+        background: #000 !important;
+        overflow: hidden !important;
+
+        .player-container {
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          animation: none !important;
+          max-width: none !important;
+        }
+      }
+
       .player-container {
         position: relative;
         width: 100%;
