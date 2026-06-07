@@ -58,19 +58,11 @@ export function isFullscreen(): boolean {
 }
 
 export function onFullscreenChange(el: HTMLElement, fn: () => void) {
-  if (el.onfullscreenchange === null) {
-    el.onfullscreenchange = fn
-    //@ts-ignore
-  } else if (el.onmsfullscreenchange === null) {
-    //@ts-ignore
-    el.onmsfullscreenchange = fn
-    //@ts-ignore
-  } else if (el.onmozfullscreenchange === null) {
-    //@ts-ignore
-    el.onmozfullscreenchange = fn
-    //@ts-ignore
-  } else if (el.onwebkitfullscreenchange === null) {
-    //@ts-ignore
-    el.onwebkitfullscreenchange = fn
+  // Use addEventListener for reliable cross-browser fullscreen detection.
+  // The old property-check approach (el.onfullscreenchange === null) could
+  // silently fail when the property was undefined instead of null.
+  const events = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+  for (const event of events) {
+    el.addEventListener(event, fn)
   }
 }
