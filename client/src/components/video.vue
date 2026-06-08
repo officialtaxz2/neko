@@ -1041,12 +1041,9 @@
       this.cursorX = Math.max(0, Math.min(rect.width, e.clientX - rect.left))
       this.cursorY = Math.max(0, Math.min(rect.height, e.clientY - rect.top))
 
-      const calX = this.trackpad_offset_x
-      const calY = this.trackpad_offset_y
-
       this.$client.sendData('mousemove', {
-        x: Math.max(0, Math.min(w, Math.round((w / rect.width) * this.cursorX) + calX)),
-        y: Math.max(0, Math.min(h, Math.round((h / rect.height) * this.cursorY) + calY)),
+        x: Math.max(0, Math.min(w, Math.round((w / rect.width) * this.cursorX))),
+        y: Math.max(0, Math.min(h, Math.round((h / rect.height) * this.cursorY))),
       })
     }
 
@@ -1235,12 +1232,12 @@
       if (!this._overlay) return
       const rect = this._overlay.getBoundingClientRect()
 
-      const calX = this.trackpad_offset_x
-      const calY = this.trackpad_offset_y
+      const calX = this.trackpadActive ? this.trackpad_offset_x : 0
+      const calY = this.trackpadActive ? this.trackpad_offset_y : 0
 
       this.$client.sendData('mousemove', {
-        x: Math.max(0, Math.min(w, Math.round((w / rect.width) * this.cursorX) + calX)),
-        y: Math.max(0, Math.min(h, Math.round((h / rect.height) * this.cursorY) + calY)),
+        x: Math.max(0, Math.min(w, Math.round((w / rect.width) * (this.cursorX + calX)))),
+        y: Math.max(0, Math.min(h, Math.round((h / rect.height) * (this.cursorY + calY)))),
       })
     }
 
@@ -1254,11 +1251,11 @@
       const { w, h } = this.$accessor.video.resolution
 
       if (rect.width > 0 && rect.height > 0 && w > 0 && h > 0) {
-        const calX = this.trackpad_offset_x
-        const calY = this.trackpad_offset_y
+        const calX = this.trackpadActive ? this.trackpad_offset_x : 0
+        const calY = this.trackpadActive ? this.trackpad_offset_y : 0
 
-        this.cursorX = Math.max(0, Math.min(rect.width, (x - calX) * (rect.width / w)))
-        this.cursorY = Math.max(0, Math.min(rect.height, (y - calY) * (rect.height / h)))
+        this.cursorX = Math.max(0, Math.min(rect.width, (x * (rect.width / w)) - calX))
+        this.cursorY = Math.max(0, Math.min(rect.height, (y * (rect.height / h)) - calY))
       }
     }
 
