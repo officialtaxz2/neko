@@ -88,6 +88,7 @@ export const setting = {
   autoplay: 'Autoplay Video',
   ignore_emotes: 'Emotes ignorieren',
   chat_sound: 'Chat-Sound abspielen',
+  force_touch: 'Touch-Steuerelemente erzwingen',
   keyboard_layout: 'Tastaturbelegung',
   trackpad_mode: 'Trackpad Mode',
   trackpad_cursor_hidden: 'Trackpad-Zeiger ausblenden',

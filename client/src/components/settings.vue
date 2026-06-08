@@ -35,6 +35,13 @@
           <span />
         </label>
       </li>
+      <li>
+        <span>{{ $t('setting.force_touch') }}</span>
+        <label class="switch">
+          <input type="checkbox" v-model="force_touch" />
+          <span />
+        </label>
+      </li>
       <li :class="{ 'disabled-setting': !is_touch_device }">
         <span>{{ $t('setting.trackpad_mode') }}</span>
         <label class="switch">
@@ -491,12 +498,24 @@
       this.$accessor.settings.setSound(value)
     }
 
+    get force_touch() {
+      return this.$accessor.settings.force_touch
+    }
+
+    set force_touch(value: boolean) {
+      this.$accessor.settings.setForceTouch(value)
+    }
+
     get is_touch_device() {
       if (typeof window === 'undefined') return false
+      if (this.$accessor.settings.force_touch) return true
       return (
         'ontouchstart' in window ||
         navigator.maxTouchPoints > 0 ||
         /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && /Macintosh|MacIntel/i.test(navigator.userAgent || navigator.platform)) ||
+        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+        (window.matchMedia && window.matchMedia('(any-pointer: coarse)').matches) ||
         window.innerWidth <= 1024
       )
     }

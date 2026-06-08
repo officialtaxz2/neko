@@ -108,26 +108,29 @@
           text-shadow: 0 0 8px rgba(38, 230, 180, 0.15);
         }
 
-        input {
+        input:not([type="checkbox"]):not([type="radio"]) {
           border: 1px solid rgba(255, 255, 255, 0.08);
-          padding: 10px 14px;
-          font-size: 14px;
+          padding: 10.5px 14px;
+          font-size: 14.5px;
           border-radius: var(--radius-inner);
           margin: 6px 0;
           background: rgba(12, 13, 18, 0.5);
           color: var(--text-pure);
           transition: var(--transition-fluid);
-          outline: none;
+          outline: none !important;
 
           &::placeholder {
             color: var(--text-muted-ok);
-            opacity: 0.8;
+            opacity: 0.75;
           }
 
           &:focus, &:focus-visible {
-            border-color: var(--color-cyber-mint);
-            background: rgba(12, 13, 18, 0.75);
-            box-shadow: 0 0 0 3px rgba(38, 230, 180, 0.15);
+            border-color: var(--color-cyber-mint) !important;
+            background: rgba(12, 13, 18, 0.75) !important;
+            box-shadow: 0 0 12px rgba(38, 230, 180, 0.2) !important;
+            outline: none !important;
+            outline-width: 0 !important;
+            outline-offset: 0 !important;
           }
 
           &::selection {
@@ -259,12 +262,18 @@
     private showDemo: boolean = false
 
     private get isDev(): boolean {
-      try {
-        const meta = import.meta as any
-        if (meta && meta.env) {
-          return !!meta.env.DEV
+      if (typeof window !== 'undefined' && window.location) {
+        const hostname = window.location.hostname
+        if (
+          hostname.includes('ais-dev-') ||
+          hostname.includes('ais-pre-') ||
+          hostname.includes('localhost') ||
+          hostname.includes('127.0.0.1') ||
+          hostname.includes('0.0.0.0')
+        ) {
+          return true
         }
-      } catch (e) {}
+      }
       return false
     }
 
@@ -291,6 +300,18 @@
       }
 
       if (displayname !== '' && password !== '') {
+        const client = this.$client as any
+        if (this.demoMode) {
+          if (client && typeof client.setDemoMode === 'function') {
+            client.setDemoMode(true)
+          }
+          password = 'demo'
+        } else {
+          if (client && typeof client.setDemoMode === 'function') {
+            client.setDemoMode(false)
+          }
+        }
+
         this.$accessor.login({ displayname, password })
         this.autoPassword = null
       }

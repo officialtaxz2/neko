@@ -692,6 +692,35 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       duration: 5000,
       speed: 1000,
     })
+
+    try {
+      if (typeof window !== 'undefined' && window.location) {
+        const hostname = window.location.hostname
+        if (
+          hostname.includes('ais-dev-') ||
+          hostname.includes('ais-pre-') ||
+          hostname.includes('localhost') ||
+          hostname.includes('127.0.0.1') ||
+          hostname.includes('0.0.0.0')
+        ) {
+          const isRealAttempt = this._displayname && !this.isDemo
+          if (isRealAttempt) {
+            (this.$vue as any).$swal({
+              title: 'Verbindung fehlgeschlagen',
+              text: 'In der AI Studio Vorschau läuft standardmäßig kein Neko-Backend auf diesem Server. Möchtest du im simulierten Desktop-Demo-/Testmodus fortfahren?',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Ja, Demo/Test starten',
+              cancelButtonText: 'Nein, abbrechen',
+            }).then((result: any) => {
+              if (result && result.value) {
+                this.startDemo(this._displayname || 'neko')
+              }
+            })
+          }
+        }
+      }
+    } catch (err) {}
   }
 
   protected [EVENT.TRACK](event: RTCTrackEvent) {

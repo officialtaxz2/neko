@@ -75,7 +75,21 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       this._ws.onmessage = this.onMessage.bind(this)
       this._ws.onerror = this.onError.bind(this)
       this._ws.onclose = this.onDisconnected.bind(this, new Error('websocket closed'))
-      this._timeout = window.setTimeout(this.onTimeout.bind(this), 15000)
+      let timeoutMs = 15000
+      try {
+        if (
+          typeof window !== 'undefined' &&
+          window.location &&
+          (window.location.hostname.includes('ais-dev-') ||
+            window.location.hostname.includes('ais-pre-') ||
+            window.location.hostname.includes('localhost') ||
+            window.location.hostname.includes('127.0.0.1') ||
+            window.location.hostname.includes('0.0.0.0'))
+        ) {
+          timeoutMs = 4000
+        }
+      } catch (err) {}
+      this._timeout = window.setTimeout(this.onTimeout.bind(this), timeoutMs)
     } catch (err: any) {
       this.onDisconnected(err)
     }

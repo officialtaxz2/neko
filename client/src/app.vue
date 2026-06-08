@@ -1,5 +1,5 @@
 <template>
-  <div id="neko" :class="[!videoOnly && side ? 'expanded' : '']">
+  <div id="neko" :class="[!videoOnly && side ? 'expanded' : '', force_touch ? 'force-touch' : '']">
     <template v-if="!$client.supported">
       <neko-unsupported />
     </template>
@@ -405,6 +405,10 @@
 
     get connected() {
       return this.$accessor.connected
+    }
+
+    get force_touch() {
+      return this.$accessor.settings.force_touch
     }
   }
 </script>

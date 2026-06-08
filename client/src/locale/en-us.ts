@@ -91,6 +91,7 @@ export const setting = {
   autoplay: 'Autoplay Video',
   ignore_emotes: 'Ignore Emotes',
   chat_sound: 'Play Chat Sound',
+  force_touch: 'Force Touch Controls',
   keyboard_layout: 'Keyboard Layout',
   trackpad_mode: 'Trackpad Mode',
   trackpad_cursor_hidden: 'Hide Trackpad Cursor',

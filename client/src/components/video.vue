@@ -50,7 +50,7 @@
       <ul v-if="!fullscreen && !hideControls" class="video-menu top">
         <li><i @click.stop.prevent="requestFullscreen" class="fas fa-expand"></i></li>
         <li v-if="admin"><i @click.stop.prevent="openResolution" class="fas fa-desktop"></i></li>
-        <li v-if="!controlLocked && !implicitHosting" :class="extraControls || 'extra-control'">
+        <li v-if="!controlLocked && !implicitHosting" :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]">
           <i
             :class="[
               hosted && !hosting ? 'disabled' : '',
@@ -80,7 +80,7 @@
         </li>
         <li
           v-if="hosting && is_touch_device"
-          :class="extraControls || 'extra-control'"
+          :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]"
           @click.stop.prevent="toggleKeyboardHelper"
         >
           <i
@@ -90,7 +90,7 @@
         </li>
         <li
           v-if="hosting && is_touch_device"
-          :class="extraControls || 'extra-control'"
+          :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]"
           @click.stop.prevent="openMobileKeyboard"
         >
           <i class="fas fa-keyboard" />
@@ -227,6 +227,9 @@
             &.extra-control {
               display: block;
             }
+          }
+          &.force-show {
+            display: block !important;
           }
         }
       }
@@ -641,10 +644,14 @@
 
     get is_touch_device() {
       if (typeof window === 'undefined') return false
+      if (this.$accessor.settings.force_touch) return true
       return (
         'ontouchstart' in window ||
         navigator.maxTouchPoints > 0 ||
         /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && /Macintosh|MacIntel/i.test(navigator.userAgent || navigator.platform)) ||
+        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+        (window.matchMedia && window.matchMedia('(any-pointer: coarse)').matches) ||
         window.innerWidth <= 1024
       )
     }
@@ -1122,17 +1129,6 @@
       const sx = Math.max(0, Math.min(w, Math.round((w / vRect.width) * this.cursorX)))
       const sy = Math.max(0, Math.min(h, Math.round((h / vRect.height) * this.cursorY)))
 
-      console.log('[NekoDebug] sendMousePos:', {
-        storeRes: `${w}x${h}`,
-        videoRes: `${this.videoWidth}x${this.videoHeight}`,
-        overlayRect: `${rect.width}x${rect.height} at (${rect.left},${rect.top})`,
-        vRect: `${vRect.width}x${vRect.height} at (${vRect.left},${vRect.top})`,
-        clientX: e.clientX,
-        clientY: e.clientY,
-        cursor: `${this.cursorX},${this.cursorY}`,
-        sent: `${sx},${sy}`
-      })
-
       this.$client.sendData('mousemove', { x: sx, y: sy })
     }
 
@@ -1325,14 +1321,6 @@
       const sx = Math.max(0, Math.min(w, Math.round((w / vRect.width) * this.cursorX)))
       const sy = Math.max(0, Math.min(h, Math.round((h / vRect.height) * this.cursorY)))
 
-      console.log('[NekoDebug] sendTrackpadMousePos:', {
-        storeRes: `${w}x${h}`,
-        videoRes: `${this.videoWidth}x${this.videoHeight}`,
-        vRect: `${vRect.width}x${vRect.height} at (${vRect.left},${vRect.top})`,
-        cursor: `${this.cursorX},${this.cursorY}`,
-        sent: `${sx},${sy}`
-      })
-
       this.$client.sendData('mousemove', { x: sx, y: sy })
     }
 
@@ -1344,21 +1332,9 @@
       const { w, h } = this.$accessor.video.resolution
       const vRect = this.getVideoRect()
 
-      console.log('[NekoDebug] onCursorPosition (receive):', {
-        x,
-        y,
-        storeRes: `${w}x${h}`,
-        videoRes: `${this.videoWidth}x${this.videoHeight}`,
-        vRect: `${vRect.width}x${vRect.height} at (${vRect.left},${vRect.top})`
-      })
-
       if (vRect.width > 0 && vRect.height > 0 && w > 0 && h > 0) {
         this.cursorX = Math.max(0, Math.min(vRect.width, x * (vRect.width / w)))
         this.cursorY = Math.max(0, Math.min(vRect.height, y * (vRect.height / h)))
-        console.log('[NekoDebug] onCursorPosition set:', {
-          cursorX: this.cursorX,
-          cursorY: this.cursorY
-        })
       }
     }
 
