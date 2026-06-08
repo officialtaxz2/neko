@@ -43,7 +43,7 @@
         <div
           v-if="trackpadActive && hosting && !locked"
           :class="['trackpad-cursor', { active: trackpadTouching }]"
-          :style="{ left: cursorX + 'px', top: cursorY + 'px' }"
+          :style="trackpadCursorStyle"
         />
         <div ref="aspect" class="player-aspect" />
       </div>
@@ -650,6 +650,63 @@
       return this.trackpad_mode && this.is_touch_device
     }
 
+    getVideoRect() {
+      const rect = this._overlay.getBoundingClientRect()
+      const { w, h } = this.$accessor.video.resolution
+
+      if (rect.width <= 0 || rect.height <= 0 || w <= 0 || h <= 0) {
+        return {
+          width: rect.width,
+          height: rect.height,
+          left: 0,
+          top: 0,
+        }
+      }
+
+      // Use the video element's actual intrinsic dimensions to compute the aspect ratio if available.
+      // This is crucial because the WebRTC video stream's aspect ratio can differ from the remote resolution (w/h),
+      // leading to incorrect pillarbox/letterbox calculations.
+      let vw = w
+      let vh = h
+      if (this._video && this._video.videoWidth > 0 && this._video.videoHeight > 0) {
+        vw = this._video.videoWidth
+        vh = this._video.videoHeight
+      }
+
+      const videoRatio = vw / vh
+      const rectRatio = rect.width / rect.height
+
+      let videoWidth = rect.width
+      let videoHeight = rect.height
+      let videoLeft = 0
+      let videoTop = 0
+
+      if (rectRatio > videoRatio) {
+        // Pillarboxed (container is wider than video content)
+        videoWidth = rect.height * videoRatio
+        videoLeft = (rect.width - videoWidth) / 2
+      } else {
+        // Letterboxed (container is taller than video content)
+        videoHeight = rect.width / videoRatio
+        videoTop = (rect.height - videoHeight) / 2
+      }
+
+      return {
+        width: videoWidth,
+        height: videoHeight,
+        left: videoLeft,
+        top: videoTop,
+      }
+    }
+
+    get trackpadCursorStyle() {
+      const vRect = this.getVideoRect()
+      return {
+        left: (this.cursorX + vRect.left) + 'px',
+        top: (this.cursorY + vRect.top) + 'px',
+      }
+    }
+
     @Watch('trackpadActive')
     onTrackpadActiveChanged(active: boolean) {
       if (!active) {
@@ -787,6 +844,7 @@
         document.addEventListener(event, this.onFullscreenChangeHandler)
       }
 
+      this._video.addEventListener('resize', this.onResize)
       this._video.addEventListener('canplaythrough', this.onVideoCanPlayThrough)
       this._video.addEventListener('canplay', this.onVideoCanPlayThrough)
       this._video.addEventListener('loadedmetadata', this.onVideoCanPlayThrough)
@@ -826,6 +884,7 @@
       window.removeEventListener('resize', this.onResize)
 
       if (this._video) {
+        this._video.removeEventListener('resize', this.onResize)
         this._video.removeEventListener('canplaythrough', this.onVideoCanPlayThrough)
         this._video.removeEventListener('canplay', this.onVideoCanPlayThrough)
         this._video.removeEventListener('loadedmetadata', this.onVideoCanPlayThrough)
@@ -1037,13 +1096,14 @@
     sendMousePos(e: MouseEvent) {
       const { w, h } = this.$accessor.video.resolution
       const rect = this._overlay.getBoundingClientRect()
+      const vRect = this.getVideoRect()
 
-      this.cursorX = Math.max(0, Math.min(rect.width, e.clientX - rect.left))
-      this.cursorY = Math.max(0, Math.min(rect.height, e.clientY - rect.top))
+      this.cursorX = Math.max(0, Math.min(vRect.width, e.clientX - rect.left - vRect.left))
+      this.cursorY = Math.max(0, Math.min(vRect.height, e.clientY - rect.top - vRect.top))
 
       this.$client.sendData('mousemove', {
-        x: Math.max(0, Math.min(w, Math.round((w / rect.width) * this.cursorX))),
-        y: Math.max(0, Math.min(h, Math.round((h / rect.height) * this.cursorY))),
+        x: Math.max(0, Math.min(w, Math.round((w / vRect.width) * this.cursorX))),
+        y: Math.max(0, Math.min(h, Math.round((h / vRect.height) * this.cursorY))),
       })
     }
 
@@ -1126,8 +1186,6 @@
         return
       }
 
-      const rect = this._overlay.getBoundingClientRect()
-
       if (e.type === 'touchstart') {
         // If we are already tracking a touch, ignore subsequent touches
         if (this.trackpadTouchId !== null) {
@@ -1182,8 +1240,10 @@
         this.touchLastX = touch.clientX
         this.touchLastY = touch.clientY
 
-        this.cursorX = Math.max(0, Math.min(rect.width, this.cursorX + dx))
-        this.cursorY = Math.max(0, Math.min(rect.height, this.cursorY + dy))
+        const vRect = this.getVideoRect()
+
+        this.cursorX = Math.max(0, Math.min(vRect.width, this.cursorX + dx))
+        this.cursorY = Math.max(0, Math.min(vRect.height, this.cursorY + dy))
 
         if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
           this.hasMoved = true
@@ -1229,15 +1289,14 @@
 
     sendTrackpadMousePos() {
       const { w, h } = this.$accessor.video.resolution
-      if (!this._overlay) return
-      const rect = this._overlay.getBoundingClientRect()
+      const vRect = this.getVideoRect()
 
       const calX = this.trackpadActive ? this.trackpad_offset_x : 0
       const calY = this.trackpadActive ? this.trackpad_offset_y : 0
 
       this.$client.sendData('mousemove', {
-        x: Math.max(0, Math.min(w, Math.round((w / rect.width) * (this.cursorX + calX)))),
-        y: Math.max(0, Math.min(h, Math.round((h / rect.height) * (this.cursorY + calY)))),
+        x: Math.max(0, Math.min(w, Math.round((w / vRect.width) * (this.cursorX + calX)))),
+        y: Math.max(0, Math.min(h, Math.round((h / vRect.height) * (this.cursorY + calY)))),
       })
     }
 
@@ -1246,16 +1305,15 @@
         return
       }
 
-      if (!this._overlay) return
-      const rect = this._overlay.getBoundingClientRect()
       const { w, h } = this.$accessor.video.resolution
+      const vRect = this.getVideoRect()
 
-      if (rect.width > 0 && rect.height > 0 && w > 0 && h > 0) {
+      if (vRect.width > 0 && vRect.height > 0 && w > 0 && h > 0) {
         const calX = this.trackpadActive ? this.trackpad_offset_x : 0
         const calY = this.trackpadActive ? this.trackpad_offset_y : 0
 
-        this.cursorX = Math.max(0, Math.min(rect.width, (x * (rect.width / w)) - calX))
-        this.cursorY = Math.max(0, Math.min(rect.height, (y * (rect.height / h)) - calY))
+        this.cursorX = Math.max(0, Math.min(vRect.width, (x * (vRect.width / w)) - calX))
+        this.cursorY = Math.max(0, Math.min(vRect.height, (y * (vRect.height / h)) - calY))
       }
     }
 
@@ -1410,19 +1468,19 @@
 
       this.$nextTick(() => {
         if (this._overlay) {
-          const rect = this._overlay.getBoundingClientRect()
+          const vRect = this.getVideoRect()
           if (this.cursorX === 0 && this.cursorY === 0) {
-            this.cursorX = rect.width / 2
-            this.cursorY = rect.height / 2
+            this.cursorX = vRect.width / 2
+            this.cursorY = vRect.height / 2
           } else if (this.lastRectWidth > 0 && this.lastRectHeight > 0) {
-            this.cursorX = Math.max(0, Math.min(rect.width, (this.cursorX / this.lastRectWidth) * rect.width))
-            this.cursorY = Math.max(0, Math.min(rect.height, (this.cursorY / this.lastRectHeight) * rect.height))
+            this.cursorX = Math.max(0, Math.min(vRect.width, (this.cursorX / this.lastRectWidth) * vRect.width))
+            this.cursorY = Math.max(0, Math.min(vRect.height, (this.cursorY / this.lastRectHeight) * vRect.height))
           } else {
-            this.cursorX = Math.max(0, Math.min(rect.width, this.cursorX))
-            this.cursorY = Math.max(0, Math.min(rect.height, this.cursorY))
+            this.cursorX = Math.max(0, Math.min(vRect.width, this.cursorX))
+            this.cursorY = Math.max(0, Math.min(vRect.height, this.cursorY))
           }
-          this.lastRectWidth = rect.width
-          this.lastRectHeight = rect.height
+          this.lastRectWidth = vRect.width
+          this.lastRectHeight = vRect.height
         }
       })
     }
