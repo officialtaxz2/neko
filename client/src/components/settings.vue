@@ -42,6 +42,13 @@
           <span />
         </label>
       </li>
+      <li v-if="trackpad_mode" :class="{ 'disabled-setting': !is_touch_device }">
+        <span>{{ $t('setting.trackpad_cursor_hidden') }}</span>
+        <label class="switch">
+          <input type="checkbox" v-model="trackpad_cursor_hidden" :disabled="!is_touch_device" />
+          <span />
+        </label>
+      </li>
 
       <li>
         <span>{{ $t('setting.keyboard_layout') }}</span>
@@ -500,6 +507,14 @@
 
     set trackpad_mode(value: boolean) {
       this.$accessor.settings.setTrackpadMode(value)
+    }
+
+    get trackpad_cursor_hidden() {
+      return this.$accessor.settings.trackpad_cursor_hidden
+    }
+
+    set trackpad_cursor_hidden(value: boolean) {
+      this.$accessor.settings.setTrackpadCursorHidden(value)
     }
 
 

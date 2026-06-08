@@ -93,6 +93,7 @@ export const setting = {
   chat_sound: 'Play Chat Sound',
   keyboard_layout: 'Keyboard Layout',
   trackpad_mode: 'Trackpad Mode',
+  trackpad_cursor_hidden: 'Hide Trackpad Cursor',
 
   broadcast_title: 'Live Broadcast',
 }

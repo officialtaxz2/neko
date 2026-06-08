@@ -18,6 +18,7 @@ export const state = () => {
     chat_sound: get<boolean>('chat_sound', true),
     keyboard_layout: get<string>('keyboard_layout', 'us'),
     trackpad_mode: get<boolean>('trackpad_mode', false),
+    trackpad_cursor_hidden: get<boolean>('trackpad_cursor_hidden', false),
 
 
     keyboard_layouts_list: {} as KeyboardLayouts,
@@ -63,6 +64,11 @@ export const mutations = mutationTree(state, {
   setTrackpadMode(state, value: boolean) {
     state.trackpad_mode = value
     set('trackpad_mode', value)
+  },
+
+  setTrackpadCursorHidden(state, value: boolean) {
+    state.trackpad_cursor_hidden = value
+    set('trackpad_cursor_hidden', value)
   },
 
 

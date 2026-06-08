@@ -41,7 +41,7 @@
           <i class="fas fa-volume-up" />
         </div>
         <div
-          v-if="trackpadActive && hosting && !locked"
+          v-if="trackpadActive && hosting && !locked && !trackpadCursorHidden"
           :class="['trackpad-cursor', { active: trackpadTouching }]"
           :style="trackpadCursorStyle"
         />
@@ -638,7 +638,9 @@
       return this.$accessor.settings.trackpad_mode
     }
 
-
+    get trackpadCursorHidden() {
+      return this.$accessor.settings.trackpad_cursor_hidden
+    }
 
     get trackpadActive() {
       return this.trackpad_mode && this.is_touch_device
@@ -1092,6 +1094,8 @@
       const rect = this._overlay.getBoundingClientRect()
       const vRect = this.getVideoRect()
 
+      if (vRect.width <= 0 || vRect.height <= 0) return
+
       this.cursorX = Math.max(0, Math.min(vRect.width, e.clientX - rect.left - vRect.left))
       this.cursorY = Math.max(0, Math.min(vRect.height, e.clientY - rect.top - vRect.top))
 
@@ -1284,6 +1288,8 @@
     sendTrackpadMousePos() {
       const { w, h } = this.$accessor.video.resolution
       const vRect = this.getVideoRect()
+
+      if (vRect.width <= 0 || vRect.height <= 0) return
 
       this.$client.sendData('mousemove', {
         x: Math.max(0, Math.min(w, Math.round((w / vRect.width) * this.cursorX))),
