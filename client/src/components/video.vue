@@ -355,6 +355,9 @@
           cursor: default;
           outline: none !important;
           border: 0;
+          padding: 0 !important;
+          margin: 0 !important;
+          box-sizing: border-box !important;
           color: transparent;
           background: transparent;
           resize: none;
@@ -659,7 +662,7 @@
     }
 
     getVideoRect() {
-      const rect = this._overlay.getBoundingClientRect()
+      const rect = (this._video || this._overlay).getBoundingClientRect()
       const { w, h } = this.$accessor.video.resolution
 
       if (rect.width <= 0 || rect.height <= 0 || w <= 0 || h <= 0) {
@@ -1108,7 +1111,7 @@
 
     sendMousePos(e: MouseEvent) {
       const { w, h } = this.$accessor.video.resolution
-      const rect = this._overlay.getBoundingClientRect()
+      const rect = (this._video || this._overlay).getBoundingClientRect()
       const vRect = this.getVideoRect()
 
       if (vRect.width <= 0 || vRect.height <= 0) return
