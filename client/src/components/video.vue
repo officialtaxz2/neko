@@ -287,6 +287,7 @@
           bottom: 0;
           width: 100%;
           height: 100%;
+          object-fit: contain;
           display: flex;
           background: #000;
 
@@ -465,8 +466,19 @@
     private lastRectWidth = 0
     private lastRectHeight = 0
 
+    private videoWidth = 0
+    private videoHeight = 0
+
+    private updateVideoDimensions() {
+      if (this._video) {
+        this.videoWidth = this._video.videoWidth
+        this.videoHeight = this._video.videoHeight
+      }
+    }
+
     private onVideoCanPlayThrough = () => {
       if (!this._video) return
+      this.updateVideoDimensions()
       this.$accessor.video.setPlayable(true)
       if (this.autoplay) {
         this.$nextTick(() => {
@@ -664,9 +676,9 @@
       // leading to incorrect pillarbox/letterbox calculations.
       let vw = w
       let vh = h
-      if (this._video && this._video.videoWidth > 0 && this._video.videoHeight > 0) {
-        vw = this._video.videoWidth
-        vh = this._video.videoHeight
+      if (this.videoWidth > 0 && this.videoHeight > 0) {
+        vw = this.videoWidth
+        vh = this.videoHeight
       }
 
       const videoRatio = vw / vh
@@ -1440,6 +1452,7 @@
     }
 
     onResize() {
+      this.updateVideoDimensions()
       let offsetWidth: number
       let offsetHeight: number
 
