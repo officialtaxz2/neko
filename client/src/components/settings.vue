@@ -42,18 +42,7 @@
           <span />
         </label>
       </li>
-      <li v-if="trackpad_mode">
-        <span>{{ $t('setting.trackpad_offset_x') }} ({{ trackpad_offset_x }}px)</span>
-        <label class="slider">
-          <input type="range" min="-50" max="50" v-model="trackpad_offset_x" />
-        </label>
-      </li>
-      <li v-if="trackpad_mode">
-        <span>{{ $t('setting.trackpad_offset_y') }} ({{ trackpad_offset_y }}px)</span>
-        <label class="slider">
-          <input type="range" min="-50" max="50" v-model="trackpad_offset_y" />
-        </label>
-      </li>
+
       <li>
         <span>{{ $t('setting.keyboard_layout') }}</span>
         <label class="select">
@@ -513,21 +502,7 @@
       this.$accessor.settings.setTrackpadMode(value)
     }
 
-    get trackpad_offset_x() {
-      return this.$accessor.settings.trackpad_offset_x.toString()
-    }
 
-    set trackpad_offset_x(value: string) {
-      this.$accessor.settings.setTrackpadOffsetX(parseInt(value))
-    }
-
-    get trackpad_offset_y() {
-      return this.$accessor.settings.trackpad_offset_y.toString()
-    }
-
-    set trackpad_offset_y(value: string) {
-      this.$accessor.settings.setTrackpadOffsetY(parseInt(value))
-    }
 
     get keyboard_layouts_list() {
       return this.$accessor.settings.keyboard_layouts_list

@@ -638,13 +638,7 @@
       return this.$accessor.settings.trackpad_mode
     }
 
-    get trackpad_offset_x() {
-      return this.$accessor.settings.trackpad_offset_x
-    }
 
-    get trackpad_offset_y() {
-      return this.$accessor.settings.trackpad_offset_y
-    }
 
     get trackpadActive() {
       return this.trackpad_mode && this.is_touch_device
@@ -1291,12 +1285,9 @@
       const { w, h } = this.$accessor.video.resolution
       const vRect = this.getVideoRect()
 
-      const calX = this.trackpadActive ? this.trackpad_offset_x : 0
-      const calY = this.trackpadActive ? this.trackpad_offset_y : 0
-
       this.$client.sendData('mousemove', {
-        x: Math.max(0, Math.min(w, Math.round((w / vRect.width) * (this.cursorX + calX)))),
-        y: Math.max(0, Math.min(h, Math.round((h / vRect.height) * (this.cursorY + calY)))),
+        x: Math.max(0, Math.min(w, Math.round((w / vRect.width) * this.cursorX))),
+        y: Math.max(0, Math.min(h, Math.round((h / vRect.height) * this.cursorY))),
       })
     }
 
@@ -1309,11 +1300,8 @@
       const vRect = this.getVideoRect()
 
       if (vRect.width > 0 && vRect.height > 0 && w > 0 && h > 0) {
-        const calX = this.trackpadActive ? this.trackpad_offset_x : 0
-        const calY = this.trackpadActive ? this.trackpad_offset_y : 0
-
-        this.cursorX = Math.max(0, Math.min(vRect.width, (x * (vRect.width / w)) - calX))
-        this.cursorY = Math.max(0, Math.min(vRect.height, (y * (vRect.height / h)) - calY))
+        this.cursorX = Math.max(0, Math.min(vRect.width, x * (vRect.width / w)))
+        this.cursorY = Math.max(0, Math.min(vRect.height, y * (vRect.height / h)))
       }
     }
 

@@ -93,8 +93,7 @@ export const setting = {
   chat_sound: 'Play Chat Sound',
   keyboard_layout: 'Keyboard Layout',
   trackpad_mode: 'Trackpad Mode',
-  trackpad_offset_x: 'Trackpad Offset X',
-  trackpad_offset_y: 'Trackpad Offset Y',
+
   broadcast_title: 'Live Broadcast',
 }
 

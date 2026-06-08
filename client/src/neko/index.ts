@@ -724,9 +724,13 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   /////////////////////////////
   // System Events
   /////////////////////////////
-  protected [EVENT.SYSTEM.INIT]({ implicit_hosting, locks, file_transfer, heartbeat_interval }: SystemInitPayload) {
+  protected [EVENT.SYSTEM.INIT]({ implicit_hosting, locks, file_transfer, heartbeat_interval, screen_size }: SystemInitPayload) {
     this.$accessor.remote.setImplicitHosting(implicit_hosting)
     this.$accessor.remote.setFileTransfer(file_transfer)
+
+    if (screen_size) {
+      this.$accessor.video.setResolution(screen_size)
+    }
 
     for (const resource in locks) {
       this[EVENT.ADMIN.LOCK]({
@@ -961,6 +965,10 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   /////////////////////////////
   protected [EVENT.SCREEN.CONFIGURATIONS]({ configurations }: ScreenConfigurationsPayload) {
     this.$accessor.video.setConfigurations(configurations)
+  }
+
+  protected ['screen/updated'](payload: ScreenResolutionPayload) {
+    this[EVENT.SCREEN.RESOLUTION](payload)
   }
 
   protected [EVENT.SCREEN.RESOLUTION]({ id, width, height, rate }: ScreenResolutionPayload) {

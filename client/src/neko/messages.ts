@@ -62,6 +62,7 @@ export interface SystemInitPayload {
   locks: Record<string, string>
   file_transfer: boolean
   heartbeat_interval: number
+  screen_size?: ScreenResolution
 }
 
 // system/disconnect
