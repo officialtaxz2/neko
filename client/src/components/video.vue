@@ -679,6 +679,9 @@
       if (this.videoWidth > 0 && this.videoHeight > 0) {
         vw = this.videoWidth
         vh = this.videoHeight
+      } else if (this._video && this._video.videoWidth > 0 && this._video.videoHeight > 0) {
+        vw = this._video.videoWidth
+        vh = this._video.videoHeight
       }
 
       const videoRatio = vw / vh
@@ -769,6 +772,8 @@
         // @ts-ignore
         this._video.src = window.URL.createObjectURL(this.stream) // for older browsers
       }
+
+      this.updateVideoDimensions()
 
       // Proactively mark the stream as playable to unlock overlay controls
       // if browser media events get delayed or blocked by autoplay detection.
@@ -1111,10 +1116,21 @@
       this.cursorX = Math.max(0, Math.min(vRect.width, e.clientX - rect.left - vRect.left))
       this.cursorY = Math.max(0, Math.min(vRect.height, e.clientY - rect.top - vRect.top))
 
-      this.$client.sendData('mousemove', {
-        x: Math.max(0, Math.min(w, Math.round((w / vRect.width) * this.cursorX))),
-        y: Math.max(0, Math.min(h, Math.round((h / vRect.height) * this.cursorY))),
+      const sx = Math.max(0, Math.min(w, Math.round((w / vRect.width) * this.cursorX)))
+      const sy = Math.max(0, Math.min(h, Math.round((h / vRect.height) * this.cursorY)))
+
+      console.log('[NekoDebug] sendMousePos:', {
+        storeRes: `${w}x${h}`,
+        videoRes: `${this.videoWidth}x${this.videoHeight}`,
+        overlayRect: `${rect.width}x${rect.height} at (${rect.left},${rect.top})`,
+        vRect: `${vRect.width}x${vRect.height} at (${vRect.left},${vRect.top})`,
+        clientX: e.clientX,
+        clientY: e.clientY,
+        cursor: `${this.cursorX},${this.cursorY}`,
+        sent: `${sx},${sy}`
       })
+
+      this.$client.sendData('mousemove', { x: sx, y: sy })
     }
 
     wheelThrottle = false
@@ -1303,10 +1319,18 @@
 
       if (vRect.width <= 0 || vRect.height <= 0) return
 
-      this.$client.sendData('mousemove', {
-        x: Math.max(0, Math.min(w, Math.round((w / vRect.width) * this.cursorX))),
-        y: Math.max(0, Math.min(h, Math.round((h / vRect.height) * this.cursorY))),
+      const sx = Math.max(0, Math.min(w, Math.round((w / vRect.width) * this.cursorX)))
+      const sy = Math.max(0, Math.min(h, Math.round((h / vRect.height) * this.cursorY)))
+
+      console.log('[NekoDebug] sendTrackpadMousePos:', {
+        storeRes: `${w}x${h}`,
+        videoRes: `${this.videoWidth}x${this.videoHeight}`,
+        vRect: `${vRect.width}x${vRect.height} at (${vRect.left},${vRect.top})`,
+        cursor: `${this.cursorX},${this.cursorY}`,
+        sent: `${sx},${sy}`
       })
+
+      this.$client.sendData('mousemove', { x: sx, y: sy })
     }
 
     onCursorPosition({ x, y }: { x: number; y: number }) {
@@ -1317,9 +1341,21 @@
       const { w, h } = this.$accessor.video.resolution
       const vRect = this.getVideoRect()
 
+      console.log('[NekoDebug] onCursorPosition (receive):', {
+        x,
+        y,
+        storeRes: `${w}x${h}`,
+        videoRes: `${this.videoWidth}x${this.videoHeight}`,
+        vRect: `${vRect.width}x${vRect.height} at (${vRect.left},${vRect.top})`
+      })
+
       if (vRect.width > 0 && vRect.height > 0 && w > 0 && h > 0) {
         this.cursorX = Math.max(0, Math.min(vRect.width, x * (vRect.width / w)))
         this.cursorY = Math.max(0, Math.min(vRect.height, y * (vRect.height / h)))
+        console.log('[NekoDebug] onCursorPosition set:', {
+          cursorX: this.cursorX,
+          cursorY: this.cursorY
+        })
       }
     }
 
