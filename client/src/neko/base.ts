@@ -32,6 +32,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   protected _micSender?: RTCRtpSender
   protected _micActive = false
   protected _disconnecting = false
+  protected _iceRecoveryTimeout?: number
 
   get id() {
     return this._id
@@ -107,6 +108,11 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       if (this._ws_heartbeat) {
         clearInterval(this._ws_heartbeat)
         this._ws_heartbeat = undefined
+      }
+
+      if (this._iceRecoveryTimeout) {
+        clearTimeout(this._iceRecoveryTimeout)
+        this._iceRecoveryTimeout = undefined
       }
 
       if (this._ws) {
@@ -342,7 +348,16 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     }
 
     this._peer.onconnectionstatechange = () => {
-      this.emit('debug', `peer connection state changed`, this._peer ? this._peer.connectionState : undefined)
+      const connState = this._peer ? this._peer.connectionState : undefined
+      this.emit('debug', `peer connection state changed`, connState)
+
+      // Detect failed connection state as a backup for ICE state monitoring.
+      // Some browsers (notably TV/embedded browsers) report 'failed' on
+      // connectionState without the iceConnectionState ever reaching 'failed'.
+      if (connState === 'failed') {
+        this.emit('warn', 'peer connection state is failed — triggering disconnect')
+        this.onDisconnected(new Error('peer connection failed'))
+      }
     }
 
     this._peer.onsignalingstatechange = () => {
@@ -354,6 +369,12 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
 
       this.emit('debug', `peer ice connection state changed: ${this._peer!.iceConnectionState}`)
 
+      // Clear any pending ICE recovery timer when state changes
+      if (this._iceRecoveryTimeout) {
+        clearTimeout(this._iceRecoveryTimeout)
+        this._iceRecoveryTimeout = undefined
+      }
+
       switch (this._state) {
         case 'checking':
           if (this._timeout) {
@@ -362,10 +383,23 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
           }
           break
         case 'connected':
+        case 'completed':
           this.onConnected()
           break
         case 'disconnected':
           this[EVENT.RECONNECTING]()
+          // Start a recovery timer. On stable networks the ICE layer will
+          // self-recover, but on weak/TV browsers (Hisense VIDAA Odin) it
+          // may stay in 'disconnected' indefinitely → blackscreen.
+          this._iceRecoveryTimeout = window.setTimeout(() => {
+            this._iceRecoveryTimeout = undefined
+            if (!this._peer) return
+            const currentState = this._peer.iceConnectionState
+            this.emit('warn', `ICE recovery timeout — current state: ${currentState}`)
+            if (currentState === 'disconnected' || currentState === 'failed') {
+              this.onDisconnected(new Error(`peer ICE recovery timeout (state: ${currentState})`))
+            }
+          }, 8000)
           break
         // https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Signaling_and_video_calling#ice_connection_state
         // We don't watch the disconnected signaling state here as it can indicate temporary issues and may

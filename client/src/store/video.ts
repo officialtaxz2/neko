@@ -142,8 +142,25 @@ export const mutations = mutationTree(state, {
   },
 
   addTrack(state, [track, stream]: [MediaStreamTrack, MediaStream]) {
-    state.tracks = state.tracks.concat([track])
-    state.streams = state.streams.concat([stream])
+    // Replace existing track of the same kind (video/audio) instead of
+    // accumulating stale tracks. During server renegotiation (triggered by
+    // room events like user join/leave, control changes, chat) the server
+    // sends a fresh video track. If we only append, the stream index stays
+    // at 0 pointing to the old, now-dead track → blackscreen.
+    const existingIdx = state.tracks.findIndex((t) => t.kind === track.kind)
+    if (existingIdx !== -1) {
+      // Stop the old track to release resources (important for TV browsers)
+      try { state.tracks[existingIdx].stop() } catch (_) {}
+      const newTracks = [...state.tracks]
+      const newStreams = [...state.streams]
+      newTracks[existingIdx] = track
+      newStreams[existingIdx] = stream
+      state.tracks = newTracks
+      state.streams = newStreams
+    } else {
+      state.tracks = state.tracks.concat([track])
+      state.streams = state.streams.concat([stream])
+    }
   },
 
   delTrack(state, index: number) {

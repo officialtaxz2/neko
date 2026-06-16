@@ -472,6 +472,14 @@
     private lastRectWidth = 0
     private lastRectHeight = 0
 
+    // --- Stream health monitoring ---
+    private _trackCleanup: (() => void) | null = null
+    private _streamCleanup: (() => void) | null = null
+    private _stalledTimer: any = null
+    private _recoveryAttempts = 0
+    private static readonly MAX_RECOVERY_ATTEMPTS = 3
+    private static readonly STALLED_TIMEOUT_MS = 5000
+
     private videoWidth = 0
     private videoHeight = 0
 
@@ -518,6 +526,78 @@
       this.$accessor.video.pause()
     }
 
+    // --- Stream health: stalled / waiting handlers ---
+    private onVideoStalled = () => {
+      console.warn('[Neko] Video stalled – starting recovery timer')
+      this.startStalledTimer()
+    }
+
+    private onVideoWaiting = () => {
+      // 'waiting' fires when playback stops due to lack of data.
+      // On TV browsers this often precedes a permanent blackscreen.
+      console.warn('[Neko] Video waiting for data')
+      this.startStalledTimer()
+    }
+
+    private onVideoTimeUpdate = () => {
+      // If we receive a timeupdate the stream is alive – cancel any recovery timer.
+      this.cancelStalledTimer()
+      this._recoveryAttempts = 0
+    }
+
+    private startStalledTimer() {
+      if (this._stalledTimer) return // already ticking
+      this._stalledTimer = window.setTimeout(() => {
+        this._stalledTimer = null
+        this.attemptStreamRecovery('stalled timeout')
+      }, (this.constructor as typeof NekoVideo).STALLED_TIMEOUT_MS)
+    }
+
+    private cancelStalledTimer() {
+      if (this._stalledTimer) {
+        clearTimeout(this._stalledTimer)
+        this._stalledTimer = null
+      }
+    }
+
+    /**
+     * Attempt to recover a dead/stalled video stream.
+     * Strategy:
+     *  1. Re-assign srcObject (forces browser to re-evaluate the stream)
+     *  2. Call load() + play() as a harder reset
+     * Gives up after MAX_RECOVERY_ATTEMPTS to avoid infinite loops.
+     */
+    private async attemptStreamRecovery(reason: string) {
+      const max = (this.constructor as typeof NekoVideo).MAX_RECOVERY_ATTEMPTS
+      if (this._recoveryAttempts >= max) {
+        console.error(`[Neko] Stream recovery failed after ${max} attempts (${reason})`)
+        return
+      }
+      this._recoveryAttempts++
+      console.warn(`[Neko] Attempting stream recovery #${this._recoveryAttempts} (${reason})`)
+
+      if (!this._video || !this.stream) return
+
+      try {
+        // Step 1: soft reset – re-assign the same stream
+        this._video.srcObject = this.stream
+        await this.$nextTick()
+
+        // Step 2: if video is still not playing, do a harder reset
+        if (this._video.paused || this._video.readyState < 2) {
+          this._video.load()
+          await this._video.play()
+        } else {
+          await this._video.play()
+        }
+
+        console.log('[Neko] Stream recovery succeeded')
+        this._recoveryAttempts = 0
+      } catch (err) {
+        console.warn('[Neko] Stream recovery play() failed, will retry on next event', err)
+      }
+    }
+
     private onFullscreenChangeHandler = () => {
       this.fullscreen = isFullscreen()
       this.fullscreen ? lockKeyboard() : unlockKeyboard()
@@ -562,6 +642,10 @@
 
     get stream() {
       return this.$accessor.video.stream
+    }
+
+    get track() {
+      return this.$accessor.video.track
     }
 
     get playing() {
@@ -776,6 +860,9 @@
         return
       }
 
+      // Clean up old stream listeners before attaching new ones
+      this.detachStreamListeners()
+
       if ('srcObject' in this._video) {
         this._video.srcObject = stream
       } else {
@@ -783,7 +870,11 @@
         this._video.src = window.URL.createObjectURL(this.stream) // for older browsers
       }
 
+      // Attach removetrack listener on the new stream
+      this.attachStreamListeners(stream)
+
       this.updateVideoDimensions()
+      this._recoveryAttempts = 0
 
       // Proactively mark the stream as playable to unlock overlay controls
       // if browser media events get delayed or blocked by autoplay detection.
@@ -800,6 +891,92 @@
             })
           }
         })
+      }
+
+      // Verify playback actually started after a short delay.
+      // On weak browsers (VIDAA Odin) the play() promise may resolve
+      // but the video element stays frozen.
+      window.setTimeout(() => {
+        if (this._video && this.playing && this._video.readyState < 2) {
+          console.warn('[Neko] Video not ready after stream change, attempting recovery')
+          this.attemptStreamRecovery('post-stream-change readyState check')
+        }
+      }, 2000)
+    }
+
+    @Watch('track')
+    onTrackChanged(track?: MediaStreamTrack) {
+      // Detach old track listeners and attach to the new track
+      this.detachTrackListeners()
+      if (track && track.kind === 'video') {
+        this.attachTrackListeners(track)
+      }
+    }
+
+    private attachTrackListeners(track: MediaStreamTrack) {
+      this.detachTrackListeners()
+
+      const onEnded = () => {
+        console.warn(`[Neko] Video track ended: ${track.id}`)
+        this.attemptStreamRecovery('track ended')
+      }
+      const onMute = () => {
+        console.warn(`[Neko] Video track muted (media pipeline stall): ${track.id}`)
+        // A muted track may recover on its own – start a timer
+        this.startStalledTimer()
+      }
+      const onUnmute = () => {
+        console.log(`[Neko] Video track unmuted (recovered): ${track.id}`)
+        this.cancelStalledTimer()
+        this._recoveryAttempts = 0
+      }
+
+      track.addEventListener('ended', onEnded)
+      track.addEventListener('mute', onMute)
+      track.addEventListener('unmute', onUnmute)
+
+      this._trackCleanup = () => {
+        track.removeEventListener('ended', onEnded)
+        track.removeEventListener('mute', onMute)
+        track.removeEventListener('unmute', onUnmute)
+      }
+    }
+
+    private detachTrackListeners() {
+      if (this._trackCleanup) {
+        this._trackCleanup()
+        this._trackCleanup = null
+      }
+    }
+
+    private attachStreamListeners(stream: MediaStream) {
+      this.detachStreamListeners()
+
+      const onRemoveTrack = (event: MediaStreamTrackEvent) => {
+        if (event.track.kind === 'video') {
+          console.warn(`[Neko] Video track removed from stream: ${event.track.id}`)
+          // Don't immediately recover – a new track should arrive shortly via onTrack.
+          // But if nothing arrives within 3s, attempt recovery.
+          window.setTimeout(() => {
+            if (this.stream && this.stream.getVideoTracks().length === 0) {
+              console.warn('[Neko] No video tracks in stream after removetrack – triggering recovery')
+              this.attemptStreamRecovery('removetrack with no replacement')
+            }
+          }, 3000)
+        }
+      }
+
+      stream.addEventListener('removetrack', onRemoveTrack)
+
+      this._streamCleanup = () => {
+        stream.removeEventListener('removetrack', onRemoveTrack)
+      }
+    }
+
+    private detachStreamListeners() {
+      if (this._streamCleanup) {
+        this._streamCleanup()
+        this._streamCleanup = null
       }
     }
 
@@ -876,6 +1053,17 @@
       this._video.addEventListener('volumechange', this.onVideoVolumeChange)
       this._video.addEventListener('playing', this.onVideoPlaying)
       this._video.addEventListener('pause', this.onVideoPause)
+      this._video.addEventListener('stalled', this.onVideoStalled)
+      this._video.addEventListener('waiting', this.onVideoWaiting)
+      this._video.addEventListener('timeupdate', this.onVideoTimeUpdate)
+
+      // Attach lifecycle listeners to initial track/stream if already present
+      if (this.track && this.track.kind === 'video') {
+        this.attachTrackListeners(this.track)
+      }
+      if (this.stream) {
+        this.attachStreamListeners(this.stream)
+      }
 
       /* Initialize Guacamole Keyboard */
       this.keyboard.onkeydown = (key: number) => {
@@ -916,7 +1104,15 @@
         this._video.removeEventListener('volumechange', this.onVideoVolumeChange)
         this._video.removeEventListener('playing', this.onVideoPlaying)
         this._video.removeEventListener('pause', this.onVideoPause)
+        this._video.removeEventListener('stalled', this.onVideoStalled)
+        this._video.removeEventListener('waiting', this.onVideoWaiting)
+        this._video.removeEventListener('timeupdate', this.onVideoTimeUpdate)
       }
+
+      // Clean up track & stream lifecycle listeners
+      this.detachTrackListeners()
+      this.detachStreamListeners()
+      this.cancelStalledTimer()
 
       {
         const fsEvents = ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']

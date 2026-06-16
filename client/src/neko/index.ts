@@ -725,13 +725,21 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
 
   protected [EVENT.TRACK](event: RTCTrackEvent) {
     const { track, streams } = event
+    const stream = streams[0] || new MediaStream([track])
+
+    // Log track arrival for debugging stream stability issues
+    console.log(`[Neko] Received ${track.kind} track: id=${track.id} readyState=${track.readyState}`)
+
     if (track.kind === 'audio') {
+      // Audio tracks are stored but do not change the active stream index
+      this.$accessor.video.addTrack([track, stream])
       return
     }
 
-    const stream = streams[0] || new MediaStream([track])
+    // Video track: addTrack will replace any existing video track (not accumulate)
     this.$accessor.video.addTrack([track, stream])
     this.$accessor.video.setStream(0)
+    this.$accessor.video.setPlayable(true)
   }
 
   protected [EVENT.DATA](data: any) {
