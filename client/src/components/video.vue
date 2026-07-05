@@ -6,7 +6,7 @@
       :style="{ '--horizontal': horizontal, '--vertical': vertical }"
     >
       <div ref="container" class="player-container">
-        <video ref="video" autoplay playsinline webkit-playsinline muted />
+        <video ref="video" playsinline webkit-playsinline />
         <div class="emotes">
           <template v-for="(emote, index) in emotes">
             <neko-emote :id="index" :key="index" />
@@ -520,26 +520,8 @@
     }
 
     private onVideoPlaying = () => {
-      const wasFirstPlay = !this._hasEverPlayed
       this._hasEverPlayed = true
       this.$accessor.video.play()
-
-      // After the first successful play, apply deferred unmuting.
-      // The video starts with the HTML 'muted' attribute to satisfy mobile
-      // autoplay policy. Now that playback is confirmed, we can unmute
-      // if the user's stored preference says so.
-      if (wasFirstPlay && this._video) {
-        const userWantsMuted = this.$accessor.video.muted
-        if (!userWantsMuted) {
-          // Try to unmute — this should work now since user already interacted
-          // (they pressed the login/connect button which counts as a gesture)
-          this._video.muted = false
-          this.mutedOverlay = false
-        } else {
-          // User wants muted — show overlay so they can unmute when ready
-          this.mutedOverlay = true
-        }
-      }
     }
 
     private onVideoPause = () => {
@@ -888,16 +870,6 @@
     @Watch('muted')
     onMutedChanged(muted: boolean) {
       if (this._video && this._video.muted != muted) {
-        // On mobile, do NOT unmute before the video has played at least once.
-        // iOS Safari blocks autoplay if the video element is unmuted before
-        // the first play() — even if play() is called immediately after.
-        // The video starts with the HTML 'muted' attribute, and we defer
-        // unmuting until after the first successful playback.
-        if (!muted && !this._hasEverPlayed) {
-          // Don't unmute yet — will be applied after first play via mutedOverlay
-          return
-        }
-
         this._video.muted = muted
 
         if (!muted) {

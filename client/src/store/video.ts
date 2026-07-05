@@ -49,12 +49,12 @@ export const mutations = mutationTree(state, {
 
   setMuted(state, muted: boolean) {
     state.muted = muted
-    set('mute', muted)
+    set('muted', muted)
   },
 
   toggleMute(state) {
     state.muted = !state.muted
-    set('mute', state.muted)
+    set('muted', state.muted)
   },
 
   setPlayable(state, playable: boolean) {
