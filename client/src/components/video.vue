@@ -560,9 +560,12 @@
 
     private onVideoTimeUpdate = () => {
       // If we receive a timeupdate the stream is alive – cancel any recovery timer.
-      this._hasEverPlayed = true
-      this.cancelStalledTimer()
-      this._recoveryAttempts = 0
+      // Optimize to avoid calling timer manipulation on every single timeupdate frame.
+      if (this._stalledTimer !== null || this._recoveryAttempts > 0 || !this._hasEverPlayed) {
+        this._hasEverPlayed = true
+        this.cancelStalledTimer()
+        this._recoveryAttempts = 0
+      }
     }
 
     private startStalledTimer() {
