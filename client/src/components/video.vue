@@ -600,25 +600,15 @@
         this._video.srcObject = this.stream
         await this.$nextTick()
 
-        // Try to play — if it fails unmuted, retry muted (mobile autoplay policy)
-        try {
-          await this._video.play()
-        } catch (playErr: any) {
-          if (playErr && (playErr.name === 'NotAllowedError' || playErr.name === 'AbortError')) {
-            // Mobile browser blocked unmuted play — try muted
-            console.warn('[Neko] Recovery play() blocked, retrying muted')
-            this._video.muted = true
-            this.$accessor.video.setMuted(true)
-            await this._video.play()
-          } else {
-            throw playErr
-          }
-        }
-
-        console.log('[Neko] Stream recovery succeeded')
+        // We do NOT call play() here immediately.
+        // Re-assigning srcObject triggers the browser to load the stream.
+        // Once the stream is loaded and ready, it fires 'canplay' or 'canplaythrough',
+        // calling onVideoCanPlayThrough. Since this.playing is true, the handler
+        // will safely and automatically call play() when the stream is ready.
+        console.log('[Neko] Stream recovery srcObject re-assignment completed')
         this._recoveryAttempts = 0
       } catch (err) {
-        console.warn('[Neko] Stream recovery play() failed, will retry on next event', err)
+        console.warn('[Neko] Stream recovery srcObject assignment failed', err)
       }
     }
 
