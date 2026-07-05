@@ -495,10 +495,19 @@
       if (!this._video) return
       this.updateVideoDimensions()
       this.$accessor.video.setPlayable(true)
-      if (this.autoplay) {
+      if (this.autoplay || this.playing) {
         this.$nextTick(() => {
           if (this._video) {
-            this.$accessor.video.play()
+            if (this.playing) {
+              // Direct play call since Watch('playing') won't fire if already true.
+              // If it fails (e.g. autoplay policies on mobile), delegate to watcher.
+              this._video.play().catch((err) => {
+                console.warn('[Neko] Direct play failed in canplaythrough, delegating to watcher:', err)
+                this.onPlayingChanged(true)
+              })
+            } else {
+              this.$accessor.video.play()
+            }
           }
         })
       }
@@ -1071,12 +1080,10 @@
       this._video.addEventListener('waiting', this.onVideoWaiting)
       this._video.addEventListener('timeupdate', this.onVideoTimeUpdate)
 
-      // Attach lifecycle listeners to initial track/stream if already present
+      // Attach lifecycle listeners to initial track if already present.
+      // (Stream listener is already attached via mounted -> onStreamChanged)
       if (this.track && this.track.kind === 'video') {
         this.attachTrackListeners(this.track)
-      }
-      if (this.stream) {
-        this.attachStreamListeners(this.stream)
       }
 
       /* Initialize Guacamole Keyboard */
