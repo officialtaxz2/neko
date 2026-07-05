@@ -8,7 +8,7 @@
       <form class="message" v-if="!connecting" @submit.stop.prevent="connect">
         <span v-if="!autoPassword">{{ $t('connect.login_title') }}</span>
         <span v-else>{{ $t('connect.invitation_title') }}</span>
-        <input type="text" :placeholder="$t('connect.displayname')" v-model="displayname" />
+        <input type="text" :placeholder="$t('connect.displayname')" v-model="displayname" autofocus />
         <input type="password" :placeholder="$t('connect.password')" v-model="password" v-if="!autoPassword" />
         
         <div class="demo-checkbox-container" v-if="!autoPassword && showDemo">
