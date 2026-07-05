@@ -520,8 +520,26 @@
     }
 
     private onVideoPlaying = () => {
+      const wasFirstPlay = !this._hasEverPlayed
       this._hasEverPlayed = true
       this.$accessor.video.play()
+
+      // After the first successful play, apply deferred unmuting.
+      // The video starts with the HTML 'muted' attribute to satisfy mobile
+      // autoplay policy. Now that playback is confirmed, we can unmute
+      // if the user's stored preference says so.
+      if (wasFirstPlay && this._video) {
+        const userWantsMuted = this.$accessor.video.muted
+        if (!userWantsMuted) {
+          // Try to unmute — this should work now since user already interacted
+          // (they pressed the login/connect button which counts as a gesture)
+          this._video.muted = false
+          this.mutedOverlay = false
+        } else {
+          // User wants muted — show overlay so they can unmute when ready
+          this.mutedOverlay = true
+        }
+      }
     }
 
     private onVideoPause = () => {
