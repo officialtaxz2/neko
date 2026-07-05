@@ -6,7 +6,7 @@
       :style="{ '--horizontal': horizontal, '--vertical': vertical }"
     >
       <div ref="container" class="player-container">
-        <video ref="video" playsinline />
+        <video ref="video" autoplay playsinline webkit-playsinline muted />
         <div class="emotes">
           <template v-for="(emote, index) in emotes">
             <neko-emote :id="index" :key="index" />
@@ -477,8 +477,9 @@
     private _streamCleanup: (() => void) | null = null
     private _stalledTimer: any = null
     private _recoveryAttempts = 0
+    private _hasEverPlayed = false // Guard: only run recovery if video played at least once
     private static readonly MAX_RECOVERY_ATTEMPTS = 3
-    private static readonly STALLED_TIMEOUT_MS = 5000
+    private static readonly STALLED_TIMEOUT_MS = 8000 // 8s — give mobile browsers more time
 
     private videoWidth = 0
     private videoHeight = 0
@@ -519,6 +520,7 @@
     }
 
     private onVideoPlaying = () => {
+      this._hasEverPlayed = true
       this.$accessor.video.play()
     }
 
@@ -528,19 +530,28 @@
 
     // --- Stream health: stalled / waiting handlers ---
     private onVideoStalled = () => {
-      console.warn('[Neko] Video stalled – starting recovery timer')
-      this.startStalledTimer()
+      // Only start recovery if we previously had a working stream.
+      // On mobile, 'stalled' fires during normal WebRTC startup buffering
+      // and triggering recovery there would kill the stream.
+      if (this._hasEverPlayed) {
+        console.warn('[Neko] Video stalled – starting recovery timer')
+        this.startStalledTimer()
+      }
     }
 
     private onVideoWaiting = () => {
       // 'waiting' fires when playback stops due to lack of data.
-      // On TV browsers this often precedes a permanent blackscreen.
-      console.warn('[Neko] Video waiting for data')
-      this.startStalledTimer()
+      // On mobile this is normal during initial buffering — only act if
+      // we had a working stream before.
+      if (this._hasEverPlayed) {
+        console.warn('[Neko] Video waiting for data')
+        this.startStalledTimer()
+      }
     }
 
     private onVideoTimeUpdate = () => {
       // If we receive a timeupdate the stream is alive – cancel any recovery timer.
+      this._hasEverPlayed = true
       this.cancelStalledTimer()
       this._recoveryAttempts = 0
     }
@@ -564,7 +575,13 @@
      * Attempt to recover a dead/stalled video stream.
      * Strategy:
      *  1. Re-assign srcObject (forces browser to re-evaluate the stream)
-     *  2. Call load() + play() as a harder reset
+     *  2. Call play() — first muted (which mobile browsers allow), then unmuted
+     *
+     * IMPORTANT: We NEVER call video.load() on a WebRTC stream.
+     * load() resets the media element, discarding the srcObject's internal state.
+     * On iOS Safari this permanently kills the stream — the video stays black
+     * and no amount of play() calls will revive it.
+     *
      * Gives up after MAX_RECOVERY_ATTEMPTS to avoid infinite loops.
      */
     private async attemptStreamRecovery(reason: string) {
@@ -579,16 +596,23 @@
       if (!this._video || !this.stream) return
 
       try {
-        // Step 1: soft reset – re-assign the same stream
+        // Re-assign srcObject to force the browser to re-evaluate the stream
         this._video.srcObject = this.stream
         await this.$nextTick()
 
-        // Step 2: if video is still not playing, do a harder reset
-        if (this._video.paused || this._video.readyState < 2) {
-          this._video.load()
+        // Try to play — if it fails unmuted, retry muted (mobile autoplay policy)
+        try {
           await this._video.play()
-        } else {
-          await this._video.play()
+        } catch (playErr: any) {
+          if (playErr && (playErr.name === 'NotAllowedError' || playErr.name === 'AbortError')) {
+            // Mobile browser blocked unmuted play — try muted
+            console.warn('[Neko] Recovery play() blocked, retrying muted')
+            this._video.muted = true
+            this.$accessor.video.setMuted(true)
+            await this._video.play()
+          } else {
+            throw playErr
+          }
         }
 
         console.log('[Neko] Stream recovery succeeded')
@@ -846,6 +870,16 @@
     @Watch('muted')
     onMutedChanged(muted: boolean) {
       if (this._video && this._video.muted != muted) {
+        // On mobile, do NOT unmute before the video has played at least once.
+        // iOS Safari blocks autoplay if the video element is unmuted before
+        // the first play() — even if play() is called immediately after.
+        // The video starts with the HTML 'muted' attribute, and we defer
+        // unmuting until after the first successful playback.
+        if (!muted && !this._hasEverPlayed) {
+          // Don't unmute yet — will be applied after first play via mutedOverlay
+          return
+        }
+
         this._video.muted = muted
 
         if (!muted) {
@@ -880,7 +914,9 @@
       // if browser media events get delayed or blocked by autoplay detection.
       this.$accessor.video.setPlayable(true)
 
-      // Automatically trigger playback if autoplay is turned on
+      // Automatically trigger playback if autoplay is turned on.
+      // On mobile browsers, unmuted autoplay is usually blocked by policy.
+      // The onPlayingChanged watcher handles the muted fallback.
       if (this.autoplay) {
         this.$accessor.video.play()
       } else if (this.playing) {
@@ -892,16 +928,6 @@
           }
         })
       }
-
-      // Verify playback actually started after a short delay.
-      // On weak browsers (VIDAA Odin) the play() promise may resolve
-      // but the video element stays frozen.
-      window.setTimeout(() => {
-        if (this._video && this.playing && this._video.readyState < 2) {
-          console.warn('[Neko] Video not ready after stream change, attempting recovery')
-          this.attemptStreamRecovery('post-stream-change readyState check')
-        }
-      }, 2000)
     }
 
     @Watch('track')
@@ -991,16 +1017,24 @@
         } catch (err: any) {
           if (!this._video.muted) {
             // video.play() can fail if audio is set due restrictive
-            // browsers autoplay policy -> retry with muted audio
+            // browsers autoplay policy -> retry with muted audio.
+            // This is the PRIMARY mobile fix: iOS Safari and mobile Chrome
+            // block unmuted autoplay but allow muted autoplay.
             try {
               this.$accessor.video.setMuted(true)
               this._video.muted = true
               await this._video.play()
-            } catch (err: any) {
-              // if it still fails, we're not playing anything
+              // Show the muted overlay so user can tap to unmute
+              this.mutedOverlay = true
+            } catch (err2: any) {
+              // if it still fails, show the play overlay instead of
+              // silently staying black
+              console.warn('[Neko] Autoplay blocked even muted, showing play overlay', err2)
               this.$accessor.video.pause()
             }
           } else {
+            // Already muted but still failing — show play overlay
+            console.warn('[Neko] Play failed even muted, showing play overlay', err)
             this.$accessor.video.pause()
           }
         }
