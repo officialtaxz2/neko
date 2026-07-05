@@ -573,7 +573,7 @@
       this._stalledTimer = window.setTimeout(() => {
         this._stalledTimer = null
         this.attemptStreamRecovery('stalled timeout')
-      }, (this.constructor as typeof NekoVideo).STALLED_TIMEOUT_MS)
+      }, NekoVideo.STALLED_TIMEOUT_MS)
     }
 
     private cancelStalledTimer() {
@@ -597,7 +597,7 @@
      * Gives up after MAX_RECOVERY_ATTEMPTS to avoid infinite loops.
      */
     private async attemptStreamRecovery(reason: string) {
-      const max = (this.constructor as typeof NekoVideo).MAX_RECOVERY_ATTEMPTS
+      const max = NekoVideo.MAX_RECOVERY_ATTEMPTS
       if (this._recoveryAttempts >= max) {
         console.error(`[Neko] Stream recovery failed after ${max} attempts (${reason})`)
         return
