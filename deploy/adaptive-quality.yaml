@@ -1,0 +1,79 @@
+# Experimental, opt-in adaptive-quality profile for the local Brave image.
+# IDs are ordered from highest to lowest quality; the first is the default.
+capture:
+  video:
+    codec: vp8
+    ids: [high, medium, low]
+    pipelines:
+      high:
+        fps: "25"
+        gst_encoder: vp8enc
+        gst_params:
+          target-bitrate: "round(3072 * 650)"
+          cpu-used: "4"
+          end-usage: cbr
+          threads: "4"
+          deadline: "1"
+          undershoot: "95"
+          buffer-size: "3072 * 4"
+          buffer-initial-size: "3072 * 2"
+          buffer-optimal-size: "3072 * 3"
+          keyframe-max-dist: "25"
+          min-quantizer: "4"
+          max-quantizer: "20"
+        show_pointer: true
+      medium:
+        width: "round(width / 3) * 2"
+        height: "round(height / 3) * 2"
+        fps: "20"
+        gst_encoder: vp8enc
+        gst_params:
+          target-bitrate: "round(1536 * 650)"
+          cpu-used: "4"
+          end-usage: cbr
+          threads: "4"
+          deadline: "1"
+          undershoot: "95"
+          buffer-size: "1536 * 4"
+          buffer-initial-size: "1536 * 2"
+          buffer-optimal-size: "1536 * 3"
+          keyframe-max-dist: "25"
+          min-quantizer: "4"
+          max-quantizer: "24"
+        show_pointer: true
+      low:
+        width: "round(width / 4) * 2"
+        height: "round(height / 4) * 2"
+        fps: "15"
+        gst_encoder: vp8enc
+        gst_params:
+          target-bitrate: "round(768 * 650)"
+          cpu-used: "4"
+          end-usage: cbr
+          threads: "4"
+          deadline: "1"
+          undershoot: "95"
+          buffer-size: "768 * 4"
+          buffer-initial-size: "768 * 2"
+          buffer-optimal-size: "768 * 3"
+          keyframe-max-dist: "25"
+          min-quantizer: "4"
+          max-quantizer: "28"
+        show_pointer: true
+
+webrtc:
+  estimator:
+    enabled: true
+    passive: false
+    debug: true
+    initial_bitrate: 2500000
+    read_interval: 2s
+    stable_duration: 12s
+    unstable_duration: 6s
+    stalled_duration: 24s
+    downgrade_backoff: 10s
+    upgrade_backoff: 5s
+    diff_threshold: 0.15
+
+server:
+  metrics: true

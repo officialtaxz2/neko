@@ -36,7 +36,7 @@ Supporting trees:
 - Vuex/typed-vuex
 - browser `RTCPeerConnection`
 
-The reconciled lockfile resolves Vue `2.7.14`, TypeScript `5.8.3`, and Vite `6.4.3`; target-server installation, lint and build remain pending.
+The reconciled lockfile resolves Vue `2.7.14`, TypeScript `5.8.3`, and Vite `6.4.3`; the operator confirmed that the target-server installation, lint and production build passed.
 
 `client/src/neko/base.ts` currently couples WebSocket signaling/session events, WebRTC peer setup, WebRTC tracks and the WebRTC data channel for input.
 
@@ -96,7 +96,11 @@ The integrated upstream server additionally contains:
 - an optional host-authorized `openinapp` plugin;
 - XInput-device keyboard dispatch for Firefox/GDK3 compatibility.
 
-The first two items establish code-level slow-peer isolation: a backpressured peer drops its own samples instead of blocking the capture fan-out. The product outcome still requires target-server validation with simultaneous healthy and throttled viewers.
+The current adaptive-quality follow-up adds bit/s stream-rate accounting aligned with the estimator, a per-pipeline bitrate gauge, and peer-local sample-drop counters labeled by session and media kind. These changes are implemented in the repository but not yet target-server verified.
+
+The non-blocking queue and unlocked fan-out establish code-level slow-peer isolation: a backpressured peer drops its own samples instead of blocking capture dispatch. The drop path now increments `neko_webrtc_track_dropped_samples_total`, making cross-peer behavior distinguishable without trace logs.
+
+The estimator compares Pion's per-peer target against the current stream bitrate. Static review for the adaptive profile found that the latter had been accumulated as encoded bytes/s even though Pion reports bit/s. The capture path now multiplies sample bytes by eight, publishes the result atomically and exports `neko_capture_streamsink_bitrate`. This corrected selection path has not yet been runtime-verified.
 
 The current fork relies on Neko's WebRTC server model. Issue #690 alternative media prototypes are not established backends in this fork.
 
@@ -105,6 +109,10 @@ The current fork relies on Neko's WebRTC server model. Issue #690 alternative me
 The default root `config.yml` is no longer copied into the base image. Server defaults now keep implicit hosting and cookie authentication disabled, matching the removed file's effective defaults. Deployments must supply intentional settings through environment variables or a mounted YAML file.
 
 The repository `docker-compose.yaml` now represents this fork's operator-confirmed deployment baseline: a locally built Brave image with registry pulling disabled, pre-start singleton-lock cleanup, persistent but ignored profile/download paths, optional managed policy, loopback HTTP binding, configurable WebRTC UDP range and enabled file transfer. `.env.example` documents non-secret settings; Compose refuses to resolve while either password is empty. Actual `.env`, profile, downloads and instance policy stay outside Git.
+
+`docker-compose.adaptive.yaml` is a separate opt-in overlay. It mounts `deploy/adaptive-quality.yaml`, whose ordered `high`/`medium`/`low` VP8 definitions activate demand-driven multi-pipeline encoding and the per-peer estimator. Omitting the overlay leaves the validated single-pipeline baseline unchanged. Activation, metrics, resource implications and rollback are in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
+
+The first target-server deployment smoke test exposed a filename regression in the sanitized reconstruction: the external policy was mounted as `/etc/brave/policies/managed/policy.json` instead of replacing the image's `/etc/brave/policies/managed/policies.json`. Restoring the original plural destination made both the custom managed policy and persistent profile load as intended. This initially validated the deployment/mount path; the operator subsequently confirmed the rest of the applicable integration regression matrix.
 
 The runtime/browser image tree also includes ARM64 Widevine installation, ARM64 Google Chrome image support, updated Chromium-family policies and NVIDIA encoder fallback selection. These image paths have not been built in Codex.
 
@@ -124,14 +132,41 @@ Only sanitized, reusable deltas belong in Git. See [`LOCAL_DELTA_AUDIT.md`](LOCA
 - make weak-viewer behavior peer-local;
 - support per-viewer quality selection;
 - make view-only roles server-enforced;
-- allow an alternative receive-media path without creating a separate room.
+- allow alternative receive-media paths without creating a separate room;
+- allow different participants in the same room to use different media backends when role/device/network capability requires it;
+- treat interactive low-latency fallback and passive/view-only streaming as separate compatibility problems.
+
+### Target media-backend shape
+
+The intended boundary is a shared encoded-media/subscription layer feeding peer-specific delivery backends:
+
+```text
+shared capture / encoder outputs
+        |
+        +-- WebRTC -------------------- interactive default
+        |
+        +-- WebCodecs + WebSocket ---- interactive fallback candidate
+        |
+        +-- HLS / LL-HLS ------------- passive/view-only candidate
+        |
+        `-- other backend ------------ only when capability evidence requires it
+```
+
+The control/session/auth path must remain independent enough that a receive-only backend does not gain control capability. A passive viewer can therefore use HTTP-streaming media while remaining in the same logical Neko room.
+
+This architecture is directionally aligned with upstream issue #371, which explicitly lists `m3u8`/HLS, WebRTC, QUIC and other media backends and proposes selecting them according to user-device, network and server capabilities.
 
 ### LATER/OPTIONAL
 
-Possible future backends include WebCodecs/WebSocket, WebTransport/QUIC or other receive-only options. Exact final interfaces remain OPEN until baseline sync and prototype evaluation.
+- WebTransport/QUIC productionization after simpler fallbacks are proven;
+- MPEG-DASH where it materially improves passive-client compatibility;
+- MJPEG only as an ultra-legacy image-only last resort;
+- fully automatic transport/codec selection after explicit capability detection and measured fallback behavior.
+
+Exact final interfaces remain OPEN until the relevant prototype work is designed against the current synchronized baseline.
 
 ## Verification boundary
 
 Architecture/runtime claims beyond repository inspection must be verified on the real target server, not in Codex. Codex should prepare server-side validation steps but must not execute the application, builds, tests, Docker or media/device checks.
 
-The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its target-server build and regression matrix remain pending.
+The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The later adaptive overlay, bitrate-unit correction and new metrics are statically reviewed repository changes whose target-server verification is still pending.

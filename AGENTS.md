@@ -10,8 +10,9 @@ Immediate sequence:
 2. reconcile desired local changes from `MyNekoProjekt` — **complete; no source delta was missing and the operator-confirmed deployment compose was imported in sanitized form**,
 3. synchronize the completed fork with current upstream without breaking fork behavior — **complete; merge commit `4e99b8d3`**,
 4. fast-forward the reviewed integration history to `master` — **complete**,
-5. validate the integrated `master` on the target server — **NEXT**,
-6. continue the product work defined in `docs/PROJECT.md`.
+5. validate the integrated `master` on the target server — **complete; operator-confirmed on 2026-09-09 after correcting the Brave policy mount filename**,
+6. make the multi-pipeline/bandwidth-estimator path reproducible and observable without changing the stable single-pipeline default — **complete in repository / target-server validation pending**,
+7. validate and measurement-tune the opt-in adaptive-quality profile on the target server — **NEXT**.
 
 ## Authoritative knowledge
 
@@ -23,6 +24,7 @@ Read before substantial work:
 - `docs/WORKPLAN.md` — current `NEXT`, sync procedure, server-side verification and open items.
 - `docs/LOCAL_DELTA_AUDIT.md` — completed, sanitized classification of the supplied `MyNekoProjekt` snapshot.
 - `docs/UPSTREAM_SYNC_AUDIT.md` — completed semantic review and merge record for the 2026-09-09 upstream synchronization.
+- `docs/ADAPTIVE_QUALITY.md` — opt-in profile, diagnostics, resource costs, exact target-server acceptance procedure and rollback.
 - `webpage/docs/` — inherited Neko documentation. Current repository code/config wins on conflicts.
 
 ## Truth rules
@@ -68,6 +70,7 @@ Runtime/build/test status must be reported as **NOT EXECUTED IN CODEX** unless r
 - `runtime/` — runtime image/container support.
 - `webpage/` — inherited Neko documentation site.
 - `docs/` — fork-specific durable project knowledge.
+- `deploy/` — tracked, non-secret opt-in deployment configuration overlays.
 
 ## Server-side verification reference
 
@@ -106,6 +109,8 @@ Use only the checks relevant to the changed areas, with broader verification aft
 - A weak viewer must not degrade healthy viewers in the target architecture.
 - Future view-only sharing must be enforced server-side; hiding controls in the UI is not authorization.
 - WebRTC is the currently implemented primary media path.
+- Future interactive and passive/view-only clients may use different media backends in the same logical room; media transport must not determine authorization.
+- WebCodecs/WebSocket and HLS/LL-HLS are TARGET candidates, not IMPLEMENTED. Do not assume WebSocket is inherently better for poor networks, and do not promote MJPEG beyond an optional ultra-legacy fallback without device evidence.
 
 ## Definition of Done for Codex work
 

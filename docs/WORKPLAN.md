@@ -43,7 +43,7 @@ integration/upstream-20260909
 upstream merge commit: 4e99b8d3ca720d1f184544306820e388716ba23a
 relation at merge commit: 37 commits ahead, 0 behind
 master: fast-forwarded to the reviewed integration history
-following commits: repository-knowledge/status updates only
+following work: deployment reconciliation, repository knowledge and the opt-in adaptive-quality unit
 ```
 
 ## COMPLETED — `MyNekoProjekt` local delta audit
@@ -57,9 +57,9 @@ Completed on 2026-09-09 against fork baseline `d9c1afd564ad4c293a0b1b28aecbc103d
 - No application-source feature/fix was missing.
 - The raw local compose and embedded credentials were initially excluded together. After the operator clarified that its structure is the intended deployment baseline, that structure was reconstructed in sanitized and parameterized form; credential values remain excluded and should be rotated operationally if still active.
 - Root ignore rules guard the local reference and runtime/profile paths against accidental staging.
-- Static follow-up repaired the stale pre-Vite client lock/type baseline in commit `2d89027e`; target-server verification is pending.
+- Static follow-up repaired the stale pre-Vite client lock/type baseline in commit `2d89027e`; its target-server client checks were later operator-confirmed as passed.
 
-Status: **Codex-side implementation complete / target-server verification pending**.
+Status: **Codex-side implementation complete / target-server verification operator-confirmed as passed on 2026-09-09**.
 
 The exhaustive sanitized classification is in [`LOCAL_DELTA_AUDIT.md`](LOCAL_DELTA_AUDIT.md).
 
@@ -100,7 +100,36 @@ Completed after operator clarification on 2026-09-09.
 - Added `.env.example`; both member/admin passwords are required and deliberately empty. Real `.env` remains ignored.
 - Kept the browser profile, downloads and instance `policy.json` contents ignored and outside Git.
 
-Status: **statically reviewed / target-server Compose resolution, image build and startup NOT EXECUTED IN CODEX**.
+Status: **statically reviewed in Codex / target-server deployment smoke test passed after the policy-mount correction described below**.
+
+## COMPLETED — target-server validation
+
+Operator-reported target-server result on 2026-09-09:
+
+- The locally built Brave deployment reached an operational state through the tracked Compose structure.
+- The first profile/policy check exposed a filename regression in the sanitized Compose reconstruction: it mounted the optional external policy as `/etc/brave/policies/managed/policy.json`, while the audited source compose, Brave image and inherited documentation use `/etc/brave/policies/managed/policies.json`.
+- The plural destination was restored in `docker-compose.yaml`.
+- After recreating the deployment, the operator confirmed that the custom managed policy and persistent browser profile load as intended.
+
+The operator subsequently confirmed that all build checks and all regression-matrix items applicable to the target deployment were tested successfully. Raw command logs, exact device models and non-applicable architecture variants were not archived in the repository, so this acceptance must not be generalized into claims for unreported devices or architectures.
+
+Status: **target deployment accepted after correction / applicable integrated-baseline validation complete**.
+
+## COMPLETED IN REPOSITORY — opt-in adaptive quality and diagnostics
+
+Implemented and statically reviewed on 2026-09-09:
+
+- Added `docker-compose.adaptive.yaml` as a separate overlay; omitting it preserves the stable single-pipeline Brave deployment.
+- Added `deploy/adaptive-quality.yaml` with VP8 tiers ordered `high`, `medium`, `low`, explicit encoder targets and explicit per-peer estimator settings.
+- Added `docs/ADAPTIVE_QUALITY.md` with activation, metrics/log diagnostics, resource costs, rollback and an exact two-healthy-plus-one-constrained-viewer acceptance sequence.
+- Added `deploy/collect-adaptive-quality.sh` and a result template to capture filtered phase metrics, estimator logs, host resources, commit and running image ID without reading deployment secrets.
+- Found a factor-of-eight unit defect while tracing the selection path: capture accumulated encoded bytes/s but compared it directly with Pion's bit/s estimate. Capture now converts sample bytes to bits and publishes the cross-goroutine bitrate atomically.
+- Added `neko_capture_streamsink_bitrate` for actual per-pipeline bit/s and `neko_webrtc_track_dropped_samples_total` for peer-local queue drops labeled by session and media kind.
+- Added a focused Go unit test for the byte-to-bit conversion.
+
+Static review status: **implementation complete in repository / runtime, build and tests NOT EXECUTED IN CODEX**.
+
+The earlier operator-confirmed integration regression predates the new overlay, metrics and bitrate correction. It remains valid for the tested baseline, but it is not acceptance evidence for this new profile.
 
 ## Target-server verification
 
@@ -115,7 +144,7 @@ npm run lint
 npm run build
 ```
 
-Required for the integrated baseline: confirm `npm ci`, TypeScript lint and the Vite production build at integration commit `4e99b8d3`. This also closes the still-pending verification of the lock/type repair in `2d89027e`.
+Required for the integrated baseline: confirm `npm ci`, TypeScript lint and the Vite production build at integration commit `4e99b8d3`. The operator later confirmed these checks passed, closing verification of the lock/type repair in `2d89027e`.
 
 ### Server and container
 
@@ -146,7 +175,7 @@ docker compose config
 docker compose up -d
 ```
 
-Confirm that `my-neko/brave:latest` is used, the cleanup service completes successfully, the profile/download/policy mounts resolve to the intended server paths, and the HTTP/UDP bindings match the firewall/reverse-proxy setup.
+Confirm that `my-neko/brave:latest` is used, the cleanup service completes successfully, the profile/download/policy mounts resolve to the intended server paths, and the HTTP/UDP bindings match the firewall/reverse-proxy setup. The managed policy destination must be `/etc/brave/policies/managed/policies.json`.
 
 The base image no longer embeds root `config.yml`; implicit hosting and cookie authentication now default to disabled. If clients cannot reach the discovered address, set `NEKO_WEBRTC_NAT1TO1` in `.env` and enable the documented Compose entry. Never put real passwords into tracked YAML.
 
@@ -169,6 +198,8 @@ Slow-viewer isolation and adaptive quality:
 - with multiple ordered video pipelines and the bandwidth estimator enabled, throttle and restore one viewer;
 - confirm only that viewer switches down/up and other viewers remain stable;
 - repeat through the legacy protocol path, which now requests automatic selection.
+
+For the new tracked opt-in profile, use the exact phases, metrics and acceptance criteria in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md). That procedure supersedes the abbreviated adaptive-quality bullets above for the current `NEXT`.
 
 Desktop:
 
@@ -217,38 +248,48 @@ Browser/runtime images, when relevant to the deployment:
 
 ## NEXT
 
-The semantic upstream synchronization and fast-forward promotion are complete. The next bounded unit is target-server validation of the integrated `master` source tree introduced by merge commit `4e99b8d3`, using the commands and regression matrix above.
+Build the current Brave image on the real target server, activate `docker-compose.adaptive.yaml`, and execute the complete acceptance procedure in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md). Archive the four-phase metric/result table, relevant estimator logs, host resource measurements, commit and image ID.
 
-Record the target-server results here before starting product work. If validation fails, apply and statically review the correction on `master`; do not describe the integrated baseline as runtime-verified until those checks pass.
+Accept or reject the profile from that evidence. If thresholds, bitrates, frame rates or encoder thread counts need adjustment, change only the opt-in YAML and repeat the affected phases plus final recovery. Do not change the stable base Compose default, and do not call the adaptive tuning validated before this target-server run passes.
 
 ## Product priority after stable synced baseline
 
-1. validate and tune the integrated slow-client isolation path;
-2. evaluate the integrated multi-pipeline + bandwidth estimator for per-viewer quality;
+1. validate the reproducible slow-client isolation and multi-pipeline estimator profile on the target server;
+2. tune per-viewer quality using the recorded target-server measurements;
 3. stabilize mobile/reconnect after sync;
 4. server-enforced view-only sharing;
 5. practical non-WebRTC viewer-media fallback.
 
 ## Fallback prototype sequence
 
-If alternative media work begins:
+Alternative media work starts only after the current adaptive-quality `NEXT` is accepted or explicitly rejected from target-server evidence.
 
-1. media-subscription abstraction;
-2. WebCodecs + dedicated WebSocket media;
-3. WebTransport only later.
+When fallback work begins, separate the two user classes instead of forcing every client through one fallback chain:
+
+1. establish a backend-neutral encoded-media/subscription boundary;
+2. prototype **WebCodecs + dedicated WebSocket media** for interactive clients whose WebRTC/ICE path is unusable;
+3. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
+4. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;
+5. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
+
+The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS is a TARGET candidate now, not merely a generic later idea.
 
 ## LATER / OPTIONAL
 
 - WebTransport productionization;
-- automatic transport selection;
+- fully automatic transport selection after explicit/manual fallback paths are proven;
 - automatic codec selection;
-- HLS/DASH fallback if justified;
+- MPEG-DASH as an additional passive HTTP-streaming backend where useful;
+- MJPEG only as an ultra-legacy image-only fallback for a concrete unsupported device class;
 - broader v3 client/library rewrite.
 
 ## OPEN
 
-- Supported Smart-TV/device matrix.
+- Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether upstream adaptive quality meets desired per-viewer behavior.
-- Best first non-WebRTC media backend after measurement.
+- Exact WebCodecs/WebSocket framing, queue/drop/backpressure policy and codec set.
+- HLS/LL-HLS latency target, segment/part sizing, codec profile and server resource cost.
+- Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
+- Exact per-client media-backend capability/selection rules and rollout order.
 - View-only token format/lifetime/revocation.
 - Longer-term legacy Vue 2 migration.

@@ -92,8 +92,8 @@ The staged path list and index were checked for forbidden runtime paths and high
 - no remaining `ArrayIn` call sites after helper deletion;
 - fork touch/trackpad/cursor, autoplay, playback recovery, fullscreen and reconnect paths confirmed present by source inspection.
 
-No dependency installation, project script, test, linter, type-checker, build, Docker image, server, browser, WebRTC session or device check was executed in Codex.
+No dependency installation, project script, test, linter, type-checker, build, Docker image, server, browser, WebRTC session or device check was executed in Codex. Those checks remained target-server work and were later operator-confirmed as passed for the applicable deployment matrix on 2026-09-09.
 
 ## Outcome
 
-The upstream synchronization is Codex-side complete and its reviewed history is on `master`. Runtime/build status is **NOT EXECUTED IN CODEX**. The next bounded unit is target-server verification of `master` as defined in [`WORKPLAN.md`](WORKPLAN.md#next).
+The upstream synchronization is Codex-side complete and its reviewed history is on `master`. Runtime/build status remains **NOT EXECUTED IN CODEX** by policy; the operator later confirmed that the applicable target-server build and regression matrix passed after correcting the Brave policy mount filename. The next bounded product unit is defined in [`WORKPLAN.md`](WORKPLAN.md#next).

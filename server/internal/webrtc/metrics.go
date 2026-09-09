@@ -118,6 +118,27 @@ func (m *metricsManager) getBySession(session types.Session) *metrics {
 		videoIds:   map[string]prometheus.Gauge{},
 		videoIdsMu: &sync.Mutex{},
 
+		trackDroppedSamplesAudio: promauto.NewCounter(prometheus.CounterOpts{
+			Name:      "track_dropped_samples",
+			Namespace: "neko",
+			Subsystem: "webrtc",
+			Help:      "Samples dropped because a peer-local WebRTC track queue was full.",
+			ConstLabels: map[string]string{
+				"session_id": sessionId,
+				"kind":       "audio",
+			},
+		}),
+		trackDroppedSamplesVideo: promauto.NewCounter(prometheus.CounterOpts{
+			Name:      "track_dropped_samples",
+			Namespace: "neko",
+			Subsystem: "webrtc",
+			Help:      "Samples dropped because a peer-local WebRTC track queue was full.",
+			ConstLabels: map[string]string{
+				"session_id": sessionId,
+				"kind":       "video",
+			},
+		}),
+
 		receiverEstimatedMaximumBitrate: promauto.NewGauge(prometheus.GaugeOpts{
 			Name:      "receiver_estimated_maximum_bitrate",
 			Namespace: "neko",
@@ -237,8 +258,10 @@ type metrics struct {
 	iceCandidatesUsedUdp prometheus.Gauge
 	iceCandidatesUsedTcp prometheus.Gauge
 
-	videoIds   map[string]prometheus.Gauge
-	videoIdsMu *sync.Mutex
+	videoIds                 map[string]prometheus.Gauge
+	videoIdsMu               *sync.Mutex
+	trackDroppedSamplesAudio prometheus.Counter
+	trackDroppedSamplesVideo prometheus.Counter
 
 	receiverEstimatedMaximumBitrate prometheus.Gauge
 	receiverEstimatedTargetBitrate  prometheus.Gauge
@@ -266,6 +289,7 @@ func (met *metrics) reset() {
 	met.iceCandidatesUsedTcp.Set(float64(0))
 
 	met.receiverEstimatedMaximumBitrate.Set(0)
+	met.receiverEstimatedTargetBitrate.Set(0)
 
 	met.receiverReportDelay.Set(0)
 	met.receiverReportJitter.Set(0)
@@ -352,6 +376,15 @@ func (met *metrics) SetVideoID(videoId string) {
 		} else {
 			entry.Set(0)
 		}
+	}
+}
+
+func (met *metrics) IncTrackDroppedSample(kind string) {
+	switch kind {
+	case "audio":
+		met.trackDroppedSamplesAudio.Inc()
+	case "video":
+		met.trackDroppedSamplesVideo.Inc()
 	}
 }
 

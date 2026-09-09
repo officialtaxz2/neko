@@ -15,8 +15,10 @@ import (
 )
 
 type Track struct {
-	logger zerolog.Logger
-	track  *webrtc.TrackLocalStaticSample
+	logger  zerolog.Logger
+	track   *webrtc.TrackLocalStaticSample
+	kind    string
+	metrics *metrics
 
 	rtcpCh chan []rtcp.Packet
 	sample chan types.Sample
@@ -34,6 +36,12 @@ func WithRtcpChan(rtcp chan []rtcp.Packet) trackOption {
 	}
 }
 
+func WithMetrics(metrics *metrics) trackOption {
+	return func(t *Track) {
+		t.metrics = metrics
+	}
+}
+
 func NewTrack(logger zerolog.Logger, codec codec.RTPCodec, connection *webrtc.PeerConnection, opts ...trackOption) (*Track, error) {
 	id := codec.Type.String()
 	track, err := webrtc.NewTrackLocalStaticSample(codec.Capability, id, "stream")
@@ -44,6 +52,7 @@ func NewTrack(logger zerolog.Logger, codec codec.RTPCodec, connection *webrtc.Pe
 	t := &Track{
 		logger: logger.With().Str("id", id).Logger(),
 		track:  track,
+		kind:   id,
 		rtcpCh: nil,
 		sample: make(chan types.Sample, 2),
 	}
@@ -113,6 +122,9 @@ func (t *Track) WriteSample(sample types.Sample) {
 	select {
 	case t.sample <- sample:
 	default:
+		if t.metrics != nil {
+			t.metrics.IncTrackDroppedSample(t.kind)
+		}
 		t.logger.Trace().Msg("dropping sample: track channel full")
 	}
 }

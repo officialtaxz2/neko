@@ -67,17 +67,26 @@ The product remains one shared session, not independent per-user browser session
 - The optional `openinapp` plugin can open HTTP(S) chat links in the shared application for an authorized host.
 - Capture-pointer visibility, clipboard resync on window focus, `?scroll=` sensitivity and several browser/runtime compatibility fixes are present.
 
-These are repository implementation claims based on static inspection. Build, runtime, multi-user, media and device verification for the integration commit is still pending on the target server.
+These repository implementation claims were first established by static inspection. On 2026-09-09, the operator confirmed that all checks applicable to the target deployment in the documented build and regression matrix passed after the Brave policy-mount correction. No universal support is claimed for devices or architectures not identified in that operator report.
+
+## Adaptive-quality follow-up
+
+### IMPLEMENTED in the repository / target-server verification pending
+
+- The Brave deployment has a separate opt-in adaptive-quality overlay with ordered `high`, `medium` and `low` VP8 pipelines; the stable base Compose file remains single-pipeline.
+- Encoded stream rates are measured and compared with the Pion target in bit/s.
+- Peer-local audio/video queue drops and per-pipeline bitrates are exported as Prometheus metrics.
+- Activation, diagnostics, resource costs, rollback and the target-server acceptance sequence are documented in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
 ## Highest-priority target outcomes
 
 ### TARGET — slow-viewer isolation
 
-The integrated per-peer non-blocking delivery mechanism is the intended code-level isolation: a slow/lossy viewer may drop its own samples without blocking healthy peers. The outcome remains a target acceptance criterion until it is demonstrated with simultaneous healthy and throttled viewers on the target server.
+The integrated per-peer non-blocking delivery mechanism is the intended code-level isolation: a slow/lossy viewer may drop its own samples without blocking healthy peers. The operator reports that the applicable simultaneous-viewer regression passed on the earlier target deployment. The current implementation adds a per-session, per-media-kind drop counter; its target-server result remains pending.
 
 ### TARGET — per-viewer adaptive quality
 
-Configure and evaluate the integrated multi-pipeline and per-peer bandwidth-estimation path before inventing a parallel ABR architecture. The estimator is not sufficient merely by being present in code; automatic peer-local switching must be verified under controlled bandwidth changes.
+The repository now contains a reproducible, opt-in three-tier VP8 profile, estimator diagnostics, resource/rollback documentation and an exact healthy-plus-constrained-viewer acceptance procedure. Static inspection during this unit found that the capture side previously accumulated encoded bytes/s while the Pion estimator target is bit/s; stream accounting now converts to bit/s and uses an atomic cross-goroutine value. Because this correction and the new profile postdate the earlier operator report, the profile must be rebuilt, measured and accepted on the target server before its tuning values or adaptive behavior are called validated. See [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
 ### TARGET — mobile robustness
 
@@ -85,13 +94,15 @@ Mobile must reliably join, start media under autoplay rules, recover from transi
 
 ### TARGET — Smart-TV / constrained browser compatibility
 
-A viewer should not be permanently excluded solely because WebRTC/ICE/media support is unreliable. A non-WebRTC media fallback is a target; exact protocol remains open.
+A viewer should not be permanently excluded solely because WebRTC/ICE/media support is unreliable. Non-WebRTC receive-media paths are a target, and they do not need to use the same transport as interactive clients.
+
+For passive/view-only devices such as Smart-TVs or constrained/older browsers, higher media latency is acceptable when it materially improves compatibility and stability. A conventional HTTP live-streaming path (preferably HLS/Low-Latency HLS as the first candidate, with DASH as an alternative to evaluate) should therefore be considered separately from low-latency interactive fallbacks.
 
 ### TARGET — server-enforced view-only share link
 
 A future `/watch/<token>`-style path or equivalent should permit passive viewing without mouse/keyboard/touch/control/admin capabilities.
 
-Authorization must be enforced server-side.
+Authorization must be enforced server-side. A view-only client may use a different receive-only media backend from interactive participants in the same shared room; changing the media transport must not create a separate desktop/session or weaken authorization.
 
 ### TARGET — robust recovery
 
@@ -99,20 +110,52 @@ Refresh, reconnect and network transitions must not leave peers permanently blac
 
 ## Alternative media direction
 
-Upstream issue #690 proposes staged work:
+The project distinguishes **interactive** and **passive/view-only** media fallback needs. There is not one mandatory fallback chain for every client.
+
+This direction is consistent with upstream issue #371, which proposes protocol-independent media backends including HLS (`m3u8`), WebRTC and QUIC, with backend selection based on device capabilities, network conditions and server capabilities.
+
+### TARGET candidate — interactive fallback
+
+Upstream issue #690 proposes staged work around:
 
 1. media-subscription abstraction;
-2. WebCodecs + WebSocket;
+2. WebCodecs + dedicated WebSocket media;
 3. WebTransport.
 
-Project direction:
+For an interactive participant, WebCodecs + WebSocket remains the first practical non-WebRTC candidate to evaluate after the media abstraction. Its purpose is primarily to bypass WebRTC/ICE/browser compatibility failures while retaining a low-latency path.
 
-- evaluate only after local reconciliation and upstream sync;
-- prefer abstraction first;
-- treat WebSocket + WebCodecs as the first practical fallback candidate;
-- keep WebTransport later/optional until justified.
+Do not assume WebSocket is automatically better on a poor or lossy connection: the standard `WebSocket` API has no built-in backpressure, and reliable ordered delivery can accumulate latency if the receiver cannot keep up. Queueing/drop policy, codec support and actual device behavior must be measured.
 
-These prototypes are not IMPLEMENTED here unless repository code proves otherwise.
+### TARGET candidate — passive/view-only HTTP streaming
+
+For passive viewers, especially Smart-TVs, old/constrained browsers, and `/watch/<token>`-style clients, evaluate a conventional adaptive HTTP livestream independently of the interactive path:
+
+- **HLS / Low-Latency HLS** is the primary candidate because it is HTTP-based, supports live audio/video and multiple bitrate variants, and is designed to adapt playback to changing network conditions.
+- **MPEG-DASH** is a secondary candidate where client/platform support makes it useful.
+- Higher latency is acceptable for this role because these clients are not controlling the desktop.
+- A passive HTTP-stream client must remain part of the same room/session and receive no implicit control rights.
+- Prefer using the same underlying capture/encoded-media abstraction where practical rather than introducing a second independent desktop capture.
+
+This is conceptually similar to a conventional Twitch/YouTube-style viewer delivery path, not a requirement to reproduce either service's exact protocol stack.
+
+### LATER/OPTIONAL — ultra-legacy image fallback
+
+MJPEG may be evaluated only as a last-resort, ultra-legacy image-only fallback if a concrete device class cannot use the other media paths. It is not a primary architecture target because it lacks an integrated audio/adaptive-streaming model and is bandwidth-inefficient for continuous desktop video.
+
+### Selection principle
+
+The eventual media backend may differ per participant based on role and capability:
+
+```text
+interactive capable client  -> WebRTC
+interactive WebRTC failure  -> WebCodecs/WebSocket candidate
+passive/view-only client     -> HLS/LL-HLS candidate
+other constrained client     -> capability-tested alternative
+```
+
+Automatic selection is a TARGET direction, not currently IMPLEMENTED. Manual/explicit selection may be used first for diagnosis and rollout.
+
+None of these alternative-media candidates are IMPLEMENTED here unless repository code proves otherwise.
 
 ## Development / verification environment constraint
 

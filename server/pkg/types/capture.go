@@ -113,6 +113,7 @@ type StreamSelectorManager interface {
 type StreamSinkManager interface {
 	ID() string
 	Codec() codec.RTPCodec
+	// Bitrate returns the current encoded stream rate in bits per second.
 	Bitrate() uint64
 
 	AddListener(listener SampleListener) error

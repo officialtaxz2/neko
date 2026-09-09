@@ -4,6 +4,7 @@ import (
 	"errors"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -25,7 +26,9 @@ type StreamSinkManagerCtx struct {
 	// wait for a keyframe before sending samples
 	waitForKf bool
 
-	bitrate   uint64
+	// Encoded stream bitrate in bits per second. The bandwidth estimator uses
+	// the same unit, so keep the byte-to-bit conversion at sample ingestion.
+	bitrate   atomic.Uint64
 	brBuckets map[int]float64
 
 	logger zerolog.Logger
@@ -43,6 +46,7 @@ type StreamSinkManagerCtx struct {
 
 	// metrics
 	currentListeners prometheus.Gauge
+	currentBitrate   prometheus.Gauge
 	totalBytes       prometheus.Counter
 	pipelinesCounter prometheus.Counter
 	pipelinesActive  prometheus.Gauge
@@ -60,7 +64,6 @@ func streamSinkNew(codec codec.RTPCodec, pipelineFn func() (string, error), id s
 		// only wait for keyframes if the codec is video
 		waitForKf: codec.IsVideo(),
 
-		bitrate:   0,
 		brBuckets: map[int]float64{},
 
 		logger:     logger,
@@ -76,6 +79,17 @@ func streamSinkNew(codec codec.RTPCodec, pipelineFn func() (string, error), id s
 			Namespace: "neko",
 			Subsystem: "capture",
 			Help:      "Current number of listeners for a pipeline.",
+			ConstLabels: map[string]string{
+				"video_id":   id,
+				"codec_name": codec.Name,
+				"codec_type": codec.Type.String(),
+			},
+		}),
+		currentBitrate: promauto.NewGauge(prometheus.GaugeOpts{
+			Name:      "streamsink_bitrate",
+			Namespace: "neko",
+			Subsystem: "capture",
+			Help:      "Current encoded pipeline bitrate in bits per second.",
 			ConstLabels: map[string]string{
 				"video_id":   id,
 				"codec_name": codec.Name,
@@ -143,7 +157,7 @@ func (manager *StreamSinkManagerCtx) ID() string {
 }
 
 func (manager *StreamSinkManagerCtx) Bitrate() uint64 {
-	return manager.bitrate
+	return manager.bitrate.Load()
 }
 
 func (manager *StreamSinkManagerCtx) Codec() codec.RTPCodec {
@@ -346,7 +360,7 @@ func (manager *StreamSinkManagerCtx) CreatePipeline() error {
 	return nil
 }
 
-func (manager *StreamSinkManagerCtx) saveSampleBitrate(timestamp time.Time, delta float64) {
+func (manager *StreamSinkManagerCtx) saveSampleBitrate(timestamp time.Time, sampleBytes float64) {
 	// get unix timestamp in seconds
 	sec := timestamp.Unix()
 	// last bucket is timestamp rounded to 3 seconds - 1 second
@@ -357,14 +371,16 @@ func (manager *StreamSinkManagerCtx) saveSampleBitrate(timestamp time.Time, delt
 	next := int((sec + 1) % 3)
 
 	if manager.brBuckets[next] != 0 {
-		// update bitrate, TODO: atomic?
-		manager.bitrate = uint64(manager.brBuckets[last])
+		bitrate := uint64(manager.brBuckets[last])
+		manager.bitrate.Store(bitrate)
+		manager.currentBitrate.Set(float64(bitrate))
 		// empty next bucket
 		manager.brBuckets[next] = 0
 	}
 
-	// add rate to current bucket
-	manager.brBuckets[curr] += delta
+	// Samples are measured in bytes, while both the Pion bandwidth estimator
+	// and StreamSinkManager.Bitrate use bits per second.
+	manager.brBuckets[curr] += sampleBytes * 8
 }
 
 func (manager *StreamSinkManagerCtx) onSample(sample types.Sample) {
@@ -412,5 +428,6 @@ func (manager *StreamSinkManagerCtx) DestroyPipeline() {
 	manager.pipelinesActive.Set(0)
 
 	manager.brBuckets = make(map[int]float64)
-	manager.bitrate = 0
+	manager.bitrate.Store(0)
+	manager.currentBitrate.Set(0)
 }

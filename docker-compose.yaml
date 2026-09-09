@@ -29,7 +29,7 @@ services:
     volumes:
       - "${NEKO_PROFILE_DIR:-./files}:/home/neko/.config/brave"
       - "${NEKO_DOWNLOADS_DIR:-./downloads}:/home/neko/Downloads"
-      - "${NEKO_POLICY_FILE:-./apps/brave/policies.json}:/etc/brave/policies/managed/policy.json:ro"
+      - "${NEKO_POLICY_FILE:-./apps/brave/policies.json}:/etc/brave/policies/managed/policies.json:ro"
     environment:
       NEKO_DESKTOP_SCREEN: "${NEKO_DESKTOP_SCREEN:-1920x1080@30}"
       NEKO_MEMBER_MULTIUSER_USER_PASSWORD: "${NEKO_MEMBER_MULTIUSER_USER_PASSWORD:?set in .env}"
