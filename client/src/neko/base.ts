@@ -16,6 +16,7 @@ export interface BaseEvents {
   warn: (...message: any[]) => void
   debug: (...message: any[]) => void
   error: (error: Error) => void
+  'cursor-position': (position: { x: number; y: number }) => void
 }
 
 export abstract class BaseClient extends EventEmitter<BaseEvents> {
