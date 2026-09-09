@@ -10,7 +10,7 @@ This document records the completed, sanitized filesystem comparison between the
 - Safety branch: `safety-pre-local-delta-audit-20260909` at that baseline.
 - Local reference root: `MyNekoProjekt/` in the supplied workspace.
 - `.git/` was excluded from raw file comparison.
-- No upstream fetch, merge, rebase, cherry-pick, or source import was performed.
+- During the local-delta audit phase, no upstream fetch, merge, rebase, cherry-pick, or source import was performed.
 - No filesystem reparse points were present in the local reference.
 
 The baseline was materialized as a clean filesystem tree from the exact Git commit. Both trees were enumerated recursively by relative path. Common files were compared using raw SHA-256; raw mismatches were compared again after replacing only CRLF with LF. This separates transport/checkout line-ending noise from content changes without ignoring other whitespace or bytes.
@@ -87,4 +87,4 @@ A server build is not required for this local reconciliation because no server, 
 
 ## Outcome
 
-The local-delta audit is closed. No desired source/config change remained to import from the supplied local snapshot, and all deployment secrets/runtime state stayed outside Git. The next bounded unit is the semantic upstream synchronization defined in [`WORKPLAN.md`](WORKPLAN.md#next).
+The local-delta audit is closed. No desired source/config change remained to import from the supplied local snapshot, and all deployment secrets/runtime state stayed outside Git. The later semantic upstream synchronization is recorded separately in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md); current work status and `NEXT` remain in [`WORKPLAN.md`](WORKPLAN.md#next).

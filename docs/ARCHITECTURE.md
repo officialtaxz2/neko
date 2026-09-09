@@ -46,7 +46,11 @@ Current behavior includes:
 - ICE candidates are exchanged over WebSocket;
 - public STUN fallback may be injected if no STUN is configured;
 - failed/closed or unresolved disconnected ICE states lead to disconnect/recovery flow;
-- input travels over the WebRTC data channel.
+- input travels over the WebRTC data channel;
+- the legacy protocol path requests automatic video-pipeline selection; it becomes active only when multiple pipelines and the per-peer bandwidth estimator are configured;
+- file-transfer capability messages carry separate non-admin download/upload/delete permissions;
+- the optional `openinapp` client/store path sends authorized HTTP(S) chat links to the shared application;
+- window focus can resynchronize the clipboard for the active controller.
 
 Therefore a true non-WebRTC viewer fallback is not currently implemented.
 
@@ -81,7 +85,26 @@ Verified fork changes after merge base `d74052bb844c43a0cc3c2386d083f7505dc483a2
 - X11 desktop/input integration
 - plugins and HTTP/WebSocket APIs
 
+The integrated upstream server additionally contains:
+
+- bounded, non-blocking sample queues per WebRTC track;
+- capture-listener dispatch outside the shared listener mutex;
+- multi-pipeline selection driven by each peer's bandwidth estimator;
+- H.265 codec and software/VA-API/NVENC pipeline support;
+- configurable capture-pointer visibility;
+- server-enforced file download/upload/delete permissions;
+- an optional host-authorized `openinapp` plugin;
+- XInput-device keyboard dispatch for Firefox/GDK3 compatibility.
+
+The first two items establish code-level slow-peer isolation: a backpressured peer drops its own samples instead of blocking the capture fan-out. The product outcome still requires target-server validation with simultaneous healthy and throttled viewers.
+
 The current fork relies on Neko's WebRTC server model. Issue #690 alternative media prototypes are not established backends in this fork.
+
+## Deployment/configuration baseline
+
+The default root `config.yml` is no longer copied into the base image. Server defaults now keep implicit hosting and cookie authentication disabled, matching the removed file's effective defaults. Deployments must supply intentional settings through environment variables or a mounted YAML file; the repository `docker-compose.yaml` is an editable example and its NAT address placeholder must be replaced.
+
+The runtime/browser image tree also includes ARM64 Widevine installation, ARM64 Google Chrome image support, updated Chromium-family policies and NVIDIA encoder fallback selection. These image paths have not been built in Codex.
 
 ## Local deployment reference
 
@@ -108,3 +131,5 @@ Possible future backends include WebCodecs/WebSocket, WebTransport/QUIC or other
 ## Verification boundary
 
 Architecture/runtime claims beyond repository inspection must be verified on the real target server, not in Codex. Codex should prepare server-side validation steps but must not execute the application, builds, tests, Docker or media/device checks.
+
+The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its target-server build and regression matrix remain pending.

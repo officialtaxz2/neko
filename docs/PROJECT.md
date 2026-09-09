@@ -55,15 +55,29 @@ The product remains one shared session, not independent per-user browser session
 - Demo mode.
 - Cross-browser fullscreen handling.
 
+## Integrated upstream implementation
+
+### IMPLEMENTED in `integration/upstream-20260909`
+
+- Per-peer WebRTC sample queues are bounded and non-blocking; a full peer queue drops that peer's sample instead of blocking capture dispatch.
+- Capture listener dispatch no longer holds the shared listener lock while writing samples.
+- Existing multi-pipeline selection and per-peer bandwidth-estimator support is now requested automatically by the legacy protocol path when the operator configures multiple pipelines and enables the estimator.
+- H.265 is available as a capture/WebRTC codec, including software, VA-API and NVENC pipeline construction.
+- File transfer supports separately configured non-admin download, upload and delete permissions plus bulk deletion.
+- The optional `openinapp` plugin can open HTTP(S) chat links in the shared application for an authorized host.
+- Capture-pointer visibility, clipboard resync on window focus, `?scroll=` sensitivity and several browser/runtime compatibility fixes are present.
+
+These are repository implementation claims based on static inspection. Build, runtime, multi-user, media and device verification for the integration commit is still pending on the target server.
+
 ## Highest-priority target outcomes
 
 ### TARGET — slow-viewer isolation
 
-A slow/lossy viewer may drop frames, lower quality, or reconnect independently; healthy viewers remain fluid.
+The integrated per-peer non-blocking delivery mechanism is the intended code-level isolation: a slow/lossy viewer may drop its own samples without blocking healthy peers. The outcome remains a target acceptance criterion until it is demonstrated with simultaneous healthy and throttled viewers on the target server.
 
 ### TARGET — per-viewer adaptive quality
 
-Evaluate upstream multi-pipeline and bandwidth-estimation/adaptive-quality work before inventing a parallel ABR architecture.
+Configure and evaluate the integrated multi-pipeline and per-peer bandwidth-estimation path before inventing a parallel ABR architecture. The estimator is not sufficient merely by being present in code; automatic peer-local switching must be verified under controlled bandwidth changes.
 
 ### TARGET — mobile robustness
 

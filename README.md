@@ -8,6 +8,8 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 
 ### IMPLEMENTED
 
+Repository implementation is listed here independently of runtime validation. The latest upstream integration is statically reviewed; its target-server build and regression matrix are still pending.
+
 - Shared Neko browser/desktop session with multi-user access.
 - Existing Neko admin/user/control semantics.
 - Fork-specific client redesign.
@@ -17,15 +19,26 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 - Video stream health/recovery logic.
 - ICE disconnect/recovery handling.
 - Demo-mode client infrastructure.
+- Per-peer non-blocking media sample delivery so one backpressured WebRTC track does not block dispatch to other tracks.
+- Multi-pipeline stream-selection and per-peer bandwidth-estimator infrastructure; the legacy protocol path requests automatic selection when configured.
+- H.265 capture/WebRTC codec support.
+- Per-user file download/upload/delete permissions and multi-file deletion.
+- Optional server-side “open chat link in app” plugin.
+- Clipboard resynchronization on browser-window focus and capture-pointer configuration.
 
 ### Integration snapshot
 
-Bootstrap snapshot (2026-09-09):
+Current upstream integration (2026-09-09):
 
-- fork `officialtaxz2/neko:master`: `d9c1afd564ad4c293a0b1b28aecbc103d1d1d9c6`
+- fork `master` and safety branch `safety-pre-upstream-sync-20260909`: `18e9320c892b4069757a71c9093c9c9b4dd7bd4a`
 - upstream `m1k1o/neko:master`: `b0f01cedea68893e85a3fd852c0521238c285695`
-- merge base: `d74052bb844c43a0cc3c2386d083f7505dc483a2`
-- GitHub comparison: diverged, with 33 commits on each side after the merge base.
+- pre-sync merge base: `d74052bb844c43a0cc3c2386d083f7505dc483a2`
+- upstream merge commit on `integration/upstream-20260909`: `4e99b8d3ca720d1f184544306820e388716ba23a`
+- at that merge commit the branch contains current upstream and is 37 commits ahead / 0 behind it; the following commit only updates repository knowledge.
+
+The 97-file upstream delta was reviewed by subsystem. Conflicts in `settings.vue`, `side.vue` and `video.vue` were resolved semantically, preserving the fork's touch/trackpad, UI and cursor/recovery behavior while accepting the upstream permissions, Open-in-App and focus-clipboard changes. A hidden demo-mode payload mismatch caused by the new file-transfer rights fields was also repaired.
+
+The detailed record is in [`docs/UPSTREAM_SYNC_AUDIT.md`](docs/UPSTREAM_SYNC_AUDIT.md).
 
 Local reconciliation (2026-09-09):
 
@@ -39,9 +52,9 @@ Do not perform a blind upstream overwrite.
 
 ## NEXT
 
-Synchronize current `m1k1o/neko` upstream on a dedicated integration branch, preserving fork-specific behavior through semantic conflict resolution. The upstream sync has not started.
+Build and regression-test `integration/upstream-20260909` on the real target server. After acceptance, fast-forward `master` to the integration commit and begin the slow-client/adaptive-quality product phase.
 
-See `docs/WORKPLAN.md`.
+See `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
 ## Development environment policy
 

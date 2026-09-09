@@ -8,8 +8,9 @@ Immediate sequence:
 
 1. preserve the current fork — **complete**,
 2. reconcile desired local changes from `MyNekoProjekt` — **complete; no missing reusable source/config delta was found**,
-3. synchronize the completed fork with current upstream without breaking fork behavior — **NEXT**,
-4. continue the product work defined in `docs/PROJECT.md`.
+3. synchronize the completed fork with current upstream without breaking fork behavior — **complete on `integration/upstream-20260909`; target-server verification pending**,
+4. validate and promote the integration branch — **NEXT**,
+5. continue the product work defined in `docs/PROJECT.md`.
 
 ## Authoritative knowledge
 
@@ -20,6 +21,7 @@ Read before substantial work:
 - `docs/ARCHITECTURE.md` — verified current architecture.
 - `docs/WORKPLAN.md` — current `NEXT`, sync procedure, server-side verification and open items.
 - `docs/LOCAL_DELTA_AUDIT.md` — completed, sanitized classification of the supplied `MyNekoProjekt` snapshot.
+- `docs/UPSTREAM_SYNC_AUDIT.md` — completed semantic review and merge record for the 2026-09-09 upstream synchronization.
 - `webpage/docs/` — inherited Neko documentation. Current repository code/config wins on conflicts.
 
 ## Truth rules
