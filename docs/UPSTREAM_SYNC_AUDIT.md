@@ -76,7 +76,7 @@ One upstream-added blank line at the end of `runtime/widevine-installer/widevine
 
 ## Exclusions and security review
 
-No content was imported from instance-only `MyNekoProjekt` deployment/runtime data during this sync. The merge contains no browser profile, download, cookie, lock file, local policy mount, deployment credential or local compose override.
+No content was imported from instance-only `MyNekoProjekt` deployment/runtime data during the upstream merge. The merge contains no browser profile, download, cookie, lock file, local policy contents, deployment credential or raw local compose override. The operator-confirmed compose structure was reconstructed separately afterward with secrets and runtime payloads excluded.
 
 The staged path list and index were checked for forbidden runtime paths and high-confidence private-key/token patterns. Only repository examples and secret-variable references already intended by upstream remain; no credential value was added.
 

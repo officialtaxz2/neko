@@ -44,8 +44,9 @@ Local reconciliation (2026-09-09):
 
 - safety branch `safety-pre-local-delta-audit-20260909` preserves the original fork HEAD;
 - the complete supplied `MyNekoProjekt` tree was audited;
-- no missing reusable source/config delta was found;
-- credentials, deployment-only compose/policy data, browser profile and downloads were excluded;
+- no missing application-source delta was found;
+- the desired local Brave deployment compose was reconstructed with configurable paths/settings and required external password variables;
+- raw credentials, instance policy contents, browser profile and downloads were excluded;
 - client lock/type consistency was repaired in `2d89027e` and awaits target-server verification.
 
 Do not perform a blind upstream overwrite.
@@ -56,6 +57,23 @@ Build and regression-test the integrated `master` on the real target server. Aft
 
 See `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
+## Local Brave deployment
+
+The tracked `docker-compose.yaml` is the sanitized deployment structure from `MyNekoProjekt`. It uses the locally built `my-neko/brave:latest` with pulling disabled, cleans stale Brave singleton locks before startup, and mounts the ignored profile/download directories.
+
+On the target server, from the repository root:
+
+```bash
+./build my-neko/base:latest -y
+./build my-neko/brave:latest -y
+cp .env.example .env
+# Set both passwords and any server-specific values in .env.
+docker compose config
+docker compose up -d
+```
+
+Use `NEKO_POLICY_FILE=./policy.json` in `.env` only when an instance-specific ignored policy file is desired; otherwise the tracked Brave policy is used.
+
 ## Development environment policy
 
 Codex is used for source editing, repository analysis and static review only. It is **not** the deployment/test environment.
@@ -63,6 +81,8 @@ Codex is used for source editing, repository analysis and static review only. It
 Do not run the application, install dependencies, execute builds/tests/linters, start Docker, or perform WebRTC/device runtime tests inside Codex.
 
 Runtime verification happens separately on the real server. Known server-side commands and the verification matrix are documented in `AGENTS.md` and `docs/WORKPLAN.md`.
+
+`.env`, `files/`, `downloads/` and `policy.json` remain ignored and must not be committed.
 
 ## Product direction
 
@@ -90,6 +110,6 @@ docs/        fork-specific project/architecture/work knowledge
 
 ## Security / deployment note
 
-`MyNekoProjekt` contains instance-specific deployment/runtime material. Import only reviewed and sanitized code/config deltas. Credentials, browser profiles, downloads, cookies and lock/runtime files stay outside Git.
+`MyNekoProjekt` contains instance-specific deployment/runtime material. Its desired Compose structure is tracked in sanitized, parameterized form; credentials, browser profiles, downloads, cookies and lock/runtime files stay outside Git.
 
 The completed local classification is recorded in `docs/LOCAL_DELTA_AUDIT.md`.

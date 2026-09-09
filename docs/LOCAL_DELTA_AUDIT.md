@@ -21,7 +21,7 @@ The baseline was materialized as a clean filesystem tree from the exact Git comm
 |---|---:|---|
 | Present in both, byte-identical | 138 | No difference |
 | Present in both, CRLF/LF only | 585 | Generated/checkout representation; no import |
-| Present in both, substantive | 1 | Instance deployment config plus credentials; excluded |
+| Present in both, substantive | 1 | Desired deployment structure plus instance values/credentials; later imported in sanitized form |
 | Local-only | 3,929 | Runtime data (3,928) plus instance policy file (1); excluded |
 | Fork-only | 0 | Nothing missing from the local tree |
 | **Fork baseline total** | **724** | All files accounted for |
@@ -50,13 +50,15 @@ None. After line-ending normalization, every common source, build, application-i
 
 ### Reusable config/example change to import
 
-None. The reusable Brave image/policy mechanisms and file-transfer settings already exist in the repository and inherited documentation. The local compose file is a cohesive instance deployment, not a safe general example.
+The initial audit classified the complete local compose file as instance-only because it combined deployment structure with credentials, host-specific ports and runtime mounts. The operator later clarified that this structure is the intended deployment baseline for this fork.
+
+The repository compose now preserves the desired reusable behavior: local `my-neko/brave:latest` image selection, Brave singleton-lock cleanup, persistent profile/download mounts, optional managed-policy mount, loopback HTTP binding, the local UDP range and file transfer. Host paths and ports remain configurable. Passwords are mandatory `.env` inputs and no credential value was copied. The ignored runtime directories and instance policy contents remain outside Git.
 
 ### Instance-only deployment config and credential
 
-`docker-compose.yaml` is the only substantive common-file difference. The local version selects a locally named Brave image, enables privileged/container capabilities, mounts the persistent browser profile, downloads and managed policy, maps loopback HTTP and a different UDP range, cleans Chromium/Brave singleton files, enables local file transfer, and embeds member/admin passwords. It was reviewed in redacted form and was not copied.
+`docker-compose.yaml` is the only substantive common-file difference. The local version selects a locally named Brave image, enables privileged/container capabilities, mounts the persistent browser profile, downloads and managed policy, maps loopback HTTP and a different UDP range, cleans Chromium/Brave singleton files, enables local file transfer, and embeds member/admin passwords. The raw file was never copied. Its operator-confirmed deployment structure was later reconstructed with parameterized paths/settings and required external password variables.
 
-The local-only root `policy.json` is an empty instance policy mount target. It was not copied; reusable browser policies remain under `apps/brave/`.
+The local-only root `policy.json` is an empty instance policy mount target. It was not copied; the compose defaults to the reusable `apps/brave/policies.json` and allows an ignored instance policy path through `NEKO_POLICY_FILE`.
 
 Any credentials present in the supplied deployment artifact must be considered exposed and rotated operationally if they are still active.
 
@@ -87,4 +89,4 @@ A server build is not required for this local reconciliation because no server, 
 
 ## Outcome
 
-The local-delta audit is closed. No desired source/config change remained to import from the supplied local snapshot, and all deployment secrets/runtime state stayed outside Git. The later semantic upstream synchronization is recorded separately in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md); current work status and `NEXT` remain in [`WORKPLAN.md`](WORKPLAN.md#next).
+The source delta audit is closed: no missing application source change was found. The original all-or-nothing exclusion of the local compose was corrected after the operator identified it as the desired deployment baseline. Its reusable structure is now tracked without copying credentials, browser-profile contents, downloads or instance-policy data. The semantic upstream synchronization is recorded separately in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md); current work status and `NEXT` remain in [`WORKPLAN.md`](WORKPLAN.md#next).

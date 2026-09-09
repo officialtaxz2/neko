@@ -54,8 +54,8 @@ Completed on 2026-09-09 against fork baseline `d9c1afd564ad4c293a0b1b28aecbc103d
 - A clean baseline and the complete supplied local tree were compared recursively, excluding `.git/`.
 - All 724 baseline files exist locally: 138 are byte-identical, 585 differ only by CRLF/LF, and only `docker-compose.yaml` differs substantively.
 - The 3,929 local-only files are 3,928 persistent browser-profile/runtime files under `files/**` plus an empty instance `policy.json`; `downloads/` is empty.
-- No source feature/fix or reusable repository config was missing, so no local source/config content was imported.
-- The local compose override and embedded credentials were excluded. Active credentials from that artifact should be rotated operationally.
+- No application-source feature/fix was missing.
+- The raw local compose and embedded credentials were initially excluded together. After the operator clarified that its structure is the intended deployment baseline, that structure was reconstructed in sanitized and parameterized form; credential values remain excluded and should be rotated operationally if still active.
 - Root ignore rules guard the local reference and runtime/profile paths against accidental staging.
 - Static follow-up repaired the stale pre-Vite client lock/type baseline in commit `2d89027e`; target-server verification is pending.
 
@@ -75,7 +75,7 @@ Completed in Codex on 2026-09-09 on `integration/upstream-20260909`.
 - Preserved fork touch detection, trackpad/cursor behavior, redesigned side/settings UI, autoplay/playback recovery, fullscreen, reconnect and cursor event cleanup.
 - Accepted upstream Open-in-App settings, file-transfer capability gating and clipboard synchronization on window focus.
 - Found and repaired a non-conflicting integration defect: the fork demo-mode file list now supplies the new download/upload/delete capability fields.
-- Kept `MyNekoProjekt`, credentials, browser profiles, downloads, lock files, runtime state and instance-only policy/compose data out of the merge.
+- Kept `MyNekoProjekt`, credentials, browser profiles, downloads, lock files, runtime state and instance-only policy/raw-compose data out of the upstream merge. The desired compose structure was handled separately afterward.
 
 Static inspection completed:
 
@@ -88,6 +88,19 @@ Static inspection completed:
 Runtime/build/test status: **NOT EXECUTED IN CODEX**.
 
 The detailed merge record is in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md).
+
+## COMPLETED — sanitized deployment-compose reconciliation
+
+Completed after operator clarification on 2026-09-09.
+
+- Replaced Upstream's generic Firefox compose example with the desired local Brave deployment structure from `MyNekoProjekt`.
+- Default image is the locally built `my-neko/brave:latest`, overridable through `NEKO_IMAGE`; `pull_policy: never` prevents accidental registry substitution.
+- Preserved singleton-lock cleanup, persistent Brave profile/download mounts, managed-policy mount, loopback port `8082`, UDP range `51000-51100`, privileged/capability settings and file transfer.
+- Parameterized image, bind address, port, UDP range, screen and host paths.
+- Added `.env.example`; both member/admin passwords are required and deliberately empty. Real `.env` remains ignored.
+- Kept the browser profile, downloads and instance `policy.json` contents ignored and outside Git.
+
+Status: **statically reviewed / target-server Compose resolution, image build and startup NOT EXECUTED IN CODEX**.
 
 ## Target-server verification
 
@@ -117,9 +130,25 @@ or:
 docker build ./server
 ```
 
-For the deployed browser image, also build the actual root/application-image path used in production. The upstream merge changes the base image, runtime dependencies and several browser Dockerfiles; a server-only binary build does not verify those layers.
+From the repository root, build the exact local base and Brave images referenced by Compose:
 
-Before starting the deployment, confirm that intentional configuration is supplied by environment variables or a mounted YAML file. The base image no longer embeds root `config.yml`; implicit hosting and cookie authentication now default to disabled. Replace the example compose file's `NEKO_WEBRTC_NAT1TO1` placeholder and never reuse its example passwords in production.
+```bash
+./build my-neko/base:latest -y
+./build my-neko/brave:latest -y
+```
+
+Then prepare the ignored deployment environment and inspect the fully resolved Compose before startup:
+
+```bash
+cp .env.example .env
+# Set both passwords and any host-specific values in .env.
+docker compose config
+docker compose up -d
+```
+
+Confirm that `my-neko/brave:latest` is used, the cleanup service completes successfully, the profile/download/policy mounts resolve to the intended server paths, and the HTTP/UDP bindings match the firewall/reverse-proxy setup.
+
+The base image no longer embeds root `config.yml`; implicit hosting and cookie authentication now default to disabled. If clients cannot reach the discovered address, set `NEKO_WEBRTC_NAT1TO1` in `.env` and enable the documented Compose entry. Never put real passwords into tracked YAML.
 
 ### Manual regression on target server
 

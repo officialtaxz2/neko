@@ -7,7 +7,7 @@ This repository is a customized fork of [`m1k1o/neko`](https://github.com/m1k1o/
 Immediate sequence:
 
 1. preserve the current fork — **complete**,
-2. reconcile desired local changes from `MyNekoProjekt` — **complete; no missing reusable source/config delta was found**,
+2. reconcile desired local changes from `MyNekoProjekt` — **complete; no source delta was missing and the operator-confirmed deployment compose was imported in sanitized form**,
 3. synchronize the completed fork with current upstream without breaking fork behavior — **complete; merge commit `4e99b8d3`**,
 4. fast-forward the reviewed integration history to `master` — **complete**,
 5. validate the integrated `master` on the target server — **NEXT**,

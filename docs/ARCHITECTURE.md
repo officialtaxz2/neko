@@ -102,15 +102,17 @@ The current fork relies on Neko's WebRTC server model. Issue #690 alternative me
 
 ## Deployment/configuration baseline
 
-The default root `config.yml` is no longer copied into the base image. Server defaults now keep implicit hosting and cookie authentication disabled, matching the removed file's effective defaults. Deployments must supply intentional settings through environment variables or a mounted YAML file; the repository `docker-compose.yaml` is an editable example and its NAT address placeholder must be replaced.
+The default root `config.yml` is no longer copied into the base image. Server defaults now keep implicit hosting and cookie authentication disabled, matching the removed file's effective defaults. Deployments must supply intentional settings through environment variables or a mounted YAML file.
+
+The repository `docker-compose.yaml` now represents this fork's operator-confirmed deployment baseline: a locally built Brave image with registry pulling disabled, pre-start singleton-lock cleanup, persistent but ignored profile/download paths, optional managed policy, loopback HTTP binding, configurable WebRTC UDP range and enabled file transfer. `.env.example` documents non-secret settings; Compose refuses to resolve while either password is empty. Actual `.env`, profile, downloads and instance policy stay outside Git.
 
 The runtime/browser image tree also includes ARM64 Widevine installation, ARM64 Google Chrome image support, updated Chromium-family policies and NVIDIA encoder fallback selection. These image paths have not been built in Codex.
 
 ## Local deployment reference
 
-The complete 2026-09-09 filesystem audit found all 724 baseline files in `MyNekoProjekt`: 138 are byte-identical, 585 differ only by CRLF/LF, and only `docker-compose.yaml` differs substantively. The tree also contains 3,928 browser-profile/runtime files and one empty local policy file. No reusable source or repository configuration improvement was missing from the fork.
+The complete 2026-09-09 filesystem audit found all 724 baseline files in `MyNekoProjekt`: 138 are byte-identical, 585 differ only by CRLF/LF, and only `docker-compose.yaml` differs substantively. The tree also contains 3,928 browser-profile/runtime files and one empty local policy file. No application-source improvement was missing. The compose structure was initially excluded with its instance data, then deliberately reconstructed after the operator confirmed it as the desired deployment configuration.
 
-The excluded local compose setup contains the custom Brave deployment/profile/policy/download mounts, lock cleanup, port mappings, file-transfer configuration and instance credentials.
+The raw local compose combined the custom Brave deployment/profile/policy/download mounts, lock cleanup, port mappings and file-transfer configuration with instance credentials. Only the sanitized structure is tracked.
 
 Only sanitized, reusable deltas belong in Git. See [`LOCAL_DELTA_AUDIT.md`](LOCAL_DELTA_AUDIT.md).
 

@@ -134,7 +134,7 @@ Runtime/build/test verification occurs separately on the real server. Until serv
 
 ### AUDITED local snapshot
 
-The supplied `MyNekoProjekt` snapshot was completely compared with the fork baseline on 2026-09-09. It contained no missing reusable source/config improvement. Its compose override, empty policy file, browser profile and downloads remain outside Git because they are instance-specific and include credentials/runtime state. Existing repository material already covers the reusable Brave and file-transfer mechanisms. See [`LOCAL_DELTA_AUDIT.md`](LOCAL_DELTA_AUDIT.md).
+The supplied `MyNekoProjekt` snapshot was completely compared with the fork baseline on 2026-09-09. It contained no missing application-source improvement. After the operator clarified that the differing compose defines the fork's intended deployment, its reusable structure was reconstructed in tracked, parameterized form. Credential values, the empty instance policy, browser profile and downloads remain outside Git. See [`LOCAL_DELTA_AUDIT.md`](LOCAL_DELTA_AUDIT.md).
 
 ## Non-goals
 

@@ -1,36 +1,43 @@
 services:
-  neko:
-    # Runs Firefox in Neko. Firefox is the default, most tested image, but Neko
-    # supports many other browsers and applications - see the full list here:
-    # https://neko.m1k1o.net/docs/v3/installation/docker-images#apps
-    image: "ghcr.io/m1k1o/neko/firefox:latest"
-    restart: "unless-stopped"
-    shm_size: "2gb"
-    ports:
-      - "8080:8080"
-      - "52000-52100:52000-52100/udp"
-    # volumes:
-      # Persist Firefox settings, bookmarks, extensions and history across
-      # container restarts by mounting the profile directory.
-      # See: https://neko.m1k1o.net/docs/v3/customization/browsers#persistent-profile
-      # - "./profile:/home/neko/.mozilla/firefox/profile.default"
+  cleanup:
+    image: "alpine:latest"
+    restart: "no"
+    volumes:
+      - "${NEKO_PROFILE_DIR:-./files}:/cleanup-dir"
+    command: >-
+      sh -c "rm -f /cleanup-dir/SingletonLock
+      /cleanup-dir/SingletonCookie
+      /cleanup-dir/SingletonSocket"
 
-      # Or mount your own pre-configured Firefox profile instead of an empty one.
-      # See: https://neko.m1k1o.net/docs/v3/customization/browsers#persistent-profile
-      # - "./my-custom-profile:/home/neko/.mozilla/firefox/profile.default"
+  neko:
+    # This is the locally built Brave image used by this fork's deployment.
+    image: "${NEKO_IMAGE:-my-neko/brave:latest}"
+    pull_policy: never
+    restart: "unless-stopped"
+    depends_on:
+      cleanup:
+        condition: service_completed_successfully
+    shm_size: "2gb"
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    ports:
+      - "${NEKO_HTTP_BIND:-127.0.0.1}:${NEKO_HTTP_PORT:-8082}:8080"
+      - "${NEKO_WEBRTC_EPR:-51000-51100}:${NEKO_WEBRTC_EPR:-51000-51100}/udp"
+    volumes:
+      - "${NEKO_PROFILE_DIR:-./files}:/home/neko/.config/brave"
+      - "${NEKO_DOWNLOADS_DIR:-./downloads}:/home/neko/Downloads"
+      - "${NEKO_POLICY_FILE:-./apps/brave/policies.json}:/etc/brave/policies/managed/policy.json:ro"
     environment:
-      # You can configure either EPR or MUX ports for WebRTC.
-      # See: https://neko.m1k1o.net/docs/v3/configuration/webrtc#network
-      NEKO_WEBRTC_EPR: 52000-52100
-      # Specify the screen resolution and refresh rate for the virtual desktop. The
-      # default is 1920x1080@30, but you can change it to any other resolution.
-      # See: https://neko.m1k1o.net/docs/v3/configuration/desktop#screen
-      NEKO_DESKTOP_SCREEN: 1920x1080@30
-      # You can configure a password for the default user and admin accounts. The
-      # default user account is "neko" and the default admin account is "admin".
-      # See: https://neko.m1k1o.net/docs/v3/configuration/authentication#member.multiuser
-      NEKO_MEMBER_MULTIUSER_USER_PASSWORD: neko
-      NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD: admin
-      # Specifying reachable IP by clients is required when running Neko.
-      # See: https://neko.m1k1o.net/docs/v3/configuration/webrtc#nat1to1
-      NEKO_WEBRTC_NAT1TO1: <your-IP>
+      NEKO_DESKTOP_SCREEN: "${NEKO_DESKTOP_SCREEN:-1920x1080@30}"
+      NEKO_MEMBER_MULTIUSER_USER_PASSWORD: "${NEKO_MEMBER_MULTIUSER_USER_PASSWORD:?set in .env}"
+      NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD: "${NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD:?set in .env}"
+      NEKO_WEBRTC_EPR: "${NEKO_WEBRTC_EPR:-51000-51100}"
+      NEKO_WEBRTC_ICELITE: "1"
+      # Set this when clients cannot reach the server via its discovered address:
+      # NEKO_WEBRTC_NAT1TO1: "${NEKO_WEBRTC_NAT1TO1}"
+      NEKO_FILETRANSFER_ENABLED: "true"
+      NEKO_FILETRANSFER_DIR: "/home/neko/Downloads"
+      NEKO_FILETRANSFER_REFRESH_INTERVAL: "5s"
