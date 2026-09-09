@@ -7,6 +7,12 @@
 ehthumbs.db
 Thumbs.db
 
+# Local deployment audit inputs and runtime state
+/MyNekoProjekt/
+/files/
+/downloads/
+/policy.json
+
 # Log/Temp files
 .tmp/
 tmp/
