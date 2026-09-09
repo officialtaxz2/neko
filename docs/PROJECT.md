@@ -57,7 +57,7 @@ The product remains one shared session, not independent per-user browser session
 
 ## Integrated upstream implementation
 
-### IMPLEMENTED in `integration/upstream-20260909`
+### IMPLEMENTED in `master` (upstream merge `4e99b8d3`)
 
 - Per-peer WebRTC sample queues are bounded and non-blocking; a full peer queue drops that peer's sample instead of blocking capture dispatch.
 - Capture listener dispatch no longer holds the shared listener lock while writing samples.

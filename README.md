@@ -30,11 +30,11 @@ Repository implementation is listed here independently of runtime validation. Th
 
 Current upstream integration (2026-09-09):
 
-- fork `master` and safety branch `safety-pre-upstream-sync-20260909`: `18e9320c892b4069757a71c9093c9c9b4dd7bd4a`
+- pre-sync safety branch `safety-pre-upstream-sync-20260909`: `18e9320c892b4069757a71c9093c9c9b4dd7bd4a`
 - upstream `m1k1o/neko:master`: `b0f01cedea68893e85a3fd852c0521238c285695`
 - pre-sync merge base: `d74052bb844c43a0cc3c2386d083f7505dc483a2`
 - upstream merge commit on `integration/upstream-20260909`: `4e99b8d3ca720d1f184544306820e388716ba23a`
-- at that merge commit the branch contains current upstream and is 37 commits ahead / 0 behind it; the following commit only updates repository knowledge.
+- `master` was fast-forwarded to the reviewed integration history; commits after `4e99b8d3` only update repository knowledge/status.
 
 The 97-file upstream delta was reviewed by subsystem. Conflicts in `settings.vue`, `side.vue` and `video.vue` were resolved semantically, preserving the fork's touch/trackpad, UI and cursor/recovery behavior while accepting the upstream permissions, Open-in-App and focus-clipboard changes. A hidden demo-mode payload mismatch caused by the new file-transfer rights fields was also repaired.
 
@@ -52,7 +52,7 @@ Do not perform a blind upstream overwrite.
 
 ## NEXT
 
-Build and regression-test `integration/upstream-20260909` on the real target server. After acceptance, fast-forward `master` to the integration commit and begin the slow-client/adaptive-quality product phase.
+Build and regression-test the integrated `master` on the real target server. After acceptance, record the results and begin the slow-client/adaptive-quality product phase.
 
 See `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 

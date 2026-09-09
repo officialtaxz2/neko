@@ -8,9 +8,10 @@ Immediate sequence:
 
 1. preserve the current fork — **complete**,
 2. reconcile desired local changes from `MyNekoProjekt` — **complete; no missing reusable source/config delta was found**,
-3. synchronize the completed fork with current upstream without breaking fork behavior — **complete on `integration/upstream-20260909`; target-server verification pending**,
-4. validate and promote the integration branch — **NEXT**,
-5. continue the product work defined in `docs/PROJECT.md`.
+3. synchronize the completed fork with current upstream without breaking fork behavior — **complete; merge commit `4e99b8d3`**,
+4. fast-forward the reviewed integration history to `master` — **complete**,
+5. validate the integrated `master` on the target server — **NEXT**,
+6. continue the product work defined in `docs/PROJECT.md`.
 
 ## Authoritative knowledge
 

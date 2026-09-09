@@ -16,6 +16,7 @@ This document records the semantic synchronization of the preserved/customized f
 | Integration branch | `integration/upstream-20260909` |
 | Merge commit | `4e99b8d3ca720d1f184544306820e388716ba23a` |
 | Post-merge relation to fetched upstream | 37 ahead / 0 behind |
+| Promotion | reviewed integration history fast-forwarded to `master` |
 
 The upstream-only delta covered 97 files with 2,559 insertions and 192 deletions. It was reviewed by subsystem before merging; no blanket `ours` or `theirs` resolution was used.
 
@@ -95,4 +96,4 @@ No dependency installation, project script, test, linter, type-checker, build, D
 
 ## Outcome
 
-The upstream synchronization is Codex-side complete on `integration/upstream-20260909`. Runtime/build status is **NOT EXECUTED IN CODEX**. The next bounded unit is the target-server verification and promotion procedure in [`WORKPLAN.md`](WORKPLAN.md#next).
+The upstream synchronization is Codex-side complete and its reviewed history is on `master`. Runtime/build status is **NOT EXECUTED IN CODEX**. The next bounded unit is target-server verification of `master` as defined in [`WORKPLAN.md`](WORKPLAN.md#next).

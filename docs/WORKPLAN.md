@@ -42,7 +42,8 @@ Current integration state:
 integration/upstream-20260909
 upstream merge commit: 4e99b8d3ca720d1f184544306820e388716ba23a
 relation at merge commit: 37 commits ahead, 0 behind
-following change: repository-knowledge update only
+master: fast-forwarded to the reviewed integration history
+following commits: repository-knowledge/status updates only
 ```
 
 ## COMPLETED — `MyNekoProjekt` local delta audit
@@ -187,16 +188,9 @@ Browser/runtime images, when relevant to the deployment:
 
 ## NEXT
 
-The semantic upstream synchronization is complete in Codex. The next bounded unit is target-server validation of the source tree introduced by `4e99b8d3` on `integration/upstream-20260909` using the commands and regression matrix above. The following commit on that branch updates only repository knowledge.
+The semantic upstream synchronization and fast-forward promotion are complete. The next bounded unit is target-server validation of the integrated `master` source tree introduced by merge commit `4e99b8d3`, using the commands and regression matrix above.
 
-If the target-server checks pass, promote the exact reviewed integration commit without rewriting it:
-
-```bash
-git switch master
-git merge --ff-only integration/upstream-20260909
-```
-
-Record the target-server results here before starting product work. If validation fails, fix and re-review on the integration branch; do not promote a partially verified tree.
+Record the target-server results here before starting product work. If validation fails, apply and statically review the correction on `master`; do not describe the integrated baseline as runtime-verified until those checks pass.
 
 ## Product priority after stable synced baseline
 
