@@ -68,19 +68,22 @@ All 3,928 local-only files under `files/**` are persistent Brave/Chromium profil
 
 The 585 CRLF/LF-only mismatches are checkout/transfer representation differences. Because their normalized SHA-256 values match exactly, importing them would create noise without changing project content.
 
-## Verification and resulting repair
+## Static review and resulting repair
 
-The first required `npm ci` exposed a pre-existing mismatch: `client/package.json` had already migrated to Vite and TypeScript 5.8, while `client/package-lock.json` still described the removed Vue CLI/TypeScript 4 toolchain. Commit `2d89027e` regenerates the lockfile from the manifest, selects TypeScript module resolution compatible with the existing Vue 2 augmentations, and types the existing `cursor-position` event.
+Static manifest/lock inspection found a pre-existing mismatch: `client/package.json` had already migrated to Vite and TypeScript 5.8, while `client/package-lock.json` still described the removed Vue CLI/TypeScript 4 toolchain. Commit `2d89027e` regenerates the lockfile from the manifest, selects TypeScript module resolution compatible with the existing Vue 2 augmentations, and types the existing `cursor-position` event.
 
-The following completed successfully before the environment was restricted to static review only:
+Static checks confirm that the lockfile root dependency and dev-dependency declarations now match `package.json`, the obsolete Vue CLI dependency graph is removed, and the existing runtime event name/payload matches its consumers in `video.vue`.
 
-```text
-npm ci --no-audit --no-fund
+Target-server verification status: **NOT EXECUTED**. Run these commands on the real server:
+
+```bash
+cd client
+npm ci
 npm run lint
 npm run build
 ```
 
-Environment: Node `24.19.0`, npm `11.17.0`. The production build emitted only Vite's non-failing large-chunk warning. A server build was not applicable because no server, root build, runtime configuration, or application-image source changed. No live server, WebRTC, multi-user, mobile, Smart-TV, or browser-device regression test was run; those behaviors must not be claimed as newly device-verified.
+A server build is not required for this local reconciliation because no server, root build, runtime configuration, or application-image source changed. No live server, WebRTC, multi-user, mobile, Smart-TV, or browser-device regression test was performed; those behaviors must not be claimed as newly verified.
 
 ## Outcome
 

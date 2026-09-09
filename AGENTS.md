@@ -4,45 +4,73 @@
 
 This repository is a customized fork of [`m1k1o/neko`](https://github.com/m1k1o/neko). It preserves Neko's shared server-side browser/desktop model while carrying fork-specific client work for mobile/touch usability, playback/reconnect recovery, and UI/UX.
 
-The maintenance sequence is:
+Immediate sequence:
 
-1. preserve the current fork exactly — **complete**,
-2. reconcile the `MyNekoProjekt` working/deployment tree into the fork — **complete; no missing reusable source/config delta was found**,
+1. preserve the current fork — **complete**,
+2. reconcile desired local changes from `MyNekoProjekt` — **complete; no missing reusable source/config delta was found**,
 3. synchronize the completed fork with current upstream without breaking fork behavior — **NEXT**,
-4. then continue the product work defined in `docs/PROJECT.md`.
+4. continue the product work defined in `docs/PROJECT.md`.
 
-## Authoritative project knowledge
+## Authoritative knowledge
 
-Read these before substantial work:
+Read before substantial work:
 
-- [`README.md`](README.md) — compact repository entry and current status.
-- [`docs/PROJECT.md`](docs/PROJECT.md) — product goals, requirements, invariants, decisions, and target vs optional work.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — verified current architecture and fork-specific implementation areas.
-- [`docs/WORKPLAN.md`](docs/WORKPLAN.md) — handoff snapshot, `NEXT`, upstream-sync procedure, verification criteria, and open items.
-- [`docs/LOCAL_DELTA_AUDIT.md`](docs/LOCAL_DELTA_AUDIT.md) — completed, sanitized classification of the `MyNekoProjekt` filesystem delta.
-- `webpage/docs/` — inherited Neko operational/developer documentation. When it conflicts with current code/config, the repository wins.
+- `README.md` — compact entry and current status.
+- `docs/PROJECT.md` — goals, requirements, invariants and target state.
+- `docs/ARCHITECTURE.md` — verified current architecture.
+- `docs/WORKPLAN.md` — current `NEXT`, sync procedure, server-side verification and open items.
+- `docs/LOCAL_DELTA_AUDIT.md` — completed, sanitized classification of the supplied `MyNekoProjekt` snapshot.
+- `webpage/docs/` — inherited Neko documentation. Current repository code/config wins on conflicts.
 
-## Source-of-truth rules
+## Truth rules
 
-1. Code, configuration, build files, tests and CI determine what is **IMPLEMENTED**.
-2. `MyNekoProjekt` remains a local/deployment reference. Its 2026-09-09 snapshot has been audited; any later local changes require a new explicit review before import.
-3. Product intent in `docs/PROJECT.md` determines **TARGET**.
-4. Upstream issues/PRs are evidence and implementation candidates, not automatically requirements.
-5. Never silently drop fork-specific behavior during upstream conflict resolution. Reconcile semantics, not just text.
-6. Never copy deployment credentials, browser profiles, downloads, cookies, lock files or other runtime data into this public repository.
+1. Code, configuration, Git history and other real artifacts determine **IMPLEMENTED**.
+2. The supplied `MyNekoProjekt` snapshot was audited on 2026-09-09. Any later local delta must be reviewed explicitly before import.
+3. `docs/PROJECT.md` determines **TARGET**.
+4. Upstream issues/PRs are evidence or candidates, not automatically requirements.
+5. Never silently drop fork-specific behavior during upstream conflict resolution.
+6. Never commit deployment credentials, browser profiles, downloads, cookies, lock files or other runtime data.
+
+## Codex execution policy
+
+**Codex is an edit and static-review environment only. It is not the target runtime environment.**
+
+Do not execute project code or runtime verification in Codex.
+
+Do **not**:
+
+- install project dependencies (`npm install`, `npm ci`, `go get`, etc.);
+- start the client, server, browser, Vite, Docker containers or images;
+- run tests, linters, type-checkers, builds or package scripts;
+- run repository build/start scripts;
+- perform WebRTC/media/network/device runtime tests;
+- treat Codex-environment execution as evidence of target-server compatibility.
+
+Static repository work is allowed and expected:
+
+- read and compare files;
+- inspect Git history, status and diffs;
+- inspect manifests, configuration and source;
+- reason about syntax/type/build/runtime implications;
+- identify likely regressions by inspection;
+- prepare exact verification commands/checklists for the real server.
+
+Runtime/build/test status must be reported as **NOT EXECUTED IN CODEX** unless results are supplied from the target server.
 
 ## Repository map
 
-- `client/` — Vue 2.7 + TypeScript client built with Vite; most fork-specific changes currently live here.
+- `client/` — Vue 2.7 + TypeScript/Vite client; most fork-specific work currently lives here.
 - `server/` — Go server and plugins.
 - `apps/` — browser/application image definitions.
 - `runtime/` — runtime image/container support.
 - `webpage/` — inherited Neko documentation site.
-- `docs/` — fork-specific durable project knowledge and work state.
+- `docs/` — fork-specific durable project knowledge.
 
-## Build / lint / verification
+## Server-side verification reference
 
-Client (CI uses Node 18):
+These commands are for the **real target server/environment only**. Codex must not run them.
+
+Client:
 
 ```bash
 cd client
@@ -51,45 +79,39 @@ npm run lint
 npm run build
 ```
 
-Client development server:
-
-```bash
-cd client
-npm ci
-npm run dev
-```
-
-Server native build (requires system dependencies documented in `webpage/docs/developer-guide/build.md`):
+Server:
 
 ```bash
 cd server
 ./build
 ```
 
-Server CI-equivalent container build:
+Container build:
 
 ```bash
 docker build ./server
 ```
 
-The repository-root `./build` script owns full image/build tooling; inspect `./build --help` before using options.
+Use only the checks relevant to the changed areas, with broader verification after major integrations.
 
 ## Technical invariants
 
-- A room is one shared remote browser/desktop/session seen by multiple participants.
+- One shared remote browser/desktop/session is seen by multiple participants.
 - At most one participant controls the shared desktop at a time.
-- Admin control locking and grant/revoke semantics must remain intact.
-- Fork-specific mobile/touch/trackpad, autoplay, playback-recovery, fullscreen and reconnect behavior is regression-sensitive.
-- A weak/slow viewer must not degrade healthy viewers in the target architecture.
-- Any future viewer/share link must enforce view-only permission server-side; hiding controls in the UI is not authorization.
-- WebRTC is the currently implemented primary media path in this fork. Alternative media transports are target/candidate work until code proves otherwise.
+- Admin lock and grant/revoke behavior must remain intact.
+- Fork mobile/touch/trackpad, autoplay, playback-recovery, fullscreen and reconnect behavior is regression-sensitive.
+- A weak viewer must not degrade healthy viewers in the target architecture.
+- Future view-only sharing must be enforced server-side; hiding controls in the UI is not authorization.
+- WebRTC is the currently implemented primary media path.
 
-## Definition of Done
+## Definition of Done for Codex work
 
-For a change to be complete:
+A Codex task is complete when:
 
-- relevant client lint/build and/or server build passes;
-- existing admin/user/control semantics are preserved;
-- touched mobile/touch, playback and reconnect paths are regression-tested per `docs/WORKPLAN.md`;
-- no secrets or runtime data are committed;
-- durable docs are updated only when project truth, architecture, target state, or work status actually changed.
+- the requested repository change is implemented and reviewed statically;
+- relevant diffs and surrounding code are inspected for regressions;
+- no secrets/runtime data are committed;
+- required target-server verification is explicitly listed as pending;
+- durable docs are updated when project truth/status changed.
+
+Do not claim runtime/build/test success without results from the real target server.

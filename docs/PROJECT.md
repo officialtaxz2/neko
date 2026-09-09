@@ -2,224 +2,137 @@
 
 Last consolidated: 2026-09-09.
 
-This document is the authoritative product/requirements source for this fork. State labels are normative:
+State labels:
 
-- **IMPLEMENTED** — verified in repository code/config or inherited Neko behavior currently present.
-- **TARGET** — desired and decided, but not yet fully implemented.
-- **LATER/OPTIONAL** — useful direction, not required for the current implementation sequence.
-- **OPEN** — unresolved; do not silently choose an answer.
+- **IMPLEMENTED** — verified in repository code/config or inherited behavior currently present.
+- **TARGET** — desired and decided, but not fully implemented.
+- **LATER/OPTIONAL** — not required for the current implementation sequence.
+- **OPEN** — unresolved.
 
-## 1. Purpose
+## Purpose
 
-This fork exists because Neko's shared-session interaction model fits the intended use case well, but the client/media path needs to be substantially more robust across heterogeneous viewers.
+This fork keeps Neko's shared server-side browser/desktop model while improving reliability across heterogeneous viewers.
 
-The product remains a self-hosted shared server-side browser/desktop, not a collection of independent per-user browser sessions.
+The product remains one shared session, not independent per-user browser sessions.
 
-## 2. Core product invariants
-
-### IMPLEMENTED / must remain true
-
-- One shared server-side browser/desktop/session is visible to multiple participants.
-- Admin and regular-user access exist.
-- Shared control is exclusive: at most one participant controls the remote desktop at a time.
-- Admins can lock controls for users and retain the ability to administer control.
-- Neko remains self-hosted and Docker-oriented.
-- WebRTC is the currently implemented primary media path.
-
-### TARGET / must remain true after future rework
-
-- Admin can completely lock control such that no normal user controls the session.
-- Admin can grant/revoke control predictably.
-- New streaming work must not weaken server-side authorization.
-- Mobile/TV compatibility work must not fork the room into separate unsynchronized desktops.
-- Healthy viewers must be isolated from weak viewers.
-- Viewer quality decisions must be per viewer, not a single globally degraded quality for everyone.
-
-## 3. Current fork-specific implementation
-
-### IMPLEMENTED
-
-Verified in the current fork client:
-
-- Vue 2.7 + TypeScript client, built with Vite.
-- Major visual redesign of the legacy client.
-- Touch-device detection including coarse pointers and mobile UA cases.
-- Trackpad mode and optional trackpad cursor.
-- Mobile keyboard button and keyboard-helper component.
-- Touch coordinate/aspect-ratio handling around letterbox/pillarbox regions.
-- Mobile-safe autoplay logic: unmuted play is attempted, then muted fallback with user-visible unmute/play behavior.
-- Stream-health monitoring using media events (`stalled`, `waiting`, `timeupdate`) and track lifecycle events.
-- Bounded client-side stream recovery using `srcObject` reassignment; `video.load()` is explicitly avoided for WebRTC recovery.
-- Client ICE disconnect timeout and fail/closed handling.
-- Public STUN fallback injection in the client when no STUN server is configured.
-- Client demo mode for UI/demo behavior.
-- Fullscreen handling across standard/WebKit/Mozilla event variants.
-- Local settings for trackpad mode, trackpad cursor visibility, forced touch detection, autoplay and scroll behavior.
-
-These are regression-sensitive when synchronizing upstream.
-
-## 4. Target outcomes
-
-### TARGET — highest priority
-
-#### 4.1 Slow-viewer isolation
-
-A slow or lossy viewer must not stall the shared capture/encoder path or degrade other peers.
-
-Expected behavior for a weak viewer:
-
-1. that viewer may drop frames;
-2. that viewer may be moved to a lower profile;
-3. that viewer may reconnect independently if necessary;
-4. healthy viewers remain fluid.
-
-Acceptance requires a controlled multi-client test, not just code inspection.
-
-#### 4.2 Per-viewer adaptive quality
-
-Quality should be independently selectable/adaptive per peer. Desired profile concept:
-
-```text
-high-quality viewer      -> 1080p60 / high bitrate
-normal viewer            -> 1080p30 or 720p30
-constrained viewer       -> 480p/720p lower bitrate
-```
-
-Use connection evidence such as bandwidth estimation, loss, RTT/jitter and client capability where available.
-
-Important constraint: upstream already contains multi-pipeline selection and experimental bandwidth-estimation/adaptive-quality work. Stabilize/evaluate that before inventing a parallel ABR architecture.
-
-#### 4.3 Mobile robustness
-
-Mobile must reliably:
-
-- join,
-- start video/audio under browser autoplay rules,
-- recover from transient media/ICE failures,
-- avoid black-screen/reconnect loops,
-- provide usable touch/trackpad and keyboard interaction,
-- behave predictably across orientation/fullscreen changes.
-
-Existing fork fixes are a starting point, not proof that mobile is fully solved.
-
-#### 4.4 Smart-TV / constrained-browser compatibility
-
-A viewer should not be permanently excluded solely because its WebRTC/ICE/media implementation is unreliable.
-
-A non-WebRTC media fallback is a product target, but its exact protocol is not yet a mandatory implementation choice.
-
-#### 4.5 Server-enforced view-only share link
-
-Target UX:
-
-```text
-/watch/<token>
-```
-
-or equivalent.
-
-A viewer joining through the view-only path should receive video/audio and optionally permitted passive features, but no mouse, keyboard, touch control, control request, or privileged API ability.
-
-Security invariant: permission must be enforced by the server. `cast`, `embed`, hidden buttons or other client-only UI modes are not sufficient.
-
-#### 4.6 Robust connection recovery
-
-Refresh/reconnect/network transitions must not leave a peer permanently black or stuck in reconnecting state. Recovery must remain bounded and observable.
-
-## 5. Architecture direction
-
-### TARGET
-
-Keep connection/control/media separable enough that alternative media transports can be added without rewriting room authorization or control semantics.
-
-This aligns with upstream issue #371, which explicitly proposes protocol-independent connection/media/control interfaces and multiple media backends.
-
-### LATER/OPTIONAL
-
-- automatic transport selection by device/network/server capability;
-- automatic codec selection (for example H.264 vs H.265/VPx based on actual support);
-- WebTransport/QUIC media;
-- HLS/DASH or other additional receive-only backends;
-- broader plugin/general-device abstractions from upstream's long-term v3 concept.
-
-Do not block the near-term sync and robustness work on these.
-
-## 6. Candidate WebRTC fallback work
-
-### TARGET direction, implementation OPEN
-
-Upstream issue #690 proposes a concrete staged prototype:
-
-1. extract encoded-media subscriptions from WebRTC-specific plumbing;
-2. add WebCodecs + dedicated WebSocket media;
-3. add WebTransport media on top.
-
-The upstream maintainer has publicly stated interest in having an alternative because WebRTC causes issues.
-
-Project decision:
-
-- evaluate the staged work after the fork is fully reconciled and synced;
-- prefer the media-abstraction step before importing a transport;
-- treat WebSocket + WebCodecs as the first practical fallback candidate;
-- treat WebTransport as later/optional until deployment/browser complexity is justified.
-
-None of those #690 prototype PRs are considered IMPLEMENTED in this fork unless merged code proves otherwise.
-
-## 7. UX requirements
+## Core invariants
 
 ### IMPLEMENTED / preserve
 
-- redesigned client appearance and overlays;
-- touch-visible controls;
-- mobile keyboard helper;
-- trackpad-style interaction;
-- play/unmute overlays compatible with browser autoplay policy.
+- One shared browser/desktop/session for multiple participants.
+- Admin and regular-user access.
+- At most one controller at a time.
+- Admin lock/grant/revoke semantics.
+- Self-hosted, Docker-oriented Neko deployment.
+- WebRTC as the primary implemented media path.
 
 ### TARGET
 
-- view-only entry should be nearly frictionless for guests;
-- recovery and fallback should fail visibly and recoverably, not as a silent black screen;
-- quality adaptation should normally be automatic; manual diagnostics/override may exist but is not the primary UX.
+- Weak viewers do not degrade healthy viewers.
+- Quality adapts independently per viewer.
+- Mobile and Smart-TV/browser robustness.
+- Server-enforced view-only guest/share access.
+- Bounded, observable reconnect/recovery.
+- Media/control/auth remain separable enough to support alternative media paths.
 
-## 8. Security and privacy constraints
-
-### TARGET / invariant
-
-- authorization is server-side;
-- do not expose admin/control capability through a view-only token;
-- do not commit deployment credentials or persistent browser profiles;
-- browser profile storage can contain cookies/session secrets and is runtime data;
-- local download directories are runtime/user data, not source;
-- external STUN/TURN behavior must remain explicit in deployment documentation when changed.
-
-## 9. Deployment
+## Verified fork-specific implementation
 
 ### IMPLEMENTED
 
-The public repository ships the inherited/example Docker-oriented Neko configuration.
+- Vue 2.7 + TypeScript client built with Vite.
+- Major client/UI redesign.
+- Touch-device detection.
+- Trackpad mode and optional trackpad cursor.
+- Mobile keyboard and keyboard-helper integration.
+- Letterbox/pillarbox-aware touch coordinate handling.
+- Mobile autoplay muted fallback.
+- Media-element stall/waiting/timeupdate monitoring.
+- Track mute/unmute/ended monitoring.
+- Bounded `srcObject`-based stream recovery.
+- Explicit avoidance of `video.load()` for WebRTC recovery.
+- ICE failure/disconnect timeout handling.
+- Public STUN fallback injection if no STUN URL is configured.
+- Demo mode.
+- Cross-browser fullscreen handling.
 
-A separate local `MyNekoProjekt` deployment tree uses a custom Brave image, persistent Brave profile, custom policy mount, download mount, cleanup of browser singleton locks, non-default local HTTP/UDP ports and file-transfer settings.
+## Highest-priority target outcomes
 
-### AUDITED boundary
+### TARGET — slow-viewer isolation
 
-The complete 2026-09-09 audit found no missing reusable source/config improvement. The local compose file, empty policy file, browser profile and downloads remain excluded because they form an instance-specific deployment and include credentials/runtime state. Existing repository documentation already covers the reusable Brave and file-transfer capabilities. See [`LOCAL_DELTA_AUDIT.md`](LOCAL_DELTA_AUDIT.md).
+A slow/lossy viewer may drop frames, lower quality, or reconnect independently; healthy viewers remain fluid.
 
-## 10. Non-goals
+### TARGET — per-viewer adaptive quality
 
-### Current non-goals
+Evaluate upstream multi-pipeline and bandwidth-estimation/adaptive-quality work before inventing a parallel ABR architecture.
 
-- replacing the shared session with one session per viewer;
-- sacrificing existing fork mobile/UX behavior merely to make an upstream merge easy;
-- implementing every idea from upstream v3 rewrite before restoring a stable baseline;
-- treating a UI-hidden control as authorization;
-- copying the local deployment folder wholesale into the public repository.
+### TARGET — mobile robustness
 
-## 11. External references
+Mobile must reliably join, start media under autoplay rules, recover from transient failures, avoid persistent black screens, and retain usable touch/keyboard behavior.
 
-Use these as evidence/candidates, not as project truth:
+### TARGET — Smart-TV / constrained browser compatibility
 
-- Upstream repository: https://github.com/m1k1o/neko
-- Upstream v3 rewrite / modular backends: https://github.com/m1k1o/neko/issues/371
-- WebCodecs/WebSocket/WebTransport proposal: https://github.com/m1k1o/neko/issues/690
-- Mobile trackpad issue: https://github.com/m1k1o/neko/issues/640
-- Upstream releases: https://github.com/m1k1o/neko/releases
+A viewer should not be permanently excluded solely because WebRTC/ICE/media support is unreliable. A non-WebRTC media fallback is a target; exact protocol remains open.
+
+### TARGET — server-enforced view-only share link
+
+A future `/watch/<token>`-style path or equivalent should permit passive viewing without mouse/keyboard/touch/control/admin capabilities.
+
+Authorization must be enforced server-side.
+
+### TARGET — robust recovery
+
+Refresh, reconnect and network transitions must not leave peers permanently black or stuck.
+
+## Alternative media direction
+
+Upstream issue #690 proposes staged work:
+
+1. media-subscription abstraction;
+2. WebCodecs + WebSocket;
+3. WebTransport.
+
+Project direction:
+
+- evaluate only after local reconciliation and upstream sync;
+- prefer abstraction first;
+- treat WebSocket + WebCodecs as the first practical fallback candidate;
+- keep WebTransport later/optional until justified.
+
+These prototypes are not IMPLEMENTED here unless repository code proves otherwise.
+
+## Development / verification environment constraint
+
+### Workflow invariant
+
+Codex is an editing/static-review environment only and is not representative of the deployment server.
+
+Codex may inspect source, configuration, history and diffs, but must not install dependencies, run builds/tests/linters, start the application, invoke Docker/project scripts, or perform WebRTC/device runtime tests.
+
+Runtime/build/test verification occurs separately on the real server. Until server results exist, changes may be described as statically reviewed but not runtime-verified.
+
+## Security / deployment constraints
+
+- authorization remains server-side;
+- do not expose control/admin capability through a view-only token;
+- do not commit credentials or persistent browser profiles;
+- downloads/browser profiles/cookies are runtime/user data;
+- local deployment differences must be sanitized before any reusable example is committed.
+
+### AUDITED local snapshot
+
+The supplied `MyNekoProjekt` snapshot was completely compared with the fork baseline on 2026-09-09. It contained no missing reusable source/config improvement. Its compose override, empty policy file, browser profile and downloads remain outside Git because they are instance-specific and include credentials/runtime state. Existing repository material already covers the reusable Brave and file-transfer mechanisms. See [`LOCAL_DELTA_AUDIT.md`](LOCAL_DELTA_AUDIT.md).
+
+## Non-goals
+
+- one session per viewer;
+- discarding fork UX/mobile behavior merely to simplify upstream merging;
+- implementing every upstream v3 idea before restoring a stable baseline;
+- treating UI-hidden controls as authorization;
+- copying the local deployment tree wholesale into the public repository.
+
+## External references
+
+- upstream: https://github.com/m1k1o/neko
+- v3 architecture direction: https://github.com/m1k1o/neko/issues/371
+- alternative media proposal: https://github.com/m1k1o/neko/issues/690
+- mobile trackpad issue: https://github.com/m1k1o/neko/issues/640
