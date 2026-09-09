@@ -129,6 +129,15 @@ export const files = {
   downloads: 'Herunterladen',
   uploads: 'Hochladen',
   upload_here: 'Klicken oder ziehen Sie Dateien zum Hochladen hierher',
+  delete: 'Löschen',
+  delete_title: '"{name}" löschen?',
+  delete_confirm: 'Möchten Sie diese Datei wirklich entfernen?',
+  select: 'Auswählen',
+  select_all: 'Alle auswählen',
+  unselect_all: 'Alle abwählen',
+  cancel: 'Abbrechen',
+  delete_selected_title: 'Ausgewählte Dateien löschen?',
+  delete_selected_confirm: 'Möchten Sie die {count} ausgewählten Dateien wirklich entfernen?',
 }
 
 export const clipboard_manager = {

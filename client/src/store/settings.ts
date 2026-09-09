@@ -16,6 +16,7 @@ export const state = () => {
     autoplay: get<boolean>('autoplay', true),
     ignore_emotes: get<boolean>('ignore_emotes', false),
     chat_sound: get<boolean>('chat_sound', true),
+    links_in_app: get<boolean>('links_in_app', false),
     keyboard_layout: get<string>('keyboard_layout', 'us'),
     trackpad_mode: get<boolean>('trackpad_mode', false),
     trackpad_cursor_hidden: get<boolean>('trackpad_cursor_hidden', false),
@@ -55,6 +56,11 @@ export const mutations = mutationTree(state, {
   setSound(state, value: boolean) {
     state.chat_sound = value
     set('chat_sound', value)
+  },
+
+  setLinksInApp(state, value: boolean) {
+    state.links_in_app = value
+    set('links_in_app', value)
   },
 
   setKeyboardLayout(state, value: string) {

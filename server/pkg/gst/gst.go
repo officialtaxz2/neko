@@ -83,7 +83,7 @@ func CreatePipeline(pipelineStr string) (Pipeline, error) {
 			Int("pipeline_id", int(id)).Logger(),
 		src:    pipelineStr,
 		ctx:    ctx,
-		sample: make(chan types.Sample),
+		sample: make(chan types.Sample, 4),
 	}
 
 	pipelines[p.id] = p
@@ -196,6 +196,17 @@ func CheckPlugins(plugins []string) error {
 		}
 	}
 
+	return nil
+}
+
+func CheckElement(element string) error {
+	elementcstr := C.CString(element)
+	factory := C.gst_element_factory_find(elementcstr)
+	C.free(unsafe.Pointer(elementcstr))
+	if factory == nil {
+		return fmt.Errorf("required gstreamer element %s not found", element)
+	}
+	C.gst_object_unref(C.gpointer(factory))
 	return nil
 }
 

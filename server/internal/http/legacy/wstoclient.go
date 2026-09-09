@@ -14,6 +14,7 @@ import (
 
 	"github.com/m1k1o/neko/server/internal/plugins/chat"
 	"github.com/m1k1o/neko/server/internal/plugins/filetransfer"
+	"github.com/m1k1o/neko/server/internal/plugins/openinapp"
 	"github.com/m1k1o/neko/server/pkg/types"
 	"github.com/m1k1o/neko/server/pkg/types/event"
 	"github.com/m1k1o/neko/server/pkg/types/message"
@@ -607,10 +608,28 @@ func (s *session) wsToClient(msg []byte) error {
 		}
 
 		return s.toClient(&oldMessage.FileTransferList{
-			Event: oldEvent.FILETRANSFER_LIST,
-			Cwd:   request.RootDir,
-			Files: files,
+			Event:        oldEvent.FILETRANSFER_LIST,
+			Cwd:          request.RootDir,
+			UserDownload: request.UserDownload,
+			UserUpload:   request.UserUpload,
+			UserDelete:   request.UserDelete,
+			Files:        files,
 		})
+
+	// Open In App Events
+	case openinapp.OPENINAPP_INIT:
+    request := &openinapp.Init{}
+    if err := json.Unmarshal(data.Payload, request); err != nil {
+			return err
+    }
+    return s.toClient(&struct {
+			Event   string `json:"event"`
+			Enabled bool   `json:"enabled"`
+    }{
+			Event:   openinapp.OPENINAPP_INIT,
+			Enabled: request.Enabled,
+    })
+
 
 	// Screen Events
 	case event.SCREEN_UPDATED:

@@ -194,9 +194,19 @@
       }
     }
 
+    get canDownload() {
+      return this.$accessor.user.admin || this.$accessor.files.userDownload
+    }
+
+    get canUpload() {
+      return this.$accessor.user.admin || this.$accessor.files.userUpload
+    }
+
     get filetransferAllowed() {
       return (
-        this.$accessor.remote.fileTransfer && (this.$accessor.user.admin || !this.$accessor.isLocked('file_transfer'))
+        this.$accessor.remote.fileTransfer &&
+        (this.$accessor.user.admin || !this.$accessor.isLocked('file_transfer')) &&
+        (this.canDownload || this.canUpload)
       )
     }
 

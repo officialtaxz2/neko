@@ -311,6 +311,9 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
         setTimeout(() => {
           this[EVENT.FILETRANSFER.LIST]({
             cwd: '/home/neko/Downloads',
+            user_download: true,
+            user_upload: true,
+            user_delete: true,
             files: [
               { name: 'lustiges_katzenbild.jpg', type: 'file', size: 1048576 },
               { name: 'neko_simulations_anleitung.txt', type: 'file', size: 2450 },
@@ -992,9 +995,25 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   /////////////////////////////
   // File Transfer Events
   /////////////////////////////
-  protected [EVENT.FILETRANSFER.LIST]({ cwd, files }: FileTransferListPayload) {
+  protected [EVENT.FILETRANSFER.LIST]({
+    cwd,
+    user_download,
+    user_upload,
+    user_delete,
+    files,
+  }: FileTransferListPayload) {
     this.$accessor.files.setCwd(cwd)
     this.$accessor.files.setFileList(files)
+    this.$accessor.files.setUserDownload(user_download)
+    this.$accessor.files.setUserUpload(user_upload)
+    this.$accessor.files.setUserDelete(user_delete)
+  }
+
+  /////////////////////////////
+  // Open in App Events
+  /////////////////////////////
+  protected [EVENT.OPENINAPP.INIT]({ enabled }: { enabled: boolean }) {
+    this.$accessor.openinapp.setEnabled(enabled)
   }
 
   /////////////////////////////

@@ -132,6 +132,15 @@ export const files = {
   downloads: 'Downloads',
   uploads: 'Uploads',
   upload_here: 'Click or drag files here to upload',
+  delete: 'Delete',
+  delete_title: 'Delete "{name}"?',
+  delete_confirm: 'Do you really want to remove this file?',
+  select: 'Select',
+  select_all: 'Select All',
+  unselect_all: 'Unselect All',
+  cancel: 'Cancel',
+  delete_selected_title: 'Delete selected files?',
+  delete_selected_confirm: 'Do you really want to remove the {count} selected files?',
 }
 
 export const clipboard_manager = {

@@ -109,9 +109,12 @@ type EmoteSend struct {
 }
 
 type FileTransferList struct {
-	Event string               `json:"event"`
-	Cwd   string               `json:"cwd"`
-	Files []types.FileListItem `json:"files"`
+	Event        string               `json:"event"`
+	Cwd          string               `json:"cwd"`
+	UserDownload bool                 `json:"user_download"`
+	UserUpload   bool                 `json:"user_upload"`
+	UserDelete   bool                 `json:"user_delete"`
+	Files        []types.FileListItem `json:"files"`
 }
 
 type Admin struct {

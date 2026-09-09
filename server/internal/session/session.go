@@ -51,7 +51,11 @@ func (session *SessionCtx) profileChanged() {
 		// otherwise webrtc destroy would trigger websocket reconnect. In case of kick event, webrtc destroy is called
 		// before websocket destroy that delivers the information about the kick.
 		time.AfterFunc(time.Second, func() {
-			session.GetWebRTCPeer().Destroy()
+			// The peer may have been removed if the user disconnected while
+			// waiting for the delayed teardown.
+			if webrtcPeer := session.GetWebRTCPeer(); webrtcPeer != nil {
+				webrtcPeer.Destroy()
+			}
 		})
 	}
 
@@ -75,8 +79,14 @@ func (session *SessionCtx) IsHost() bool {
 
 // only needed for legacy webrtc handler
 func (session *SessionCtx) LegacyIsHost() bool {
-	implicitHosting := session.manager.Settings().ImplicitHosting
-	return !(!implicitHosting && !session.manager.isHost(session)) || (implicitHosting && !session.profile.CanHost)
+	settings := session.manager.Settings()
+	if !session.profile.CanHost || session.PrivateModeEnabled() {
+		return false
+	}
+	if settings.LockedControls && !session.profile.IsAdmin {
+		return false
+	}
+	return settings.ImplicitHosting || session.manager.isHost(session)
 }
 
 func (session *SessionCtx) SetAsHost() {

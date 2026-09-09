@@ -1107,9 +1107,11 @@
       }
       this.keyboard.listenTo(this._overlay)
       this.$client.on('cursor-position', this.onCursorPosition)
+      window.addEventListener('focus', this._onWindowFocus)
     }
 
     beforeDestroy() {
+      window.removeEventListener('focus', this._onWindowFocus)
       this.observer.disconnect()
       this.$accessor.video.setPlayable(false)
 
@@ -1657,6 +1659,11 @@
       }
 
       this.sendMousePos(e)
+    }
+
+    // stable reference for add/removeEventListener
+    private _onWindowFocus = () => {
+      if (this.hosting) this.syncClipboard()
     }
 
     onMouseEnter(e: MouseEvent) {

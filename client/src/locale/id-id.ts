@@ -124,4 +124,13 @@ export const files = {
   downloads: 'Unduhan',
   uploads: 'Unggahan',
   upload_here: 'Klik atau seret berkas ke sini untuk mengunggah',
+  delete: 'Hapus',
+  delete_title: 'Hapus "{name}"?',
+  delete_confirm: 'Apakah Anda benar-benar ingin menghapus berkas ini?',
+  select: 'Pilih',
+  select_all: 'Pilih Semua',
+  unselect_all: 'Batalkan Semua Pilihan',
+  cancel: 'Batal',
+  delete_selected_title: 'Hapus berkas yang dipilih?',
+  delete_selected_confirm: 'Apakah Anda benar-benar ingin menghapus {count} berkas yang dipilih?',
 }
