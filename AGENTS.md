@@ -13,7 +13,8 @@ Immediate sequence:
 5. validate the integrated `master` on the target server — **complete; operator-confirmed on 2026-09-09 after correcting the Brave policy mount filename**,
 6. make the multi-pipeline/bandwidth-estimator path reproducible and observable without changing the stable single-pipeline default — **complete**,
 7. validate and measurement-tune the opt-in adaptive-quality profile on the target server — **complete; operator-accepted on 2026-09-10 for the documented three-viewer scenario at `bfaca84e`**,
-8. promote the reviewed and accepted `testing` history to `master` while preserving the single-pipeline default — **NEXT**.
+8. stabilize and verify bounded iOS transient-recovery behavior on `testing` — **NEXT**,
+9. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
 
 ## Authoritative knowledge
 

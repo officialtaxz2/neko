@@ -277,22 +277,24 @@ Browser/runtime images, when relevant to the deployment:
 
 ## NEXT
 
-The complete range `d9105ef8..testing` has been statically reviewed. It contains the intended opt-in adaptive-quality implementation, metrics, tests, deployment overlay, collector and durable documentation, plus the previously operator-accepted correction of the Brave managed-policy destination to `policies.json`. No runtime/profile/download data or credentials are part of the range, and the base deployment remains single-pipeline.
+Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Fast-forward `master` to the reviewed `testing` head and push both branch references. Do not rewrite either branch and do not change the stable single-pipeline Compose default.
+Audit the current iOS transient-network recovery path across WebSocket/session reconnect, ICE timeout handling and the `video.vue` media-element recovery. Distinguish three cases explicitly: automatic recovery of the existing peer, bounded application-level reconnect after the existing peer cannot recover, and Safari's standards-required Play gesture after media is available. Implement the smallest regression-safe change that removes any unnecessary page reload while preserving the visible Play fallback when autoplay is blocked.
 
-After promotion, switch the target-server checkout to `master`, verify the promoted commit and a clean worktree, and run `docker compose config --quiet` for the base model plus the merged adaptive model. Because the acceptance closeout changes only documentation and the evidence collector's log filter after the already-tested server commit, rebuilding the image is unnecessary unless the promoted source commit or local image changed. Preserve the currently healthy opt-in service while verifying its image ID and configuration.
+Keep the recovery bounded and idempotent: prevent parallel reconnect loops, clean up old timers/listeners/peers, preserve authentication/session semantics, and do not disturb healthy participants or the existing touch/trackpad/playback behavior. Add focused tests around extracted state/timer decisions where the repository structure permits, update the durable documentation, review the complete diff statically, commit it on `testing`, and push only `testing`.
+
+Runtime/build/device verification remains target-server work under `AGENTS.md`. Prepare an exact iPhone interruption/recovery procedure, but group its execution with the next coherent `testing` validation checkpoint unless the implementation evidence makes an immediate isolated check necessary. Do not claim fully automatic recovery until a no-reload target-server run proves it.
 
 ## Product priority after stable synced baseline
 
-1. promote the accepted adaptive-quality history from `testing` to `master`;
-2. distinguish and, if necessary, improve automatic iOS in-place recovery versus the already proven reload/Play fallback;
-3. server-enforced view-only sharing;
-4. practical non-WebRTC viewer-media fallback.
+1. distinguish and, if necessary, improve automatic iOS in-place recovery versus the already proven reload/Play fallback;
+2. server-enforced view-only sharing;
+3. practical non-WebRTC viewer-media fallback;
+4. promote the accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
 
-Alternative media work starts only after the accepted adaptive-quality history is promoted and the bounded iOS recovery follow-up is resolved.
+Alternative media work starts only after the bounded iOS recovery follow-up is resolved. It remains on `testing` until the operator explicitly approves a later grouped promotion.
 
 When fallback work begins, separate the two user classes instead of forcing every client through one fallback chain:
 

@@ -58,7 +58,7 @@ Do not perform a blind upstream overwrite.
 
 ## NEXT
 
-Promote the reviewed and accepted `testing` range to `master` without changing the stable single-pipeline default. The range contains the opt-in adaptive-quality unit, its diagnostics/documentation and the already accepted Brave `policies.json` mount correction. After promotion, confirm the target server is on the promoted commit and that both the base and opt-in Compose models still resolve; no image rebuild is required for the documentation-only acceptance commits.
+Continue exclusively on `testing`: audit the iOS transient-network path and implement the smallest regression-safe improvement that can recover a disconnected session without requiring a page reload. Preserve the standards-required Play gesture when Safari blocks autoplay, and distinguish that policy fallback from connection recovery. `master` remains pinned at the accepted stable baseline until the operator explicitly authorizes a later grouped promotion.
 
 See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
