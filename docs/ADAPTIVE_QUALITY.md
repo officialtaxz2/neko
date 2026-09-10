@@ -1,8 +1,8 @@
 # Opt-in Adaptive Quality Profile
 
-This document describes the experimental multi-pipeline and per-peer bandwidth-estimator profile for the repository's Brave Compose baseline. The normal `docker-compose.yaml` remains the stable, single-pipeline default. Adaptive quality is enabled only when `docker-compose.adaptive.yaml` is supplied as a second Compose file.
+This document describes the opt-in multi-pipeline and per-peer bandwidth-estimator profile for the repository's Brave Compose baseline. The normal `docker-compose.yaml` remains the stable, single-pipeline default. Adaptive quality is enabled only when `docker-compose.adaptive.yaml` is supplied as a second Compose file.
 
-The pipeline values below are reproducible starting points. The estimator timings, encoder constraints and asymmetric upgrade threshold include target-server tuning candidates described below, but the profile remains unaccepted until the affected phases and final recovery pass with recorded measurements. Do not promote the overlay to the default before that acceptance.
+The values below were measurement-tuned and accepted on 2026-09-10 for the documented target server with one healthy desktop, one healthy iPad and one constrained iPhone at commit `bfaca84e`. This is bounded deployment evidence, not a universal device or network guarantee, and it does not promote the overlay to the default.
 
 ## Profile contents
 
@@ -34,7 +34,26 @@ That stable-selection rerun still failed constrained-viewer usability. At 1.3 Mb
 
 The next measurement-led candidate budgeted transport headroom instead of changing more timers: `medium` is 748,800 bit/s, `low` is 332,800 bit/s, and all tiers allow VP8's full `max-quantizer: 63` range so the quality floor cannot defeat those limits. Its target-server run was a material improvement. At 1.3 Mbit/s, `medium` measured 569,136 bit/s plus 130,968 bit/s audio and remained watchable with only small occasional interruptions. At 0.7 Mbit/s, `low` measured 369,144 bit/s plus 125,672 bit/s audio and was likewise mostly watchable. Both healthy viewers remained smooth on `high`, all peer-local drop counters remained zero, and the constrained viewer recovered `low` to `medium` to `high` within 45 seconds after restoration. Baseline `high` measured 2,057,672 bit/s against its 1,996,800 bit/s target with no reported visual regression.
 
-One deterministic defect remains: during the unchanged 0.7 Mbit/s phase the estimator reported 613,076 bit/s and briefly upgraded `low` to `medium`, which immediately worsened playback before the downgrade back to `low`. The implementation still referenced the content-dependent measured current rate. Each profile tier now declares `nominal_bitrate`, and the server evaluates an upgrade directly against the next tier's nominal rate. With the normal 0.15 reserve, `low` to `medium` requires at least 861,120 bit/s, so the observed 613,076 bit/s is insufficient; profiles without this metadata retain their previous current-measured-rate fallback. This is the final code candidate before accepting or explicitly rejecting the profile.
+One deterministic defect remained during that run: at an unchanged 0.7 Mbit/s constraint the estimator reported 613,076 bit/s and briefly upgraded `low` to `medium`, which immediately worsened playback before the downgrade back to `low`. The implementation still referenced the content-dependent measured current rate. Each profile tier now declares `nominal_bitrate`, and the server evaluates an upgrade directly against the next tier's nominal rate. With the normal 0.15 reserve, `low` to `medium` requires at least 861,120 bit/s, so the observed 613,076 bit/s is insufficient; profiles without this metadata retain their previous current-measured-rate fallback.
+
+## Target-server acceptance — 2026-09-10
+
+The final candidate was built and exercised from `testing` at `bfaca84e0bcf`. The target host intentionally has no Go installation, so the repository's server Docker image ran the focused capture and WebRTC tests; both packages passed. The local base and Brave images then built successfully, Compose started the adaptive service healthy with zero restarts, and the running Brave image ID was `sha256:a3efc4573a26965b0b9ccc54a289278fcd570d206c8ddaea58719f5e1a2c69ca`.
+
+Combined acceptance evidence:
+
+| Phase | Healthy desktop / iPad | Constrained iPhone | Relevant measurements | Result |
+| --- | --- | --- | --- | --- |
+| unconstrained baseline | both remained visually smooth on `high`; audio/video drop counters stayed at zero | visually smooth on `high`; drop counters stayed at zero | `high` measured 1,708,808 bit/s in the final baseline | pass |
+| 1.3 Mbit/s, 80 ms RTT, 1% loss | both remained smooth on `high`; no peer-local drops | `medium` was watchable with only small occasional interruptions | 569,136 bit/s video plus 130,968 bit/s audio in the passing rate-control run | pass; final nominal gate only makes upgrades stricter |
+| 0.7 Mbit/s, 120 ms RTT, 2% loss | both remained smooth on `high`; no peer-local drops and no shaped-class traffic | initially froze on `medium`, reached `low` by 45 seconds, then stayed watchable on `low` through 90 seconds without the previous upward excursion | target estimate stayed between 100,000 and 328,879 bit/s on `low`; shaped class carried 7,068,103 bytes during the approximately 91-second phase | pass |
+| impairment removed | both remained on `high` | moved to `medium` by 15 seconds and `high` by 45 seconds; playback became smooth | final `high` rate 2,001,544 bit/s; only `high` remained active with three listeners | pass |
+
+The final container used 102.74% CPU and 903.1 MiB of 25.43 GiB RAM on an eight-CPU host, so the observed result did not indicate sustained host saturation. The host qdisc was restored to its original `fq_codel` configuration after shaping.
+
+Refresh/rejoin and transient cellular interruption were also exercised. Reload produced a new active iPhone session on `high` with zero peer-local drops. After a 15-second flight-mode interruption, another new iPhone session was already active on `high` at the first 10-second sample and remained connected throughout the 90-second observation. The desktop and iPad stayed smooth on `high` with zero drop deltas throughout. The operator reports that iPhone playback worked after reload and, where iOS required it, pressing the central Play control. This proves the manual reload/play fallback without cross-peer disruption; it does not prove fully automatic in-place iOS recovery without user action.
+
+Decision: **accepted as an opt-in profile for this tested deployment and scenario**. Keep the base Compose deployment single-pipeline, retain the documented rollback path, and remeasure before claiming other devices, architectures or materially different network envelopes.
 
 ## Before activation
 
@@ -108,10 +127,10 @@ For switch decisions and their measured inputs, follow the estimator logs:
 
 ```bash
 docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs -f neko \
-  | grep -E 'got bitrate from estimator|downgraded video stream|upgraded video stream|set video|dropping sample'
+  | grep -E "got bitrate from estimator|downgraded video stream|upgraded video stream|set video|dropping sample|don't have enough bitrate"
 ```
 
-`got bitrate from estimator` includes `target_bitrate`, measured `stream_bitrate`, their ratio and trend. The trace-only `dropping sample` line may not be visible at the normal log level; the counter is the authoritative drop diagnostic.
+`got bitrate from estimator` includes `target_bitrate`, measured `stream_bitrate`, their ratio and trend. A rejected nominal-rate upgrade includes `upgrade_reference_bitrate` and `nominal_reference`; the collector retains its `don't have enough bitrate` message. The trace-only `dropping sample` line may not be visible at the normal log level; the counter is the authoritative drop diagnostic.
 
 ## Resource cost
 

@@ -11,8 +11,9 @@ Immediate sequence:
 3. synchronize the completed fork with current upstream without breaking fork behavior — **complete; merge commit `4e99b8d3`**,
 4. fast-forward the reviewed integration history to `master` — **complete**,
 5. validate the integrated `master` on the target server — **complete; operator-confirmed on 2026-09-09 after correcting the Brave policy mount filename**,
-6. make the multi-pipeline/bandwidth-estimator path reproducible and observable without changing the stable single-pipeline default — **complete in repository / target-server validation pending**,
-7. validate and measurement-tune the opt-in adaptive-quality profile on the target server — **NEXT**.
+6. make the multi-pipeline/bandwidth-estimator path reproducible and observable without changing the stable single-pipeline default — **complete**,
+7. validate and measurement-tune the opt-in adaptive-quality profile on the target server — **complete; operator-accepted on 2026-09-10 for the documented three-viewer scenario at `bfaca84e`**,
+8. review and promote the accepted `testing` history to `master` while preserving the single-pipeline default — **NEXT**.
 
 ## Authoritative knowledge
 

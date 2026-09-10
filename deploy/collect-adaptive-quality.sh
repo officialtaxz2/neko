@@ -172,7 +172,7 @@ logs_record() {
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   output_file="$output_dir/$stamp-estimator.log"
   compose logs --no-color --since "$since" neko \
-    | grep -E 'got bitrate from estimator|downgraded video stream|upgraded video stream|set video|dropping sample' \
+    | grep -E "got bitrate from estimator|downgraded video stream|upgraded video stream|set video|dropping sample|don't have enough bitrate" \
     >"$output_file" || true
   printf 'Recorded filtered logs: %s\n' "$output_file"
 }

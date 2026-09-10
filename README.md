@@ -8,7 +8,7 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 
 ### IMPLEMENTED
 
-Repository implementation is listed here independently of runtime validation. The latest upstream integration is statically reviewed and the operator has confirmed that all applicable target-server build and regression checks passed after correcting the Brave policy mount filename. This acceptance applies to the tested deployment; it is not a universal device-support claim.
+Repository implementation is listed here independently of runtime validation. The latest upstream integration is statically reviewed and the operator has confirmed that all applicable target-server build and regression checks passed after correcting the Brave policy mount filename. The opt-in adaptive profile was separately built, tuned and accepted on the target server on 2026-09-10 for the documented three-viewer scenario. These acceptances apply to the tested deployment; they are not universal device-support claims.
 
 - Shared Neko browser/desktop session with multi-user access.
 - Existing Neko admin/user/control semantics.
@@ -25,6 +25,7 @@ Repository implementation is listed here independently of runtime validation. Th
 - Peer-local audio/video sample-drop counters plus measured pipeline-bitrate metrics for adaptive-quality diagnosis.
 - Stream bitrate accounting in bit/s, matching the Pion estimator rather than comparing its bit/s target with encoded bytes/s.
 - Separate downgrade and upgrade headroom thresholds so approximately 2:1 quality tiers do not reuse an unsafe current-tier upgrade margin; the compatible server default remains unchanged.
+- Optional per-pipeline nominal bitrate metadata so an upgrade can be gated against the next tier's capacity requirement instead of a content-dependent current-tier measurement.
 - H.265 capture/WebRTC codec support.
 - Per-user file download/upload/delete permissions and multi-file deletion.
 - Optional server-side “open chat link in app” plugin.
@@ -57,7 +58,7 @@ Do not perform a blind upstream overwrite.
 
 ## NEXT
 
-Build the final next-tier nominal-upgrade candidate from `testing` and rerun the affected 0.7 Mbit/s phase plus recovery. Accept or explicitly reject the profile from that result; only after a pass, complete refresh/rejoin and transient-interruption checks. The stable single-pipeline deployment remains the default.
+Review the accepted `testing` range against `master`, then promote it without changing the stable single-pipeline default. After promotion, confirm the target server is on the promoted commit and that both the base and opt-in Compose models still resolve; no image rebuild is required for the documentation-only acceptance commit.
 
 See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
@@ -85,7 +86,7 @@ docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml config --q
 docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml up -d --force-recreate
 ```
 
-Activation, diagnostics, the exact acceptance sequence, the non-destructive evidence collector and rollback are documented in [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md). These new server/profile changes have not been built or runtime-tested in Codex.
+Activation, diagnostics, the exact acceptance sequence, the non-destructive evidence collector, the 2026-09-10 target-server result and rollback are documented in [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md). These server/profile changes were not built or runtime-tested in Codex; the documented build and runtime evidence was supplied from the real target server.
 
 ## Development environment policy
 

@@ -131,7 +131,7 @@ Static review status: **implementation complete in repository / runtime, build a
 
 The earlier operator-confirmed integration regression predates the new overlay, metrics and bitrate correction. It remains valid for the tested baseline, but it is not acceptance evidence for this new profile.
 
-## IN PROGRESS — adaptive-quality target-server validation
+## COMPLETED — adaptive-quality target-server validation
 
 Operator-reported evidence on 2026-09-10 from the `testing` branch:
 
@@ -152,8 +152,13 @@ Operator-reported evidence on 2026-09-10 from the `testing` branch:
 - The next opt-in candidate lowered `medium` to 748,800 bit/s and `low` to 332,800 bit/s, permitted `max-quantizer: 63`, and adjusted `upgrade_diff_threshold` to 1.75 for the new maximum adjacent ratio of about 2.67:1. Its target-server run made both constrained phases mostly watchable, kept both healthy viewers smooth on `high` with zero peer-local drops, and recovered the constrained viewer through `medium` to `high` within 45 seconds. Baseline `high` measured 2,057,672 bit/s against its 1,996,800 bit/s target without visible regression; CPU and memory again remained unsaturated.
 - The 1.3 Mbit/s phase held `medium` from 30 through 90 seconds and ended at 569,136 bit/s video plus 130,968 bit/s audio. The 0.7 Mbit/s phase normally held `low` at 369,144 bit/s video plus 125,672 bit/s audio, but briefly changed `low` to `medium` at 75 seconds and back to `low` by 90 seconds; the operator correlated that excursion with the remaining larger interruption.
 - Static review found why the nominal ratio threshold did not prevent that excursion: upgrade still divided the estimate by the content-dependent measured current rate. The final code candidate adds explicit per-pipeline `nominal_bitrate` metadata and evaluates an upgrade against the next tier's nominal target plus the normal 15% reserve. `Low` to `medium` therefore requires 861,120 bit/s, rejecting the observed 613,076 bit/s estimate. The current measured rate remains the fallback for all existing profiles that omit the field.
+- The final candidate at `bfaca84e0bcf` passed the focused capture and WebRTC tests in the repository's server Docker image. The base and Brave images built successfully; the adaptive service started healthy with zero restarts and image ID `sha256:a3efc4573a26965b0b9ccc54a289278fcd570d206c8ddaea58719f5e1a2c69ca`.
+- Its final unconstrained baseline placed all three viewers on `high`, kept every peer-local audio/video drop counter at zero, and measured the high pipeline at 1,708,808 bit/s. The previously passing 1.3 Mbit/s evidence remains applicable because the final code change only makes upgrades stricter by using the unchanged next-tier nominal target.
+- In the affected 0.7 Mbit/s rerun, the iPhone moved from `medium` to `low` by 45 seconds and held `low` through the 90-second phase; the previous low-to-medium excursion did not recur. Once on `low`, the operator found playback watchable and largely fluid with at most small occasional interruptions. Both healthy viewers remained smooth on `high`, their drop counters stayed at zero, and their unshaped `fq_codel` class recorded no drops.
+- Removing impairment returned the iPhone through `medium` to `high` within 45 seconds. The final state had three `high` listeners, inactive zero-listener `medium`/`low` pipelines, a 2,001,544 bit/s high stream, 102.74% container CPU and 903.1 MiB RAM on the eight-CPU host. The host qdisc was restored to its original `fq_codel` configuration.
+- Refresh/rejoin created a healthy new iPhone session on `high`. After a 15-second flight-mode interruption, another new iPhone session was already healthy on `high` at the first 10-second sample and stayed connected for the full 90-second observation; the desktop and iPad remained smooth on `high` with zero drop deltas. The operator confirmed playback after reload and an iOS Play tap when required. This accepts the manual recovery fallback and cross-peer isolation, but does not claim automatic in-place iOS recovery without user action.
 
-Pending before acceptance: build and deploy the next-tier nominal-reference candidate, run its focused tests, and repeat only the affected 0.7 Mbit/s phase plus final recovery. If it passes, complete refresh/rejoin plus transient-interruption checks; otherwise reject the profile from the recorded evidence. The stable base Compose and profiles without `nominal_bitrate` retain their previous estimator behavior.
+Status: **accepted on 2026-09-10 as an opt-in profile for the documented target deployment and three-viewer scenario**. The stable base Compose remains single-pipeline, and profiles without `nominal_bitrate` retain their previous estimator behavior. This bounded acceptance must not be generalized to untested devices, architectures or network conditions.
 
 ## Target-server verification
 
@@ -223,7 +228,7 @@ Slow-viewer isolation and adaptive quality:
 - confirm only that viewer switches down/up and other viewers remain stable;
 - repeat through the legacy protocol path, which now requests automatic selection.
 
-For the new tracked opt-in profile, use the exact phases, metrics and acceptance criteria in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md). That procedure supersedes the abbreviated adaptive-quality bullets above for the current `NEXT`.
+For the tracked opt-in profile, use the exact phases, metrics, acceptance criteria and bounded 2026-09-10 result in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
 Desktop:
 
@@ -272,21 +277,20 @@ Browser/runtime images, when relevant to the deployment:
 
 ## NEXT
 
-Build the final next-tier nominal-reference candidate on the real target server, run the focused capture and estimator tests, and repeat only the affected 0.7 Mbit/s phase plus final recovery from [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md). Archive its metrics, relevant estimator logs, host resource measurements, commit and image ID alongside the already passing 1.3 Mbit/s evidence.
+Review the complete accepted range `d9105ef8..testing`, confirm it contains only the intended opt-in adaptive-quality unit and its documentation, then fast-forward `master` to the reviewed `testing` head and push both branch references. Do not rewrite either branch and do not change the stable single-pipeline Compose default.
 
-Accept or reject the profile from that evidence, then complete refresh/rejoin and transient-interruption checks for the constrained client. Any further target-specific threshold, bitrate, frame-rate or encoder-thread tuning belongs only in the opt-in YAML. Do not change the stable base Compose default, and do not call the adaptive tuning validated before this target-server run passes.
+After promotion, switch the target-server checkout to `master`, verify the promoted commit and a clean worktree, and run `docker compose config --quiet` for the base model plus the merged adaptive model. Because the acceptance closeout changes only documentation and the evidence collector's log filter after the already-tested server commit, rebuilding the image is unnecessary unless the promoted source commit or local image changed. Preserve the currently healthy opt-in service while verifying its image ID and configuration.
 
 ## Product priority after stable synced baseline
 
-1. validate the reproducible slow-client isolation and multi-pipeline estimator profile on the target server;
-2. tune per-viewer quality using the recorded target-server measurements;
-3. stabilize mobile/reconnect after sync;
-4. server-enforced view-only sharing;
-5. practical non-WebRTC viewer-media fallback.
+1. promote the accepted adaptive-quality history from `testing` to `master`;
+2. distinguish and, if necessary, improve automatic iOS in-place recovery versus the already proven reload/Play fallback;
+3. server-enforced view-only sharing;
+4. practical non-WebRTC viewer-media fallback.
 
 ## Fallback prototype sequence
 
-Alternative media work starts only after the current adaptive-quality `NEXT` is accepted or explicitly rejected from target-server evidence.
+Alternative media work starts only after the accepted adaptive-quality history is promoted and the bounded iOS recovery follow-up is resolved.
 
 When fallback work begins, separate the two user classes instead of forcing every client through one fallback chain:
 
@@ -310,7 +314,7 @@ The passive path may trade latency for reliability and compatibility. It must st
 ## OPEN
 
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
-- Whether upstream adaptive quality meets desired per-viewer behavior.
+- Whether iOS can recover in place after a transient network transition without reload or a Play gesture, and whether that behavior should be required beyond the proven manual fallback.
 - Exact WebCodecs/WebSocket framing, queue/drop/backpressure policy and codec set.
 - HLS/LL-HLS latency target, segment/part sizing, codec profile and server resource cost.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.

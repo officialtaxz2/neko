@@ -1,6 +1,6 @@
 # Project Definition
 
-Last consolidated: 2026-09-09.
+Last consolidated: 2026-09-10.
 
 State labels:
 
@@ -71,13 +71,16 @@ These repository implementation claims were first established by static inspecti
 
 ## Adaptive-quality follow-up
 
-### IMPLEMENTED in the repository / target-server acceptance in progress
+### IMPLEMENTED in the repository / target-server accepted for the documented scenario
 
 - The Brave deployment has a separate opt-in adaptive-quality overlay with ordered `high`, `medium` and `low` VP8 pipelines; the stable base Compose file remains single-pipeline.
 - Encoded stream rates are measured and compared with the Pion target in bit/s.
 - Peer-local audio/video queue drops and per-pipeline bitrates are exported as Prometheus metrics.
 - Upgrade headroom is configured separately from the current-tier downgrade margin; the opt-in profile can therefore account for its approximately 2:1 adjacent tiers without changing the compatible server default.
+- Optional `nominal_bitrate` metadata gates an upgrade against the next tier's target; configurations without it retain the previous measured-current-tier fallback.
 - Activation, diagnostics, resource costs, rollback and the target-server acceptance sequence are documented in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
+
+On 2026-09-10, the operator accepted commit `bfaca84e` on the target server for one desktop, one iPad and one iPhone. The isolated 0.7 Mbit/s rerun held the iPhone on `low` after downgrade, preserved both healthy viewers on `high` with zero peer-local drops, and recovered through `medium` to `high` within 45 seconds after impairment removal. Refresh/rejoin and a transient cellular interruption also preserved both healthy viewers. This is bounded evidence for that deployment and device set, not a universal profile guarantee.
 
 ## Highest-priority target outcomes
 
@@ -87,11 +90,13 @@ The integrated per-peer non-blocking delivery mechanism is the intended code-lev
 
 ### TARGET — per-viewer adaptive quality
 
-The repository now contains a reproducible, opt-in three-tier VP8 profile, estimator diagnostics, resource/rollback documentation and an exact healthy-plus-constrained-viewer acceptance procedure. Target-server measurements confirmed the corrected bit/s accounting, and the focused asymmetric-upgrade test passed. Lower constrained-tier rates and the full VP8 quantizer range made both shaped phases mostly watchable while preserving healthy viewers. A remaining low-to-medium excursion exposed content-dependent measured bitrate as an unsafe upgrade reference. The final candidate evaluates upgrades against explicit nominal rates for the next pipeline while retaining the current measured-rate fallback for existing configurations. It requires one affected constrained rerun before acceptance or explicit rejection. See [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
+The repository contains a reproducible, opt-in three-tier VP8 profile, estimator diagnostics, resource/rollback documentation and an exact healthy-plus-constrained-viewer acceptance procedure. Target-server measurements confirmed the corrected bit/s accounting; focused bitrate, nominal-rate and estimator tests passed. Lower constrained-tier rates, the full VP8 quantizer range and next-tier nominal upgrade gating made both shaped phases acceptably usable for the tested iPhone while preserving the healthy desktop and iPad. The profile was accepted for this bounded target-server scenario on 2026-09-10. The stable single-pipeline deployment remains the default. See [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
 ### TARGET — mobile robustness
 
 Mobile must reliably join, start media under autoplay rules, recover from transient failures, avoid persistent black screens, and retain usable touch/keyboard behavior.
+
+The 2026-09-10 iPhone check proved successful rejoin after reload and, when required by iOS autoplay policy, a central Play tap; it also proved that this recovery did not disturb the other viewers. Fully automatic in-place recovery without either user action was not established and remains a bounded follow-up rather than an accepted universal claim.
 
 ### TARGET — Smart-TV / constrained browser compatibility
 
