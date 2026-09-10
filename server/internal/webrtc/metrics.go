@@ -119,7 +119,7 @@ func (m *metricsManager) getBySession(session types.Session) *metrics {
 		videoIdsMu: &sync.Mutex{},
 
 		trackDroppedSamplesAudio: promauto.NewCounter(prometheus.CounterOpts{
-			Name:      "track_dropped_samples",
+			Name:      "track_dropped_samples_total",
 			Namespace: "neko",
 			Subsystem: "webrtc",
 			Help:      "Samples dropped because a peer-local WebRTC track queue was full.",
@@ -129,7 +129,7 @@ func (m *metricsManager) getBySession(session types.Session) *metrics {
 			},
 		}),
 		trackDroppedSamplesVideo: promauto.NewCounter(prometheus.CounterOpts{
-			Name:      "track_dropped_samples",
+			Name:      "track_dropped_samples_total",
 			Namespace: "neko",
 			Subsystem: "webrtc",
 			Help:      "Samples dropped because a peer-local WebRTC track queue was full.",

@@ -58,7 +58,7 @@ With the default loopback HTTP port, inspect the relevant metrics on the target 
 
 ```bash
 curl -fsS http://127.0.0.1:8082/metrics \
-  | grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes_total)|pipelines_active)|webrtc_(receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners))'
+  | grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners))'
 ```
 
 Replace `8082` when `NEKO_HTTP_PORT` has been changed. The important series are:
@@ -68,7 +68,7 @@ Replace `8082` when `NEKO_HTTP_PORT` has been changed. The important series are:
 - `neko_webrtc_video_listeners`: the selected tier for each session (`1` is active);
 - `neko_webrtc_track_dropped_samples_total`: cumulative peer-local queue drops, labeled by `session_id` and `kind`;
 - `neko_capture_streamsink_listeners` and `neko_capture_pipelines_active`: demand and active encoder pipelines;
-- `neko_capture_streamsink_bytes_total`: cumulative encoded output, useful for an independent rate calculation.
+- `neko_capture_streamsink_bytes`: cumulative encoded output, useful for an independent rate calculation.
 
 The bitrate gauge and estimator target deliberately use the same bit/s unit. A completed or closed session can leave cumulative counters in the Prometheus registry; use `neko_webrtc_connection_state == 5` or a current `video_listeners == 1` series to identify active sessions. Evaluate queue-drop counter deltas during a phase, not their lifetime totals.
 
