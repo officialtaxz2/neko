@@ -277,7 +277,9 @@ Browser/runtime images, when relevant to the deployment:
 
 ## NEXT
 
-Review the complete accepted range `d9105ef8..testing`, confirm it contains only the intended opt-in adaptive-quality unit and its documentation, then fast-forward `master` to the reviewed `testing` head and push both branch references. Do not rewrite either branch and do not change the stable single-pipeline Compose default.
+The complete range `d9105ef8..testing` has been statically reviewed. It contains the intended opt-in adaptive-quality implementation, metrics, tests, deployment overlay, collector and durable documentation, plus the previously operator-accepted correction of the Brave managed-policy destination to `policies.json`. No runtime/profile/download data or credentials are part of the range, and the base deployment remains single-pipeline.
+
+Fast-forward `master` to the reviewed `testing` head and push both branch references. Do not rewrite either branch and do not change the stable single-pipeline Compose default.
 
 After promotion, switch the target-server checkout to `master`, verify the promoted commit and a clean worktree, and run `docker compose config --quiet` for the base model plus the merged adaptive model. Because the acceptance closeout changes only documentation and the evidence collector's log filter after the already-tested server commit, rebuilding the image is unnecessary unless the promoted source commit or local image changed. Preserve the currently healthy opt-in service while verifying its image ID and configuration.
 

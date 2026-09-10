@@ -58,7 +58,7 @@ Do not perform a blind upstream overwrite.
 
 ## NEXT
 
-Review the accepted `testing` range against `master`, then promote it without changing the stable single-pipeline default. After promotion, confirm the target server is on the promoted commit and that both the base and opt-in Compose models still resolve; no image rebuild is required for the documentation-only acceptance commit.
+Promote the reviewed and accepted `testing` range to `master` without changing the stable single-pipeline default. The range contains the opt-in adaptive-quality unit, its diagnostics/documentation and the already accepted Brave `policies.json` mount correction. After promotion, confirm the target server is on the promoted commit and that both the base and opt-in Compose models still resolve; no image rebuild is required for the documentation-only acceptance commits.
 
 See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
