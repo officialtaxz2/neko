@@ -23,3 +23,11 @@ func TestSaveSampleBitrateUsesBitsPerSecond(t *testing.T) {
 		t.Fatalf("Bitrate() = %d, want %d bits per second", got, want)
 	}
 }
+
+func TestNominalBitrate(t *testing.T) {
+	manager := &StreamSinkManagerCtx{nominalBitrate: 748_800}
+
+	if got, want := manager.NominalBitrate(), uint64(748_800); got != want {
+		t.Fatalf("NominalBitrate() = %d, want %d bits per second", got, want)
+	}
+}

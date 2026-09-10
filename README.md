@@ -57,7 +57,7 @@ Do not perform a blind upstream overwrite.
 
 ## NEXT
 
-Deploy the final config-only constrained-bitrate candidate from `testing` and rerun the two constrained phases plus recovery. Accept or explicitly reject the profile from that result; only after a pass, complete refresh/rejoin and transient-interruption checks. The stable single-pipeline deployment remains the default.
+Build the final next-tier nominal-upgrade candidate from `testing` and rerun the affected 0.7 Mbit/s phase plus recovery. Accept or explicitly reject the profile from that result; only after a pass, complete refresh/rejoin and transient-interruption checks. The stable single-pipeline deployment remains the default.
 
 See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 

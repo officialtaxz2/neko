@@ -7,6 +7,7 @@ capture:
     pipelines:
       high:
         fps: "25"
+        nominal_bitrate: 1996800
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(3072 * 650)"
@@ -26,6 +27,7 @@ capture:
         width: "round(width / 3) * 2"
         height: "round(height / 3) * 2"
         fps: "20"
+        nominal_bitrate: 748800
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(1152 * 650)"
@@ -45,6 +47,7 @@ capture:
         width: "round(width / 4) * 2"
         height: "round(height / 4) * 2"
         fps: "15"
+        nominal_bitrate: 332800
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(512 * 650)"
@@ -76,9 +79,8 @@ webrtc:
     downgrade_backoff: 30s
     upgrade_backoff: 5s
     diff_threshold: 0.15
-    # The widest adjacent target ratio is approximately 2.67:1. Require an
-    # estimate 2.75 times the current rate before moving to the next tier.
-    upgrade_diff_threshold: 1.75
+    # Require 15% headroom over the nominal rate of the next tier.
+    upgrade_diff_threshold: 0.15
 
 server:
   metrics: true

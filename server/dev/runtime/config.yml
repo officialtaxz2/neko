@@ -24,6 +24,7 @@ capture:
         show_pointer: true
       hq:
         fps: 25
+        nominal_bitrate: 1996800
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: round(3072 * 650)
@@ -40,6 +41,7 @@ capture:
           max-quantizer: 20
       lq:
         fps: 25
+        nominal_bitrate: 665600
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: round(1024 * 650)

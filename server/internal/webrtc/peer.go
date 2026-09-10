@@ -282,10 +282,27 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			continue
 		}
 
-		// upgrade only if estimated bitrate passed the threshold
-		if !estimatedBitrateSupportsUpgrade(targetBitrate, streamBitrate, conf.UpgradeDiffThreshold) {
+		// Resolve the next stream before applying the upgrade threshold. When the
+		// next stream declares a nominal rate, compare the estimate with the rate
+		// we are about to select instead of the content-dependent current rate.
+		upgradeStream, ok := peer.video.GetStream(types.StreamSelector{
+			ID:   streamId,
+			Type: types.StreamSelectorTypeHigher,
+		})
+		if !ok {
+			debugLogger.Info().Msg("looks like we are already on the highest stream")
+			continue
+		}
+
+		upgradeNominalBitrate := streamNominalBitrate(upgradeStream)
+		upgradeReferenceBitrate := referenceBitrateForUpgrade(streamBitrate, upgradeNominalBitrate)
+		if !estimatedBitrateSupportsUpgrade(targetBitrate, upgradeReferenceBitrate, conf.UpgradeDiffThreshold) {
 			debugLogger.Debug().
-				Float64("diff", diff).
+				Float64("current_stream_diff", diff).
+				Float64("upgrade_diff", float64(targetBitrate)/float64(upgradeReferenceBitrate)).
+				Str("upgrade_stream_id", upgradeStream.ID()).
+				Uint64("upgrade_reference_bitrate", upgradeReferenceBitrate).
+				Bool("nominal_reference", upgradeNominalBitrate != 0).
 				Float64("threshold", conf.UpgradeDiffThreshold).
 				Msgf("looks like we don't have enough bitrate to accomodate higher stream, " +
 					"therefore we should wait for some more time")
@@ -294,8 +311,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 
 		err := peer.SetVideo(types.PeerVideoRequest{
 			Selector: &types.StreamSelector{
-				ID:   streamId,
-				Type: types.StreamSelectorTypeHigher,
+				ID: upgradeStream.ID(),
 			},
 		})
 		if err != nil && err != types.ErrWebRTCStreamNotFound {
@@ -303,23 +319,36 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		}
 		lastUpgradeTime = time.Now()
 
-		if err == types.ErrWebRTCStreamNotFound {
-			debugLogger.Info().Msg("looks like we are already on the highest stream")
-		} else {
+		if err != types.ErrWebRTCStreamNotFound {
 			debugLogger.Info().Msg("upgraded video stream")
 		}
 	}
 }
 
-func estimatedBitrateSupportsUpgrade(targetBitrate int, streamBitrate uint64, threshold float64) bool {
+func streamNominalBitrate(stream types.StreamSinkManager) uint64 {
+	provider, ok := stream.(types.StreamSinkNominalBitrateProvider)
+	if !ok {
+		return 0
+	}
+	return provider.NominalBitrate()
+}
+
+func referenceBitrateForUpgrade(measuredBitrate, nominalBitrate uint64) uint64 {
+	if nominalBitrate != 0 {
+		return nominalBitrate
+	}
+	return measuredBitrate
+}
+
+func estimatedBitrateSupportsUpgrade(targetBitrate int, referenceBitrate uint64, threshold float64) bool {
 	if threshold < 0 {
 		return true
 	}
-	if streamBitrate == 0 {
+	if referenceBitrate == 0 {
 		return false
 	}
 
-	return float64(targetBitrate)/float64(streamBitrate) >= 1+threshold
+	return float64(targetBitrate)/float64(referenceBitrate) >= 1+threshold
 }
 
 func (peer *WebRTCPeerCtx) SetPaused(isPaused bool) error {

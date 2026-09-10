@@ -770,7 +770,7 @@
     ],
     "type": "float",
     "defaultValue": "0.15",
-    "description": "how much spare estimated bitrate is required before upgrading to the next stream"
+    "description": "how much spare estimated bitrate over the upgrade stream reference is required before upgrading"
   },
   {
     "key": [

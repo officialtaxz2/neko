@@ -79,7 +79,7 @@
       --webrtc.estimator.stalled_duration duration    how long to wait for stalled bandwidth estimation before downgrading (default 24s)
       --webrtc.estimator.unstable_duration duration   how long to wait for stalled connection (neutral trend with low bandwidth) before downgrading (default 6s)
       --webrtc.estimator.upgrade_backoff duration     how long to wait before upgrading again after previous upgrade (default 5s)
-      --webrtc.estimator.upgrade_diff_threshold float how much spare estimated bitrate is required before upgrading to the next stream (default 0.15)
+      --webrtc.estimator.upgrade_diff_threshold float how much spare estimated bitrate over the upgrade stream reference is required before upgrading (default 0.15)
       --webrtc.icelite                                configures whether or not the ICE agent should be a lite agent
       --webrtc.iceservers.backend string              STUN and TURN servers used by the backend (default "[]")
       --webrtc.iceservers.frontend string             STUN and TURN servers used by the frontend (default "[]")

@@ -58,6 +58,7 @@ capture:
         width: "<expression>"
         height: "<expression>"
         fps: "<expression>"
+        nominal_bitrate: <bits_per_second>
         gst_prefix: "<gst_pipeline>"
         gst_encoder: "<gst_encoder_name>"
         gst_params:
@@ -67,6 +68,7 @@ capture:
 ```
 
 - <Def id="video.pipelines.width" />, <Def id="video.pipelines.height" />, and <Def id="video.pipelines.fps" /> are the expressions that are evaluated to get the stream resolution and framerate. They can be different from the display resolution and framerate if downscaling or upscaling is desired.
+- <Def id="video.pipelines.nominal_bitrate" /> is the optional expected encoded rate in bit/s. Before an upgrade, the bandwidth estimator uses the next tier's value as the stable reference; when it is absent, the current tier's measured stream rate remains the fallback.
 - <Def id="video.pipelines.gst_prefix" /> and <Def id="video.pipelines.gst_suffix" /> allow you to add custom Gstreamer elements before and after the encoder. Both parameters need to start with `!` and then be followed by the Gstreamer elements.
 - <Def id="video.pipelines.gst_encoder" /> is the name of the Gstreamer encoder element, such as `vp8enc` or `x264enc`.
 - <Def id="video.pipelines.gst_params" /> are the parameters that are passed to the encoder element specified in <Opt id="video.pipelines.gst_encoder" />.
@@ -90,6 +92,7 @@ import TabItem from '@theme/TabItem';
         pipelines:
           hq:
             fps: 25
+            nominal_bitrate: 1996800
             gst_encoder: vp8enc
             gst_params:
               target-bitrate: round(3072 * 650)
@@ -106,6 +109,7 @@ import TabItem from '@theme/TabItem';
               max-quantizer: 20
           lq:
             fps: 25
+            nominal_bitrate: 665600
             gst_encoder: vp8enc
             gst_params:
               target-bitrate: round(1024 * 650)

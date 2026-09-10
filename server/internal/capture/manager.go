@@ -69,7 +69,7 @@ func New(desktop types.DesktopManager, config *config.Capture) *CaptureManagerCt
 			Msg("syntax check for video stream pipeline passed")
 
 		// append to videos
-		videos[video_id] = streamSinkNew(config.VideoCodec, createPipeline, video_id)
+		videos[video_id] = streamSinkNew(config.VideoCodec, createPipeline, video_id, pipelineConf.NominalBitrate)
 	}
 
 	return &CaptureManagerCtx{
@@ -139,7 +139,7 @@ func New(desktop types.DesktopManager, config *config.Capture) *CaptureManagerCt
 					"! %s "+
 					"! appsink name=appsink", config.AudioDevice, config.AudioCodec.Pipeline,
 			), nil
-		}, "audio"),
+		}, "audio", 0),
 		video: streamSelectorNew(config.VideoCodec, videos, config.VideoIDs),
 
 		// sources

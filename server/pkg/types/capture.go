@@ -127,6 +127,13 @@ type StreamSinkManager interface {
 	DestroyPipeline()
 }
 
+// StreamSinkNominalBitrateProvider is implemented by stream sinks that expose
+// a stable, configured bitrate reference. It remains optional so existing sink
+// implementations retain their measured-bitrate behavior.
+type StreamSinkNominalBitrateProvider interface {
+	NominalBitrate() uint64
+}
+
 type StreamSrcManager interface {
 	Codec() codec.RTPCodec
 
@@ -151,16 +158,17 @@ type CaptureManager interface {
 }
 
 type VideoConfig struct {
-	Width       string            `mapstructure:"width"`        // expression
-	Height      string            `mapstructure:"height"`       // expression
-	Fps         string            `mapstructure:"fps"`          // expression
-	Bitrate     int               `mapstructure:"bitrate"`      // pipeline bitrate (not used currently)
-	GstPrefix   string            `mapstructure:"gst_prefix"`   // pipeline prefix, starts with !
-	GstEncoder  string            `mapstructure:"gst_encoder"`  // gst encoder name
-	GstParams   map[string]string `mapstructure:"gst_params"`   // map of expressions
-	GstSuffix   string            `mapstructure:"gst_suffix"`   // pipeline suffix, starts with !
-	GstPipeline string            `mapstructure:"gst_pipeline"` // whole pipeline as a string
-	ShowPointer bool              `mapstructure:"show_pointer"` // show pointer in the video
+	Width          string            `mapstructure:"width"`           // expression
+	Height         string            `mapstructure:"height"`          // expression
+	Fps            string            `mapstructure:"fps"`             // expression
+	Bitrate        int               `mapstructure:"bitrate"`         // pipeline bitrate (not used currently)
+	NominalBitrate int               `mapstructure:"nominal_bitrate"` // nominal encoded rate in bits per second
+	GstPrefix      string            `mapstructure:"gst_prefix"`      // pipeline prefix, starts with !
+	GstEncoder     string            `mapstructure:"gst_encoder"`     // gst encoder name
+	GstParams      map[string]string `mapstructure:"gst_params"`      // map of expressions
+	GstSuffix      string            `mapstructure:"gst_suffix"`      // pipeline suffix, starts with !
+	GstPipeline    string            `mapstructure:"gst_pipeline"`    // whole pipeline as a string
+	ShowPointer    bool              `mapstructure:"show_pointer"`    // show pointer in the video
 }
 
 func (config *VideoConfig) GetPipeline(screen ScreenSize) (string, error) {

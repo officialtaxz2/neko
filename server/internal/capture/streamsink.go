@@ -20,8 +20,12 @@ import (
 
 var moveSinkListenerMu = sync.Mutex{}
 
+var _ types.StreamSinkNominalBitrateProvider = (*StreamSinkManagerCtx)(nil)
+
 type StreamSinkManagerCtx struct {
 	id string
+	// nominal encoded stream rate in bits per second, or 0 if unspecified
+	nominalBitrate uint64
 
 	// wait for a keyframe before sending samples
 	waitForKf bool
@@ -52,7 +56,7 @@ type StreamSinkManagerCtx struct {
 	pipelinesActive  prometheus.Gauge
 }
 
-func streamSinkNew(codec codec.RTPCodec, pipelineFn func() (string, error), id string) *StreamSinkManagerCtx {
+func streamSinkNew(codec codec.RTPCodec, pipelineFn func() (string, error), id string, nominalBitrate int) *StreamSinkManagerCtx {
 	logger := log.With().
 		Str("module", "capture").
 		Str("submodule", "stream-sink").
@@ -132,6 +136,9 @@ func streamSinkNew(codec codec.RTPCodec, pipelineFn func() (string, error), id s
 			},
 		}),
 	}
+	if nominalBitrate > 0 {
+		manager.nominalBitrate = uint64(nominalBitrate)
+	}
 
 	return manager
 }
@@ -158,6 +165,10 @@ func (manager *StreamSinkManagerCtx) ID() string {
 
 func (manager *StreamSinkManagerCtx) Bitrate() uint64 {
 	return manager.bitrate.Load()
+}
+
+func (manager *StreamSinkManagerCtx) NominalBitrate() uint64 {
+	return manager.nominalBitrate
 }
 
 func (manager *StreamSinkManagerCtx) Codec() codec.RTPCodec {

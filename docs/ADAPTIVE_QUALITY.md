@@ -16,6 +16,8 @@ The pipeline values below are reproducible starting points. The estimator timing
 
 For other desktop sizes, `medium` scales both dimensions to roughly two thirds and `low` to roughly one half; both expressions produce even dimensions. All pipelines use the same VP8 codec as required by Neko's stream selector. The first ID, `high`, is the initial/default stream.
 
+Each tier's `nominal_bitrate` matches its encoder target. It does not alter encoding; before an upgrade it provides a stable reference for the next tier, which cannot shrink merely because the current desktop frame is easy to encode. Profiles that omit it continue to use the current tier's measured stream bitrate.
+
 The overlay mounts the profile read-only at `/etc/neko/adaptive-quality.yaml` and sets `NEKO_CONFIG` to that path. Existing Compose environment values still override corresponding YAML values, so the tracked base configuration continues to supply screen, ICE and deployment settings.
 
 The estimator is active rather than passive, starts at 2.5 Mbit/s and uses explicit timing/threshold values. Debug logging is enabled for the estimator. These values are deliberately kept in one mounted file so a measurement-led tuning change produces a reviewable diff.
@@ -30,7 +32,9 @@ Source tracing explains that oscillation. The original `diff_threshold` both pro
 
 That stable-selection rerun still failed constrained-viewer usability. At 1.3 Mbit/s the viewer reached `low` after 60 seconds and held it; at 0.7 Mbit/s it remained on `low`; both healthy viewers stayed smooth on `high` with zero peer-local drops. `Low` was usable under the 1.3 Mbit/s constraint but showed repeated freezes and audio loss at 0.7 Mbit/s. The low stream measured 494,296 bit/s and shared the shaped path with 128,400 bit/s of audio, consuming about 623 kbit/s before RTP/UDP/IP overhead and retransmission. The 0.7 Mbit/s shaper consequently stayed at capacity and dropped another 153,969 packets. After restoration playback was immediately smooth, but conservative estimation returned through `medium` within 90 seconds and reached `high` only later.
 
-The final measurement-led candidate budgets transport headroom instead of changing more timers: `medium` is 748,800 bit/s, `low` is 332,800 bit/s, and all tiers allow VP8's full `max-quantizer: 63` range so the quality floor cannot defeat those limits. The widest adjacent nominal target ratio is about 2.67:1, so the profile now uses `upgrade_diff_threshold: 1.75`, requiring an estimate 2.75 times the current measured rate. This should allow prompt unimpeded recovery while preventing `medium` to `high` at 1.3 Mbit/s and `low` to `medium` at 0.7 Mbit/s. It is the last tuning candidate before accepting or explicitly rejecting this profile.
+The next measurement-led candidate budgeted transport headroom instead of changing more timers: `medium` is 748,800 bit/s, `low` is 332,800 bit/s, and all tiers allow VP8's full `max-quantizer: 63` range so the quality floor cannot defeat those limits. Its target-server run was a material improvement. At 1.3 Mbit/s, `medium` measured 569,136 bit/s plus 130,968 bit/s audio and remained watchable with only small occasional interruptions. At 0.7 Mbit/s, `low` measured 369,144 bit/s plus 125,672 bit/s audio and was likewise mostly watchable. Both healthy viewers remained smooth on `high`, all peer-local drop counters remained zero, and the constrained viewer recovered `low` to `medium` to `high` within 45 seconds after restoration. Baseline `high` measured 2,057,672 bit/s against its 1,996,800 bit/s target with no reported visual regression.
+
+One deterministic defect remains: during the unchanged 0.7 Mbit/s phase the estimator reported 613,076 bit/s and briefly upgraded `low` to `medium`, which immediately worsened playback before the downgrade back to `low`. The implementation still referenced the content-dependent measured current rate. Each profile tier now declares `nominal_bitrate`, and the server evaluates an upgrade directly against the next tier's nominal rate. With the normal 0.15 reserve, `low` to `medium` requires at least 861,120 bit/s, so the observed 613,076 bit/s is insufficient; profiles without this metadata retain their previous current-measured-rate fallback. This is the final code candidate before accepting or explicitly rejecting the profile.
 
 ## Before activation
 
@@ -39,8 +43,8 @@ Run these commands only on the real target server. Preserve the currently workin
 ```bash
 docker image tag my-neko/brave:latest my-neko/brave:pre-adaptive
 cd server
-go test ./internal/capture -run '^TestSaveSampleBitrateUsesBitsPerSecond$'
-go test ./internal/webrtc -run '^TestEstimatedBitrateSupportsUpgrade$'
+go test ./internal/capture -run '^(TestSaveSampleBitrateUsesBitsPerSecond|TestNominalBitrate)$'
+go test ./internal/webrtc -run '^(TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade|TestStreamNominalBitrateIsOptional)$'
 ./build
 cd ..
 ./build my-neko/base:latest -y
@@ -53,9 +57,11 @@ When the target host deliberately has no Go toolchain, validate through the repo
 VALIDATION_IMAGE="my-neko/server-validation:$(git rev-parse --short=8 HEAD)"
 docker build -t "$VALIDATION_IMAGE" ./server
 docker run --rm "$VALIDATION_IMAGE" \
-  go test ./internal/capture -run '^TestSaveSampleBitrateUsesBitsPerSecond$'
+  go test ./internal/capture \
+  -run '^(TestSaveSampleBitrateUsesBitsPerSecond|TestNominalBitrate)$'
 docker run --rm "$VALIDATION_IMAGE" \
-  go test ./internal/webrtc -run '^TestEstimatedBitrateSupportsUpgrade$'
+  go test ./internal/webrtc \
+  -run '^(TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade|TestStreamNominalBitrateIsOptional)$'
 ./build my-neko/base:latest -y
 ./build my-neko/brave:latest -y
 ```
