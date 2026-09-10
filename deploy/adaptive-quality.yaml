@@ -70,8 +70,10 @@ webrtc:
     read_interval: 2s
     stable_duration: 12s
     unstable_duration: 6s
-    stalled_duration: 24s
-    downgrade_backoff: 10s
+    # Target-server tuning: react sooner to a persistently stalled receiver,
+    # then let the newly selected tier settle before another downgrade.
+    stalled_duration: 8s
+    downgrade_backoff: 30s
     upgrade_backoff: 5s
     diff_threshold: 0.15
 

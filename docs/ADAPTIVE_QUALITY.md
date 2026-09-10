@@ -2,7 +2,7 @@
 
 This document describes the experimental multi-pipeline and per-peer bandwidth-estimator profile for the repository's Brave Compose baseline. The normal `docker-compose.yaml` remains the stable, single-pipeline default. Adaptive quality is enabled only when `docker-compose.adaptive.yaml` is supplied as a second Compose file.
 
-The values below are reproducible starting points, not target-server tuning results. Do not promote the overlay to the default until the acceptance procedure has passed with recorded measurements on the intended host and client networks.
+The pipeline values below are reproducible starting points. The estimator timings include a target-server tuning candidate described below, but the profile remains unaccepted until the affected phases and final recovery pass with recorded measurements. Do not promote the overlay to the default before that acceptance.
 
 ## Profile contents
 
@@ -20,6 +20,8 @@ The overlay mounts the profile read-only at `/etc/neko/adaptive-quality.yaml` an
 
 The estimator is active rather than passive, starts at 2.5 Mbit/s and uses explicit timing/threshold values. Debug logging is enabled for the estimator. These values are deliberately kept in one mounted file so a measurement-led tuning change produces a reviewable diff.
 
+The first bounded target-server constraint run on 2026-09-10 isolated the constrained viewer successfully, but took about 30 seconds to leave `high` and cascaded from `medium` to `low` about 15 seconds later. The current tuning candidate therefore reduces `stalled_duration` from 24 to 8 seconds and increases `downgrade_backoff` from 10 to 30 seconds. The intent is to leave an overloaded tier sooner while allowing its replacement tier to settle before another downgrade. This is recorded evidence for a candidate change, not acceptance; the 1.3 Mbit/s, 0.7 Mbit/s and recovery phases must be rerun.
+
 ## Before activation
 
 Run these commands only on the real target server. Preserve the currently working image under a rollback tag, then rebuild because the adaptive unit includes server-side bitrate/metrics changes:
@@ -30,6 +32,17 @@ cd server
 go test ./internal/capture -run '^TestSaveSampleBitrateUsesBitsPerSecond$'
 ./build
 cd ..
+./build my-neko/base:latest -y
+./build my-neko/brave:latest -y
+```
+
+When the target host deliberately has no Go toolchain, validate through the repository's server image instead:
+
+```bash
+VALIDATION_IMAGE="my-neko/server-validation:$(git rev-parse --short=8 HEAD)"
+docker build -t "$VALIDATION_IMAGE" ./server
+docker run --rm "$VALIDATION_IMAGE" \
+  go test ./internal/capture -run '^TestSaveSampleBitrateUsesBitsPerSecond$'
 ./build my-neko/base:latest -y
 ./build my-neko/brave:latest -y
 ```
@@ -92,6 +105,8 @@ Record host CPU, memory, load, pipeline gauges and packet/drop behavior while al
 ## Healthy-plus-constrained-viewer acceptance
 
 Use two healthy viewers (`H1`, `H2`) and one independently constrained viewer (`C`). A constraint must apply only to `C`'s receive path. Browser HTTP throttling is not sufficient evidence because WebRTC media normally uses UDP; use a router, VM/network namespace or OS shaper whose scope and actual throughput can be verified. Record the shaper/tool, client IP, browser versions, server commit and image ID.
+
+When combining a rate limit with `netem`, bound and inspect the queue explicitly. The default 1,000-packet limit produced several seconds of backlog and an invalid frozen-viewer result during the first target-server attempt. Verify non-zero shaped traffic, bounded backlog and an unshaped healthy-viewer path from `tc -s` output; record kernel-shaper drops separately from `neko_webrtc_track_dropped_samples_total`, which measures the earlier peer-local track queue.
 
 Take a metrics snapshot at the beginning and end of every phase and keep the estimator log running. Map `H1`, `H2` and `C` to `session_id` values by joining them one at a time and observing the newly active `video_listeners` series.
 

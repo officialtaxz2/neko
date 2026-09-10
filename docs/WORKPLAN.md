@@ -1,6 +1,6 @@
 # Work Plan / Handoff State
 
-Last consolidated: 2026-09-09.
+Last consolidated: 2026-09-10.
 
 ## Environment boundary
 
@@ -130,6 +130,20 @@ Implemented and statically reviewed on 2026-09-09:
 Static review status: **implementation complete in repository / runtime, build and tests NOT EXECUTED IN CODEX**.
 
 The earlier operator-confirmed integration regression predates the new overlay, metrics and bitrate correction. It remains valid for the tested baseline, but it is not acceptance evidence for this new profile.
+
+## IN PROGRESS — adaptive-quality target-server validation
+
+Operator-reported evidence on 2026-09-10 from the `testing` branch:
+
+- The server Docker build and focused capture bitrate unit test passed without installing Go on the host; the local base and Brave images built successfully.
+- The adaptive Compose model started healthy, loaded all three pipelines, preserved the Brave profile and managed policy, and passed login, audio, video and control smoke checks.
+- A clean three-viewer baseline kept both healthy viewers and the cellular constrained-viewer candidate on `high`, with zero peer-local audio/video queue drops and no host resource saturation.
+- A container-network PCAP comparison isolated exactly one additional IPv4 WebRTC/UDP endpoint for the cellular viewer. Host shaping counters subsequently proved that only this endpoint entered the constrained class.
+- A first `netem rate` attempt with its 1,000-packet queue was rejected as a test setup because it accumulated almost 1 MB of backlog and froze the constrained viewer. The host qdisc was restored completely.
+- A bounded HTB plus 40-packet `netem` trial at 1.3 Mbit/s preserved smooth playback for both healthy viewers and kept their peer-local drop counters at zero. The constrained viewer stalled on `high`, changed to `medium` after about 30 seconds, then cascaded to `low` at about 45 seconds. Removing the constraint returned it to `high` without refresh in about 30 seconds; unused pipelines returned inactive.
+- That bounded trial rejected the original estimator timing for this target: `stalled_duration: 24s` reacted too slowly and `downgrade_backoff: 10s` did not give the replacement tier enough settling time. The opt-in tuning candidate is now 8 seconds and 30 seconds respectively.
+
+Pending before acceptance: deploy the timing-only candidate, rerun the affected 1.3 Mbit/s phase, execute the 0.7 Mbit/s and final recovery phases, capture resources/logs, and complete refresh/rejoin plus transient-interruption checks. The stable base Compose remains unchanged.
 
 ## Target-server verification
 
