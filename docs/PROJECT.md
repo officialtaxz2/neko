@@ -87,7 +87,7 @@ The integrated per-peer non-blocking delivery mechanism is the intended code-lev
 
 ### TARGET — per-viewer adaptive quality
 
-The repository now contains a reproducible, opt-in three-tier VP8 profile, estimator diagnostics, resource/rollback documentation and an exact healthy-plus-constrained-viewer acceptance procedure. Target-server measurements confirmed the corrected bit/s accounting and showed that `max-quantizer: 56` brings the unconstrained `high` stream close to its nominal target. The same runs exposed premature upward oscillation because one current-tier threshold governed both downgrade and upgrade. A separate backward-compatible upgrade threshold is now implemented, with the opt-in profile requiring enough estimated capacity for its approximately 2x next tier plus headroom. This latest selection change must be rebuilt, tested and rerun before the profile is accepted. See [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
+The repository now contains a reproducible, opt-in three-tier VP8 profile, estimator diagnostics, resource/rollback documentation and an exact healthy-plus-constrained-viewer acceptance procedure. Target-server measurements confirmed the corrected bit/s accounting, and the focused asymmetric-upgrade test passed. The separate upgrade threshold eliminated upward oscillation, but the measured 499.2 kbit/s-class low video plus 128.4 kbit/s audio left too little transport headroom at 0.7 Mbit/s. The final mounted-profile candidate lowers the constrained-tier targets, allows the full VP8 quantizer range and adjusts upgrade headroom for the resulting tier ratios. It requires one final constrained rerun before acceptance or explicit rejection. See [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
 ### TARGET — mobile robustness
 

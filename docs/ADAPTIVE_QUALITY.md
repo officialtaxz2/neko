@@ -11,8 +11,8 @@ The pipeline values below are reproducible starting points. The estimator timing
 | ID | Resolution at 1920×1080 | Frame rate | Nominal encoder target |
 | --- | ---: | ---: | ---: |
 | `high` | 1920×1080 | 25 fps | 1,996,800 bit/s |
-| `medium` | 1280×720 | 20 fps | 998,400 bit/s |
-| `low` | 960×540 | 15 fps | 499,200 bit/s |
+| `medium` | 1280×720 | 20 fps | 748,800 bit/s |
+| `low` | 960×540 | 15 fps | 332,800 bit/s |
 
 For other desktop sizes, `medium` scales both dimensions to roughly two thirds and `low` to roughly one half; both expressions produce even dimensions. All pipelines use the same VP8 codec as required by Neko's stream selector. The first ID, `high`, is the initial/default stream.
 
@@ -26,7 +26,11 @@ The phase measurements identified encoder overshoot rather than host saturation:
 
 The constrained rerun rejected encoder tuning alone as sufficient. The healthy viewers remained smooth on `high`, but the constrained viewer oscillated upward while the impairment was unchanged: during the 1.3 Mbit/s phase it moved from `medium` to `low`, back to `medium`, and then to `high`; during the 0.7 Mbit/s phase it spent most of the phase on `medium` before reaching `low`. `Low` was the only constrained tier that became visibly usable in part of the 1.3 Mbit/s run, while returning to an unconstrained path restored smooth playback immediately.
 
-Source tracing explains that oscillation. The original `diff_threshold` both protects the current tier from downgrade and permits an upgrade by comparing the estimate with the **current** tier's measured rate. With approximately 2:1 adjacent targets, the old 0.15 upgrade value needed only 15% spare over the lower tier, not enough capacity for the next tier. The server now has a separate `upgrade_diff_threshold`; its default remains 0.15 for compatibility, while this opt-in profile uses 1.30. The upgrade therefore requires an estimate at least 2.30 times the current rate, corresponding to the next approximately 2x tier plus 15% headroom. This asymmetric threshold is the current candidate and requires a rebuilt image and constrained rerun.
+Source tracing explains that oscillation. The original `diff_threshold` both protects the current tier from downgrade and permits an upgrade by comparing the estimate with the **current** tier's measured rate. With approximately 2:1 adjacent targets, the old 0.15 upgrade value needed only 15% spare over the lower tier, not enough capacity for the next tier. The server now has a separate `upgrade_diff_threshold`; its default remains 0.15 for compatibility. Its focused target-server test passed, and a profile value of 1.30 removed upward oscillation under both unchanged constraints.
+
+That stable-selection rerun still failed constrained-viewer usability. At 1.3 Mbit/s the viewer reached `low` after 60 seconds and held it; at 0.7 Mbit/s it remained on `low`; both healthy viewers stayed smooth on `high` with zero peer-local drops. `Low` was usable under the 1.3 Mbit/s constraint but showed repeated freezes and audio loss at 0.7 Mbit/s. The low stream measured 494,296 bit/s and shared the shaped path with 128,400 bit/s of audio, consuming about 623 kbit/s before RTP/UDP/IP overhead and retransmission. The 0.7 Mbit/s shaper consequently stayed at capacity and dropped another 153,969 packets. After restoration playback was immediately smooth, but conservative estimation returned through `medium` within 90 seconds and reached `high` only later.
+
+The final measurement-led candidate budgets transport headroom instead of changing more timers: `medium` is 748,800 bit/s, `low` is 332,800 bit/s, and all tiers allow VP8's full `max-quantizer: 63` range so the quality floor cannot defeat those limits. The widest adjacent nominal target ratio is about 2.67:1, so the profile now uses `upgrade_diff_threshold: 1.75`, requiring an estimate 2.75 times the current measured rate. This should allow prompt unimpeded recovery while preventing `medium` to `high` at 1.3 Mbit/s and `low` to `medium` at 0.7 Mbit/s. It is the last tuning candidate before accepting or explicitly rejecting this profile.
 
 ## Before activation
 

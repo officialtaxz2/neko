@@ -20,7 +20,7 @@ capture:
           buffer-optimal-size: "3072 * 3"
           keyframe-max-dist: "25"
           min-quantizer: "4"
-          max-quantizer: "56"
+          max-quantizer: "63"
         show_pointer: true
       medium:
         width: "round(width / 3) * 2"
@@ -28,18 +28,18 @@ capture:
         fps: "20"
         gst_encoder: vp8enc
         gst_params:
-          target-bitrate: "round(1536 * 650)"
+          target-bitrate: "round(1152 * 650)"
           cpu-used: "4"
           end-usage: cbr
           threads: "4"
           deadline: "1"
           undershoot: "95"
-          buffer-size: "1536 * 4"
-          buffer-initial-size: "1536 * 2"
-          buffer-optimal-size: "1536 * 3"
+          buffer-size: "1152 * 4"
+          buffer-initial-size: "1152 * 2"
+          buffer-optimal-size: "1152 * 3"
           keyframe-max-dist: "25"
           min-quantizer: "4"
-          max-quantizer: "56"
+          max-quantizer: "63"
         show_pointer: true
       low:
         width: "round(width / 4) * 2"
@@ -47,18 +47,18 @@ capture:
         fps: "15"
         gst_encoder: vp8enc
         gst_params:
-          target-bitrate: "round(768 * 650)"
+          target-bitrate: "round(512 * 650)"
           cpu-used: "4"
           end-usage: cbr
           threads: "4"
           deadline: "1"
           undershoot: "95"
-          buffer-size: "768 * 4"
-          buffer-initial-size: "768 * 2"
-          buffer-optimal-size: "768 * 3"
+          buffer-size: "512 * 4"
+          buffer-initial-size: "512 * 2"
+          buffer-optimal-size: "512 * 3"
           keyframe-max-dist: "25"
           min-quantizer: "4"
-          max-quantizer: "56"
+          max-quantizer: "63"
         show_pointer: true
 
 webrtc:
@@ -76,9 +76,9 @@ webrtc:
     downgrade_backoff: 30s
     upgrade_backoff: 5s
     diff_threshold: 0.15
-    # Adjacent pipelines are approximately 2:1. Requiring 130% spare over the
-    # current tier means the estimate covers the next tier plus 15% headroom.
-    upgrade_diff_threshold: 1.30
+    # The widest adjacent target ratio is approximately 2.67:1. Require an
+    # estimate 2.75 times the current rate before moving to the next tier.
+    upgrade_diff_threshold: 1.75
 
 server:
   metrics: true
