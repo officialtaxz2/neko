@@ -2,7 +2,7 @@
 
 This document describes the experimental multi-pipeline and per-peer bandwidth-estimator profile for the repository's Brave Compose baseline. The normal `docker-compose.yaml` remains the stable, single-pipeline default. Adaptive quality is enabled only when `docker-compose.adaptive.yaml` is supplied as a second Compose file.
 
-The pipeline values below are reproducible starting points. The estimator timings include a target-server tuning candidate described below, but the profile remains unaccepted until the affected phases and final recovery pass with recorded measurements. Do not promote the overlay to the default before that acceptance.
+The pipeline values below are reproducible starting points. The estimator timings and encoder constraints include target-server tuning candidates described below, but the profile remains unaccepted until the affected phases and final recovery pass with recorded measurements. Do not promote the overlay to the default before that acceptance.
 
 ## Profile contents
 
@@ -20,7 +20,9 @@ The overlay mounts the profile read-only at `/etc/neko/adaptive-quality.yaml` an
 
 The estimator is active rather than passive, starts at 2.5 Mbit/s and uses explicit timing/threshold values. Debug logging is enabled for the estimator. These values are deliberately kept in one mounted file so a measurement-led tuning change produces a reviewable diff.
 
-The first bounded target-server constraint run on 2026-09-10 isolated the constrained viewer successfully, but took about 30 seconds to leave `high` and cascaded from `medium` to `low` about 15 seconds later. The current tuning candidate therefore reduces `stalled_duration` from 24 to 8 seconds and increases `downgrade_backoff` from 10 to 30 seconds. The intent is to leave an overloaded tier sooner while allowing its replacement tier to settle before another downgrade. This is recorded evidence for a candidate change, not acceptance; the 1.3 Mbit/s, 0.7 Mbit/s and recovery phases must be rerun.
+The first bounded target-server constraint run on 2026-09-10 isolated the constrained viewer successfully, but took about 30 seconds to leave `high` and cascaded from `medium` to `low` about 15 seconds later. The next run reduced `stalled_duration` from 24 to 8 seconds and increased `downgrade_backoff` from 10 to 30 seconds. It left `high` within 20 seconds and recovered from `low` through `medium` to `high` within 40 seconds, but still cascaded to `low` during the 1.3 Mbit/s phase.
+
+The phase measurements identified encoder overshoot rather than host saturation: the nominal 1,996,800 bit/s `high` stream measured as high as 4,394,400 bit/s, while the nominal 499,200 bit/s `low` stream measured between 702,400 and 1,230,040 bit/s. The profile had limited `max-quantizer` to 20, 24 and 28; libvpx can let those quality floors override rate-control targets. [GStreamer documents 63 as the default worst-quality bound](https://gstreamer.freedesktop.org/documentation/vpx/GstVPXEnc.html?gi-language=c), while the [WebM real-time CBR guidance](https://www.webmproject.org/docs/encoder-parameters/) recommends a 50–63 range and demonstrates 56. The current encoder tuning candidate therefore uses `max-quantizer: 56` for every tier while retaining each tier's existing target, resolution and frame rate. This remains a candidate until the constrained phases are rerun.
 
 ## Before activation
 

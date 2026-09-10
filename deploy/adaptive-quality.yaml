@@ -20,7 +20,7 @@ capture:
           buffer-optimal-size: "3072 * 3"
           keyframe-max-dist: "25"
           min-quantizer: "4"
-          max-quantizer: "20"
+          max-quantizer: "56"
         show_pointer: true
       medium:
         width: "round(width / 3) * 2"
@@ -39,7 +39,7 @@ capture:
           buffer-optimal-size: "1536 * 3"
           keyframe-max-dist: "25"
           min-quantizer: "4"
-          max-quantizer: "24"
+          max-quantizer: "56"
         show_pointer: true
       low:
         width: "round(width / 4) * 2"
@@ -58,7 +58,7 @@ capture:
           buffer-optimal-size: "768 * 3"
           keyframe-max-dist: "25"
           min-quantizer: "4"
-          max-quantizer: "28"
+          max-quantizer: "56"
         show_pointer: true
 
 webrtc:
