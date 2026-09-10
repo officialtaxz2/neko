@@ -24,6 +24,7 @@ Repository implementation is listed here independently of runtime validation. Th
 - An explicitly opt-in Brave Compose overlay with ordered `high`/`medium`/`low` VP8 pipelines and explicit estimator settings; the base Compose deployment remains single-pipeline.
 - Peer-local audio/video sample-drop counters plus measured pipeline-bitrate metrics for adaptive-quality diagnosis.
 - Stream bitrate accounting in bit/s, matching the Pion estimator rather than comparing its bit/s target with encoded bytes/s.
+- Separate downgrade and upgrade headroom thresholds so approximately 2:1 quality tiers do not reuse an unsafe current-tier upgrade margin; the compatible server default remains unchanged.
 - H.265 capture/WebRTC codec support.
 - Per-user file download/upload/delete permissions and multi-file deletion.
 - Optional server-side “open chat link in app” plugin.
@@ -56,7 +57,7 @@ Do not perform a blind upstream overwrite.
 
 ## NEXT
 
-Build and validate the new opt-in adaptive-quality profile on the target server, record the healthy-plus-constrained-viewer measurements, and tune only from that evidence. The stable single-pipeline deployment remains the default.
+Build the latest `testing`-branch server/base/Brave images, verify the new upgrade-threshold unit test, and rerun the two constrained phases plus recovery. Complete refresh/rejoin and transient-interruption checks only after the tier selection remains stable. The stable single-pipeline deployment remains the default.
 
 See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 

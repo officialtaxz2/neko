@@ -283,10 +283,10 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		}
 
 		// upgrade only if estimated bitrate passed the threshold
-		if conf.DiffThreshold >= 0 && diff < 1+conf.DiffThreshold {
+		if !estimatedBitrateSupportsUpgrade(targetBitrate, streamBitrate, conf.UpgradeDiffThreshold) {
 			debugLogger.Debug().
 				Float64("diff", diff).
-				Float64("threshold", conf.DiffThreshold).
+				Float64("threshold", conf.UpgradeDiffThreshold).
 				Msgf("looks like we don't have enough bitrate to accomodate higher stream, " +
 					"therefore we should wait for some more time")
 			continue
@@ -309,6 +309,17 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			debugLogger.Info().Msg("upgraded video stream")
 		}
 	}
+}
+
+func estimatedBitrateSupportsUpgrade(targetBitrate int, streamBitrate uint64, threshold float64) bool {
+	if threshold < 0 {
+		return true
+	}
+	if streamBitrate == 0 {
+		return false
+	}
+
+	return float64(targetBitrate)/float64(streamBitrate) >= 1+threshold
 }
 
 func (peer *WebRTCPeerCtx) SetPaused(isPaused bool) error {

@@ -144,9 +144,11 @@ Operator-reported evidence on 2026-09-10 from the `testing` branch:
 - That bounded trial rejected the original estimator timing for this target: `stalled_duration: 24s` reacted too slowly and `downgrade_backoff: 10s` did not give the replacement tier enough settling time. The opt-in tuning candidate is now 8 seconds and 30 seconds respectively.
 - A rerun with those timings and an exact IPv4/UDP endpoint filter moved the constrained viewer from `high` to `medium` within 20 seconds and recovered `low` to `medium` to `high` within 40 seconds. It still cascaded to `low` during the 1.3 Mbit/s phase and remained visually unusable under both constraints; both healthy viewers stayed smooth and their path and peer-local queues recorded zero drops.
 - The shaper delivered the intended approximately 1.30 and 0.72 Mbit/s rates. Pipeline measurements instead showed persistent encoder overshoot: `high` reached 4,394,400 bit/s against a 1,996,800 bit/s target, and `low` ranged from 702,400 to 1,230,040 bit/s against a 499,200 bit/s target. Peak container CPU was 134.04% on an eight-CPU host and memory remained below 1 GiB, so host saturation does not explain the failure.
-- The next opt-in candidate raises each VP8 `max-quantizer` from 20/24/28 to 56 so CBR can trade image quality for the configured rate. Target bitrates, resolutions, frame rates and all stable base-Compose behavior remain unchanged.
+- Raising each VP8 `max-quantizer` from 20/24/28 to 56 corrected the unconstrained `high` stream to 1,996,120 bit/s against its 1,996,800 bit/s target. All three viewers stayed visually smooth on `high`, peer-local audio/video drops remained zero, and the host remained far from CPU or memory saturation.
+- The constrained max-quantizer rerun again isolated the weak viewer: both healthy viewers stayed smooth on `high` and their peer-local drops remained zero. The weak viewer became usable only while a suitable `low` tier held, then oscillated upward despite an unchanged constraint: `medium` to `low` to `medium` to `high` during the 1.3 Mbit/s phase, and mostly `medium` before eventually reaching `low` during the 0.7 Mbit/s phase. Restoring the path made playback smooth immediately.
+- Static tracing found a second selection defect behind that oscillation. The original `diff_threshold` is applied to both downgrade and upgrade decisions, while the upgrade compares the estimate with the current tier rather than the approximately 2x next tier. The server now exposes a separate, default-preserving `upgrade_diff_threshold`; the opt-in profile sets it to 1.30, requiring 2.30 times the current tier (the next tier plus approximately 15% headroom) before upgrade. A focused unit test covers the new decision boundary.
 
-Pending before acceptance: deploy the encoder candidate, rerun the affected 1.3 Mbit/s and 0.7 Mbit/s phases plus final recovery, capture resources/logs, and complete refresh/rejoin plus transient-interruption checks. The stable base Compose remains unchanged.
+Pending before acceptance: build and deploy the asymmetric-threshold candidate, rerun the affected 1.3 Mbit/s and 0.7 Mbit/s phases plus final recovery, capture resources/logs, and complete refresh/rejoin plus transient-interruption checks. The stable base Compose and default estimator behavior remain unchanged.
 
 ## Target-server verification
 
@@ -265,9 +267,9 @@ Browser/runtime images, when relevant to the deployment:
 
 ## NEXT
 
-Build the current Brave image on the real target server, activate `docker-compose.adaptive.yaml`, and execute the complete acceptance procedure in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md). Archive the four-phase metric/result table, relevant estimator logs, host resource measurements, commit and image ID.
+Build the current `testing`-branch server/base/Brave images on the real target server, run the focused capture and upgrade-threshold tests through the server image, activate `docker-compose.adaptive.yaml`, and repeat the affected constrained phases plus final recovery from [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md). Archive the four-phase metric/result table, relevant estimator logs, host resource measurements, commit and image ID.
 
-Accept or reject the profile from that evidence. If thresholds, bitrates, frame rates or encoder thread counts need adjustment, change only the opt-in YAML and repeat the affected phases plus final recovery. Do not change the stable base Compose default, and do not call the adaptive tuning validated before this target-server run passes.
+Accept or reject the profile from that evidence, then complete refresh/rejoin and transient-interruption checks for the constrained client. Any further target-specific threshold, bitrate, frame-rate or encoder-thread tuning belongs only in the opt-in YAML. Do not change the stable base Compose default, and do not call the adaptive tuning validated before this target-server run passes.
 
 ## Product priority after stable synced baseline
 

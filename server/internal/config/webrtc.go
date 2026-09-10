@@ -35,8 +35,10 @@ type WebRTCEstimator struct {
 	DowngradeBackoff time.Duration
 	// how long to wait before upgrading again after previous upgrade
 	UpgradeBackoff time.Duration
-	// how bigger the difference between estimated and stream bitrate must be to trigger upgrade/downgrade
+	// how much spare estimated bitrate keeps the current stream from being downgraded
 	DiffThreshold float64
+	// how much spare estimated bitrate is required before upgrading to the next stream
+	UpgradeDiffThreshold float64
 }
 
 type WebRTC struct {
@@ -159,8 +161,13 @@ func (WebRTC) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().Float64("webrtc.estimator.diff_threshold", 0.15, "how bigger the difference between estimated and stream bitrate must be to trigger upgrade/downgrade")
+	cmd.PersistentFlags().Float64("webrtc.estimator.diff_threshold", 0.15, "how much spare estimated bitrate keeps the current stream from being downgraded")
 	if err := viper.BindPFlag("webrtc.estimator.diff_threshold", cmd.PersistentFlags().Lookup("webrtc.estimator.diff_threshold")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Float64("webrtc.estimator.upgrade_diff_threshold", 0.15, "how much spare estimated bitrate is required before upgrading to the next stream")
+	if err := viper.BindPFlag("webrtc.estimator.upgrade_diff_threshold", cmd.PersistentFlags().Lookup("webrtc.estimator.upgrade_diff_threshold")); err != nil {
 		return err
 	}
 
@@ -315,6 +322,7 @@ func (s *WebRTC) Set() {
 	s.Estimator.DowngradeBackoff = viper.GetDuration("webrtc.estimator.downgrade_backoff")
 	s.Estimator.UpgradeBackoff = viper.GetDuration("webrtc.estimator.upgrade_backoff")
 	s.Estimator.DiffThreshold = viper.GetFloat64("webrtc.estimator.diff_threshold")
+	s.Estimator.UpgradeDiffThreshold = viper.GetFloat64("webrtc.estimator.upgrade_diff_threshold")
 }
 
 func (s *WebRTC) SetV2() {

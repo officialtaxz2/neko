@@ -96,11 +96,13 @@ The integrated upstream server additionally contains:
 - an optional host-authorized `openinapp` plugin;
 - XInput-device keyboard dispatch for Firefox/GDK3 compatibility.
 
-The current adaptive-quality follow-up adds bit/s stream-rate accounting aligned with the estimator, a per-pipeline bitrate gauge, and peer-local sample-drop counters labeled by session and media kind. These changes are implemented in the repository but not yet target-server verified.
+The adaptive-quality follow-up adds bit/s stream-rate accounting aligned with the estimator, a per-pipeline bitrate gauge, and peer-local sample-drop counters labeled by session and media kind. The operator confirmed the server-image build and focused bitrate test, then observed plausible pipeline bit/s values and peer-local metrics during three-viewer target-server runs.
 
 The non-blocking queue and unlocked fan-out establish code-level slow-peer isolation: a backpressured peer drops its own samples instead of blocking capture dispatch. The drop path now increments `neko_webrtc_track_dropped_samples_total`, making cross-peer behavior distinguishable without trace logs.
 
-The estimator compares Pion's per-peer target against the current stream bitrate. Static review for the adaptive profile found that the latter had been accumulated as encoded bytes/s even though Pion reports bit/s. The capture path now multiplies sample bytes by eight, publishes the result atomically and exports `neko_capture_streamsink_bitrate`. This corrected selection path has not yet been runtime-verified.
+The estimator compares Pion's per-peer target against the current stream bitrate. Static review for the adaptive profile found that the latter had been accumulated as encoded bytes/s even though Pion reports bit/s. The capture path now multiplies sample bytes by eight, publishes the result atomically and exports `neko_capture_streamsink_bitrate`; the target-server measurements confirmed the corrected unit.
+
+Target-server impairment runs then exposed an asymmetric decision requirement. Downgrade needs to ask whether the current tier still fits, while upgrade needs enough capacity for the approximately 2x next tier. Reusing one 0.15 current-tier threshold allowed premature upward oscillation. The server now has a separate `upgrade_diff_threshold`, defaulting to the old 0.15 behavior for compatibility; the opt-in profile uses 1.30 so an upgrade requires 2.30 times the current measured rate. This new decision path is statically reviewed but still awaits its focused target-server test and constrained rerun.
 
 The current fork relies on Neko's WebRTC server model. Issue #690 alternative media prototypes are not established backends in this fork.
 
@@ -169,4 +171,4 @@ Exact final interfaces remain OPEN until the relevant prototype work is designed
 
 Architecture/runtime claims beyond repository inspection must be verified on the real target server, not in Codex. Codex should prepare server-side validation steps but must not execute the application, builds, tests, Docker or media/device checks.
 
-The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The later adaptive overlay, bitrate-unit correction and new metrics are statically reviewed repository changes whose target-server verification is still pending.
+The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction and diagnostics have since been exercised on the target server, but the profile is not accepted: the latest asymmetric upgrade-threshold change still requires a rebuilt image, focused test and constrained acceptance rerun.

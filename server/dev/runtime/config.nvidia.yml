@@ -120,3 +120,4 @@ webrtc:
   #   downgrade_backoff: 10s
   #   upgrade_backoff: 30s
   #   diff_threshold: 0.5
+  #   upgrade_diff_threshold: 0.5

@@ -69,7 +69,7 @@
       --session.private_mode                          whether private mode should be enabled initially
       --webrtc.epr string                             limits the pool of ephemeral ports that ICE UDP connections can allocate from
       --webrtc.estimator.debug                        enables debug logging for the bandwidth estimator
-      --webrtc.estimator.diff_threshold float         how bigger the difference between estimated and stream bitrate must be to trigger upgrade/downgrade (default 0.15)
+      --webrtc.estimator.diff_threshold float         how much spare estimated bitrate keeps the current stream from being downgraded (default 0.15)
       --webrtc.estimator.downgrade_backoff duration   how long to wait before downgrading again after previous downgrade (default 10s)
       --webrtc.estimator.enabled                      enables the bandwidth estimator
       --webrtc.estimator.initial_bitrate int          initial bitrate for the bandwidth estimator (default 1000000)
@@ -79,6 +79,7 @@
       --webrtc.estimator.stalled_duration duration    how long to wait for stalled bandwidth estimation before downgrading (default 24s)
       --webrtc.estimator.unstable_duration duration   how long to wait for stalled connection (neutral trend with low bandwidth) before downgrading (default 6s)
       --webrtc.estimator.upgrade_backoff duration     how long to wait before upgrading again after previous upgrade (default 5s)
+      --webrtc.estimator.upgrade_diff_threshold float how much spare estimated bitrate is required before upgrading to the next stream (default 0.15)
       --webrtc.icelite                                configures whether or not the ICE agent should be a lite agent
       --webrtc.iceservers.backend string              STUN and TURN servers used by the backend (default "[]")
       --webrtc.iceservers.frontend string             STUN and TURN servers used by the frontend (default "[]")

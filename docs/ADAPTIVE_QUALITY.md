@@ -2,7 +2,7 @@
 
 This document describes the experimental multi-pipeline and per-peer bandwidth-estimator profile for the repository's Brave Compose baseline. The normal `docker-compose.yaml` remains the stable, single-pipeline default. Adaptive quality is enabled only when `docker-compose.adaptive.yaml` is supplied as a second Compose file.
 
-The pipeline values below are reproducible starting points. The estimator timings and encoder constraints include target-server tuning candidates described below, but the profile remains unaccepted until the affected phases and final recovery pass with recorded measurements. Do not promote the overlay to the default before that acceptance.
+The pipeline values below are reproducible starting points. The estimator timings, encoder constraints and asymmetric upgrade threshold include target-server tuning candidates described below, but the profile remains unaccepted until the affected phases and final recovery pass with recorded measurements. Do not promote the overlay to the default before that acceptance.
 
 ## Profile contents
 
@@ -22,7 +22,11 @@ The estimator is active rather than passive, starts at 2.5 Mbit/s and uses expli
 
 The first bounded target-server constraint run on 2026-09-10 isolated the constrained viewer successfully, but took about 30 seconds to leave `high` and cascaded from `medium` to `low` about 15 seconds later. The next run reduced `stalled_duration` from 24 to 8 seconds and increased `downgrade_backoff` from 10 to 30 seconds. It left `high` within 20 seconds and recovered from `low` through `medium` to `high` within 40 seconds, but still cascaded to `low` during the 1.3 Mbit/s phase.
 
-The phase measurements identified encoder overshoot rather than host saturation: the nominal 1,996,800 bit/s `high` stream measured as high as 4,394,400 bit/s, while the nominal 499,200 bit/s `low` stream measured between 702,400 and 1,230,040 bit/s. The profile had limited `max-quantizer` to 20, 24 and 28; libvpx can let those quality floors override rate-control targets. [GStreamer documents 63 as the default worst-quality bound](https://gstreamer.freedesktop.org/documentation/vpx/GstVPXEnc.html?gi-language=c), while the [WebM real-time CBR guidance](https://www.webmproject.org/docs/encoder-parameters/) recommends a 50–63 range and demonstrates 56. The current encoder tuning candidate therefore uses `max-quantizer: 56` for every tier while retaining each tier's existing target, resolution and frame rate. This remains a candidate until the constrained phases are rerun.
+The phase measurements identified encoder overshoot rather than host saturation: the nominal 1,996,800 bit/s `high` stream measured as high as 4,394,400 bit/s, while the nominal 499,200 bit/s `low` stream measured between 702,400 and 1,230,040 bit/s. The profile had limited `max-quantizer` to 20, 24 and 28; libvpx can let those quality floors override rate-control targets. [GStreamer documents 63 as the default worst-quality bound](https://gstreamer.freedesktop.org/documentation/vpx/GstVPXEnc.html?gi-language=c), while the [WebM real-time CBR guidance](https://www.webmproject.org/docs/encoder-parameters/) recommends a 50–63 range and demonstrates 56. Raising `max-quantizer` to 56 brought the unconstrained `high` stream to 1,996,120 bit/s against its 1,996,800 bit/s target. All three viewers stayed smooth on `high`, with zero peer-local audio/video drops.
+
+The constrained rerun rejected encoder tuning alone as sufficient. The healthy viewers remained smooth on `high`, but the constrained viewer oscillated upward while the impairment was unchanged: during the 1.3 Mbit/s phase it moved from `medium` to `low`, back to `medium`, and then to `high`; during the 0.7 Mbit/s phase it spent most of the phase on `medium` before reaching `low`. `Low` was the only constrained tier that became visibly usable in part of the 1.3 Mbit/s run, while returning to an unconstrained path restored smooth playback immediately.
+
+Source tracing explains that oscillation. The original `diff_threshold` both protects the current tier from downgrade and permits an upgrade by comparing the estimate with the **current** tier's measured rate. With approximately 2:1 adjacent targets, the old 0.15 upgrade value needed only 15% spare over the lower tier, not enough capacity for the next tier. The server now has a separate `upgrade_diff_threshold`; its default remains 0.15 for compatibility, while this opt-in profile uses 1.30. The upgrade therefore requires an estimate at least 2.30 times the current rate, corresponding to the next approximately 2x tier plus 15% headroom. This asymmetric threshold is the current candidate and requires a rebuilt image and constrained rerun.
 
 ## Before activation
 
@@ -32,6 +36,7 @@ Run these commands only on the real target server. Preserve the currently workin
 docker image tag my-neko/brave:latest my-neko/brave:pre-adaptive
 cd server
 go test ./internal/capture -run '^TestSaveSampleBitrateUsesBitsPerSecond$'
+go test ./internal/webrtc -run '^TestEstimatedBitrateSupportsUpgrade$'
 ./build
 cd ..
 ./build my-neko/base:latest -y
@@ -45,6 +50,8 @@ VALIDATION_IMAGE="my-neko/server-validation:$(git rev-parse --short=8 HEAD)"
 docker build -t "$VALIDATION_IMAGE" ./server
 docker run --rm "$VALIDATION_IMAGE" \
   go test ./internal/capture -run '^TestSaveSampleBitrateUsesBitsPerSecond$'
+docker run --rm "$VALIDATION_IMAGE" \
+  go test ./internal/webrtc -run '^TestEstimatedBitrateSupportsUpgrade$'
 ./build my-neko/base:latest -y
 ./build my-neko/brave:latest -y
 ```

@@ -76,6 +76,9 @@ webrtc:
     downgrade_backoff: 30s
     upgrade_backoff: 5s
     diff_threshold: 0.15
+    # Adjacent pipelines are approximately 2:1. Requiring 130% spare over the
+    # current tier means the estimate covers the next tier plus 15% headroom.
+    upgrade_diff_threshold: 1.30
 
 server:
   metrics: true

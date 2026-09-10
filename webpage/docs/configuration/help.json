@@ -670,7 +670,7 @@
     ],
     "type": "float",
     "defaultValue": "0.15",
-    "description": "how bigger the difference between estimated and stream bitrate must be to trigger upgrade/downgrade"
+    "description": "how much spare estimated bitrate keeps the current stream from being downgraded"
   },
   {
     "key": [
@@ -761,6 +761,16 @@
     "type": "duration",
     "defaultValue": "5s",
     "description": "how long to wait before upgrading again after previous upgrade"
+  },
+  {
+    "key": [
+      "webrtc",
+      "estimator",
+      "upgrade_diff_threshold"
+    ],
+    "type": "float",
+    "defaultValue": "0.15",
+    "description": "how much spare estimated bitrate is required before upgrading to the next stream"
   },
   {
     "key": [

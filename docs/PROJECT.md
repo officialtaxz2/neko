@@ -71,22 +71,23 @@ These repository implementation claims were first established by static inspecti
 
 ## Adaptive-quality follow-up
 
-### IMPLEMENTED in the repository / target-server verification pending
+### IMPLEMENTED in the repository / target-server acceptance in progress
 
 - The Brave deployment has a separate opt-in adaptive-quality overlay with ordered `high`, `medium` and `low` VP8 pipelines; the stable base Compose file remains single-pipeline.
 - Encoded stream rates are measured and compared with the Pion target in bit/s.
 - Peer-local audio/video queue drops and per-pipeline bitrates are exported as Prometheus metrics.
+- Upgrade headroom is configured separately from the current-tier downgrade margin; the opt-in profile can therefore account for its approximately 2:1 adjacent tiers without changing the compatible server default.
 - Activation, diagnostics, resource costs, rollback and the target-server acceptance sequence are documented in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
 ## Highest-priority target outcomes
 
 ### TARGET — slow-viewer isolation
 
-The integrated per-peer non-blocking delivery mechanism is the intended code-level isolation: a slow/lossy viewer may drop its own samples without blocking healthy peers. The operator reports that the applicable simultaneous-viewer regression passed on the earlier target deployment. The current implementation adds a per-session, per-media-kind drop counter; its target-server result remains pending.
+The integrated per-peer non-blocking delivery mechanism is the intended code-level isolation: a slow/lossy viewer may drop its own samples without blocking healthy peers. Repeated target-server impairment runs kept both healthy viewers smooth on `high`, with zero new peer-local audio/video drops, while only the constrained viewer changed tiers and stalled. This validates isolation for the reported three-device scenario, not for untested devices or architectures.
 
 ### TARGET — per-viewer adaptive quality
 
-The repository now contains a reproducible, opt-in three-tier VP8 profile, estimator diagnostics, resource/rollback documentation and an exact healthy-plus-constrained-viewer acceptance procedure. Static inspection during this unit found that the capture side previously accumulated encoded bytes/s while the Pion estimator target is bit/s; stream accounting now converts to bit/s and uses an atomic cross-goroutine value. Because this correction and the new profile postdate the earlier operator report, the profile must be rebuilt, measured and accepted on the target server before its tuning values or adaptive behavior are called validated. See [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
+The repository now contains a reproducible, opt-in three-tier VP8 profile, estimator diagnostics, resource/rollback documentation and an exact healthy-plus-constrained-viewer acceptance procedure. Target-server measurements confirmed the corrected bit/s accounting and showed that `max-quantizer: 56` brings the unconstrained `high` stream close to its nominal target. The same runs exposed premature upward oscillation because one current-tier threshold governed both downgrade and upgrade. A separate backward-compatible upgrade threshold is now implemented, with the opt-in profile requiring enough estimated capacity for its approximately 2x next tier plus headroom. This latest selection change must be rebuilt, tested and rerun before the profile is accepted. See [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
 ### TARGET — mobile robustness
 
