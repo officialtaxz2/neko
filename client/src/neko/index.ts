@@ -28,11 +28,18 @@ import {
 
 interface NekoEvents extends BaseEvents {}
 
+interface ReconnectCredentials {
+  password?: string
+  viewOnlyToken?: string
+  displayname: string
+}
+
 export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   private $vue!: Vue
   private $accessor!: typeof accessor
   private url!: string
-  private reconnectCredentials?: { password: string; displayname: string }
+  private reconnectCredentials?: ReconnectCredentials
+  private viewOnlyToken?: string
   private reconnectTimer?: number
   private reconnectAttempt = 0
   private reconnectInFlight = false
@@ -59,7 +66,14 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     return !this.reconnectSuppressed && !this.recovering
   }
 
+  public get viewOnlyLink() {
+    return this.viewOnlyToken !== undefined
+  }
+
   init(vue: Vue) {
+    const viewOnlyMatch = location.hash.match(/^#\/watch\/([0-9a-fA-F]{64})$/)
+    this.viewOnlyToken = viewOnlyMatch ? viewOnlyMatch[1] : undefined
+
     let port: string | undefined = undefined
     try {
       if (typeof process !== 'undefined' && process.env) {
@@ -193,10 +207,19 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       this.reconnectInFlight = true
       this.emit('debug', `starting application reconnect attempt ${attempt}`)
       this[EVENT.RECONNECTING]()
-      this.connect(this.url, credentials.password, credentials.displayname)
+      this.connectWithCredentials(credentials)
     }, delay)
 
     return true
+  }
+
+  private connectWithCredentials(credentials: ReconnectCredentials) {
+    if (credentials.viewOnlyToken !== undefined) {
+      this.connectViewOnly(this.url, credentials.viewOnlyToken, credentials.displayname)
+      return
+    }
+
+    this.connect(this.url, credentials.password || '', credentials.displayname)
   }
 
   sendData(event: string, data: any) {
@@ -223,8 +246,11 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     if (this.isDemo || password.toLowerCase() === 'demo') {
       this.startDemo(displayname)
     } else {
-      this.reconnectCredentials = { password, displayname }
-      this.connect(this.url, password, displayname)
+      this.reconnectCredentials =
+        this.viewOnlyToken !== undefined
+          ? { viewOnlyToken: this.viewOnlyToken, displayname }
+          : { password, displayname }
+      this.connectWithCredentials(this.reconnectCredentials)
     }
   }
 
@@ -281,10 +307,10 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       })
 
       this.simMembers = [
-        { id: 'demo-user-id', displayname, admin: true, muted: false },
-        { id: 'nekobot', displayname: 'NekoBot 🐱', admin: false, muted: false },
-        { id: 'alice', displayname: 'Alice 🌸', admin: false, muted: false },
-        { id: 'bob', displayname: 'Bob 🚀', admin: true, muted: false },
+        { id: 'demo-user-id', displayname, admin: true, muted: false, view_only: false },
+        { id: 'nekobot', displayname: 'NekoBot 🐱', admin: false, muted: false, view_only: false },
+        { id: 'alice', displayname: 'Alice 🌸', admin: false, muted: false, view_only: false },
+        { id: 'bob', displayname: 'Bob 🚀', admin: true, muted: false, view_only: false },
       ]
 
       // Set initial player list

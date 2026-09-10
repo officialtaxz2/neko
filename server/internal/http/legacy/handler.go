@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -26,6 +27,10 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
+
+const viewOnlySubprotocolPrefix = "neko-view."
+
+var viewOnlySubprotocolPattern = regexp.MustCompile(`^[0-9a-fA-F]{64}$`)
 
 var (
 	// DefaultUpgrader specifies the parameters for upgrading an HTTP
@@ -67,9 +72,18 @@ func New(serverAddr, pathPrefix string) *LegacyHandler {
 func (h *LegacyHandler) Route(r types.Router) {
 	r.Get("/ws", func(w http.ResponseWriter, r *http.Request) error {
 		s := h.newSession(r)
+		viewOnlyToken, selectedSubprotocol, err := viewOnlyTokenFromRequest(r)
+		if err != nil {
+			return utils.HttpBadRequest("invalid view-only websocket subprotocol").WithInternalErr(err)
+		}
+
+		responseHeaders := http.Header{}
+		if selectedSubprotocol != "" {
+			responseHeaders.Set("Sec-WebSocket-Protocol", selectedSubprotocol)
+		}
 
 		// create a new websocket connection
-		connClient, err := DefaultUpgrader.Upgrade(w, r, nil)
+		connClient, err := DefaultUpgrader.Upgrade(w, r, responseHeaders)
 		if err != nil {
 			return utils.HttpError(http.StatusInternalServerError).
 				WithInternalErr(err).
@@ -89,6 +103,9 @@ func (h *LegacyHandler) Route(r types.Router) {
 		// create a new session
 		username := r.URL.Query().Get("username")
 		password := r.URL.Query().Get("password")
+		if viewOnlyToken != "" {
+			password = viewOnlyToken
+		}
 		err = s.create(username, password)
 		if err != nil {
 			h.logger.Error().Err(err).Msg("couldn't create a new session")
@@ -424,6 +441,25 @@ func (h *LegacyHandler) Route(r types.Router) {
 		_, err := w.Write([]byte("true"))
 		return err
 	})
+}
+
+func viewOnlyTokenFromRequest(r *http.Request) (token, selectedSubprotocol string, err error) {
+	for _, subprotocol := range websocket.Subprotocols(r) {
+		if !strings.HasPrefix(subprotocol, viewOnlySubprotocolPrefix) {
+			continue
+		}
+		if selectedSubprotocol != "" {
+			return "", "", errors.New("multiple view-only subprotocols provided")
+		}
+
+		token = strings.TrimPrefix(subprotocol, viewOnlySubprotocolPrefix)
+		if !viewOnlySubprotocolPattern.MatchString(token) {
+			return "", "", errors.New("view-only token must contain exactly 64 hexadecimal characters")
+		}
+		selectedSubprotocol = subprotocol
+	}
+
+	return token, selectedSubprotocol, nil
 }
 
 func (h *LegacyHandler) ban(sessionId string) error {

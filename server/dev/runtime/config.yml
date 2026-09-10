@@ -118,8 +118,9 @@ member:
   #   path: "/home/neko/members.json"
   provider: "multiuser"
   multiuser:
-   admin_password: "admin"
-   user_password: "neko"
+    admin_password: "admin"
+    user_password: "neko"
+    # view_only_token: "" # optional; exactly 64 hexadecimal characters
   #  admin_profile: # optional
   #  user_profile: # optional
   # provider: "noauth"

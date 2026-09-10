@@ -382,7 +382,7 @@ func (manager *WebRTCManagerCtx) CreatePeer(session types.Session) (*webrtc.Sess
 
 		logger.Info().Msgf("received new remote track")
 
-		if !session.Profile().CanShareMedia {
+		if !session.Profile().IsInteractive() || !session.Profile().CanShareMedia {
 			err := receiver.Stop()
 			logger.Warn().Err(err).Msg("media sharing is disabled for this session")
 			return

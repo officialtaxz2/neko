@@ -26,6 +26,11 @@ func (s *session) wsToBackend(msg []byte) error {
 		return err
 	}
 
+	if s.isViewOnly && !viewOnlyLegacyEventAllowed(header.Event) {
+		s.logger.Warn().Str("event", header.Event).Msg("view-only session denied legacy websocket event")
+		return nil
+	}
+
 	switch header.Event {
 	// Client Events
 	case oldEvent.CLIENT_HEARTBEAT:
@@ -382,5 +387,17 @@ func (s *session) wsToBackend(msg []byte) error {
 
 	default:
 		return fmt.Errorf("unknown event type: %s", header.Event)
+	}
+}
+
+func viewOnlyLegacyEventAllowed(eventName string) bool {
+	switch eventName {
+	case oldEvent.CLIENT_HEARTBEAT,
+		oldEvent.SIGNAL_OFFER,
+		oldEvent.SIGNAL_ANSWER,
+		oldEvent.SIGNAL_CANDIDATE:
+		return true
+	default:
+		return false
 	}
 }

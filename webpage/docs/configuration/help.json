@@ -368,6 +368,15 @@
   {
     "key": [
       "member",
+      "multiuser",
+      "view_only_token"
+    ],
+    "type": "string",
+    "description": "member multiuser provider: optional 64-character hexadecimal token for view-only share links"
+  },
+  {
+    "key": [
+      "member",
       "object",
       "users"
     ],

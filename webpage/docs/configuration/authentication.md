@@ -25,6 +25,7 @@ A member profile is a structure that describes the user and what the user is all
 | Field                      | Description | Type |
 |----------------------------|-------------|------|
 | <Def id="profile.name" />                     | User's name as shown in the UI, must not be unique within the system (not used as an identifier). | string |
+| <Def id="profile.is_view_only" />             | Whether the member is passive. When true, server-side session normalization removes admin, control, media-sharing, clipboard and inactive-cursor-send capabilities, while ingress checks deny plugin input regardless of conflicting profile fields. | boolean |
 | <Def id="profile.is_admin" />                 | Whether the user can perform administrative tasks that include managing users, sessions, and settings. | boolean |
 | <Def id="profile.can_login" />                | Whether the user can log in to the system and use the HTTP API. | boolean |
 | <Def id="profile.can_connect" />              | Whether the user can connect to the room using the WebSocket API (needs <Opt id="profile.can_login" /> to be enabled). | boolean |
@@ -44,6 +45,7 @@ import TabItem from '@theme/TabItem';
   
     ```yaml title="Example member profile in YAML"
     name: User Name
+    is_view_only: false
     is_admin: false
     can_login: true
     can_connect: true
@@ -63,6 +65,7 @@ import TabItem from '@theme/TabItem';
     ```json title="Example member profile in JSON"
     {
       "name": "User Name",
+      "is_view_only": false,
       "is_admin": false,
       "can_login": true, 
       "can_connect": true, 
@@ -93,7 +96,9 @@ Currently, Neko supports configuring only one authentication provider at a time.
 
 This is the **default provider** that works exactly like the authentication used to work in v2 of neko.
 
-This provider allows you to define two types of users: **regular** users and **admins**. Which user is an admin is determined by the password they provide when logging in. If the password is correct, the user is an admin; otherwise, they are a regular user. Based on those profiles, the users are generated on demand when they log in and they are removed when they log out. Their username is prefixed with 5 random characters to avoid conflicts when multiple users share the same username.
+This provider allows you to define two interactive user types: **regular** users and **admins**. Which user is an admin is determined by the password they provide when logging in. If the password is correct, the user is an admin; otherwise, they are a regular user. Based on those profiles, the users are generated on demand when they log in and they are removed when they log out. Their username is suffixed with 5 random characters to avoid conflicts when multiple users share the same username.
+
+An optional third credential creates a fixed **view-only** session. Generate the 256-bit bearer token with `openssl rand -hex 32` and share a URL in the form `https://neko.example/#/watch/<token>`. The fragment is not sent in ordinary HTTP request targets; the client carries the token in the WebSocket subprotocol header. It may still remain in browser history, bookmarks, screenshots and copied links. Use TLS, trust every recipient and do not log `Sec-WebSocket-Protocol` headers. The token has no built-in clock expiry: it is valid until removed or rotated and the service is recreated. View-only sessions are never persisted, so recreation also revokes connected viewers.
 
 Profiles for regular users and admins are optional, if not provided, the default profiles are used (see below in the example configuration).
 
@@ -115,6 +120,10 @@ Profiles for regular users and admins are optional, if not provided, the default
     defaultValue: {},
     description: "Profile fields as described above",
   },
+  "member.multiuser.view_only_token": {
+    defaultValue: "",
+    description: "Optional 64-character hexadecimal bearer token for server-enforced view-only share links.",
+  },
 }} />
 
 <details>
@@ -127,8 +136,10 @@ Profiles for regular users and admins are optional, if not provided, the default
     provider: multiuser
     multiuser:
       admin_password: "admin"
+      view_only_token: "" # optional; generate with: openssl rand -hex 32
       admin_profile:
         name: "" # if empty, the login username is used
+        is_view_only: false
         # highlight-start
         is_admin: true
         # highlight-end
@@ -145,6 +156,7 @@ Profiles for regular users and admins are optional, if not provided, the default
       user_password: "neko"
       user_profile:
         name: "" # if empty, the login username is used
+        is_view_only: false
         # highlight-start
         is_admin: false
         # highlight-end
@@ -169,6 +181,7 @@ For easier configuration, you can specify only passwords using environment varia
 environment:
   NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD: "admin"
   NEKO_MEMBER_MULTIUSER_USER_PASSWORD: "neko"
+  NEKO_MEMBER_MULTIUSER_VIEW_ONLY_TOKEN: "" # optional; exactly 64 hexadecimal characters
 ```
 :::
 

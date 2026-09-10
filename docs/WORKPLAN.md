@@ -43,7 +43,8 @@ integration/upstream-20260909
 upstream merge commit: 4e99b8d3ca720d1f184544306820e388716ba23a
 relation at merge commit: 37 commits ahead, 0 behind
 master: fast-forwarded to the reviewed integration history
-following work: deployment reconciliation, repository knowledge and the opt-in adaptive-quality unit
+testing: deployment reconciliation, accepted opt-in adaptive quality, bounded iOS recovery and server-enforced view-only sharing
+master: pinned at d9105ef8 until explicit grouped-promotion authorization
 ```
 
 ## COMPLETED — `MyNekoProjekt` local delta audit
@@ -179,6 +180,23 @@ Static review status: **implementation complete in repository / client test, lin
 
 Target-server status: **pending at the next coherent grouped `testing` checkpoint**. The prior 2026-09-10 reload/Play evidence does not validate the new no-reload implementation, and no automatic iOS claim is made yet.
 
+## COMPLETED IN REPOSITORY — server-enforced view-only sharing
+
+Implemented and statically reviewed on `testing` on 2026-09-10:
+
+- Added an optional 256-bit multi-user bearer token and the fragment share form `#/watch/<token>`. The browser keeps the token out of HTTP paths/query strings and carries it in a validated WebSocket subprotocol.
+- Added the backend-neutral `is_view_only` member/session marker. Login, session creation and profile update normalize it so conflicting admin, host, media-share, clipboard or cursor-send fields cannot restore interaction.
+- Kept the viewer in the same logical room and on the existing receive-only WebRTC media path; the authorization marker does not depend on that transport and can be reused by a later passive backend.
+- Audited and closed the authenticated HTTP room/API, current WebSocket, legacy protocol, modern/legacy data channel, inbound media track and plugin boundaries. View-only input is denied before core/plugin dispatch, host assignment refuses passive targets, microphone/camera input is stopped, and file capability/list data is withheld.
+- Reduced the client to video/playback controls for a connected passive session while preserving server authorization as the actual boundary.
+- Defined deployment-bound lifetime and hard revocation: rotate/remove the token and recreate the service. View-only sessions are neither written to `session.file` nor restored from stale serialized data.
+- Added focused Go tests for token configuration/authentication, profile normalization, middleware denial, non-persistence and current/legacy WebSocket and WebRTC data-channel allowlists.
+- Added [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md) with threat boundary, activation, denial behavior, revocation, rollback and an adversarial ordinary/admin/view-only target-server matrix.
+
+Static review status: **implementation complete in repository / client checks, server tests/build and runtime matrix NOT EXECUTED IN CODEX**.
+
+Target-server status: **pending at the same coherent grouped `testing` checkpoint as bounded iOS recovery**.
+
 ## Target-server verification
 
 This phase is performed by the operator on the real server, not by Codex.
@@ -195,12 +213,13 @@ npm run build
 
 Required for the integrated baseline: confirm `npm ci`, TypeScript lint and the Vite production build at integration commit `4e99b8d3`. The operator later confirmed these checks passed, closing verification of the lock/type repair in `2d89027e`.
 
-For the bounded iOS recovery block on `testing`, run all four commands at the exact candidate commit and then follow [`IOS_RECOVERY.md`](IOS_RECOVERY.md). This new client block has not yet been executed on the target server.
+For the accumulated iOS recovery and view-only blocks on `testing`, run all four commands at the exact candidate commit and then follow [`IOS_RECOVERY.md`](IOS_RECOVERY.md) and [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md). These client blocks have not yet been executed on the target server.
 
 ### Server and container
 
 ```bash
 cd server
+go test ./pkg/types ./pkg/auth ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
 ./build
 ```
 
@@ -210,6 +229,8 @@ or:
 docker build ./server
 ```
 
+When the target host has no Go installation, run the focused packages through the repository server image exactly as documented in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md); a Docker build alone does not execute those tests.
+
 From the repository root, build the exact local base and Brave images referenced by Compose:
 
 ```bash
@@ -217,12 +238,12 @@ From the repository root, build the exact local base and Brave images referenced
 ./build my-neko/brave:latest -y
 ```
 
-Then prepare the ignored deployment environment and inspect the fully resolved Compose before startup:
+Then prepare the ignored deployment environment and validate the Compose model without printing expanded credentials:
 
 ```bash
 cp .env.example .env
-# Set both passwords and any host-specific values in .env.
-docker compose config
+# Set both passwords, an optional generated view-only token and any host-specific values in .env.
+docker compose config --quiet
 docker compose up -d
 ```
 
@@ -282,6 +303,14 @@ Mobile:
 
 For the current iOS block, the generic mobile bullets are not sufficient; execute and record the same-peer, replacement-session, bounded-exhaustion and server-directed-disconnect phases in [`IOS_RECOVERY.md`](IOS_RECOVERY.md).
 
+View-only sharing:
+
+- configure a fresh ignored token and join an ordinary member, admin and view-only participant concurrently;
+- verify the passive participant receives the same audio/video but cannot obtain control or use mouse, keyboard, touch, clipboard, files, microphone, admin, chat-send or arbitrary plugin input;
+- exercise crafted HTTP, current/legacy WebSocket, data-channel and inbound-media attempts, not only hidden UI controls;
+- rotate/remove the token and recreate the service to prove old-link and active-session revocation;
+- execute the complete matrix and acceptance criteria in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md).
+
 Smart-TV/embedded:
 
 - join;
@@ -303,18 +332,15 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Design and implement the smallest server-enforced view-only share path that keeps every viewer in the same logical room while granting no mouse, keyboard, touch, clipboard, file, microphone, control-request or admin capability. Audit the current authentication/session profile and legacy protocol boundaries before choosing the token shape; hiding client controls is not authorization.
+Validate the accumulated bounded iOS recovery and server-enforced view-only blocks together at one exact `testing` commit. Run the client checks, focused server tests/build and image build, then execute every phase and record every acceptance item in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) and [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md). Keep the existing ordinary/admin, touch, playback, file-transfer and adaptive-quality behavior in the regression scope. Do not claim no-reload iOS recovery or target-server view-only acceptance before that evidence exists.
 
-Keep media transport independent from authorization: the first implementation may remain WebRTC receive-only, but its server-side capability model must remain usable by a later HLS/LL-HLS passive backend. Define token lifetime/revocation and denial behavior explicitly, add focused server tests for forbidden actions, document deployment/rollback and prepare a target-server matrix with an ordinary member, admin and view-only participant.
-
-Retain the completed iOS recovery block on `testing` and execute its pending [`IOS_RECOVERY.md`](IOS_RECOVERY.md) device procedure at the next coherent grouped validation checkpoint. Do not claim no-reload iOS recovery before that evidence exists.
+After the grouped checkpoint is accepted, design the backend-neutral receive-media/subscription boundary for practical non-WebRTC prototypes. Implementation and any later promotion remain separate decisions; `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
-1. implement server-enforced view-only sharing while retaining the completed iOS recovery block;
-2. validate the accumulated iOS/view-only client and server behavior at a coherent `testing` checkpoint;
-3. practical non-WebRTC viewer-media fallback;
-4. promote the accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
+1. validate the accumulated iOS/view-only client and server behavior at a coherent `testing` checkpoint;
+2. design and prototype a practical non-WebRTC viewer-media fallback only after that acceptance;
+3. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
 
@@ -347,5 +373,4 @@ The passive path may trade latency for reliability and compatibility. It must st
 - HLS/LL-HLS latency target, segment/part sizing, codec profile and server resource cost.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
 - Exact per-client media-backend capability/selection rules and rollout order.
-- View-only token format/lifetime/revocation.
 - Longer-term legacy Vue 2 migration.

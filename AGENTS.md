@@ -14,8 +14,9 @@ Immediate sequence:
 6. make the multi-pipeline/bandwidth-estimator path reproducible and observable without changing the stable single-pipeline default — **complete**,
 7. validate and measurement-tune the opt-in adaptive-quality profile on the target server — **complete; operator-accepted on 2026-09-10 for the documented three-viewer scenario at `bfaca84e`**,
 8. implement bounded iOS transient recovery without requiring a page reload while preserving Safari's Play fallback — **complete in the repository on `testing`; target-server no-reload validation pending at the next grouped checkpoint**,
-9. implement server-enforced view-only sharing on `testing` — **NEXT**,
-10. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
+9. implement server-enforced view-only sharing on `testing` — **complete in the repository; target-server validation pending at the grouped checkpoint**,
+10. validate bounded iOS recovery and server-enforced view-only sharing together at one exact `testing` commit — **NEXT**,
+11. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
 
 ## Authoritative knowledge
 
@@ -29,6 +30,7 @@ Read before substantial work:
 - `docs/UPSTREAM_SYNC_AUDIT.md` — completed semantic review and merge record for the 2026-09-09 upstream synchronization.
 - `docs/ADAPTIVE_QUALITY.md` — opt-in profile, diagnostics, resource costs, exact target-server acceptance procedure and rollback.
 - `docs/IOS_RECOVERY.md` — implemented bounded reconnect states, exact target-server iPhone procedure, acceptance criteria and rollback.
+- `docs/VIEW_ONLY_SHARING.md` — implemented passive-session boundary, token lifetime/revocation, denial behavior, exact three-role target-server matrix and rollback.
 - `webpage/docs/` — inherited Neko documentation. Current repository code/config wins on conflicts.
 
 ## Truth rules
@@ -111,7 +113,7 @@ Use only the checks relevant to the changed areas, with broader verification aft
 - Admin lock and grant/revoke behavior must remain intact.
 - Fork mobile/touch/trackpad, autoplay, playback-recovery, fullscreen and reconnect behavior is regression-sensitive.
 - A weak viewer must not degrade healthy viewers in the target architecture.
-- Future view-only sharing must be enforced server-side; hiding controls in the UI is not authorization.
+- View-only sharing is enforced server-side; hiding controls in the UI is not authorization.
 - WebRTC is the currently implemented primary media path.
 - Future interactive and passive/view-only clients may use different media backends in the same logical room; media transport must not determine authorization.
 - WebCodecs/WebSocket and HLS/LL-HLS are TARGET candidates, not IMPLEMENTED. Do not assume WebSocket is inherently better for poor networks, and do not promote MJPEG beyond an optional ultra-legacy fallback without device evidence.

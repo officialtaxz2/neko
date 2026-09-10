@@ -32,10 +32,11 @@ func profileToMember(id string, profile types.MemberProfile) (*oldTypes.Member, 
 	}
 
 	return &oldTypes.Member{
-		ID:    id,
-		Name:  profile.Name,
-		Admin: profile.IsAdmin,
-		Muted: !settings.CanSend,
+		ID:       id,
+		Name:     profile.Name,
+		Admin:    profile.IsAdmin,
+		Muted:    !settings.CanSend,
+		ViewOnly: profile.IsViewOnly,
 	}, nil
 }
 
@@ -260,7 +261,7 @@ func (s *session) wsToClient(msg []byte) error {
 			ImplicitHosting: request.Settings.ImplicitHosting,
 			Locks:           locks,
 			// TODO: hack - we don't know if file transfer is enabled, we would need to check the global config.
-			FileTransfer:      viper.GetBool("filetransfer.enabled") || (viper.GetBool("legacy") && viper.GetBool("file_transfer_enabled")),
+			FileTransfer:      !s.isViewOnly && (viper.GetBool("filetransfer.enabled") || (viper.GetBool("legacy") && viper.GetBool("file_transfer_enabled"))),
 			HeartbeatInterval: request.Settings.HeartbeatInterval,
 		})
 

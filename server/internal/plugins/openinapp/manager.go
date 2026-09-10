@@ -44,6 +44,10 @@ func (m *Manager) openLinkHandler(w http.ResponseWriter, r *http.Request) error 
 		return utils.HttpUnauthorized("session not found")
 	}
 
+	if !session.Profile().IsInteractive() {
+		return utils.HttpForbidden("openinapp is unavailable to view-only sessions")
+	}
+
 	if !m.config.Enabled {
 		return utils.HttpForbidden("openinapp is disabled")
 	}

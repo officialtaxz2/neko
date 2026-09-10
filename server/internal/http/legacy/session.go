@@ -38,11 +38,12 @@ type session struct {
 	serverAddr string
 	pathPrefix string
 
-	id, ip  string
-	token   string
-	name    string
-	isAdmin bool
-	client  *http.Client
+	id, ip     string
+	token      string
+	name       string
+	isAdmin    bool
+	isViewOnly bool
+	client     *http.Client
 
 	lastHostID         string
 	lockedControls     bool
@@ -188,6 +189,7 @@ func (s *session) create(username, password string) error {
 	s.token = data.Token
 	s.name = data.Profile.Name
 	s.isAdmin = data.Profile.IsAdmin
+	s.isViewOnly = data.Profile.IsViewOnly
 
 	// if Cookie auth, the token will be empty
 	if s.token == "" {

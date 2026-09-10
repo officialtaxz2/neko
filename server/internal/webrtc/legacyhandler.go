@@ -44,6 +44,11 @@ func (manager *WebRTCManagerCtx) handleLegacy(
 	logger zerolog.Logger, data []byte,
 	session types.Session,
 ) error {
+	if session.Profile().IsViewOnly {
+		logger.Warn().Msg("view-only session denied legacy data-channel input")
+		return nil
+	}
+
 	// continue only if session is host
 	if !session.LegacyIsHost() {
 		return nil

@@ -361,7 +361,7 @@
     }
 
     get videoOnly() {
-      return this.isCastMode || this.isEmbedMode
+      return this.isCastMode || this.isEmbedMode || this.$accessor.user.viewOnly
     }
 
     @Watch('volume', { immediate: true })

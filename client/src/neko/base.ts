@@ -56,6 +56,26 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   public connect(url: string, password: string, displayname: string) {
+    this.connectSocket(
+      `${url}?password=${encodeURIComponent(password)}&username=${encodeURIComponent(displayname)}`,
+      displayname,
+    )
+  }
+
+  public connectViewOnly(url: string, token: string, displayname: string) {
+    if (!/^[0-9a-fA-F]{64}$/.test(token)) {
+      this.onDisconnected(new Error('view-only token must contain exactly 64 hexadecimal characters'))
+      return
+    }
+
+    this.connectSocket(
+      `${url}?username=${encodeURIComponent(displayname)}`,
+      displayname,
+      [`neko-view.${token}`],
+    )
+  }
+
+  private connectSocket(url: string, displayname: string, protocols?: string[]) {
     if (this.socketOpen) {
       this.emit('warn', `attempting to create websocket while connection open`)
       return
@@ -70,11 +90,10 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     this[EVENT.CONNECTING]()
 
     try {
-      const socket = new WebSocket(
-        `${url}?password=${encodeURIComponent(password)}&username=${encodeURIComponent(displayname)}`,
-      )
+      const socket = protocols ? new WebSocket(url, protocols) : new WebSocket(url)
       this._ws = socket
-      this.emit('debug', `connecting to ${socket.url}`)
+      // Do not echo passwords or view-only bearer tokens to the browser log.
+      this.emit('debug', `connecting to websocket`)
       socket.onmessage = (event) => {
         if (this._ws !== socket) return
         this.onMessage(event, socket).catch((err) =>

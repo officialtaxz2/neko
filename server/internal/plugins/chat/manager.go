@@ -59,10 +59,14 @@ func (m *Manager) settingsForSession(session types.Session) (Settings, error) {
 		return Settings{}, fmt.Errorf("unable to unmarshal %s plugin settings from profile: %w", PluginName, err)
 	}
 
-	return Settings{
+	resolved := Settings{
 		CanSend:    m.config.Enabled && (settings.CanSend || session.Profile().IsAdmin) && profile.CanSend,
 		CanReceive: m.config.Enabled && (settings.CanReceive || session.Profile().IsAdmin) && profile.CanReceive,
-	}, nil
+	}
+	if !session.Profile().IsInteractive() {
+		resolved.CanSend = false
+	}
+	return resolved, nil
 }
 
 func (m *Manager) sendMessage(session types.Session, content Content) {

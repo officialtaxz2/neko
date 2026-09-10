@@ -87,6 +87,9 @@ func (api *ApiManagerCtx) Whoami(w http.ResponseWriter, r *http.Request) error {
 // TODO: Remove when legacy mode is removed as all sessions must be synced with their providers.
 func (api *ApiManagerCtx) UpdateProfile(w http.ResponseWriter, r *http.Request) error {
 	session, _ := auth.GetSession(r)
+	if !session.Profile().IsInteractive() {
+		return utils.HttpForbidden("view-only sessions cannot update profiles")
+	}
 
 	profile := session.Profile()
 	if !profile.IsAdmin {

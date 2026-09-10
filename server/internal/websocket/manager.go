@@ -347,6 +347,13 @@ func (manager *WebSocketManagerCtx) handle(connection *websocket.Conn, peer type
 					Msg("received message from client")
 			}
 
+			if session.Profile().IsViewOnly && !viewOnlyEventAllowed(data.Event) {
+				logger.Warn().
+					Str("event", data.Event).
+					Msg("view-only session denied websocket event")
+				continue
+			}
+
 			handled := manager.handler.Message(session, data)
 			for _, handler := range manager.handlers {
 				if handled {

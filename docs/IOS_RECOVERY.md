@@ -2,6 +2,8 @@
 
 This document describes the client recovery path implemented on `testing` and the exact target-server procedure needed before making a no-reload iOS recovery claim. Runtime/build/device checks are not executed in Codex.
 
+The next checkpoint runs this procedure and the ordinary/admin/view-only matrix in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md) against the same exact `testing` commit and image. Passing one procedure is not evidence for the other.
+
 ## Implemented recovery boundary
 
 The client treats connection recovery and autoplay permission as separate state machines:

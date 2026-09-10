@@ -12,6 +12,7 @@ type MemberProfile struct {
 	Name string `json:"name"`
 
 	// permissions
+	IsViewOnly            bool `json:"is_view_only"            mapstructure:"is_view_only"`
 	IsAdmin               bool `json:"is_admin"                 mapstructure:"is_admin"`
 	CanLogin              bool `json:"can_login"                mapstructure:"can_login"`
 	CanConnect            bool `json:"can_connect"              mapstructure:"can_connect"`
@@ -24,6 +25,41 @@ type MemberProfile struct {
 
 	// plugin scope
 	Plugins PluginSettings `json:"plugins"`
+}
+
+// RestrictViewOnly removes every interactive capability from a view-only
+// profile. The marker is authoritative even when a provider or API payload
+// accidentally combines it with privileged fields.
+func (profile MemberProfile) RestrictViewOnly() MemberProfile {
+	if !profile.IsViewOnly {
+		return profile
+	}
+
+	profile.IsAdmin = false
+	profile.CanHost = false
+	profile.CanShareMedia = false
+	profile.CanAccessClipboard = false
+	profile.SendsInactiveCursor = false
+	return profile
+}
+
+func (profile MemberProfile) IsInteractive() bool {
+	return !profile.IsViewOnly
+}
+
+func NewViewOnlyMemberProfile(name string) MemberProfile {
+	return MemberProfile{
+		Name:       name,
+		IsViewOnly: true,
+		CanLogin:   true,
+		CanConnect: true,
+		CanWatch:   true,
+		Plugins:    PluginSettings{
+			"chat.can_send":        false,
+			"chat.can_receive":     true,
+			"filetransfer.enabled": false,
+		},
+	}
 }
 
 type MemberProvider interface {

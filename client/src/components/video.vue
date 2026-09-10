@@ -647,19 +647,23 @@
     }
 
     get controlling() {
-      return this.$accessor.remote.controlling
+      return !this.viewOnly && this.$accessor.remote.controlling
     }
 
     get hosting() {
-      return this.$accessor.remote.hosting
+      return !this.viewOnly && this.$accessor.remote.hosting
     }
 
     get implicitHosting() {
-      return this.$accessor.remote.implicitHosting
+      return !this.viewOnly && this.$accessor.remote.implicitHosting
     }
 
     get hosted() {
-      return this.$accessor.remote.hosted
+      return !this.viewOnly && this.$accessor.remote.hosted
+    }
+
+    get viewOnly() {
+      return this.$accessor.user.viewOnly
     }
 
     get volume() {

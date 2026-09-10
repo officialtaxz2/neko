@@ -20,6 +20,8 @@ Repository implementation is listed here independently of runtime validation. Th
 - ICE disconnect/recovery handling.
 - A bounded application-level reconnect after an established peer cannot recover: four serialized attempts at 1/2/5/10-second delays, suppressed for initial-login failure, explicit logout, demo mode and server-directed disconnects.
 - Stale WebSocket/peer/data-channel callbacks and old stream timers are isolated from a replacement connection; Safari's central Play fallback remains separate from network recovery.
+- Optional server-enforced view-only sharing through `#/watch/<256-bit-token>`: the passive session remains in the same room and receives WebRTC media while HTTP, current/legacy WebSocket, data-channel, plugin, host-assignment, file and inbound-microphone boundaries deny interaction.
+- View-only authorization is represented by a backend-neutral session marker; share sessions are not persisted, and token rotation/removal plus service recreation is the explicit revocation boundary.
 - Demo-mode client infrastructure.
 - Per-peer non-blocking media sample delivery so one backpressured WebRTC track does not block dispatch to other tracks.
 - Multi-pipeline stream-selection and per-peer bandwidth-estimator infrastructure; the legacy protocol path requests automatic selection when configured.
@@ -41,7 +43,7 @@ Current upstream integration (2026-09-09):
 - upstream `m1k1o/neko:master`: `b0f01cedea68893e85a3fd852c0521238c285695`
 - pre-sync merge base: `d74052bb844c43a0cc3c2386d083f7505dc483a2`
 - upstream merge commit on `integration/upstream-20260909`: `4e99b8d3ca720d1f184544306820e388716ba23a`
-- `master` was fast-forwarded to the reviewed integration history; subsequent `testing` work includes the sanitized Brave deployment reconciliation, the accepted opt-in adaptive-quality unit and the bounded iOS recovery block pending target-device validation.
+- `master` was fast-forwarded to the reviewed integration history; subsequent `testing` work includes the sanitized Brave deployment reconciliation, the accepted opt-in adaptive-quality unit, bounded iOS recovery and server-enforced view-only sharing pending their grouped target-server validation.
 
 The 97-file upstream delta was reviewed by subsystem. Conflicts in `settings.vue`, `side.vue` and `video.vue` were resolved semantically, preserving the fork's touch/trackpad, UI and cursor/recovery behavior while accepting the upstream permissions, Open-in-App and focus-clipboard changes. A hidden demo-mode payload mismatch caused by the new file-transfer rights fields was also repaired.
 
@@ -58,13 +60,13 @@ Local reconciliation (2026-09-09):
 
 Do not perform a blind upstream overwrite.
 
-The bounded iOS recovery path is implemented and statically reviewed on `testing`; its exact no-reload device procedure remains pending for the next grouped target-server checkpoint. No automatic in-place recovery claim is made until that run passes.
+The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`; their exact device and three-role procedures remain pending for the next grouped target-server checkpoint. No automatic in-place recovery or target-server view-only acceptance claim is made until that run passes.
 
 ## NEXT
 
-Continue exclusively on `testing`: implement server-enforced view-only sharing without weakening the existing control/admin model or coupling authorization to a media transport. Keep the current iOS recovery block on `testing` and validate it with the grouped checkpoint defined in [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md). `master` remains pinned at the accepted stable baseline until the operator explicitly authorizes a later grouped promotion.
+Continue exclusively on `testing`: validate the accumulated bounded iOS recovery and server-enforced view-only blocks together at one exact commit, using the complete procedures in [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md) and [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md). `master` remains pinned at the accepted stable baseline until the operator explicitly authorizes a later grouped promotion.
 
-See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
+See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md), [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
 ## Local Brave deployment
 
@@ -76,8 +78,8 @@ On the target server, from the repository root:
 ./build my-neko/base:latest -y
 ./build my-neko/brave:latest -y
 cp .env.example .env
-# Set both passwords and any server-specific values in .env.
-docker compose config
+# Set both passwords, an optional generated view-only token and server-specific values in .env.
+docker compose config --quiet
 docker compose up -d
 ```
 
@@ -109,7 +111,7 @@ Target outcomes include:
 - slow-viewer isolation;
 - per-viewer adaptive quality;
 - robust mobile/TV behavior;
-- server-enforced view-only sharing;
+- target-server validation and future alternate-media support for server-enforced view-only sharing;
 - robust reconnect/recovery;
 - role/capability-aware media fallback: WebCodecs/WebSocket as an interactive candidate and HLS/LL-HLS as a passive/view-only candidate.
 

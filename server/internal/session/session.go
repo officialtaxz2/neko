@@ -80,7 +80,7 @@ func (session *SessionCtx) IsHost() bool {
 // only needed for legacy webrtc handler
 func (session *SessionCtx) LegacyIsHost() bool {
 	settings := session.manager.Settings()
-	if !session.profile.CanHost || session.PrivateModeEnabled() {
+	if !session.profile.IsInteractive() || !session.profile.CanHost || session.PrivateModeEnabled() {
 		return false
 	}
 	if settings.LockedControls && !session.profile.IsAdmin {
@@ -106,7 +106,7 @@ func (session *SessionCtx) PrivateModeEnabled() bool {
 }
 
 func (session *SessionCtx) SetCursor(cursor types.Cursor) {
-	if session.manager.Settings().InactiveCursors && session.profile.SendsInactiveCursor {
+	if session.profile.IsInteractive() && session.manager.Settings().InactiveCursors && session.profile.SendsInactiveCursor {
 		session.manager.SetCursor(cursor, session)
 	}
 }

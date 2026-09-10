@@ -31,6 +31,13 @@ func (manager *WebRTCManagerCtx) handle(
 		return err
 	}
 
+	if session.Profile().IsViewOnly && !viewOnlyDataEventAllowed(header.Event) {
+		logger.Warn().
+			Uint8("event", header.Event).
+			Msg("view-only session denied data-channel input")
+		return nil
+	}
+
 	//
 	// parse body
 	//
@@ -203,4 +210,8 @@ func (manager *WebRTCManagerCtx) handle(
 	}
 
 	return nil
+}
+
+func viewOnlyDataEventAllowed(eventName uint8) bool {
+	return eventName == payload.OP_PING
 }

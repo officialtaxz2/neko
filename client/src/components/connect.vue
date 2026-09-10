@@ -6,12 +6,12 @@
         <span><b>n</b>.eko</span>
       </div>
       <form class="message" v-if="!connecting" @submit.stop.prevent="connect">
-        <span v-if="!autoPassword">{{ $t('connect.login_title') }}</span>
+        <span v-if="!isInvitation">{{ $t('connect.login_title') }}</span>
         <span v-else>{{ $t('connect.invitation_title') }}</span>
         <input type="text" :placeholder="$t('connect.displayname')" v-model="displayname" autofocus />
-        <input type="password" :placeholder="$t('connect.password')" v-model="password" v-if="!autoPassword" />
+        <input type="password" :placeholder="$t('connect.password')" v-model="password" v-if="!isInvitation" />
         
-        <div class="demo-checkbox-container" v-if="!autoPassword && showDemo">
+        <div class="demo-checkbox-container" v-if="!isInvitation && showDemo">
           <input type="checkbox" id="demo-mode" v-model="demoMode" />
           <label for="demo-mode">Demo- / Testmodus (Lokale Sim)</label>
         </div>
@@ -261,6 +261,10 @@
     private demoMode: boolean = false
     private showDemo: boolean = false
 
+    private get isInvitation(): boolean {
+      return this.autoPassword !== null || this.$client.viewOnlyLink
+    }
+
     private get isDev(): boolean {
       if (typeof window !== 'undefined' && window.location) {
         const hostname = window.location.hostname
@@ -278,8 +282,8 @@
     }
 
     created() {
-      this.showDemo = this.isDev
-      this.demoMode = this.isDev
+      this.showDemo = this.isDev && !this.$client.viewOnlyLink
+      this.demoMode = this.isDev && !this.$client.viewOnlyLink
     }
 
     mounted() {
@@ -289,6 +293,11 @@
       if (this.autoPassword !== null) {
         this.removeUrlParam('pwd')
         password = this.autoPassword
+      }
+      if (this.$client.viewOnlyLink) {
+        // The bearer token stays in the URL fragment and the client instance;
+        // never copy it into Vuex or persistent browser storage.
+        password = ''
       }
 
       // auto-user fill
@@ -303,7 +312,7 @@
       this.displayname = displayname
       this.password = password
 
-      if (displayname !== '' && password !== '') {
+      if (displayname !== '' && (password !== '' || this.$client.viewOnlyLink)) {
         const client = this.$client as any
         // The singleton client owns transient-session retries. A newly mounted
         // login form must not start a parallel connection or override a
@@ -333,30 +342,18 @@
     }
 
     removeUrlParam(param: string) {
-      let url = document.location.href
-      let urlparts = url.split('?')
-
-      if (urlparts.length >= 2) {
-        let urlBase = urlparts.shift()
-        let queryString = urlparts.join('?')
-
-        let prefix = encodeURIComponent(param) + '='
-        let pars = queryString.split(/[&;]/g)
-        for (let i = pars.length; i-- > 0; ) {
-          if (pars[i].lastIndexOf(prefix, 0) !== -1) {
-            pars.splice(i, 1)
-          }
-        }
-
-        url = urlBase + (pars.length > 0 ? '?' + pars.join('&') : '')
-        window.history.pushState('', document.title, url)
-      }
+      const url = new URL(document.location.href)
+      url.searchParams.delete(param)
+      window.history.pushState('', document.title, url.toString())
     }
 
     login() {
       let password = this.password
       if (this.autoPassword !== null) {
         password = this.autoPassword
+      }
+      if (this.$client.viewOnlyLink) {
+        password = ''
       }
 
       if (this.displayname == '') {

@@ -23,6 +23,7 @@ The product remains one shared session, not independent per-user browser session
 - Admin and regular-user access.
 - At most one controller at a time.
 - Admin lock/grant/revoke semantics.
+- A backend-neutral, server-enforced passive/view-only session identity.
 - Self-hosted, Docker-oriented Neko deployment.
 - WebRTC as the primary implemented media path.
 
@@ -31,7 +32,7 @@ The product remains one shared session, not independent per-user browser session
 - Weak viewers do not degrade healthy viewers.
 - Quality adapts independently per viewer.
 - Mobile and Smart-TV/browser robustness.
-- Server-enforced view-only guest/share access.
+- Target-server validation and future alternate-media support for view-only guest/share access.
 - Bounded, observable reconnect/recovery.
 - Media/control/auth remain separable enough to support alternative media paths.
 
@@ -57,6 +58,9 @@ The product remains one shared session, not independent per-user browser session
 - Public STUN fallback injection if no STUN URL is configured.
 - Demo mode.
 - Cross-browser fullscreen handling.
+- Optional 256-bit view-only share credential transported by a `#/watch/<token>` fragment and WebSocket subprotocol rather than an HTTP request path/query string.
+- Fixed view-only profile/session normalization plus HTTP, current/legacy WebSocket, modern/legacy data-channel, inbound-media, host-assignment and plugin enforcement.
+- Non-persisted passive sessions with documented token rotation/removal and service recreation as the hard revocation boundary.
 
 ## Integrated upstream implementation
 
@@ -109,11 +113,13 @@ A viewer should not be permanently excluded solely because WebRTC/ICE/media supp
 
 For passive/view-only devices such as Smart-TVs or constrained/older browsers, higher media latency is acceptable when it materially improves compatibility and stability. A conventional HTTP live-streaming path (preferably HLS/Low-Latency HLS as the first candidate, with DASH as an alternative to evaluate) should therefore be considered separately from low-latency interactive fallbacks.
 
-### TARGET — server-enforced view-only share link
+### IMPLEMENTED IN REPOSITORY — server-enforced view-only share link
 
-A future `/watch/<token>`-style path or equivalent should permit passive viewing without mouse/keyboard/touch/control/admin capabilities.
+The optional `#/watch/<64-hex-token>` link permits passive WebRTC viewing in the same room without mouse, keyboard, touch, clipboard, file, microphone/media-share, control-request or admin capabilities. The token remains in the URL fragment and is carried in a WebSocket subprotocol; it is never placed in the normal share-link HTTP request path or query string.
 
-Authorization must be enforced server-side. A view-only client may use a different receive-only media backend from interactive participants in the same shared room; changing the media transport must not create a separate desktop/session or weaken authorization.
+Authorization is enforced by a normalized backend-neutral `is_view_only` profile and allow/deny checks across every current ingress path, not by hidden controls or by WebRTC. This leaves the same identity usable by a future different receive-only media backend without creating a separate desktop/session or weakening authorization. Token lifetime, revocation, denial behavior, deployment, rollback and the pending three-role target-server matrix are specified in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md).
+
+Runtime status: **implementation complete and statically reviewed on `testing`; build/tests and adversarial target-server validation pending at the grouped iOS/view-only checkpoint**.
 
 ### TARGET — robust recovery
 

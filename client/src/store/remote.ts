@@ -82,7 +82,7 @@ export const actions = actionTree(
   { state, getters, mutations },
   {
     sendClipboard({ getters }, clipboard: string) {
-      if (!accessor.connected || !getters.hosting) {
+      if (!accessor.connected || accessor.user.viewOnly || !getters.hosting) {
         return
       }
 
@@ -90,7 +90,7 @@ export const actions = actionTree(
     },
 
     toggle({ getters }) {
-      if (!accessor.connected) {
+      if (!accessor.connected || accessor.user.viewOnly) {
         return
       }
 
@@ -102,7 +102,7 @@ export const actions = actionTree(
     },
 
     request({ getters }) {
-      if (!accessor.connected || getters.controlling) {
+      if (!accessor.connected || accessor.user.viewOnly || getters.controlling) {
         return
       }
 
@@ -110,7 +110,7 @@ export const actions = actionTree(
     },
 
     release({ getters }) {
-      if (!accessor.connected || !getters.hosting) {
+      if (!accessor.connected || accessor.user.viewOnly || !getters.hosting) {
         return
       }
 
@@ -118,7 +118,7 @@ export const actions = actionTree(
     },
 
     give({ getters }, member: string | Member) {
-      if (!accessor.connected || !getters.hosting) {
+      if (!accessor.connected || accessor.user.viewOnly || !getters.hosting) {
         return
       }
 
@@ -166,7 +166,7 @@ export const actions = actionTree(
     },
 
     changeKeyboard({ getters }) {
-      if (!accessor.connected || !getters.hosting) {
+      if (!accessor.connected || accessor.user.viewOnly || !getters.hosting) {
         return
       }
 
@@ -174,6 +174,9 @@ export const actions = actionTree(
     },
 
     syncKeyboardModifierState({ state }, { capsLock, numLock, scrollLock }) {
+      if (accessor.user.viewOnly) {
+        return
+      }
       if (state.keyboardModifierState === keyboardModifierState(capsLock, numLock, scrollLock)) {
         return
       }

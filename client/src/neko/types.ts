@@ -3,6 +3,7 @@ export interface Member {
   displayname: string
   admin: boolean
   muted: boolean
+  view_only: boolean
   connected?: boolean
   ignored?: boolean
 }

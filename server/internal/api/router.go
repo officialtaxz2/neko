@@ -46,21 +46,21 @@ func (api *ApiManagerCtx) Route(r types.Router) {
 
 		r.Post("/logout", api.Logout)
 		r.Get("/whoami", api.Whoami)
-		r.Post("/profile", api.UpdateProfile)
 		r.Get("/stats", api.Stats)
+		r.With(auth.InteractiveOnly).Post("/profile", api.UpdateProfile)
 
 		sessionsHandler := sessions.New(api.sessions)
-		r.Route("/sessions", sessionsHandler.Route)
+		r.With(auth.InteractiveOnly).Route("/sessions", sessionsHandler.Route)
 
 		membersHandler := members.New(api.members)
-		r.Route("/members", membersHandler.Route)
-		r.Route("/members_bulk", membersHandler.RouteBulk)
+		r.With(auth.InteractiveOnly).Route("/members", membersHandler.Route)
+		r.With(auth.InteractiveOnly).Route("/members_bulk", membersHandler.RouteBulk)
 
 		roomHandler := room.New(api.sessions, api.desktop, api.capture)
 		r.Route("/room", roomHandler.Route)
 
 		for path, router := range api.routers {
-			r.Route(path, router)
+			r.With(auth.InteractiveOnly).Route(path, router)
 		}
 	})
 }

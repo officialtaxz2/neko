@@ -99,6 +99,11 @@ func (manager *MemberManagerCtx) UpdateProfile(id string, profile types.MemberPr
 	manager.providerMu.Lock()
 	defer manager.providerMu.Unlock()
 
+	if session, ok := manager.sessions.Get(id); ok && session.Profile().IsViewOnly {
+		profile.IsViewOnly = true
+	}
+	profile = profile.RestrictViewOnly()
+
 	// update corresponding session, if exists
 	err := manager.sessions.Update(id, profile)
 	if err != nil && !errors.Is(err, types.ErrSessionNotFound) {
@@ -140,6 +145,7 @@ func (manager *MemberManagerCtx) Login(username string, password string) (types.
 	if err != nil {
 		return nil, "", err
 	}
+	profile = profile.RestrictViewOnly()
 
 	if !profile.IsAdmin && manager.sessions.Settings().LockedLogins {
 		return nil, "", types.ErrSessionLoginsLocked

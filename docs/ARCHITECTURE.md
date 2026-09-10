@@ -51,6 +51,8 @@ Current behavior includes:
 - initial-login failures, explicit logout, demo mode and server-directed disconnects cannot enter that automatic retry path;
 - old socket/peer/data-channel callbacks are identity-guarded, buffered ICE candidates are cleared during teardown, and the login component does not start a parallel connection;
 - input travels over the WebRTC data channel;
+- a `#/watch/<64-hex-token>` fragment creates a view-only login whose credential is sent as a WebSocket subprotocol, not an HTTP request path/query string;
+- once the passive member marker arrives, the client renders video/playback controls without room, input, clipboard, file, chat or admin controls;
 - the legacy protocol path requests automatic video-pipeline selection; it becomes active only when multiple pipelines and the per-peer bandwidth estimator are configured;
 - file-transfer capability messages carry separate non-admin download/upload/delete permissions;
 - the optional `openinapp` client/store path sends authorized HTTP(S) chat links to the shared application;
@@ -112,11 +114,27 @@ Target-server impairment runs then exposed an asymmetric decision requirement. D
 
 The current fork relies on Neko's WebRTC server model. Issue #690 alternative media prototypes are not established backends in this fork.
 
+The view-only follow-up adds a transport-independent `MemberProfile.IsViewOnly` marker and a fixed multi-user share profile. The marker is normalized before login-lock evaluation and whenever sessions are created or updated. Server enforcement then applies at the authenticated HTTP routes, current and legacy WebSocket dispatchers, both WebRTC data-channel formats, inbound media tracks, host assignment and plugin managers. Only heartbeat and receive-media signalling cross the passive WebSocket boundary; only data-channel ping crosses the modern passive data boundary. Passive sessions cannot be persisted or restored.
+
+```text
+#/watch/<token> fragment
+        |
+        | Sec-WebSocket-Protocol: neko-view.<token>
+        v
+multi-user authentication -> normalized is_view_only session
+        |                              |
+        | receive signalling/media    `-- deny HTTP/input/plugin/media-publish paths
+        v
+same shared WebRTC room/desktop
+```
+
+This is still a WebRTC receive-media implementation. Its authorization identity is deliberately outside the media transport so a later HLS/LL-HLS subscriber can reuse the same room/session boundary.
+
 ## Deployment/configuration baseline
 
 The default root `config.yml` is no longer copied into the base image. Server defaults now keep implicit hosting and cookie authentication disabled, matching the removed file's effective defaults. Deployments must supply intentional settings through environment variables or a mounted YAML file.
 
-The repository `docker-compose.yaml` now represents this fork's operator-confirmed deployment baseline: a locally built Brave image with registry pulling disabled, pre-start singleton-lock cleanup, persistent but ignored profile/download paths, optional managed policy, loopback HTTP binding, configurable WebRTC UDP range and enabled file transfer. `.env.example` documents non-secret settings; Compose refuses to resolve while either password is empty. Actual `.env`, profile, downloads and instance policy stay outside Git.
+The repository `docker-compose.yaml` now represents this fork's operator-confirmed deployment baseline: a locally built Brave image with registry pulling disabled, pre-start singleton-lock cleanup, persistent but ignored profile/download paths, optional managed policy, loopback HTTP binding, configurable WebRTC UDP range and enabled file transfer. `.env.example` documents non-secret settings and the optional `NEKO_VIEW_ONLY_TOKEN`; Compose refuses to resolve while either password is empty. Actual `.env`, share credential, profile, downloads and instance policy stay outside Git.
 
 `docker-compose.adaptive.yaml` is a separate opt-in overlay. It mounts `deploy/adaptive-quality.yaml`, whose ordered `high`/`medium`/`low` VP8 definitions activate demand-driven multi-pipeline encoding and the per-peer estimator. Omitting the overlay leaves the validated single-pipeline baseline unchanged. The overlay was accepted on the target server for the documented desktop/iPad/iPhone scenario on 2026-09-10. Activation, metrics, resource implications, bounded evidence and rollback are in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
@@ -139,7 +157,7 @@ Only sanitized, reusable deltas belong in Git. See [`LOCAL_DELTA_AUDIT.md`](LOCA
 - keep authorization/control independent from media transport;
 - make weak-viewer behavior peer-local;
 - support per-viewer quality selection;
-- make view-only roles server-enforced;
+- preserve the server-enforced view-only role across future media backends;
 - allow alternative receive-media paths without creating a separate room;
 - allow different participants in the same room to use different media backends when role/device/network capability requires it;
 - treat interactive low-latency fallback and passive/view-only streaming as separate compatibility problems.
@@ -177,4 +195,4 @@ Exact final interfaces remain OPEN until the relevant prototype work is designed
 
 Architecture/runtime claims beyond repository inspection must be verified on the real target server, not in Codex. Codex should prepare server-side validation steps but must not execute the application, builds, tests, Docker or media/device checks.
 
-The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction, diagnostics and next-tier nominal upgrade gate were subsequently built, focused-tested and accepted on 2026-09-10 for the documented three-viewer target-server scenario. Codex did not execute those runtime checks.
+The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction, diagnostics and next-tier nominal upgrade gate were subsequently built, focused-tested and accepted on 2026-09-10 for the documented three-viewer target-server scenario. The later iOS recovery and view-only blocks are implemented and statically reviewed on `testing`, with their grouped target-server procedures in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) and [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md) still pending. Codex did not execute those runtime checks.
