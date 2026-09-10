@@ -475,6 +475,7 @@
     // --- Stream health monitoring ---
     private _trackCleanup: (() => void) | null = null
     private _streamCleanup: (() => void) | null = null
+    private _removeTrackTimer: number | null = null
     private _stalledTimer: any = null
     private _recoveryAttempts = 0
     private _hasEverPlayed = false // Guard: only run recovery if video played at least once
@@ -530,6 +531,8 @@
 
     private onVideoPlaying = () => {
       this._hasEverPlayed = true
+      this.cancelStalledTimer()
+      this._recoveryAttempts = 0
       this.$accessor.video.play()
     }
 
@@ -587,16 +590,20 @@
      * Attempt to recover a dead/stalled video stream.
      * Strategy:
      *  1. Re-assign srcObject (forces browser to re-evaluate the stream)
-     *  2. Call play() — first muted (which mobile browsers allow), then unmuted
+     *  2. Let the normal media-ready/play watcher retry playback. If Safari
+     *     rejects autoplay even while muted, keep the central Play fallback.
      *
      * IMPORTANT: We NEVER call video.load() on a WebRTC stream.
      * load() resets the media element, discarding the srcObject's internal state.
      * On iOS Safari this permanently kills the stream — the video stays black
      * and no amount of play() calls will revive it.
      *
-     * Gives up after MAX_RECOVERY_ATTEMPTS to avoid infinite loops.
+     * Attempts reset only after playback progress, track unmute or a new
+     * stream. A successful srcObject assignment alone is not recovery.
      */
     private async attemptStreamRecovery(reason: string) {
+      if (!this._video || !this.stream) return
+
       const max = NekoVideo.MAX_RECOVERY_ATTEMPTS
       if (this._recoveryAttempts >= max) {
         console.error(`[Neko] Stream recovery failed after ${max} attempts (${reason})`)
@@ -604,8 +611,6 @@
       }
       this._recoveryAttempts++
       console.warn(`[Neko] Attempting stream recovery #${this._recoveryAttempts} (${reason})`)
-
-      if (!this._video || !this.stream) return
 
       try {
         // Re-assign srcObject to force the browser to re-evaluate the stream
@@ -617,8 +622,7 @@
         // Once the stream is loaded and ready, it fires 'canplay' or 'canplaythrough',
         // calling onVideoCanPlayThrough. Since this.playing is true, the handler
         // will safely and automatically call play() when the stream is ready.
-        console.log('[Neko] Stream recovery srcObject re-assignment completed')
-        this._recoveryAttempts = 0
+        console.log('[Neko] Stream recovery srcObject re-assignment completed; awaiting playback progress')
       } catch (err) {
         console.warn('[Neko] Stream recovery srcObject assignment failed', err)
       }
@@ -882,12 +886,23 @@
 
     @Watch('stream')
     onStreamChanged(stream?: MediaStream) {
-      if (!this._video || !stream) {
+      // Detach from the previous stream even when the store is being reset.
+      // Otherwise an old removetrack callback can race a replacement peer.
+      this.detachStreamListeners()
+
+      if (!this._video) {
         return
       }
 
-      // Clean up old stream listeners before attaching new ones
-      this.detachStreamListeners()
+      if (!stream) {
+        this.cancelStalledTimer()
+        this._recoveryAttempts = 0
+        this._hasEverPlayed = false
+        if ('srcObject' in this._video) {
+          this._video.srcObject = null
+        }
+        return
+      }
 
       if ('srcObject' in this._video) {
         this._video.srcObject = stream
@@ -975,8 +990,12 @@
           console.warn(`[Neko] Video track removed from stream: ${event.track.id}`)
           // Don't immediately recover – a new track should arrive shortly via onTrack.
           // But if nothing arrives within 3s, attempt recovery.
-          window.setTimeout(() => {
-            if (this.stream && this.stream.getVideoTracks().length === 0) {
+          if (this._removeTrackTimer !== null) {
+            window.clearTimeout(this._removeTrackTimer)
+          }
+          this._removeTrackTimer = window.setTimeout(() => {
+            this._removeTrackTimer = null
+            if (this.stream === stream && stream.getVideoTracks().length === 0) {
               console.warn('[Neko] No video tracks in stream after removetrack – triggering recovery')
               this.attemptStreamRecovery('removetrack with no replacement')
             }
@@ -992,6 +1011,10 @@
     }
 
     private detachStreamListeners() {
+      if (this._removeTrackTimer !== null) {
+        window.clearTimeout(this._removeTrackTimer)
+        this._removeTrackTimer = null
+      }
       if (this._streamCleanup) {
         this._streamCleanup()
         this._streamCleanup = null

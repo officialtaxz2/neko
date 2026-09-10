@@ -51,6 +51,9 @@ The product remains one shared session, not independent per-user browser session
 - Bounded `srcObject`-based stream recovery.
 - Explicit avoidance of `video.load()` for WebRTC recovery.
 - ICE failure/disconnect timeout handling.
+- Bounded application-level reconnect for a previously established real session after the existing peer/socket cannot recover: four serialized attempts after 1, 2, 5 and 10 seconds.
+- Automatic reconnect suppression for initial-login failure, explicit logout, demo mode and server-directed disconnects, preserving authentication/session intent.
+- Identity guards and teardown for stale WebSocket, peer, data-channel, ICE-candidate and media-stream callbacks before a replacement connection becomes authoritative.
 - Public STUN fallback injection if no STUN URL is configured.
 - Demo mode.
 - Cross-browser fullscreen handling.
@@ -96,7 +99,9 @@ The repository contains a reproducible, opt-in three-tier VP8 profile, estimator
 
 Mobile must reliably join, start media under autoplay rules, recover from transient failures, avoid persistent black screens, and retain usable touch/keyboard behavior.
 
-The 2026-09-10 iPhone check proved successful rejoin after reload and, when required by iOS autoplay policy, a central Play tap; it also proved that this recovery did not disturb the other viewers. Fully automatic in-place recovery without either user action was not established and remains a bounded follow-up rather than an accepted universal claim.
+The repository now separates the bounded recovery states: eight seconds for automatic recovery of an existing ICE peer; a four-attempt application-level login when the established peer/socket is unrecoverable; and the existing central Play control when Safari blocks playback after media is available. A successful media-element `srcObject` assignment is no longer treated as recovery until playback progress or track unmute occurs, and old stream timers/listeners are removed when the connection store resets.
+
+The 2026-09-10 iPhone check proved successful rejoin after reload and, when required by iOS autoplay policy, a central Play tap; it also proved that this recovery did not disturb the other viewers. The new no-reload path is implemented and statically reviewed on `testing`, but its exact target-server iPhone procedure in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) remains pending for the next grouped checkpoint. Fully automatic in-place recovery is not an accepted device claim until that run passes.
 
 ### TARGET — Smart-TV / constrained browser compatibility
 

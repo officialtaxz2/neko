@@ -13,8 +13,9 @@ Immediate sequence:
 5. validate the integrated `master` on the target server — **complete; operator-confirmed on 2026-09-09 after correcting the Brave policy mount filename**,
 6. make the multi-pipeline/bandwidth-estimator path reproducible and observable without changing the stable single-pipeline default — **complete**,
 7. validate and measurement-tune the opt-in adaptive-quality profile on the target server — **complete; operator-accepted on 2026-09-10 for the documented three-viewer scenario at `bfaca84e`**,
-8. stabilize and verify bounded iOS transient-recovery behavior on `testing` — **NEXT**,
-9. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
+8. implement bounded iOS transient recovery without requiring a page reload while preserving Safari's Play fallback — **complete in the repository on `testing`; target-server no-reload validation pending at the next grouped checkpoint**,
+9. implement server-enforced view-only sharing on `testing` — **NEXT**,
+10. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
 
 ## Authoritative knowledge
 
@@ -27,6 +28,7 @@ Read before substantial work:
 - `docs/LOCAL_DELTA_AUDIT.md` — completed, sanitized classification of the supplied `MyNekoProjekt` snapshot.
 - `docs/UPSTREAM_SYNC_AUDIT.md` — completed semantic review and merge record for the 2026-09-09 upstream synchronization.
 - `docs/ADAPTIVE_QUALITY.md` — opt-in profile, diagnostics, resource costs, exact target-server acceptance procedure and rollback.
+- `docs/IOS_RECOVERY.md` — implemented bounded reconnect states, exact target-server iPhone procedure, acceptance criteria and rollback.
 - `webpage/docs/` — inherited Neko documentation. Current repository code/config wins on conflicts.
 
 ## Truth rules

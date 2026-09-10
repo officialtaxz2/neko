@@ -33,6 +33,10 @@ jobs:
         working-directory: ./client
         run: npm ci
 
+      - name: Test client recovery decisions
+        working-directory: ./client
+        run: npm test
+
       - name: Build client
         working-directory: ./client
         run: npm run build

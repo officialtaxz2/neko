@@ -18,6 +18,8 @@ Repository implementation is listed here independently of runtime validation. Th
 - Autoplay/muted fallback.
 - Video stream health/recovery logic.
 - ICE disconnect/recovery handling.
+- A bounded application-level reconnect after an established peer cannot recover: four serialized attempts at 1/2/5/10-second delays, suppressed for initial-login failure, explicit logout, demo mode and server-directed disconnects.
+- Stale WebSocket/peer/data-channel callbacks and old stream timers are isolated from a replacement connection; Safari's central Play fallback remains separate from network recovery.
 - Demo-mode client infrastructure.
 - Per-peer non-blocking media sample delivery so one backpressured WebRTC track does not block dispatch to other tracks.
 - Multi-pipeline stream-selection and per-peer bandwidth-estimator infrastructure; the legacy protocol path requests automatic selection when configured.
@@ -39,7 +41,7 @@ Current upstream integration (2026-09-09):
 - upstream `m1k1o/neko:master`: `b0f01cedea68893e85a3fd852c0521238c285695`
 - pre-sync merge base: `d74052bb844c43a0cc3c2386d083f7505dc483a2`
 - upstream merge commit on `integration/upstream-20260909`: `4e99b8d3ca720d1f184544306820e388716ba23a`
-- `master` was fast-forwarded to the reviewed integration history; subsequent work includes the sanitized Brave deployment reconciliation and the current opt-in adaptive-quality unit.
+- `master` was fast-forwarded to the reviewed integration history; subsequent `testing` work includes the sanitized Brave deployment reconciliation, the accepted opt-in adaptive-quality unit and the bounded iOS recovery block pending target-device validation.
 
 The 97-file upstream delta was reviewed by subsystem. Conflicts in `settings.vue`, `side.vue` and `video.vue` were resolved semantically, preserving the fork's touch/trackpad, UI and cursor/recovery behavior while accepting the upstream permissions, Open-in-App and focus-clipboard changes. A hidden demo-mode payload mismatch caused by the new file-transfer rights fields was also repaired.
 
@@ -56,11 +58,13 @@ Local reconciliation (2026-09-09):
 
 Do not perform a blind upstream overwrite.
 
+The bounded iOS recovery path is implemented and statically reviewed on `testing`; its exact no-reload device procedure remains pending for the next grouped target-server checkpoint. No automatic in-place recovery claim is made until that run passes.
+
 ## NEXT
 
-Continue exclusively on `testing`: audit the iOS transient-network path and implement the smallest regression-safe improvement that can recover a disconnected session without requiring a page reload. Preserve the standards-required Play gesture when Safari blocks autoplay, and distinguish that policy fallback from connection recovery. `master` remains pinned at the accepted stable baseline until the operator explicitly authorizes a later grouped promotion.
+Continue exclusively on `testing`: implement server-enforced view-only sharing without weakening the existing control/admin model or coupling authorization to a media transport. Keep the current iOS recovery block on `testing` and validate it with the grouped checkpoint defined in [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md). `master` remains pinned at the accepted stable baseline until the operator explicitly authorizes a later grouped promotion.
 
-See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
+See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
 ## Local Brave deployment
 

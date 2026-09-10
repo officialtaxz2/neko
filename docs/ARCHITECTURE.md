@@ -46,6 +46,10 @@ Current behavior includes:
 - ICE candidates are exchanged over WebSocket;
 - public STUN fallback may be injected if no STUN is configured;
 - failed/closed or unresolved disconnected ICE states lead to disconnect/recovery flow;
+- an ICE `disconnected` state retains the existing peer for an eight-second self-recovery window;
+- after an established peer/socket is irrecoverable, one application-owned timer serializes at most four fresh legacy logins after 1/2/5/10 seconds;
+- initial-login failures, explicit logout, demo mode and server-directed disconnects cannot enter that automatic retry path;
+- old socket/peer/data-channel callbacks are identity-guarded, buffered ICE candidates are cleared during teardown, and the login component does not start a parallel connection;
 - input travels over the WebRTC data channel;
 - the legacy protocol path requests automatic video-pipeline selection; it becomes active only when multiple pipelines and the per-peer bandwidth estimator are configured;
 - file-transfer capability messages carry separate non-admin download/upload/delete permissions;
@@ -69,6 +73,8 @@ Therefore a true non-WebRTC viewer fallback is not currently implemented.
 - stream/track listener cleanup.
 
 These behaviors require semantic preservation through upstream sync.
+
+The video layer remains separate from connection recovery. It can reassign `srcObject` for a bounded media-element stall without calling `video.load()`, but an assignment is not counted as success until playback progress or track unmute. When a new or recovered stream is available and Safari rejects autoplay even while muted, the existing central Play overlay remains the user-activation fallback; this does not trigger another network reconnect.
 
 ## Fork-specific scope
 

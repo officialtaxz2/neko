@@ -53,6 +53,8 @@ The final container used 102.74% CPU and 903.1 MiB of 25.43 GiB RAM on an eight-
 
 Refresh/rejoin and transient cellular interruption were also exercised. Reload produced a new active iPhone session on `high` with zero peer-local drops. After a 15-second flight-mode interruption, another new iPhone session was already active on `high` at the first 10-second sample and remained connected throughout the 90-second observation. The desktop and iPad stayed smooth on `high` with zero drop deltas throughout. The operator reports that iPhone playback worked after reload and, where iOS required it, pressing the central Play control. This proves the manual reload/play fallback without cross-peer disruption; it does not prove fully automatic in-place iOS recovery without user action.
 
+The later bounded no-reload client implementation on `testing` is outside this adaptive-profile acceptance record. Its separate same-peer, replacement-session and Safari policy validation remains pending under [`IOS_RECOVERY.md`](IOS_RECOVERY.md).
+
 Decision: **accepted as an opt-in profile for this tested deployment and scenario**. Keep the base Compose deployment single-pipeline, retain the documented rollback path, and remeasure before claiming other devices, architectures or materially different network envelopes.
 
 ## Before activation

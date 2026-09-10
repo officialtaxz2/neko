@@ -160,6 +160,25 @@ Operator-reported evidence on 2026-09-10 from the `testing` branch:
 
 Status: **accepted on 2026-09-10 as an opt-in profile for the documented target deployment and three-viewer scenario**. The stable base Compose remains single-pipeline, and profiles without `nominal_bitrate` retain their previous estimator behavior. This bounded acceptance must not be generalized to untested devices, architectures or network conditions.
 
+## COMPLETED IN REPOSITORY — bounded iOS transient recovery
+
+Implemented and statically reviewed on `testing` on 2026-09-10:
+
+- Preserved the existing-peer path: ICE `disconnected` still has an eight-second window to return to `connected`/`completed` without replacing the peer or server session.
+- Added a bounded application-level path after an established peer/socket becomes irrecoverable. One timer owns four serialized attempts after 1, 2, 5 and 10 seconds, using the same in-memory login values as a manual reconnect.
+- Kept initial-login failures manual and suppressed retries for logout, demo mode and every server-directed `system/disconnect`, so recovery cannot fight authentication, kick or other session intent.
+- Prevented the remounted login component from starting a parallel automatic login while the client owns recovery; after exhaustion or suppression, the form remains populated for manual use.
+- Guarded WebSocket, peer and data-channel callbacks by object identity, cleared buffered ICE candidates during teardown, and stopped stale async offer work from sending through a replacement socket.
+- Removed old media-stream listeners and the delayed `removetrack` timer when the store resets or a new stream arrives.
+- Corrected the media-element attempt bound: reassigning `srcObject` no longer resets the counter by itself; only actual playback progress, track unmute or a new stream does. `video.load()` remains prohibited.
+- Preserved Safari's autoplay behavior as a separate final stage: normal/muted playback is attempted when media is ready, and the central Play overlay remains visible if user activation is required.
+- Extracted and covered the reconnect eligibility and delay decisions with dependency-free Node tests in `client/tests/recovery.test.mjs` and an `npm test` script.
+- Added [`IOS_RECOVERY.md`](IOS_RECOVERY.md) with exact target-server build commands, same-peer and replacement-session interruption phases, bounded-exhaustion/auth checks, acceptance criteria and rollback.
+
+Static review status: **implementation complete in repository / client test, lint, build and iPhone runtime verification NOT EXECUTED IN CODEX**.
+
+Target-server status: **pending at the next coherent grouped `testing` checkpoint**. The prior 2026-09-10 reload/Play evidence does not validate the new no-reload implementation, and no automatic iOS claim is made yet.
+
 ## Target-server verification
 
 This phase is performed by the operator on the real server, not by Codex.
@@ -169,11 +188,14 @@ This phase is performed by the operator on the real server, not by Codex.
 ```bash
 cd client
 npm ci
+npm test
 npm run lint
 npm run build
 ```
 
 Required for the integrated baseline: confirm `npm ci`, TypeScript lint and the Vite production build at integration commit `4e99b8d3`. The operator later confirmed these checks passed, closing verification of the lock/type repair in `2d89027e`.
+
+For the bounded iOS recovery block on `testing`, run all four commands at the exact candidate commit and then follow [`IOS_RECOVERY.md`](IOS_RECOVERY.md). This new client block has not yet been executed on the target server.
 
 ### Server and container
 
@@ -258,6 +280,8 @@ Mobile:
 - keyboard/helper;
 - reconnect/recovery.
 
+For the current iOS block, the generic mobile bullets are not sufficient; execute and record the same-peer, replacement-session, bounded-exhaustion and server-directed-disconnect phases in [`IOS_RECOVERY.md`](IOS_RECOVERY.md).
+
 Smart-TV/embedded:
 
 - join;
@@ -279,22 +303,22 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Audit the current iOS transient-network recovery path across WebSocket/session reconnect, ICE timeout handling and the `video.vue` media-element recovery. Distinguish three cases explicitly: automatic recovery of the existing peer, bounded application-level reconnect after the existing peer cannot recover, and Safari's standards-required Play gesture after media is available. Implement the smallest regression-safe change that removes any unnecessary page reload while preserving the visible Play fallback when autoplay is blocked.
+Design and implement the smallest server-enforced view-only share path that keeps every viewer in the same logical room while granting no mouse, keyboard, touch, clipboard, file, microphone, control-request or admin capability. Audit the current authentication/session profile and legacy protocol boundaries before choosing the token shape; hiding client controls is not authorization.
 
-Keep the recovery bounded and idempotent: prevent parallel reconnect loops, clean up old timers/listeners/peers, preserve authentication/session semantics, and do not disturb healthy participants or the existing touch/trackpad/playback behavior. Add focused tests around extracted state/timer decisions where the repository structure permits, update the durable documentation, review the complete diff statically, commit it on `testing`, and push only `testing`.
+Keep media transport independent from authorization: the first implementation may remain WebRTC receive-only, but its server-side capability model must remain usable by a later HLS/LL-HLS passive backend. Define token lifetime/revocation and denial behavior explicitly, add focused server tests for forbidden actions, document deployment/rollback and prepare a target-server matrix with an ordinary member, admin and view-only participant.
 
-Runtime/build/device verification remains target-server work under `AGENTS.md`. Prepare an exact iPhone interruption/recovery procedure, but group its execution with the next coherent `testing` validation checkpoint unless the implementation evidence makes an immediate isolated check necessary. Do not claim fully automatic recovery until a no-reload target-server run proves it.
+Retain the completed iOS recovery block on `testing` and execute its pending [`IOS_RECOVERY.md`](IOS_RECOVERY.md) device procedure at the next coherent grouped validation checkpoint. Do not claim no-reload iOS recovery before that evidence exists.
 
 ## Product priority after stable synced baseline
 
-1. distinguish and, if necessary, improve automatic iOS in-place recovery versus the already proven reload/Play fallback;
-2. server-enforced view-only sharing;
+1. implement server-enforced view-only sharing while retaining the completed iOS recovery block;
+2. validate the accumulated iOS/view-only client and server behavior at a coherent `testing` checkpoint;
 3. practical non-WebRTC viewer-media fallback;
 4. promote the accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
 
-Alternative media work starts only after the bounded iOS recovery follow-up is resolved. It remains on `testing` until the operator explicitly approves a later grouped promotion.
+Alternative media work starts only after bounded iOS recovery is target-server validated and the server-enforced view-only boundary is established. It remains on `testing` until the operator explicitly approves a later grouped promotion.
 
 When fallback work begins, separate the two user classes instead of forcing every client through one fallback chain:
 
@@ -318,7 +342,7 @@ The passive path may trade latency for reliability and compatibility. It must st
 ## OPEN
 
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
-- Whether iOS can recover in place after a transient network transition without reload or a Play gesture, and whether that behavior should be required beyond the proven manual fallback.
+- Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
 - Exact WebCodecs/WebSocket framing, queue/drop/backpressure policy and codec set.
 - HLS/LL-HLS latency target, segment/part sizing, codec profile and server resource cost.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.

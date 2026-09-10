@@ -3,6 +3,7 @@ import EventEmitter from 'eventemitter3'
 import { BaseClient, BaseEvents } from './base'
 import { Member } from './types'
 import { EVENT } from './events'
+import { reconnectDelayForAttempt, shouldReconnect } from './recovery'
 import { accessor } from '~/store'
 
 import {
@@ -31,6 +32,12 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   private $vue!: Vue
   private $accessor!: typeof accessor
   private url!: string
+  private reconnectCredentials?: { password: string; displayname: string }
+  private reconnectTimer?: number
+  private reconnectAttempt = 0
+  private reconnectInFlight = false
+  private reconnectEligible = false
+  private reconnectSuppressed = false
 
   public isDemo = false
   private demoInterval?: any
@@ -42,6 +49,14 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
 
   public setDemoMode(isDemo: boolean) {
     this.isDemo = isDemo
+  }
+
+  public get recovering() {
+    return this.reconnectTimer !== undefined || this.reconnectInFlight
+  }
+
+  public get automaticLoginAllowed() {
+    return !this.reconnectSuppressed && !this.recovering
   }
 
   init(vue: Vue) {
@@ -114,6 +129,76 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.$accessor.chat.reset()
   }
 
+  private clearReconnectTimer() {
+    if (this.reconnectTimer !== undefined) {
+      window.clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = undefined
+    }
+  }
+
+  private stopReconnect(forgetCredentials = false) {
+    this.clearReconnectTimer()
+    this.reconnectAttempt = 0
+    this.reconnectInFlight = false
+    this.reconnectEligible = false
+
+    if (forgetCredentials) {
+      this.reconnectCredentials = undefined
+    }
+  }
+
+  private canReconnect() {
+    return shouldReconnect({
+      previouslyConnected: this.reconnectEligible,
+      credentialsAvailable: this.reconnectCredentials !== undefined,
+      supported: this.supported,
+      demo: this.isDemo,
+      suppressed: this.reconnectSuppressed,
+    })
+  }
+
+  private scheduleReconnect() {
+    if (!this.canReconnect()) {
+      return false
+    }
+
+    // A disconnect can be reported by WebSocket, ICE and the data channel in
+    // close succession. One pending timer owns the application-level retry.
+    if (this.reconnectTimer !== undefined) {
+      return true
+    }
+
+    const delay = reconnectDelayForAttempt(this.reconnectAttempt)
+    if (delay === null) {
+      this.emit('warn', `application reconnect exhausted after ${this.reconnectAttempt} attempts`)
+      this.reconnectEligible = false
+      this.reconnectInFlight = false
+      return false
+    }
+
+    const attempt = this.reconnectAttempt + 1
+    const credentials = this.reconnectCredentials!
+    this.reconnectAttempt = attempt
+    this.reconnectInFlight = false
+    this.emit('debug', `scheduling application reconnect attempt ${attempt} in ${delay}ms`)
+
+    this.reconnectTimer = window.setTimeout(() => {
+      this.reconnectTimer = undefined
+
+      if (!this.canReconnect() || this.connected || this.socketOpen) {
+        this.reconnectInFlight = false
+        return
+      }
+
+      this.reconnectInFlight = true
+      this.emit('debug', `starting application reconnect attempt ${attempt}`)
+      this[EVENT.RECONNECTING]()
+      this.connect(this.url, credentials.password, credentials.displayname)
+    }, delay)
+
+    return true
+  }
+
   sendData(event: string, data: any) {
     if (this.isDemo) {
       if (event === 'mousemove') {
@@ -132,14 +217,20 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   login(password: string, displayname: string) {
+    this.stopReconnect(true)
+    this.reconnectSuppressed = false
+
     if (this.isDemo || password.toLowerCase() === 'demo') {
       this.startDemo(displayname)
     } else {
+      this.reconnectCredentials = { password, displayname }
       this.connect(this.url, password, displayname)
     }
   }
 
   logout() {
+    this.reconnectSuppressed = true
+    this.stopReconnect(true)
     this.stopDemo()
     this.disconnect()
     this.cleanup()
@@ -667,6 +758,11 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   protected [EVENT.CONNECTED]() {
+    this.clearReconnectTimer()
+    this.reconnectAttempt = 0
+    this.reconnectInFlight = false
+    this.reconnectEligible = !this.isDemo && this.reconnectCredentials !== undefined
+
     this.$accessor.user.setMember(this.id)
     this.$accessor.setConnected(true)
 
@@ -685,7 +781,14 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   protected [EVENT.DISCONNECTED](reason?: Error) {
+    this.reconnectInFlight = false
+    const reconnectScheduled = this.scheduleReconnect()
     this.cleanup()
+
+    if (reconnectScheduled) {
+      this[EVENT.RECONNECTING]()
+      return
+    }
 
     this.$vue.$notify({
       group: 'neko',
@@ -706,7 +809,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
           hostname.includes('127.0.0.1') ||
           hostname.includes('0.0.0.0')
         ) {
-          const isRealAttempt = this._displayname && !this.isDemo
+          const isRealAttempt = this.reconnectCredentials?.displayname && !this.isDemo
           if (isRealAttempt) {
             (this.$vue as any).$swal({
               title: 'Verbindung fehlgeschlagen',
@@ -717,7 +820,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
               cancelButtonText: 'Nein, abbrechen',
             }).then((result: any) => {
               if (result && result.value) {
-                this.startDemo(this._displayname || 'neko')
+                this.startDemo(this.reconnectCredentials?.displayname || 'neko')
               }
             })
           }
@@ -787,6 +890,11 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   protected [EVENT.SYSTEM.DISCONNECT]({ message }: SystemMessagePayload) {
+    // Server-directed disconnects carry authentication/authorization/session
+    // intent. Do not fight them with an automatic login loop.
+    this.reconnectSuppressed = true
+    this.stopReconnect()
+
     if (message == 'kicked') {
       this.$accessor.logout()
       message = this.$vue.$t('connection.kicked') as string

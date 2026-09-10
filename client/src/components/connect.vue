@@ -299,8 +299,19 @@
         displayname = this.$accessor.displayname || usr
       }
 
+      // Keep the form usable if bounded recovery is exhausted or suppressed.
+      this.displayname = displayname
+      this.password = password
+
       if (displayname !== '' && password !== '') {
         const client = this.$client as any
+        // The singleton client owns transient-session retries. A newly mounted
+        // login form must not start a parallel connection or override a
+        // server-directed disconnect.
+        if (client && client.automaticLoginAllowed === false) {
+          return
+        }
+
         if (this.demoMode) {
           if (client && typeof client.setDemoMode === 'function') {
             client.setDemoMode(true)

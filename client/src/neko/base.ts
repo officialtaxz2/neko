@@ -70,13 +70,23 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     this[EVENT.CONNECTING]()
 
     try {
-      this._ws = new WebSocket(
+      const socket = new WebSocket(
         `${url}?password=${encodeURIComponent(password)}&username=${encodeURIComponent(displayname)}`,
       )
-      this.emit('debug', `connecting to ${this._ws.url}`)
-      this._ws.onmessage = this.onMessage.bind(this)
-      this._ws.onerror = this.onError.bind(this)
-      this._ws.onclose = this.onDisconnected.bind(this, new Error('websocket closed'))
+      this._ws = socket
+      this.emit('debug', `connecting to ${socket.url}`)
+      socket.onmessage = (event) => {
+        if (this._ws !== socket) return
+        this.onMessage(event, socket).catch((err) =>
+          this.emit('error', err instanceof Error ? err : new Error(String(err))),
+        )
+      }
+      socket.onerror = (event) => {
+        if (this._ws === socket) this.onError(event)
+      }
+      socket.onclose = () => {
+        if (this._ws === socket) this.onDisconnected(new Error('websocket closed'))
+      }
       let timeoutMs = 15000
       try {
         if (
@@ -147,6 +157,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
         this._peer.onconnectionstatechange = () => {}
         this._peer.onsignalingstatechange = () => {}
         this._peer.oniceconnectionstatechange = () => {}
+        this._peer.onicecandidate = () => {}
+        this._peer.onnegotiationneeded = () => {}
         this._peer.ontrack = () => {}
 
         try {
@@ -161,6 +173,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       this._state = 'disconnected'
       this._displayname = undefined
       this._id = ''
+      this._candidates = []
     } finally {
       this._disconnecting = false
     }
@@ -348,8 +361,12 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       this._peer = new RTCPeerConnection()
     }
 
-    this._peer.onconnectionstatechange = () => {
-      const connState = this._peer ? this._peer.connectionState : undefined
+    const peer = this._peer!
+    const isCurrentPeer = () => this._peer === peer
+
+    peer.onconnectionstatechange = () => {
+      if (!isCurrentPeer()) return
+      const connState = peer.connectionState
       this.emit('debug', `peer connection state changed`, connState)
 
       // Detect failed connection state as a backup for ICE state monitoring.
@@ -361,14 +378,16 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       }
     }
 
-    this._peer.onsignalingstatechange = () => {
-      this.emit('debug', `peer signaling state changed`, this._peer ? this._peer.signalingState : undefined)
+    peer.onsignalingstatechange = () => {
+      if (!isCurrentPeer()) return
+      this.emit('debug', `peer signaling state changed`, peer.signalingState)
     }
 
-    this._peer.oniceconnectionstatechange = () => {
-      this._state = this._peer!.iceConnectionState
+    peer.oniceconnectionstatechange = () => {
+      if (!isCurrentPeer()) return
+      this._state = peer.iceConnectionState
 
-      this.emit('debug', `peer ice connection state changed: ${this._peer!.iceConnectionState}`)
+      this.emit('debug', `peer ice connection state changed: ${peer.iceConnectionState}`)
 
       // Clear any pending ICE recovery timer when state changes
       if (this._iceRecoveryTimeout) {
@@ -394,8 +413,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
           // may stay in 'disconnected' indefinitely → blackscreen.
           this._iceRecoveryTimeout = window.setTimeout(() => {
             this._iceRecoveryTimeout = undefined
-            if (!this._peer) return
-            const currentState = this._peer.iceConnectionState
+            if (!isCurrentPeer()) return
+            const currentState = peer.iceConnectionState
             this.emit('warn', `ICE recovery timeout — current state: ${currentState}`)
             if (currentState === 'disconnected' || currentState === 'failed') {
               this.onDisconnected(new Error(`peer ICE recovery timeout (state: ${currentState})`))
@@ -415,9 +434,12 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       }
     }
 
-    this._peer.ontrack = this.onTrack.bind(this)
+    peer.ontrack = (event) => {
+      if (isCurrentPeer()) this.onTrack(event)
+    }
 
-    this._peer.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+    peer.onicecandidate = (event: RTCPeerConnectionIceEvent) => {
+      if (!isCurrentPeer()) return
       if (!event.candidate) {
         this.emit('debug', `sent all local ICE candidates`)
         return
@@ -436,43 +458,61 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       }
     }
 
-    this._peer.onnegotiationneeded = () => {
+    peer.onnegotiationneeded = () => {
+      if (!isCurrentPeer()) return
       this.emit('debug', `negotiation is needed (no-op)`)
     }
 
-    this._channel = this._peer.createDataChannel('data')
-    this._channel.binaryType = 'arraybuffer'
-    this._channel.onerror = this.onError.bind(this)
-    this._channel.onmessage = this.onData.bind(this)
-    this._channel.onclose = this.onDisconnected.bind(this, new Error('peer data channel closed'))
+    const channel = peer.createDataChannel('data')
+    this._channel = channel
+    channel.binaryType = 'arraybuffer'
+    channel.onerror = (event) => {
+      if (this._channel === channel) this.onError(event)
+    }
+    channel.onmessage = (event) => {
+      if (this._channel === channel) this.onData(event)
+    }
+    channel.onclose = () => {
+      if (this._channel === channel) this.onDisconnected(new Error('peer data channel closed'))
+    }
   }
 
   public async setRemoteOffer(sdp: string) {
-    if (!this._peer) {
+    const peer = this._peer
+    const socket = this._ws
+    if (!peer || !socket) {
       this.emit('warn', `attempting to set remote offer while disconnected`)
       return
     }
 
-    await this._peer.setRemoteDescription({ type: 'offer', sdp })
+    await peer.setRemoteDescription({ type: 'offer', sdp })
+    if (this._peer !== peer || this._ws !== socket) return
 
-    for (const candidate of this._candidates) {
+    const candidates = this._candidates
+    for (const candidate of candidates) {
       try {
-        await this._peer.addIceCandidate(candidate)
+        await peer.addIceCandidate(candidate)
       } catch (err) {
         this.emit('warn', 'failed to add buffered rtc ice candidate', err)
       }
+      if (this._peer !== peer || this._ws !== socket) return
     }
-    this._candidates = []
+    if (this._candidates === candidates) {
+      this._candidates = []
+    }
+    if (this._peer !== peer || this._ws !== socket) return
 
     try {
-      const d = await this._peer.createAnswer()
+      const d = await peer.createAnswer()
+      if (this._peer !== peer || this._ws !== socket) return
 
       // add stereo=1 to answer sdp to enable stereo audio for chromium
       d.sdp = d.sdp?.replace(/(stereo=1;)?useinbandfec=1/, 'useinbandfec=1;stereo=1')
 
-      this._peer!.setLocalDescription(d)
+      peer.setLocalDescription(d)
+      if (this._peer !== peer || this._ws !== socket || socket.readyState !== WebSocket.OPEN) return
 
-      this._ws!.send(
+      socket.send(
         JSON.stringify({
           event: EVENT.SIGNAL.ANSWER,
           sdp: d.sdp,
@@ -485,15 +525,17 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   public async setRemoteAnswer(sdp: string) {
-    if (!this._peer) {
+    const peer = this._peer
+    if (!peer) {
       this.emit('warn', `attempting to set remote answer while disconnected`)
       return
     }
 
-    await this._peer.setRemoteDescription({ type: 'answer', sdp })
+    await peer.setRemoteDescription({ type: 'answer', sdp })
   }
 
-  private async onMessage(e: MessageEvent) {
+  private async onMessage(e: MessageEvent, socket: WebSocket) {
+    if (this._ws !== socket) return
     const { event, ...payload } = JSON.parse(e.data) as WebSocketMessages
 
     this.emit('debug', `received websocket event ${event} ${payload ? `with payload: ` : ''}`, payload)
@@ -502,6 +544,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       const { sdp, lite, ice, id } = payload as SignalProvidePayload
       this._id = id
       await this.createPeer(lite, ice)
+      if (this._ws !== socket) return
       await this.setRemoteOffer(sdp)
       return
     }
