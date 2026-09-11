@@ -263,6 +263,8 @@ Target-server acceptance remains pending. The compatibility block is not accepte
 
 The first target-server validation-image build at `637d259f` reached the Go compile step and exposed two stale imports removed from `server/pkg/types/capture.go` even though later capture-pipeline helpers still use `fmt` and `strings`. The follow-up restores those imports only; the complete container check and runtime matrix must be rerun at the resulting exact commit.
 
+At follow-up commit `5d68ef0b`, the validation image and its embedded server/plugin build succeeded. The expanded container test command then passed `pkg/types`, auth, capture, member, session, legacy HTTP, WebSocket and WebRTC, but `internal/media` stopped at compile time because one test retained an unused fake-backend binding. The next follow-up removes only that binding; the complete container command still requires a clean rerun because its trailing `./build` did not execute after the test-command failure.
+
 ## Target-server verification
 
 This phase is performed by the operator on the real server, not by Codex.

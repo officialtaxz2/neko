@@ -189,7 +189,7 @@ func TestDeliveryManagerRevokesOnProfileChangeAndSessionDelete(t *testing.T) {
 }
 
 func TestDeliveryManagerReplacesOnePrimaryDeliveryAndShutsDown(t *testing.T) {
-	manager, sessions, backend := newDeliveryTestManager(t)
+	manager, sessions, _ := newDeliveryTestManager(t)
 	member, _, err := sessions.Create("member", types.MemberProfile{CanLogin: true, CanConnect: true, CanWatch: true})
 	if err != nil {
 		t.Fatalf("Create() error: %v", err)
