@@ -1,0 +1,85 @@
+name: neko-validation
+
+services:
+  client-checks:
+    image: node:18-bullseye-slim
+    working_dir: /work
+    volumes:
+      - type: bind
+        source: .
+        target: /source
+        read_only: true
+    tmpfs:
+      - /work
+    command:
+      - sh
+      - -lc
+      - |
+        set -eux
+        cp -a /source/client /work/client
+        cd /work/client
+        npm ci
+        npm test
+        npm run lint
+        npm run build
+
+  server-checks:
+    image: my-neko/server-validation:testing
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      args:
+        GIT_COMMIT: "${NEKO_VALIDATION_COMMIT:-unknown}"
+        GIT_BRANCH: testing
+        GIT_TAG: ""
+    environment:
+      GIT_COMMIT: "${NEKO_VALIDATION_COMMIT:-unknown}"
+      GIT_BRANCH: testing
+      GIT_TAG: ""
+    working_dir: /src
+    command:
+      - sh
+      - -lc
+      - |
+        set -eux
+        go test ./pkg/types ./pkg/auth ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
+        ./build
+
+  metrics-snapshot:
+    image: alpine:latest
+    network_mode: host
+    environment:
+      NEKO_METRICS_URL: "${NEKO_METRICS_URL:-http://127.0.0.1:8082/metrics}"
+    command:
+      - sh
+      - -ec
+      - |
+        wget -qO- "$$NEKO_METRICS_URL" |
+          grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(connection_state|receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners))'
+
+  token-generator:
+    image: alpine:latest
+    network_mode: none
+    command:
+      - sh
+      - -ec
+      - |
+        dd if=/dev/urandom bs=32 count=1 2>/dev/null | od -An -tx1 | tr -d ' \n'
+        printf '\n'
+
+  view-only-http-checks:
+    image: python:3.12-alpine
+    network_mode: host
+    read_only: true
+    environment:
+      NEKO_BASE_URL: "${NEKO_BASE_URL:-http://127.0.0.1:8082}"
+      NEKO_VIEW_ONLY_TOKEN: "${NEKO_VIEW_ONLY_TOKEN:-}"
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - type: bind
+        source: ./deploy/check-view-only-http.py
+        target: /check-view-only-http.py
+        read_only: true
+    command:
+      - python
+      - /check-view-only-http.py

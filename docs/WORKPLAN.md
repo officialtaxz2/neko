@@ -1,6 +1,6 @@
 # Work Plan / Handoff State
 
-Last consolidated: 2026-09-10.
+Last consolidated: 2026-09-11.
 
 ## Environment boundary
 
@@ -203,6 +203,16 @@ This phase is performed by the operator on the real server, not by Codex.
 
 ### Client
 
+The grouped iOS/view-only checkpoint does not require Node.js or npm on the target host. From the repository root, the dedicated validation Compose file runs the complete client sequence in a short-lived Node container and keeps `node_modules`/`dist` off the host:
+
+```bash
+export NEKO_VALIDATION_COMMIT="$(git rev-parse HEAD)"
+docker compose -f docker-compose.validation.yaml pull client-checks
+docker compose -f docker-compose.validation.yaml run --rm client-checks
+```
+
+The container executes the following equivalent commands:
+
 ```bash
 cd client
 npm ci
@@ -217,19 +227,29 @@ For the accumulated iOS recovery and view-only blocks on `testing`, run all four
 
 ### Server and container
 
+The same checkpoint can run the focused Go tests and server/plugin build without Go on the host:
+
+```bash
+export NEKO_VALIDATION_COMMIT="$(git rev-parse HEAD)"
+docker compose -f docker-compose.validation.yaml build --pull server-checks
+docker compose -f docker-compose.validation.yaml run --rm server-checks
+```
+
+The container executes the following equivalent checks:
+
 ```bash
 cd server
 go test ./pkg/types ./pkg/auth ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
 ./build
 ```
 
-or:
+A standalone image build can additionally be run:
 
 ```bash
 docker build ./server
 ```
 
-When the target host has no Go installation, run the focused packages through the repository server image exactly as documented in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md); a Docker build alone does not execute those tests.
+It does not replace the focused tests. The complete copy/paste sequence, safe output capture, metrics helper and manual device/role phases are documented in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) and [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md).
 
 From the repository root, build the exact local base and Brave images referenced by Compose:
 

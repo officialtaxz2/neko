@@ -102,6 +102,8 @@ Do not run the application, install dependencies, execute builds/tests/linters, 
 
 Runtime verification happens separately on the real server. Known server-side commands and the verification matrix are documented in `AGENTS.md` and `docs/WORKPLAN.md`.
 
+For the grouped iOS/view-only checkpoint, [`docker-compose.validation.yaml`](docker-compose.validation.yaml) runs the client checks, focused Go tests/server build, metrics snapshots, token generation and HTTP denial probe in containers. The target host therefore needs no local Node.js/npm, Go or Python installation; the copy/paste sequence and manual device phases are in [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md) and [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md).
+
 `.env`, `files/`, `downloads/` and `policy.json` remain ignored and must not be committed.
 
 ## Product direction

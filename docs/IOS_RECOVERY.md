@@ -1,64 +1,202 @@
-# Bounded iOS Transient-Network Recovery
+# Begrenzte iOS-Wiederherstellung nach Netzunterbrechungen
 
-This document describes the client recovery path implemented on `testing` and the exact target-server procedure needed before making a no-reload iOS recovery claim. Runtime/build/device checks are not executed in Codex.
+Status: **auf `testing` implementiert und statisch geprüft; Docker-Builds und die iPhone-Laufzeitprüfung auf dem Zielserver stehen noch aus**.
 
-The next checkpoint runs this procedure and the ordinary/admin/view-only matrix in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md) against the same exact `testing` commit and image. Passing one procedure is not evidence for the other.
+Dieses Runbook ist für einen Linux-Zielserver gedacht, auf dem nur Git, Bash, Docker Engine und `docker compose` vorhanden sein müssen. Node.js, npm, Go und Python werden auf dem Host **nicht** benötigt. Die automatisierbaren Prüfungen laufen in kurzlebigen Containern über [`docker-compose.validation.yaml`](../docker-compose.validation.yaml).
 
-## Implemented recovery boundary
+Der Checkpoint muss gemeinsam mit der Drei-Rollen-Prüfung aus [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md) auf demselben Commit und demselben Neko-Image erfolgen. Ein bestandenes Runbook ist kein Nachweis für das andere.
 
-The client treats connection recovery and autoplay permission as separate state machines:
+## Was geprüft wird
 
-1. **Existing-peer recovery:** an ICE `disconnected` state keeps the current WebSocket, peer and server session alive for eight seconds. If ICE returns to `connected`/`completed`, the timer is cancelled and no new login is created.
-2. **Application-level reconnect:** if the WebSocket closes, ICE becomes `failed`/`closed`, or the eight-second ICE window expires, the old socket, peer, data channel, heartbeat, timers, candidates and media references are cleared. A session that had previously connected may then retry with its in-memory login values after 1, 2, 5 and 10 seconds. The four-attempt sequence is owned by one timer and cannot run in parallel.
-3. **Safari Play fallback:** once a recovered or replacement peer supplies media, the existing autoplay path first tries normal playback and then muted playback. If Safari still requires user activation, the central Play control remains visible. A required Play tap is a media-policy outcome, not a failed network reconnect.
+Die Implementierung trennt drei Zustände:
 
-Initial login failures do not start the retry sequence. Explicit logout, demo mode and every server-directed `system/disconnect` suppress it, preserving authentication and session intent. After exhaustion the populated login form remains available for a manual retry without reloading the page.
+1. **Bestehender Peer:** ICE darf sich acht Sekunden lang selbst erholen. Bei Erfolg bleiben WebSocket, Peer und Server-Session bestehen.
+2. **Neue Anwendungssession:** Ist der alte Peer nicht mehr verwendbar, werden Socket, Peer, Data Channel, Timer, Kandidaten und Medienreferenzen entfernt. Danach folgen höchstens vier serielle Loginversuche nach 1, 2, 5 und 10 Sekunden.
+3. **Safari-Play-Fallback:** Ist das Netz bereits wiederhergestellt und Media vorhanden, darf Safari noch eine Play-Geste verlangen. Dieser Tap ist eine Autoplay-Vorgabe und kein fehlgeschlagener Reconnect.
 
-Stale WebSocket, peer, data-channel and stream callbacks are identity-checked or detached so a delayed event from the replaced connection cannot tear down or populate the current one. Media-element `srcObject` recovery remains bounded and never calls `video.load()`.
+Initiale Loginfehler, explizites Logout, Demo-Modus und ein serverseitiges `system/disconnect` dürfen keine automatische Loginserie auslösen. Veraltete Callbacks dürfen eine neue Verbindung nicht verändern. Die Media-Element-Wiederherstellung bleibt begrenzt und verwendet niemals `video.load()`.
 
-## Static verification boundary
+## Übersicht des Ablaufs
 
-The extracted retry decision and delay schedule have dependency-free Node tests in `client/tests/recovery.test.mjs`. Run all commands below only on the real target server:
+| Block | Ausführung | Ergebnis |
+| --- | --- | --- |
+| 0 | Git/Bash auf dem Server | exakter Commit und Ergebnisordner |
+| 1 | Docker Compose | Client: `npm ci`, Recovery-Test, TypeScript-Lint, Vite-Build |
+| 2 | Docker Compose | fokussierte Go-Tests und Server-Build |
+| 3 | vorhandenes `./build` | lokaler Base-/Brave-Image-Build; intern vollständig containerisiert |
+| 4 | Docker Compose | adaptive Zielbereitstellung und Startnachweis |
+| A–C | reales iPhone plus zwei gesunde Zuschauer | Same-Peer-, Replacement- und Exhaustion-Test |
+
+Die Blöcke 0–4 werden für den gemeinsamen iOS/View-only-Checkpoint nur einmal ausgeführt.
+
+## Sicherheits- und Evidenzregeln
+
+- Niemals `.env`, Passwörter, den View-only-Token oder die Ausgabe eines nicht stillen `docker compose config` weitergeben.
+- Ausschließlich `docker compose ... config --quiet` verwenden.
+- Ergebnisdateien außerhalb des Repositorys ablegen; Session-IDs und Hostdetails können sensibel sein.
+- Alle Befehle aus dem Repository-Stamm ausführen.
+- Bei einem Fehler nicht weiterlaufen oder Werte verändern, sondern den vollständigen Block-Output übergeben.
+- Die folgenden Befehle verwenden absichtlich das bereits akzeptierte adaptive Overlay, damit die Regression der gesunden Zuschauer mitgeprüft wird. Wird bewusst nur das Basisprofil verwendet, müssen bei **allen** Compose-Befehlen `-f docker-compose.adaptive.yaml` und die tierbezogenen Akzeptanzpunkte entfallen; dies ist im Ergebnis zu vermerken.
+
+## Block 0 — exakten Checkpoint vorbereiten
+
+Diesen Block vollständig kopieren. Die Shell für die folgenden Blöcke geöffnet lassen, damit die exportierten Variablen erhalten bleiben.
 
 ```bash
+set -o pipefail
 git switch testing
 git pull --ff-only origin testing
 git status --short --branch
-git rev-parse HEAD
 
-cd client
-npm ci
-npm test
-npm run lint
-npm run build
-cd ..
+export NEKO_VALIDATION_COMMIT="$(git rev-parse HEAD)"
+export NEKO_RESULT_DIR="../neko-checkpoint-${NEKO_VALIDATION_COMMIT:0:12}-$(date -u +%Y%m%dT%H%M%SZ)"
+export NEKO_ROLLBACK_IMAGE="my-neko/brave:pre-ios-view-only-${NEKO_VALIDATION_COMMIT:0:12}"
+mkdir -p "$NEKO_RESULT_DIR"
+
+{
+  date -u +'%Y-%m-%dT%H:%M:%SZ'
+  git status --short --branch
+  git rev-parse HEAD
+  git rev-parse origin/testing
+  echo "rollback_image=$NEKO_ROLLBACK_IMAGE"
+  docker --version
+  docker compose version
+} 2>&1 | tee "$NEKO_RESULT_DIR/00-provenance.txt"
 ```
 
-Rebuild and recreate the deployment through the operator's normal `testing` procedure. For the tracked Brave deployment:
+Erwartung:
+
+- Branch `testing`;
+- Arbeitsbaum sauber;
+- `HEAD` und `origin/testing` identisch.
+
+Wenn `git status --short --branch` zusätzliche Dateiänderungen zeigt oder die beiden Hashes abweichen: stoppen und `00-provenance.txt` übergeben.
+
+## Block 1 — Client vollständig im Container prüfen
+
+Der Quellbaum wird read-only eingebunden und in ein temporäres Container-Dateisystem kopiert. `node_modules` und `dist` landen nicht auf dem Host.
 
 ```bash
-docker image tag my-neko/brave:latest my-neko/brave:pre-ios-recovery
-./build my-neko/base:latest -y
-./build my-neko/brave:latest -y
-docker compose config --quiet
-docker compose up -d --force-recreate
-docker compose ps
+(
+  set -e
+  docker compose -f docker-compose.validation.yaml config --quiet
+  docker compose -f docker-compose.validation.yaml pull client-checks
+  docker compose -f docker-compose.validation.yaml run --rm client-checks
+) 2>&1 | tee "$NEKO_RESULT_DIR/01-client-checks.txt"
 ```
 
-If the adaptive overlay is part of the grouped checkpoint, use both Compose files consistently instead. Do not print the resolved Compose model because it contains password values.
+Erwartung: `npm ci`, `npm test`, `npm run lint` und `npm run build` enden ohne Fehler. Dieser eine Block deckt alle Clientbefehle ab; nichts davon muss auf dem Host installiert sein.
 
-## Exact iPhone interruption procedure
+## Block 2 — Servertests und Server-Build im Container
 
-### Record before starting
+Der Compose-Service baut das Repository-`server/Dockerfile`, führt danach die fokussierten Pakete aus und startet `./build` nochmals im kurzlebigen Prüfcontainer.
 
-- exact `testing` commit and running image ID;
-- iPhone model, iOS version and Safari version;
-- whether Safari Web Inspector is available;
-- whether the base or adaptive Compose profile is active;
-- healthy desktop (`H1`), healthy iPad/second viewer (`H2`) and iPhone (`C`) session IDs;
-- initial muted/playing state and whether an initial Play tap was required.
+```bash
+(
+  set -e
+  docker compose -f docker-compose.validation.yaml build --pull server-checks
+  docker compose -f docker-compose.validation.yaml run --rm server-checks
+) 2>&1 | tee "$NEKO_RESULT_DIR/02-server-checks.txt"
+```
 
-Keep changing desktop content visible on all three viewers. If the adaptive overlay is active, snapshot `video_listeners`, connection state and peer-local drop counters before and after every phase. Keep server logs open and, when Web Inspector is available, retain client messages containing:
+Geprüfte Pakete:
+
+```text
+./pkg/types
+./pkg/auth
+./internal/member/multiuser
+./internal/session
+./internal/http/legacy
+./internal/websocket
+./internal/webrtc
+```
+
+Erwartung: sämtliche `go test`-Pakete melden Erfolg und der anschließende Server-/Plugin-Build endet ohne Fehler. Go muss auf dem Host nicht vorhanden sein.
+
+## Block 3 — Rollback-Image sichern und Zielimages bauen
+
+Die folgenden Befehle gehen vom dokumentierten Image `my-neko/brave:latest` aus und sichern es unter einem commitbezogenen Rollback-Tag. Falls `.env` absichtlich einen anderen `NEKO_IMAGE`-Namen verwendet, muss der Quellname ersetzt und `NEKO_ROLLBACK_IMAGE` vor diesem Block passend neu gesetzt werden.
+
+`./build` ist der vorhandene Repository-Wrapper. Er startet die erforderlichen Go-/Node-/Docker-Buildschritte selbst in Containern; npm oder Go werden dadurch nicht auf dem Host installiert.
+
+```bash
+(
+  set -e
+  docker image inspect --format 'source_image={{.RepoTags}} id={{.Id}} created={{.Created}}' my-neko/brave:latest
+  docker image tag my-neko/brave:latest "$NEKO_ROLLBACK_IMAGE"
+  ./build my-neko/base:latest -y
+  ./build my-neko/brave:latest -y
+  docker image inspect --format 'image={{.RepoTags}} id={{.Id}} created={{.Created}}' my-neko/brave:latest
+) 2>&1 | tee "$NEKO_RESULT_DIR/03-image-build.txt"
+```
+
+Erwartung: beide Builds erfolgreich; der abschließende Inspect zeigt das neu gebaute lokale Brave-Image.
+
+## Block 4 — adaptives Compose-Profil bereitstellen
+
+Für den gemeinsamen Checkpoint muss **vor diesem Block** der frische Token aus dem Abschnitt „Frischen Token ohne Host-OpenSSL erzeugen“ in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md) in `.env` eingetragen sein. Dieser Block gibt keine aufgelösten Umgebungswerte aus.
+
+```bash
+(
+  set -e
+  docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml config --quiet
+  docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml up -d --force-recreate
+  docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml ps
+  NEKO_CONTAINER_ID="$(docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml ps -q neko)"
+  docker inspect --format 'container={{.Name}} image={{.Config.Image}} image_id={{.Image}} started={{.State.StartedAt}} status={{.State.Status}}' "$NEKO_CONTAINER_ID"
+  docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs --since=5m --no-color neko
+) 2>&1 | tee "$NEKO_RESULT_DIR/04-deployment.txt"
+```
+
+Vor den Gerätetests muss Folgendes stimmen:
+
+- `neko` läuft ohne Neustartschleife;
+- das erwartete lokale Brave-Image wird verwendet;
+- kein Konfigurations-, GStreamer- oder Pluginfehler;
+- Profil, Downloads und Brave-Policy sind weiterhin vorhanden;
+- Admin- und Mitgliederlogin, Audio, Video und Kontrolle funktionieren;
+- das Policy-Ziel bleibt `/etc/brave/policies/managed/policies.json`.
+
+## Metrik-Snapshot ohne Host-Werkzeuge
+
+Der Hilfsservice verwendet auf dem Linux-Host das Hostnetz und liest standardmäßig `http://127.0.0.1:8082/metrics`:
+
+```bash
+docker compose -f docker-compose.validation.yaml run --rm metrics-snapshot
+```
+
+Wenn `NEKO_HTTP_PORT` nicht `8082` ist, vor dem Aufruf beispielsweise setzen:
+
+```bash
+export NEKO_METRICS_URL="http://127.0.0.1:ANDERER_PORT/metrics"
+```
+
+Die Ausgabe enthält nur die für Sessionzustand, Tierwahl, Bitrate und Peer-Drops relevanten Metriken, keine Compose-Geheimnisse.
+
+## Vor den iPhone-Phasen erfassen
+
+Benötigt werden drei gleichzeitig aktive Zuschauer mit sichtbar wechselndem Desktopinhalt:
+
+- `H1`: gesunder Desktop;
+- `H2`: gesunder iPad-/zweiter Zuschauer;
+- `C`: das zu prüfende iPhone.
+
+Manuell notieren:
+
+- Commit und Image-ID aus Block 0/4;
+- iPhone-Modell, iOS- und Safari-Version;
+- Verfügbarkeit des Safari Web Inspectors;
+- Session-IDs von H1, H2 und C;
+- anfänglicher Muted-/Playing-Zustand;
+- ob beim ersten Join ein Play-Tap erforderlich war.
+
+Baseline-Metriken speichern:
+
+```bash
+docker compose -f docker-compose.validation.yaml run --rm metrics-snapshot 2>&1 | tee "$NEKO_RESULT_DIR/10-ios-baseline.txt"
+```
+
+Im Safari Web Inspector nach Möglichkeit die Clientmeldungen mit diesen Texten erhalten:
 
 ```text
 peer ice connection state changed
@@ -69,49 +207,133 @@ connected
 Autoplay blocked
 ```
 
-### Phase A — existing peer recovers
+Ohne Web Inspector muss eine alternative Aufzeichnung die Anzahl paralleler/gestarteter Versuche eindeutig belegen. Reine Sichtbeobachtung genügt für die Vier-Versuche-Grenze nicht.
 
-1. Join `H1`, `H2` and then `C`; wait 60 seconds with video and audio working.
-2. Enable flight mode on `C` for five seconds, then disable it without reloading or touching the page.
-3. Observe for 60 seconds.
-4. Confirm that `C` returned on the same server session ID and that the client showed ICE `disconnected` followed by `connected`/`completed` without an application-reconnect attempt.
-5. Confirm `H1` and `H2` never reconnected, stalled or changed tier. If Safari shows Play after media returns, record and tap it once; do not classify that policy tap as an application reconnect.
+## Phase A — bestehender Peer erholt sich
 
-### Phase B — replacement session recovers without reload
+1. H1, dann H2, dann C verbinden und 60 Sekunden mit funktionierendem Audio/Video warten.
+2. Auf C Flugmodus für **5 Sekunden** einschalten, danach ausschalten.
+3. Weder Seite neu laden noch Login oder Play betätigen.
+4. 60 Sekunden beobachten.
+5. Erst wenn Media zurückgekehrt ist, einen eventuell sichtbaren zentralen Play-Button genau einmal betätigen und separat als Safari-Policy-Ergebnis notieren.
 
-1. With all viewers healthy again, enable flight mode on `C` for 15 seconds. If this device does not cross the ICE/WebSocket failure boundary in 15 seconds, extend only this interruption until the old peer is demonstrably closed or the ICE recovery timeout fires, and record the actual duration.
-2. Disable flight mode. Do not reload Safari, navigate, resubmit the login form or touch Play yet.
-3. Observe for up to 90 seconds. Confirm that exactly one reconnect attempt is in flight at a time and no more than four attempts start.
-4. Confirm a replacement session becomes connected and supplies video/audio. A new session ID is expected for this application-level login.
-5. If the central Play control appears only after media is available, record the autoplay-policy result and tap it once. Acceptance permits this standards-required gesture, but not a page reload or manual login.
-6. Confirm `H1` and `H2` remained usable and did not reconnect. Under the adaptive profile, both must remain on `high` and gain no peer-local video-drop delta.
+Danach ausführen:
 
-### Phase C — bounded exhaustion and manual recovery
+```bash
+docker compose -f docker-compose.validation.yaml run --rm metrics-snapshot 2>&1 | tee "$NEKO_RESULT_DIR/11-ios-phase-a.txt"
+docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs --since=10m --no-color neko 2>&1 | tee "$NEKO_RESULT_DIR/12-ios-phase-a-server.log"
+```
 
-1. Start from a healthy `C`, then keep it offline long enough for all four application retries to finish. Because each WebSocket/peer attempt may itself wait for the 15-second connection timeout, allow up to 90 seconds before declaring the sequence unbounded.
-2. Confirm the client logged no more than four `starting application reconnect attempt` messages and then stopped retrying.
-3. Restore connectivity. Confirm the populated login form can reconnect manually without a reload.
-4. From a healthy session, issue an admin kick or another intentional `system/disconnect`. Confirm that no automatic reconnect attempt follows. This is required evidence that recovery does not override server authorization/session decisions.
+Phase A besteht nur, wenn:
 
-## Acceptance criteria
+- C dieselbe Server-Session-ID behält;
+- ICE von `disconnected` nach `connected`/`completed` zurückkehrt;
+- kein `starting application reconnect attempt` erscheint;
+- H1/H2 nicht reconnecten, nicht stocken, auf `high` bleiben und keine neuen Video-Drops erhalten;
+- kein Reload verwendet wurde.
 
-The block can be described as target-server verified only when all of the following are recorded:
+## Phase B — Ersatzsession ohne Reload
 
-- Phase A recovers the same peer/session without reload.
-- Phase B creates at most one connection attempt at a time and restores media through a replacement session without reload or manual login.
-- No more than four application attempts occur in Phase C, and explicit server disconnect does not retry.
-- A central Play tap, if required, occurs only after media is present and is reported separately from network recovery.
-- Old session IDs disappear or become inactive; no stale callback tears down the replacement session.
-- `H1` and `H2` remain connected and usable throughout; adaptive runs also keep them on `high` with zero peer-local video-drop deltas.
-- Touch, trackpad, mobile keyboard/helper, orientation/fullscreen, mute/unmute, audio and control semantics still work after recovery.
-- No page reload is used in Phases A or B.
+1. Alle drei Zuschauer wieder vollständig stabilisieren.
+2. Auf C Flugmodus für **15 Sekunden** einschalten. Falls der alte Peer dadurch nicht geschlossen wird und auch der ICE-Timeout nicht auslöst, nur diese Unterbrechung verlängern, bis eine dieser Grenzen nachweislich erreicht ist; tatsächliche Dauer notieren.
+3. Flugmodus ausschalten. Nicht neu laden, nicht navigieren, Login nicht erneut absenden und Play zunächst nicht drücken.
+4. Bis zu 90 Sekunden beobachten.
+5. Nach vorhandenem Media einen eventuell notwendigen zentralen Play-Button einmal drücken und als Autoplay-Ergebnis notieren.
 
-Until this procedure passes on the target iPhone, the repository status is **implemented and statically reviewed, target-server no-reload behavior pending**.
+Danach ausführen:
+
+```bash
+docker compose -f docker-compose.validation.yaml run --rm metrics-snapshot 2>&1 | tee "$NEKO_RESULT_DIR/13-ios-phase-b.txt"
+docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs --since=15m --no-color neko 2>&1 | tee "$NEKO_RESULT_DIR/14-ios-phase-b-server.log"
+```
+
+Phase B besteht nur, wenn:
+
+- immer höchstens ein Reconnectversuch gleichzeitig läuft;
+- höchstens vier Versuche gestartet werden;
+- eine neue C-Session-ID entsteht und Audio/Video ohne Reload oder manuellen Login zurückkehren;
+- alte Session-IDs verschwinden oder inaktiv werden;
+- kein veralteter Callback die Ersatzsession wieder trennt;
+- H1/H2 durchgehend verwendbar bleiben, auf `high` bleiben und keine neuen Peer-Video-Drops erhalten.
+
+## Phase C — begrenztes Ausschöpfen und bewusster Disconnect
+
+1. C wieder gesund verbinden.
+2. C so lange offline halten, bis alle automatischen Versuche beendet sind. Wegen des 15-Sekunden-Verbindungstimeouts pro Versuch bis zu **90 Sekunden** warten.
+3. Prüfen, dass höchstens vier Meldungen `starting application reconnect attempt` vorkommen und danach keine weitere Aktivität folgt.
+4. Netz wiederherstellen. Das ausgefüllte Loginformular manuell absenden; kein Reload.
+5. Nach erfolgreicher Verbindung C durch einen Admin kicken oder einen anderen absichtlichen `system/disconnect` auslösen.
+6. Prüfen, dass danach kein automatischer Reconnect beginnt.
+
+Danach ausführen:
+
+```bash
+docker compose -f docker-compose.validation.yaml run --rm metrics-snapshot 2>&1 | tee "$NEKO_RESULT_DIR/15-ios-phase-c.txt"
+docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs --since=30m --no-color neko 2>&1 | tee "$NEKO_RESULT_DIR/16-ios-phase-c-server.log"
+```
+
+## Gemeinsame Regression nach der Wiederherstellung
+
+Nach Phase C auf C sowie H1/H2 prüfen:
+
+- Touch und Trackpad;
+- mobile Tastatur und Keyboard-Helper;
+- Orientierung und Vollbild;
+- Play, Mute/Unmute, Lautstärke und Audio;
+- normale Request/Grant/Release-/Admin-Kontrollsemantik;
+- Dateiübertragung mit den konfigurierten Mitglieds-/Adminrechten;
+- keine neue Störung der beiden gesunden Zuschauer.
+
+## Antwortvorlage für die iOS-Evidenz
+
+Zusammen mit den Dateien `00` bis `16` diese ausgefüllte Kurzfassung übergeben:
+
+```text
+IOS CHECKPOINT
+Commit:
+Image-ID:
+Profil: adaptive / base
+iPhone / iOS / Safari:
+Web Inspector verfügbar: ja / nein
+H1 / H2 / C Session-IDs vor Start:
+
+Phase A: PASS / FAIL
+C Session-ID vorher/nachher:
+ICE-Zustände:
+Application-Reconnectversuche:
+Play-Tap nötig: ja / nein
+H1/H2 Beobachtung und Drop-Deltas:
+
+Phase B: PASS / FAIL
+Unterbrechungsdauer:
+C Session-ID vorher/nachher:
+Gestartete Versuche und maximale Parallelität:
+Zeit bis Media zurück:
+Play-Tap nötig: ja / nein
+H1/H2 Beobachtung und Drop-Deltas:
+
+Phase C: PASS / FAIL
+Gesamtzahl gestarteter Versuche:
+Manueller Login ohne Reload erfolgreich: ja / nein
+Reconnect nach Admin-Kick/system disconnect: ja / nein
+
+Touch/Trackpad/Keyboard/Orientierung/Vollbild/Audio/Kontrolle/Dateien:
+Abweichungen oder Fehler:
+```
+
+Der Block ist erst zielserververifiziert, wenn alle Phasen und Regressionspunkte belegt sind. Bis dahin bleibt die Aussage: **implementiert und statisch geprüft; No-Reload-Verhalten auf dem Zielserver ausstehend**.
 
 ## Rollback
 
-Return to the pre-change `testing` commit or the preserved image tag, recreate the same Compose profile, and repeat login/playback/control smoke checks. The recovery change has no server configuration or persistent-data migration.
+Beim adaptiven Profil das gesicherte Image ohne Volume-Löschung starten:
+
+Falls inzwischen eine neue Shell geöffnet wurde, `NEKO_ROLLBACK_IMAGE` zuerst auf den in `00-provenance.txt` protokollierten Wert setzen.
 
 ```bash
-NEKO_IMAGE=my-neko/brave:pre-ios-recovery docker compose up -d --force-recreate
+docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml down
+NEKO_IMAGE="$NEKO_ROLLBACK_IMAGE" \
+  docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml up -d --force-recreate
+docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml ps
 ```
+
+Kein `down -v` verwenden. Die Recovery-Änderung benötigt keine Datenmigration. Nach einem Rollback Login, Video, Audio, Kontrolle, Profil und Policy erneut kurz prüfen.
