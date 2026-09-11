@@ -3,6 +3,7 @@ package webrtc
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"sync"
 	"time"
 
@@ -19,17 +20,21 @@ import (
 )
 
 type WebRTCPeerCtx struct {
-	mu         sync.Mutex
-	logger     zerolog.Logger
-	session    types.Session
-	metrics    *metrics
-	connection *webrtc.PeerConnection
+	mu           sync.Mutex
+	id           string
+	logger       zerolog.Logger
+	session      types.Session
+	done         chan struct{}
+	doneOnce     sync.Once
+	closeOnce    sync.Once
+	initialOffer *webrtc.SessionDescription
+	metrics      *metrics
+	connection   *webrtc.PeerConnection
 	// bandwidth estimator
 	estimator     cc.BandwidthEstimator
 	estimateTrend *utils.TrendDetector
-	// stream selectors
-	video types.StreamSelectorManager
-	audio types.StreamSinkManager
+	// backend-neutral encoded-media provider
+	media types.EncodedMediaProvider
 	// tracks & channels
 	audioTrack  *Track
 	videoTrack  *Track
@@ -109,17 +114,37 @@ func (peer *WebRTCPeerCtx) SetCandidate(candidate webrtc.ICECandidateInit) error
 
 // TODO: Add shutdown function?
 func (peer *WebRTCPeerCtx) Destroy() {
-	peer.mu.Lock()
-	defer peer.mu.Unlock()
+	peer.closeOnce.Do(func() {
+		peer.mu.Lock()
+		defer peer.mu.Unlock()
 
-	var err error
+		var err error
+		if peer.connection.ConnectionState() != webrtc.PeerConnectionStateClosed {
+			err = peer.connection.Close()
+		}
+		peer.logger.Err(err).Msg("peer connection destroyed")
+	})
+}
 
-	// if peer connection is not closed, close it
-	if peer.connection.ConnectionState() != webrtc.PeerConnectionStateClosed {
-		err = peer.connection.Close()
-	}
+func (peer *WebRTCPeerCtx) ID() string {
+	return peer.id
+}
 
-	peer.logger.Err(err).Msg("peer connection destroyed")
+func (peer *WebRTCPeerCtx) SessionID() string {
+	return peer.session.ID()
+}
+
+func (peer *WebRTCPeerCtx) Backend() string {
+	return "webrtc"
+}
+
+func (peer *WebRTCPeerCtx) Close() error {
+	peer.Destroy()
+	return nil
+}
+
+func (peer *WebRTCPeerCtx) Done() <-chan struct{} {
+	return peer.done
 }
 
 func (peer *WebRTCPeerCtx) estimatorReader() {
@@ -171,14 +196,14 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		direction := peer.estimateTrend.GetDirection()
 
 		// get current stream bitrate
-		stream, ok := peer.videoTrack.Stream()
+		stream, ok := peer.videoTrack.Source()
 		if !ok {
 			debugLogger.Warn().Msg("looks like we don't have a stream yet, skipping bitrate estimation")
 			continue
 		}
 
 		// if stream bitrate is 0, we need to wait for some time until we get a valid value
-		streamId, streamBitrate := stream.ID(), stream.Bitrate()
+		streamId, streamBitrate := stream.ID, stream.Bitrate
 		if streamBitrate == 0 {
 			debugLogger.Warn().Msg("looks like stream bitrate is 0, we need to wait for some time")
 			continue
@@ -285,22 +310,22 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		// Resolve the next stream before applying the upgrade threshold. When the
 		// next stream declares a nominal rate, compare the estimate with the rate
 		// we are about to select instead of the content-dependent current rate.
-		upgradeStream, ok := peer.video.GetStream(types.StreamSelector{
+		upgradeStream, ok := types.SelectMediaSource(peer.media.Sources(types.MediaKindVideo), types.MediaSelector{
 			ID:   streamId,
-			Type: types.StreamSelectorTypeHigher,
+			Type: types.MediaSelectorTypeHigher,
 		})
 		if !ok {
 			debugLogger.Info().Msg("looks like we are already on the highest stream")
 			continue
 		}
 
-		upgradeNominalBitrate := streamNominalBitrate(upgradeStream)
+		upgradeNominalBitrate := upgradeStream.NominalBitrate
 		upgradeReferenceBitrate := referenceBitrateForUpgrade(streamBitrate, upgradeNominalBitrate)
 		if !estimatedBitrateSupportsUpgrade(targetBitrate, upgradeReferenceBitrate, conf.UpgradeDiffThreshold) {
 			debugLogger.Debug().
 				Float64("current_stream_diff", diff).
 				Float64("upgrade_diff", float64(targetBitrate)/float64(upgradeReferenceBitrate)).
-				Str("upgrade_stream_id", upgradeStream.ID()).
+				Str("upgrade_stream_id", upgradeStream.ID).
 				Uint64("upgrade_reference_bitrate", upgradeReferenceBitrate).
 				Bool("nominal_reference", upgradeNominalBitrate != 0).
 				Float64("threshold", conf.UpgradeDiffThreshold).
@@ -311,7 +336,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 
 		err := peer.SetVideo(types.PeerVideoRequest{
 			Selector: &types.StreamSelector{
-				ID: upgradeStream.ID(),
+				ID: upgradeStream.ID,
 			},
 		})
 		if err != nil && err != types.ErrWebRTCStreamNotFound {
@@ -323,14 +348,6 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			debugLogger.Info().Msg("upgraded video stream")
 		}
 	}
-}
-
-func streamNominalBitrate(stream types.StreamSinkManager) uint64 {
-	provider, ok := stream.(types.StreamSinkNominalBitrateProvider)
-	if !ok {
-		return 0
-	}
-	return provider.NominalBitrate()
 }
 
 func referenceBitrateForUpgrade(measuredBitrate, nominalBitrate uint64) uint64 {
@@ -400,20 +417,19 @@ func (peer *WebRTCPeerCtx) SetVideo(r types.PeerVideoRequest) error {
 		selector := *r.Selector
 
 		// get requested video stream from selector
-		stream, ok := peer.video.GetStream(selector)
-		if !ok {
-			return types.ErrWebRTCStreamNotFound
-		}
-
-		// set video stream to track
-		changed, err := peer.videoTrack.SetStream(stream)
+		// Resolve and set the encoded source behind the backend-neutral provider.
+		changed, err := peer.videoTrack.SetSource(peer.media, selector)
 		if err != nil {
+			if errors.Is(err, types.ErrMediaSourceNotFound) {
+				return types.ErrWebRTCStreamNotFound
+			}
 			return err
 		}
 
 		// update only if stream changed
 		if changed {
-			videoID := stream.ID()
+			stream, _ := peer.videoTrack.Source()
+			videoID := stream.ID
 			peer.metrics.SetVideoID(videoID)
 
 			peer.logger.Info().Str("video_id", videoID).Msg("set video")
@@ -457,9 +473,9 @@ func (peer *WebRTCPeerCtx) Video() types.PeerVideo {
 
 	// get current video stream ID
 	ID := ""
-	stream, ok := peer.videoTrack.Stream()
+	stream, ok := peer.videoTrack.Source()
 	if ok {
-		ID = stream.ID()
+		ID = stream.ID
 	}
 
 	return types.PeerVideo{

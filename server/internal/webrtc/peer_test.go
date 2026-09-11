@@ -1,19 +1,6 @@
 package webrtc
 
-import (
-	"testing"
-
-	"github.com/m1k1o/neko/server/pkg/types"
-)
-
-type nominalBitrateStream struct {
-	types.StreamSinkManager
-	bitrate uint64
-}
-
-func (stream nominalBitrateStream) NominalBitrate() uint64 {
-	return stream.bitrate
-}
+import "testing"
 
 func TestEstimatedBitrateSupportsUpgrade(t *testing.T) {
 	tests := []struct {
@@ -75,17 +62,5 @@ func TestReferenceBitrateForUpgrade(t *testing.T) {
 	}
 	if got, want := referenceBitrateForUpgrade(200_000, 0), uint64(200_000); got != want {
 		t.Fatalf("measured fallback = %d, want %d", got, want)
-	}
-}
-
-func TestStreamNominalBitrateIsOptional(t *testing.T) {
-	withNominal := nominalBitrateStream{bitrate: 748_800}
-	if got, want := streamNominalBitrate(withNominal), uint64(748_800); got != want {
-		t.Fatalf("nominal stream bitrate = %d, want %d", got, want)
-	}
-
-	withoutNominal := struct{ types.StreamSinkManager }{}
-	if got := streamNominalBitrate(withoutNominal); got != 0 {
-		t.Fatalf("stream without nominal bitrate = %d, want 0", got)
 	}
 }

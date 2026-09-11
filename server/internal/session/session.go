@@ -31,6 +31,9 @@ type SessionCtx struct {
 
 	webrtcPeer types.WebRTCPeer
 	webrtcMu   sync.Mutex
+
+	mediaDelivery types.MediaDelivery
+	mediaMu       sync.Mutex
 }
 
 func (session *SessionCtx) ID() string {
@@ -51,10 +54,10 @@ func (session *SessionCtx) profileChanged() {
 		// otherwise webrtc destroy would trigger websocket reconnect. In case of kick event, webrtc destroy is called
 		// before websocket destroy that delivers the information about the kick.
 		time.AfterFunc(time.Second, func() {
-			// The peer may have been removed if the user disconnected while
+			// The delivery may have been removed if the user disconnected while
 			// waiting for the delayed teardown.
-			if webrtcPeer := session.GetWebRTCPeer(); webrtcPeer != nil {
-				webrtcPeer.Destroy()
+			if delivery := session.GetMediaDelivery(); delivery != nil {
+				_ = delivery.Close()
 			}
 		})
 	}
@@ -63,9 +66,9 @@ func (session *SessionCtx) profileChanged() {
 		session.DestroyWebSocketPeer("profile changed")
 	}
 
-	// update webrtc paused state
-	if webrtcPeer := session.GetWebRTCPeer(); webrtcPeer != nil {
-		webrtcPeer.SetPaused(session.PrivateModeEnabled())
+	// update receive-media paused state independently from its backend
+	if delivery := session.GetMediaDelivery(); delivery != nil {
+		_ = delivery.SetPaused(session.PrivateModeEnabled())
 	}
 }
 
@@ -275,9 +278,18 @@ func (session *SessionCtx) SetWebRTCPeer(webrtcPeer types.WebRTCPeer) {
 func (session *SessionCtx) SetWebRTCConnected(webrtcPeer types.WebRTCPeer, connected bool) {
 	session.webrtcMu.Lock()
 	isCurrentPeer := webrtcPeer == session.webrtcPeer
+	if isCurrentPeer && !connected {
+		session.webrtcPeer = nil
+	}
 	session.webrtcMu.Unlock()
 
 	if !isCurrentPeer {
+		return
+	}
+	if delivery, ok := webrtcPeer.(types.MediaDelivery); ok {
+		if session.SetMediaDeliveryActive(delivery, connected) && !connected {
+			session.Send(event.SIGNAL_CLOSE, nil)
+		}
 		return
 	}
 
@@ -301,16 +313,7 @@ func (session *SessionCtx) SetWebRTCConnected(webrtcPeer types.WebRTCPeer, conne
 		return
 	}
 
-	session.webrtcMu.Lock()
-	isCurrentPeer = webrtcPeer == session.webrtcPeer
-	if isCurrentPeer {
-		session.webrtcPeer = nil
-	}
-	session.webrtcMu.Unlock()
-
-	if isCurrentPeer {
-		session.Send(event.SIGNAL_CLOSE, nil)
-	}
+	session.Send(event.SIGNAL_CLOSE, nil)
 }
 
 // Get current WebRTC peer. Nil if not connected.
@@ -319,4 +322,53 @@ func (session *SessionCtx) GetWebRTCPeer() types.WebRTCPeer {
 	defer session.webrtcMu.Unlock()
 
 	return session.webrtcPeer
+}
+
+// ---
+// backend-neutral receive media
+// ---
+
+func (session *SessionCtx) SetMediaDelivery(delivery types.MediaDelivery) {
+	session.mediaMu.Lock()
+	previous := session.mediaDelivery
+	session.mediaDelivery = delivery
+	session.mediaMu.Unlock()
+
+	if previous != nil && previous != delivery {
+		_ = previous.Close()
+	}
+}
+
+func (session *SessionCtx) SetMediaDeliveryActive(delivery types.MediaDelivery, active bool) bool {
+	session.mediaMu.Lock()
+	isCurrent := delivery != nil && delivery == session.mediaDelivery
+	if isCurrent && !active {
+		session.mediaDelivery = nil
+	}
+	session.mediaMu.Unlock()
+	if !isCurrent {
+		return false
+	}
+
+	session.logger.Info().
+		Str("backend", delivery.Backend()).
+		Bool("active", active).
+		Msg("set media delivery active")
+
+	session.state.IsWatching = active
+	if now := time.Now(); active {
+		session.state.WatchingSince = &now
+		session.state.NotWatchingSince = nil
+	} else {
+		session.state.WatchingSince = nil
+		session.state.NotWatchingSince = &now
+	}
+	session.manager.emmiter.Emit("state_changed", session)
+	return true
+}
+
+func (session *SessionCtx) GetMediaDelivery() types.MediaDelivery {
+	session.mediaMu.Lock()
+	defer session.mediaMu.Unlock()
+	return session.mediaDelivery
 }

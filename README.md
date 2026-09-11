@@ -22,6 +22,10 @@ Repository implementation is listed here independently of runtime validation. Th
 - Stale WebSocket/peer/data-channel callbacks and old stream timers are isolated from a replacement connection; Safari's central Play fallback remains separate from network recovery.
 - Optional server-enforced view-only sharing through the compact `#/<16-character-Base64URL-token>` route: the 96-bit passive bearer remains outside normal HTTP request targets, while the session stays in the same room and receives WebRTC media and every interactive boundary remains denied.
 - View-only authorization is represented by a backend-neutral session marker; share sessions are not persisted, and token rotation/removal plus service recreation is the explicit revocation boundary.
+- Pure encoded-media descriptors/events, a capture-backed provider with bounded source subscriptions and a central participant-delivery registry now separate shared capture demand from per-session transport delivery.
+- The existing WebRTC sender is the first delivery backend behind that boundary. Its signaling, data channels, adaptive selection, effective two-sample drop-new queue, per-session metrics, authorization and deployment defaults remain unchanged by design.
+- GStreamer PTS/DTS, format metadata, source generations, keyframe admission and explicit discontinuities are carried through the new provider contract; published media buffers are immutable and slow subscriptions drop locally.
+- Generic session watching state is owned by the active participant delivery rather than by WebRTC-named lifecycle code; backend leases expose no login/share credential.
 - Demo-mode client infrastructure.
 - Per-peer non-blocking media sample delivery so one backpressured WebRTC track does not block dispatch to other tracks.
 - Multi-pipeline stream-selection and per-peer bandwidth-estimator infrastructure; the legacy protocol path requests automatic selection when configured.
@@ -62,9 +66,11 @@ Do not perform a blind upstream overwrite.
 
 The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`. The full view-only boundary, real inbound-media denial and revocation passed at `80eeca64`; containerized client/server checks, image build/deployment, the HTTP denial probe and the compact `#/<16-character-token>` browser smoke check then passed at exact commit `913a981e`. On 2026-09-11 the operator deliberately closed the grouped checkpoint without the manual iPhone deep test because no Safari Web Inspector/Mac was available and the automated evidence was accepted as sufficient for this deployment decision. This is not evidence that same-peer, replacement-session or bounded-exhaustion recovery works on a real iPhone without reload.
 
+The backend-neutral media-subscription/WebRTC compatibility refactor is implemented and statically reviewed on `testing`. It adds no client-visible transport or configuration and was not built or runtime-tested in Codex. Its focused server tests, image build and ordinary/admin/view-only/adaptive target-server regression checkpoint remain pending before any alternative-backend prototype begins.
+
 ## NEXT
 
-Continue exclusively on `testing`: implement the no-new-transport compatibility refactor in [`docs/MEDIA_SUBSCRIPTION_BOUNDARY.md`](docs/MEDIA_SUBSCRIPTION_BOUNDARY.md). Introduce backend-neutral encoded-media/source-subscription and participant-delivery contracts, then migrate the existing WebRTC sender without changing its protocol, defaults, queue/drop behavior or authorization. WebCodecs/WebSocket and HLS remain later opt-in prototypes. `master` remains pinned at the accepted stable baseline until the operator explicitly authorizes a later grouped promotion.
+Continue exclusively on `testing`: validate the implemented no-new-transport compatibility refactor from [`docs/MEDIA_SUBSCRIPTION_BOUNDARY.md`](docs/MEDIA_SUBSCRIPTION_BOUNDARY.md) on the target server. Run the focused media/capture/WebRTC/session tests and server/plugin build, rebuild the local image, then repeat the ordinary/admin/view-only and adaptive-quality smoke checks. WebCodecs/WebSocket and HLS remain later opt-in prototypes until this compatibility block is accepted. `master` remains pinned at the accepted stable baseline until the operator explicitly authorizes a later grouped promotion.
 
 See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md), [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md), [`docs/MEDIA_SUBSCRIPTION_BOUNDARY.md`](docs/MEDIA_SUBSCRIPTION_BOUNDARY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 

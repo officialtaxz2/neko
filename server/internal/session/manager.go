@@ -168,8 +168,8 @@ func (manager *SessionManagerCtx) Delete(id string) error {
 		session.DestroyWebSocketPeer("session deleted")
 	}
 
-	if session.State().IsWatching {
-		session.GetWebRTCPeer().Destroy()
+	if delivery := session.GetMediaDelivery(); delivery != nil {
+		_ = delivery.Close()
 	}
 
 	manager.emmiter.Emit("deleted", session)
@@ -191,8 +191,8 @@ func (manager *SessionManagerCtx) Disconnect(id string) error {
 		session.DestroyWebSocketPeer("session disconnected")
 	}
 
-	if session.State().IsWatching {
-		session.GetWebRTCPeer().Destroy()
+	if delivery := session.GetMediaDelivery(); delivery != nil {
+		_ = delivery.Close()
 	}
 
 	return nil
@@ -448,9 +448,9 @@ func (manager *SessionManagerCtx) updateSettings(session types.Session, new, old
 				session.ClearHost()
 			}
 
-			// its webrtc connection will be paused or unpaused
-			if webrtcPeer := s.GetWebRTCPeer(); webrtcPeer != nil {
-				webrtcPeer.SetPaused(enabled)
+			// its receive-media delivery will be paused or unpaused
+			if delivery := s.GetMediaDelivery(); delivery != nil {
+				_ = delivery.SetPaused(enabled)
 			}
 		}
 	}

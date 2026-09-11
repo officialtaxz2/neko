@@ -104,6 +104,26 @@ The integrated upstream server additionally contains:
 - an optional host-authorized `openinapp` plugin;
 - XInput-device keyboard dispatch for Firefox/GDK3 compatibility.
 
+The compatibility refactor on `testing` adds an internal transport-neutral media layer without adding a client-visible transport:
+
+```text
+GStreamer appsink
+    -> timestamped types.Sample compatibility input
+    -> capture-backed EncodedMediaProvider
+    -> bounded MediaSubscription event queue
+    -> authorized MediaDeliveryManager lease
+    -> WebRTC backend adapter
+    -> Pion TrackLocalStaticSample
+```
+
+`server/pkg/types/media.go` contains only codec/source descriptions, encoded units, lifecycle events, selectors and provider/delivery interfaces; it imports no Pion type. `server/internal/capture/media.go` adapts the existing demand-driven stream sinks, owns keyframe admission and source changes, and publishes format, unit, discontinuity and end events. GStreamer exposes PTS, DTS, duration and caps-derived dimensions/frame rate; each pipeline creation advances a source generation and sequence. The provider aligns valid GStreamer timestamps with one manager-owned timeline and preserves the Go arrival timestamp only as `CapturedAt` for the existing Pion compatibility field.
+
+`server/internal/media/manager.go` is the only participant-facing delivery registry. It checks the current authenticated session and `CanWatch`, intersects requests with registered backend capabilities, issues a backend/session-scoped lease with no credential access, keeps one primary delivery per session and owns replacement, revocation, shutdown and generic watching state. View-only sessions pass the same receive authorization because their normalized profile retains `CanWatch`; no delivery capability grants input, control, plugins or media publication.
+
+WebRTC remains a compatibility backend as well as the current control-data transport. Its private `CreatePeer` path therefore carries the already-authenticated concrete session only in the call context needed to preserve signaling, data-channel authorization and session events. The adapter has no general session-manager dependency, and neither the generic backend request nor its lease exposes a login/share credential.
+
+The migrated WebRTC track has no sample channel of its own. It consumes the provider subscription directly with the existing effective capacity of two encoded units and drop-new overflow. The existing `neko_webrtc_track_dropped_samples_total` callback remains peer-local, while new low-cardinality `neko_media_*` metrics expose subscription demand, queue observations, deliveries, bytes/units, drops, discontinuities and source generation.
+
 The adaptive-quality follow-up adds bit/s stream-rate accounting aligned with the estimator, a per-pipeline bitrate gauge, and peer-local sample-drop counters labeled by session and media kind. The operator confirmed the server-image build and focused bitrate/nominal-rate/estimator tests, then observed plausible pipeline bit/s values and peer-local metrics during three-viewer target-server runs.
 
 The non-blocking queue and unlocked fan-out establish code-level slow-peer isolation: a backpressured peer drops its own samples instead of blocking capture dispatch. The drop path now increments `neko_webrtc_track_dropped_samples_total`, making cross-peer behavior distinguishable without trace logs.
@@ -112,7 +132,7 @@ The estimator compares Pion's per-peer target against the current stream bitrate
 
 Target-server impairment runs then exposed an asymmetric decision requirement. Downgrade needs to ask whether the current tier still fits, while upgrade needs enough capacity for the next tier. Reusing one 0.15 current-tier threshold allowed premature upward oscillation. The server now has a separate `upgrade_diff_threshold`, defaulting to the old 0.15 behavior for compatibility. Measurement-led constrained-tier rates made both shaped phases mostly usable, but one low-to-medium excursion remained because upgrade still referenced the content-dependent measured current rate. Video pipelines can now declare `nominal_bitrate`; before an upgrade the estimator uses the next tier's stable nominal value when present and retains the current measured-rate fallback when absent. The final target-server rerun held the constrained viewer on `low`, then recovered it through `medium` to `high`; the opt-in profile was accepted for that bounded scenario. The stable deployment and existing configurations remain behaviorally unchanged.
 
-The current fork relies on Neko's WebRTC server model. Issue #690 alternative media prototypes are not established backends in this fork.
+The current fork still relies on Neko's WebRTC server model. WebRTC is merely the first registered adapter behind the new boundary; issue #690 alternative media prototypes are not established backends in this fork.
 
 The view-only follow-up adds a transport-independent `MemberProfile.IsViewOnly` marker and a fixed multi-user share profile. The marker is normalized before login-lock evaluation and whenever sessions are created or updated. Server enforcement then applies at the authenticated HTTP routes, current and legacy WebSocket dispatchers, both WebRTC data-channel formats, inbound media tracks, host assignment and plugin managers. Only heartbeat and receive-media signalling cross the passive WebSocket boundary; only data-channel ping crosses the modern passive data boundary. Passive sessions cannot be persisted or restored.
 
@@ -180,9 +200,9 @@ shared capture / encoder outputs
 
 The control/session/auth path must remain independent enough that a receive-only backend does not gain control capability. A passive viewer can therefore use HTTP-streaming media while remaining in the same logical Neko room.
 
-The concrete boundary is now designed in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It distinguishes a backend subscription to an encoded source from the authorized delivery attached to a participant: WebRTC or a media WebSocket may subscribe per participant, while an HLS packager may subscribe once per active variant and issue separate short-lived viewer leases. A central delivery manager checks `CanWatch`; backends never receive login/share credentials or authority over control, plugins or member profiles.
+The concrete boundary is implemented in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It distinguishes a backend subscription to an encoded source from the authorized delivery attached to a participant: WebRTC subscribes per participant now; a later media WebSocket may do the same, while a later HLS packager may subscribe once per active variant and issue separate short-lived viewer leases. The central delivery manager checks `CanWatch`; backends never receive login/share credentials or authority over control, plugins or member profiles.
 
-The design also closes gaps in the current `types.Sample`/`SampleListener` seam: format metadata, real GStreamer PTS/DTS, a monotonic timeline, generations and discontinuities become explicit; subscriber queues are bounded and non-blocking; and generic session watching state no longer depends on the name `WebRTC`. This is **DESIGNED**, not implemented. The first implementation must migrate WebRTC behind the new contract without adding a new transport or changing current defaults.
+The implementation closes the planned gaps in the former WebRTC-facing `types.Sample`/`SampleListener` seam: format metadata, real GStreamer PTS/DTS, a manager-owned timeline, generations and discontinuities are explicit; subscriber queues are bounded and non-blocking; and generic session watching state no longer depends on the name `WebRTC`. Legacy stream-sink types remain capture-internal compatibility machinery, while WebRTC depends only on `EncodedMediaProvider`/`MediaSubscription`. No new transport, public API or configuration was added.
 
 This architecture is directionally aligned with upstream issue #371, which explicitly lists `m3u8`/HLS, WebRTC, QUIC and other media backends and proposes selecting them according to user-device, network and server capabilities.
 
@@ -199,4 +219,4 @@ The source-subscription and participant-delivery interface semantics are decided
 
 Architecture/runtime claims beyond repository inspection must be verified on the real target server, not in Codex. Codex should prepare server-side validation steps but must not execute the application, builds, tests, Docker or media/device checks.
 
-The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction, diagnostics and next-tier nominal upgrade gate were subsequently built, focused-tested and accepted on 2026-09-10 for the documented three-viewer target-server scenario. The view-only boundary, real inbound-media denial and revocation passed through `80eeca64`; exact-commit client/server checks, deployment, HTTP probe and compact-link browser smoke then passed at `913a981e`. The operator closed that grouped checkpoint without executing the manual iPhone deep test, so no no-reload iPhone claim is made. The new media-subscription work is documentation/design only and has no runtime verification requirement until its first code implementation. Codex did not execute any runtime checks.
+The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction, diagnostics and next-tier nominal upgrade gate were subsequently built, focused-tested and accepted on 2026-09-10 for the documented three-viewer target-server scenario. The view-only boundary, real inbound-media denial and revocation passed through `80eeca64`; exact-commit client/server checks, deployment, HTTP probe and compact-link browser smoke then passed at `913a981e`. The operator closed that grouped checkpoint without executing the manual iPhone deep test, so no no-reload iPhone claim is made. The media-subscription/WebRTC compatibility refactor is now implemented and statically reviewed in the repository, but its focused tests, build, image and runtime regression checks remain target-server work. Codex did not execute any runtime checks.

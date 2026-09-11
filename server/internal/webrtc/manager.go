@@ -1,6 +1,7 @@
 package webrtc
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -50,7 +51,12 @@ const (
 	rtcpPLIInterval = 3 * time.Second
 )
 
-func New(desktop types.DesktopManager, capture types.CaptureManager, config *config.WebRTC) *WebRTCManagerCtx {
+func New(
+	desktop types.DesktopManager,
+	capture types.CaptureManager,
+	deliveries types.MediaDeliveryManager,
+	config *config.WebRTC,
+) *WebRTCManagerCtx {
 	logger := log.With().Str("module", "webrtc").Logger()
 
 	configuration := webrtc.Configuration{
@@ -86,6 +92,8 @@ func New(desktop types.DesktopManager, capture types.CaptureManager, config *con
 
 		desktop:     desktop,
 		capture:     capture,
+		deliveries:  deliveries,
+		media:       capture.Media(),
 		curImage:    cursor.NewImage(logger, desktop),
 		curPosition: cursor.NewPosition(logger),
 	}
@@ -99,6 +107,8 @@ type WebRTCManagerCtx struct {
 
 	desktop     types.DesktopManager
 	capture     types.CaptureManager
+	deliveries  types.MediaDeliveryManager
+	media       types.EncodedMediaProvider
 	curImage    cursor.Image
 	curPosition cursor.Position
 
@@ -169,6 +179,33 @@ func (manager *WebRTCManagerCtx) Shutdown() error {
 
 func (manager *WebRTCManagerCtx) ICEServers() []types.ICEServer {
 	return manager.config.ICEServersFrontend
+}
+
+func (manager *WebRTCManagerCtx) Name() string {
+	return "webrtc"
+}
+
+func (manager *WebRTCManagerCtx) Capabilities() types.MediaBackendCapabilities {
+	return types.MediaBackendCapabilities{
+		ReceiveAudio:        true,
+		ReceiveVideo:        true,
+		ServerSideSelection: true,
+		NativeAdaptive:      false,
+		PublishMedia:        true,
+	}
+}
+
+type webRTCSessionContextKey struct{}
+
+func (manager *WebRTCManagerCtx) Open(ctx context.Context, lease types.MediaLease, _ types.MediaDeliveryRequest) (types.MediaDelivery, error) {
+	if ctx == nil {
+		return nil, types.ErrMediaDeliveryNotAllowed
+	}
+	session, ok := ctx.Value(webRTCSessionContextKey{}).(types.Session)
+	if !ok || session.ID() != lease.SessionID() || !session.Profile().CanWatch {
+		return nil, types.ErrMediaDeliveryNotAllowed
+	}
+	return manager.openPeer(session, lease)
 }
 
 func (manager *WebRTCManagerCtx) newPeerConnection(logger zerolog.Logger, codecs []codec.RTPCodec) (*webrtc.PeerConnection, cc.BandwidthEstimator, error) {
@@ -269,6 +306,28 @@ func (manager *WebRTCManagerCtx) newPeerConnection(logger zerolog.Logger, codecs
 }
 
 func (manager *WebRTCManagerCtx) CreatePeer(session types.Session) (*webrtc.SessionDescription, types.WebRTCPeer, error) {
+	if session == nil {
+		return nil, nil, types.ErrMediaDeliveryNotAllowed
+	}
+	ctx := context.WithValue(context.Background(), webRTCSessionContextKey{}, session)
+	delivery, err := manager.deliveries.Open(ctx, session, types.MediaDeliveryRequest{
+		Backend: manager.Name(),
+		Audio:   true,
+		Video:   true,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	peer, ok := delivery.(*WebRTCPeerCtx)
+	if !ok {
+		_ = delivery.Close()
+		return nil, nil, errors.New("webrtc backend returned an incompatible delivery")
+	}
+	session.SetWebRTCPeer(peer)
+	return peer.initialOffer, peer, nil
+}
+
+func (manager *WebRTCManagerCtx) openPeer(session types.Session, lease types.MediaLease) (*WebRTCPeerCtx, error) {
 	id := atomic.AddInt32(&manager.peerId, 1)
 
 	// get metrics for session
@@ -279,18 +338,26 @@ func (manager *WebRTCManagerCtx) CreatePeer(session types.Session) (*webrtc.Sess
 	logger := manager.logger.With().Str("session_id", session.ID()).Int32("peer_id", id).Logger()
 	logger.Info().Msg("creating webrtc peer")
 
-	// all audios must have the same codec
-	audio := manager.capture.Audio()
-	audioCodec := audio.Codec()
-
-	// all videos must have the same codec
-	video := manager.capture.Video()
-	videoCodec := video.Codec()
+	audioSources := manager.media.Sources(types.MediaKindAudio)
+	videoSources := manager.media.Sources(types.MediaKindVideo)
+	if len(audioSources) == 0 || len(videoSources) == 0 {
+		return nil, types.ErrMediaSourceNotFound
+	}
+	audioSource := audioSources[0]
+	videoSource := videoSources[0]
+	audioCodec, err := rtpCodecFromMediaSource(audioSource)
+	if err != nil {
+		return nil, err
+	}
+	videoCodec, err := rtpCodecFromMediaSource(videoSource)
+	if err != nil {
+		return nil, err
+	}
 
 	connection, estimator, err := manager.newPeerConnection(
 		logger, []codec.RTPCodec{audioCodec, videoCodec})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// asynchronously send local ICE Candidates
@@ -310,25 +377,28 @@ func (manager *WebRTCManagerCtx) CreatePeer(session types.Session) (*webrtc.Sess
 	}
 
 	// audio track
-	audioTrack, err := NewTrack(logger, audioCodec, connection, WithMetrics(metrics))
+	audioTrack, err := NewTrack(logger, audioSource, connection, WithMetrics(metrics))
 	if err != nil {
-		return nil, nil, err
+		_ = connection.Close()
+		return nil, err
 	}
 
 	// we disable audio by default manually
 	audioTrack.SetPaused(true)
 
 	// set stream for audio track
-	_, err = audioTrack.SetStream(audio)
+	_, err = audioTrack.SetSource(manager.media, types.MediaSelector{ID: audioSource.ID})
 	if err != nil {
-		return nil, nil, err
+		_ = connection.Close()
+		return nil, err
 	}
 
 	// video track
 	videoRtcp := make(chan []rtcp.Packet, 1)
-	videoTrack, err := NewTrack(logger, videoCodec, connection, WithRtcpChan(videoRtcp), WithMetrics(metrics))
+	videoTrack, err := NewTrack(logger, videoSource, connection, WithRtcpChan(videoRtcp), WithMetrics(metrics))
 	if err != nil {
-		return nil, nil, err
+		_ = connection.Close()
+		return nil, err
 	}
 
 	//
@@ -339,12 +409,15 @@ func (manager *WebRTCManagerCtx) CreatePeer(session types.Session) (*webrtc.Sess
 
 	dataChannel, err := connection.CreateDataChannel("data", nil)
 	if err != nil {
-		return nil, nil, err
+		_ = connection.Close()
+		return nil, err
 	}
 
 	peer := &WebRTCPeerCtx{
+		id:         lease.ID(),
 		logger:     logger,
 		session:    session,
+		done:       make(chan struct{}),
 		metrics:    metrics,
 		connection: connection,
 		// bandwidth estimator
@@ -360,9 +433,8 @@ func (manager *WebRTCManagerCtx) CreatePeer(session types.Session) (*webrtc.Sess
 				DownwardTrendThreshold: -0.5,
 				CollapseValues:         true,
 			}),
-		// stream selectors
-		video: video,
-		audio: audio,
+		// encoded media
+		media: manager.media,
 		// tracks & channels
 		audioTrack:  audioTrack,
 		videoTrack:  videoTrack,
@@ -499,20 +571,25 @@ func (manager *WebRTCManagerCtx) CreatePeer(session types.Session) (*webrtc.Sess
 	connection.OnConnectionStateChange(func(state webrtc.PeerConnectionState) {
 		switch state {
 		case webrtc.PeerConnectionStateConnected:
-			session.SetWebRTCConnected(peer, true)
+			lease.SetState(types.MediaDeliveryStateActive)
 		case webrtc.PeerConnectionStateDisconnected,
 			webrtc.PeerConnectionStateFailed:
 			peer.Destroy()
 		case webrtc.PeerConnectionStateClosed:
 			// ensure we only run this once
 			once.Do(func() {
+				current := lease.SetState(types.MediaDeliveryStateClosed)
 				session.SetWebRTCConnected(peer, false)
+				if current {
+					session.Send(event.SIGNAL_CLOSE, nil)
+				}
 				//
 				// TODO: Shutdown peer?
 				//
 				audioTrack.Shutdown()
 				videoTrack.Shutdown()
 				close(videoRtcp)
+				peer.doneOnce.Do(func() { close(peer.done) })
 			})
 		}
 
@@ -553,12 +630,12 @@ func (manager *WebRTCManagerCtx) CreatePeer(session types.Session) (*webrtc.Sess
 		}
 	})
 
-	session.SetWebRTCPeer(peer)
-
 	offer, err := peer.CreateOffer(false)
 	if err != nil {
-		return nil, nil, err
+		peer.Destroy()
+		return nil, err
 	}
+	peer.initialOffer = offer
 
 	// on negotiation needed handler must be registered after creating initial
 	// offer, otherwise it can fire and intercept sucessful negotiation
@@ -591,7 +668,7 @@ func (manager *WebRTCManagerCtx) CreatePeer(session types.Session) (*webrtc.Sess
 	// start estimator reader
 	go peer.estimatorReader()
 
-	return offer, peer, nil
+	return peer, nil
 }
 
 func (manager *WebRTCManagerCtx) SetCursorPosition(x, y int) {

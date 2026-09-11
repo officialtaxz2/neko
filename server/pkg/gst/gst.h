@@ -23,7 +23,21 @@ typedef struct GstPipelineCtx {
   GstElement *appsrc;
 } GstPipelineCtx;
 
-extern void goHandlePipelineBuffer(int pipelineId, void *buffer, int bufferLen, guint64 duration, gboolean deltaUnit);
+extern void goHandlePipelineBuffer(
+  int pipelineId,
+  void *buffer,
+  int bufferLen,
+  guint64 pts,
+  gboolean ptsValid,
+  guint64 dts,
+  gboolean dtsValid,
+  guint64 duration,
+  gboolean deltaUnit,
+  gint width,
+  gint height,
+  gint frameRateNumerator,
+  gint frameRateDenominator
+);
 extern void goPipelineLog(int pipelineId, char *level, char *msg);
 
 GstPipelineCtx *gstreamer_pipeline_create(char *pipelineStr, int pipelineId, GError **error);

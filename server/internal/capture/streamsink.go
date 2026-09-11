@@ -32,8 +32,10 @@ type StreamSinkManagerCtx struct {
 
 	// Encoded stream bitrate in bits per second. The bandwidth estimator uses
 	// the same unit, so keep the byte-to-bit conversion at sample ingestion.
-	bitrate   atomic.Uint64
-	brBuckets map[int]float64
+	bitrate    atomic.Uint64
+	generation atomic.Uint64
+	sequence   atomic.Uint64
+	brBuckets  map[int]float64
 
 	logger zerolog.Logger
 	mu     sync.Mutex
@@ -169,6 +171,10 @@ func (manager *StreamSinkManagerCtx) Bitrate() uint64 {
 
 func (manager *StreamSinkManagerCtx) NominalBitrate() uint64 {
 	return manager.nominalBitrate
+}
+
+func (manager *StreamSinkManagerCtx) Generation() uint64 {
+	return manager.generation.Load()
 }
 
 func (manager *StreamSinkManagerCtx) Codec() codec.RTPCodec {
@@ -348,6 +354,8 @@ func (manager *StreamSinkManagerCtx) CreatePipeline() error {
 	}
 
 	manager.pipeline.AttachAppsink("appsink")
+	manager.generation.Add(1)
+	manager.sequence.Store(0)
 	manager.pipeline.Play()
 
 	pipeline := manager.pipeline
@@ -395,6 +403,8 @@ func (manager *StreamSinkManagerCtx) saveSampleBitrate(timestamp time.Time, samp
 }
 
 func (manager *StreamSinkManagerCtx) onSample(sample types.Sample) {
+	sample.Generation = manager.generation.Load()
+	sample.Sequence = manager.sequence.Add(1)
 	manager.listenersMu.Lock()
 
 	// save to metrics

@@ -3,9 +3,7 @@ package types
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/m1k1o/neko/server/pkg/types/codec"
@@ -20,7 +18,19 @@ var (
 type Sample struct {
 	// timing information
 	Timestamp time.Time
+	PTS       time.Duration
+	DTS       time.Duration
+	PTSValid  bool
+	DTSValid  bool
 	Duration  time.Duration
+	// source lifecycle
+	Generation uint64
+	Sequence   uint64
+	// encoded caps observed at the appsink
+	Width                uint32
+	Height               uint32
+	FrameRateNumerator   uint32
+	FrameRateDenominator uint32
 	// metadata
 	DeltaUnit bool // this unit cannot be decoded independently.
 	// buffer length
@@ -46,62 +56,18 @@ type ScreencastManager interface {
 	Image() ([]byte, error)
 }
 
-type StreamSelectorType int
+// Legacy names remain aliases so every existing JSON/API/configuration shape
+// stays unchanged while selection itself belongs to the media contract.
+type StreamSelectorType = MediaSelectorType
 
 const (
-	// select exact stream
-	StreamSelectorTypeExact StreamSelectorType = iota
-	// select nearest stream (in either direction) if exact stream is not available
-	StreamSelectorTypeNearest
-	// if exact stream is found select the next lower stream, otherwise select the nearest lower stream
-	StreamSelectorTypeLower
-	// if exact stream is found select the next higher stream, otherwise select the nearest higher stream
-	StreamSelectorTypeHigher
+	StreamSelectorTypeExact   = MediaSelectorTypeExact
+	StreamSelectorTypeNearest = MediaSelectorTypeNearest
+	StreamSelectorTypeLower   = MediaSelectorTypeLower
+	StreamSelectorTypeHigher  = MediaSelectorTypeHigher
 )
 
-func (s StreamSelectorType) String() string {
-	switch s {
-	case StreamSelectorTypeExact:
-		return "exact"
-	case StreamSelectorTypeNearest:
-		return "nearest"
-	case StreamSelectorTypeLower:
-		return "lower"
-	case StreamSelectorTypeHigher:
-		return "higher"
-	default:
-		return fmt.Sprintf("%d", int(s))
-	}
-}
-
-func (s *StreamSelectorType) UnmarshalText(text []byte) error {
-	switch strings.ToLower(string(text)) {
-	case "exact", "":
-		*s = StreamSelectorTypeExact
-	case "nearest":
-		*s = StreamSelectorTypeNearest
-	case "lower":
-		*s = StreamSelectorTypeLower
-	case "higher":
-		*s = StreamSelectorTypeHigher
-	default:
-		return fmt.Errorf("invalid stream selector type: %s", string(text))
-	}
-	return nil
-}
-
-func (s StreamSelectorType) MarshalText() ([]byte, error) {
-	return []byte(s.String()), nil
-}
-
-type StreamSelector struct {
-	// type of stream selector
-	Type StreamSelectorType `json:"type"`
-	// select stream by its ID
-	ID string `json:"id"`
-	// select stream by its bitrate
-	Bitrate uint64 `json:"bitrate"`
-}
+type StreamSelector = MediaSelector
 
 type StreamSelectorManager interface {
 	IDs() []string
@@ -152,6 +118,7 @@ type CaptureManager interface {
 	Screencast() ScreencastManager
 	Audio() StreamSinkManager
 	Video() StreamSelectorManager
+	Media() EncodedMediaProvider
 
 	Webcam() StreamSrcManager
 	Microphone() StreamSrcManager

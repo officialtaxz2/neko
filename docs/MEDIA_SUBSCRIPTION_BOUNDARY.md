@@ -1,8 +1,8 @@
 # Backend-neutral encoded-media subscription boundary
 
-Status: **design complete on `testing` as of 2026-09-11; no alternative media backend is implemented**.
+Status: **design and first no-new-transport compatibility implementation complete in the repository on `testing` as of 2026-09-11; target-server verification pending; no alternative media backend is implemented**.
 
-This document fixes the architecture contract for the next implementation block. It is intentionally more concrete than a product direction, but it does not claim that WebCodecs/WebSocket, HLS/LL-HLS, DASH or WebTransport exists in the repository.
+This document fixes the architecture contract and records its first compatibility implementation. It is intentionally more concrete than a product direction, but it does not claim that WebCodecs/WebSocket, HLS/LL-HLS, DASH or WebTransport exists in the repository.
 
 ## Scope
 
@@ -19,9 +19,9 @@ It covers:
 
 It deliberately does not define a final WebCodecs wire format, HLS segment duration, automatic fallback algorithm, Smart-TV support matrix or new control transport. Those belong to later prototypes and measurements.
 
-## Current code seam
+## Pre-refactor code seam
 
-The implemented receive path is:
+The receive path before this compatibility block was:
 
 ```text
 GStreamer appsink
@@ -33,7 +33,7 @@ GStreamer appsink
     -> browser RTCPeerConnection
 ```
 
-The useful existing properties are:
+The useful existing properties preserved by the refactor are:
 
 - `server/internal/capture/streamsink.go` starts an encoder on its first listener and stops it after the last listener;
 - video listeners wait in a keyframe lobby before receiving samples;
@@ -42,7 +42,7 @@ The useful existing properties are:
 - each WebRTC `Track` owns a bounded two-sample queue and drops locally when full;
 - current stream bitrate, nominal bitrate, listener count and peer-local drops are observable.
 
-The coupling that must be removed is:
+The coupling removed from the WebRTC sender was:
 
 - `types.StreamSinkManager` and `types.StreamSelector` are exposed directly to WebRTC;
 - codec metadata is represented by `codec.RTPCodec`, which contains Pion/RTP-specific fields;
@@ -166,7 +166,7 @@ The contract is:
 - overflow, source restart and format change produce an explicit discontinuity rather than an unexplained timestamp jump;
 - end-of-stream and subscription close are distinct events.
 
-If the initial refactor cannot prove common audio/video timestamp normalization, it may preserve current WebRTC delivery behind a compatibility adapter, but no HLS or WebCodecs prototype may be declared ready until the timing requirement is implemented and tested.
+The implemented provider aligns valid GStreamer PTS/DTS from each newly created pipeline to one provider-owned monotonic origin. Arrival time is retained separately as `CapturedAt` only so the Pion compatibility adapter can preserve its prior sample field; it is not the cross-backend PTS. Missing DTS remains explicitly invalid. No HLS or WebCodecs prototype may be declared ready until its own audio/video synchronization behavior is tested on the target server.
 
 ## Provider and subscription contract
 
@@ -206,7 +206,7 @@ Every source subscription has a bounded manager-owned queue. Dispatch into that 
 
 Queue capacity and overflow policy are trusted backend configuration, not client input. The initial WebRTC adapter must keep its effective capacity of two samples and current drop-new behavior so the refactor does not silently change accepted behavior.
 
-That means the migrated WebRTC path has one two-unit subscription queue rather than stacking a new queue in front of the existing two-sample `Track.sample` channel. The adapter consumes the subscription queue directly when writing to Pion.
+The migrated WebRTC path now has one two-unit subscription queue rather than stacking a new queue in front of the former two-sample `Track.sample` channel. The adapter consumes the subscription event channel directly when writing to Pion, and provider overflow invokes the existing peer-local WebRTC drop metric callback.
 
 Later backends may choose only defined bounded policies:
 
@@ -271,13 +271,13 @@ The compact view-only fragment remains only a login bootstrap. It must not becom
 
 | Current artifact | Target responsibility |
 | --- | --- |
-| `types.Sample` | compatibility input mapped to `EncodedMediaUnit` with real timing/generation |
-| `types.SampleListener` | replaced internally by a bounded `MediaSubscription` event queue |
+| `types.Sample` | capture-internal compatibility input mapped to `EncodedMediaUnit` with PTS/DTS, caps, generation and sequence |
+| `types.SampleListener` | capture-internal adapter feeding a bounded `MediaSubscription` event queue |
 | `StreamSinkManagerCtx` | encoded source implementation behind `EncodedMediaProvider` |
-| `StreamSelectorManagerCtx` | source catalog/selector implementation |
-| `webrtc.Track` | WebRTC delivery adapter consuming a media subscription |
-| `WebRTCManagerCtx.CreatePeer` | WebRTC signaling/control plus an opened media delivery |
-| `Session.SetWebRTCConnected` | compatibility shim over generic primary-delivery watching state |
+| `StreamSelectorManagerCtx` | capture-internal source catalog/selector implementation |
+| `webrtc.Track` | WebRTC delivery adapter consuming one provider subscription directly |
+| `WebRTCManagerCtx.CreatePeer` | unchanged public signaling entry opening the registered WebRTC delivery through the central manager |
+| `Session.SetWebRTCConnected` | retained compatibility shim over generic primary-delivery watching state |
 | broadcast/screencast managers | remain separate until a later explicit convergence decision |
 
 ## Observability contract
@@ -295,9 +295,9 @@ No metric or log may contain a credential or delivery URL token. The implementat
 
 Session IDs may remain in debug logs and the existing bounded per-session metrics where already accepted, but they must not be added to low-value high-cardinality metrics without a concrete diagnostic need.
 
-## First implementation block: compatibility refactor
+## First implementation block: compatibility refactor — implemented in repository
 
-The next code block must change structure without adding another client-visible transport:
+The repository implementation changes structure without adding another client-visible transport:
 
 1. Add the pure media descriptors, events, provider/subscription and delivery interfaces.
 2. Extend the GStreamer bridge to expose the timing/format data needed by the contract while preserving the current sample data path.
@@ -321,6 +321,44 @@ Required focused tests include:
 - absence of tokens in logs/metric labels by construction.
 
 Runtime/build verification remains target-server work under `AGENTS.md`. The compatibility refactor is not complete until focused Go tests, server/plugin build, local image build and the existing ordinary/admin/view-only/adaptive regression smoke tests pass there.
+
+Repository implementation record:
+
+- `server/pkg/types/media.go` defines Pion-free codecs, sources, encoded units, lifecycle events, selectors, bounded source-subscription contracts, backend descriptors, delivery requests and credential-free leases.
+- `server/pkg/gst/` exports buffer PTS/DTS validity, duration and caps-derived resolution/frame rate while retaining the existing encoded sample data path.
+- `server/internal/capture/media.go` adapts ordered audio/video stream sinks into demand-driven subscriptions, assigns pipeline generation/sequence, enforces provider-side keyframe admission and publishes explicit format/discontinuity/end events.
+- Subscription dispatch uses a manager-owned bounded encoded-unit queue. Consumer slowness never waits in capture fan-out; `drop_newest` remains the WebRTC policy, and lifecycle transitions replace stale queued units rather than being silently dropped.
+- `server/internal/media/manager.go` validates the current session and `CanWatch`, intersects requested receive media with registered backend capabilities, issues an opaque backend/session lease, keeps one primary delivery, revokes on profile/session lifecycle and closes deliveries before capture shutdown.
+- `server/internal/session/` owns generic media attachment/watching state and private-mode pause; WebRTC-named accessors remain compatibility shims for existing signaling handlers.
+- `server/internal/webrtc/` registers as the first backend and maps pure codec descriptors back to the existing Pion codec definitions. Because this compatibility backend also carries the existing control data channel, its private `CreatePeer` call context supplies only that already-authenticated session to the concrete delivery; the generic lease and backend request expose neither the session manager nor a login/share credential. SDP, ICE, data channels, inbound media, estimator behavior, video/audio messages and client protocol remain unchanged.
+- Existing `neko_webrtc_track_dropped_samples_total` counters remain session-local. New `neko_media_*` metrics cover backend delivery state, subscription demand, queue observations, delivered units/bytes, local drops, discontinuities and source generation without credential labels.
+- Focused tests cover the required selector, demand, keyframe, switch/pause/resume/close, timing/generation/format/discontinuity, overflow/isolation, two-unit WebRTC queue, authorization, replacement, revocation and shutdown cases.
+
+Static status: **implementation and diff review complete in Codex; project code, tests, builds, containers and runtime checks NOT EXECUTED IN CODEX**. The next checkpoint is the exact target-server validation below; no alternative-backend prototype should begin until it is accepted.
+
+Target-server commands from the repository root:
+
+```bash
+git switch testing
+git pull --ff-only origin testing
+export NEKO_VALIDATION_COMMIT="$(git rev-parse HEAD)"
+docker compose -f docker-compose.validation.yaml build --pull server-checks
+docker compose -f docker-compose.validation.yaml run --rm server-checks
+./build my-neko/base:latest -y
+./build my-neko/brave:latest -y
+docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml config --quiet
+docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml up -d --force-recreate
+```
+
+The validation service runs:
+
+```bash
+cd server
+go test ./pkg/types ./pkg/auth ./internal/capture ./internal/media ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
+./build
+```
+
+After deployment, verify ordinary member and admin join/audio/video/control, view-only receive plus denial behavior, video/audio enable-disable, private-mode pause/resume, manual tier selection, estimator-driven down/up switching with two healthy viewers, peer-local drop counters, reconnect/replacement and clean disconnect/shutdown. The `neko_media_*` series must show source demand and delivery lifecycle without any credential or delivery URL. Keep `master` unchanged.
 
 ## Prototype gates after the refactor
 

@@ -14,6 +14,7 @@ import (
 	"github.com/m1k1o/neko/server/internal/config"
 	"github.com/m1k1o/neko/server/internal/desktop"
 	"github.com/m1k1o/neko/server/internal/http"
+	mediadelivery "github.com/m1k1o/neko/server/internal/media"
 	"github.com/m1k1o/neko/server/internal/member"
 	"github.com/m1k1o/neko/server/internal/plugins"
 	"github.com/m1k1o/neko/server/internal/session"
@@ -55,6 +56,7 @@ type serve struct {
 	managers struct {
 		desktop   *desktop.DesktopManagerCtx
 		capture   *capture.CaptureManagerCtx
+		media     *mediadelivery.ManagerCtx
 		webRTC    *webrtc.WebRTCManagerCtx
 		member    *member.MemberManagerCtx
 		session   *session.SessionManagerCtx
@@ -160,11 +162,19 @@ func (c *serve) Start(cmd *cobra.Command) {
 	)
 	c.managers.capture.Start()
 
+	c.managers.media = mediadelivery.New(
+		c.managers.session,
+	)
+
 	c.managers.webRTC = webrtc.New(
 		c.managers.desktop,
 		c.managers.capture,
+		c.managers.media,
 		&c.configs.WebRTC,
 	)
+	if err := c.managers.media.Register(c.managers.webRTC); err != nil {
+		c.logger.Panic().Err(err).Msg("unable to register WebRTC media backend")
+	}
 	c.managers.webRTC.Start()
 
 	c.managers.webSocket = websocket.New(
@@ -216,6 +226,9 @@ func (c *serve) Shutdown() {
 
 	err = c.managers.webSocket.Shutdown()
 	c.logger.Err(err).Msg("websocket manager shutdown")
+
+	err = c.managers.media.Shutdown()
+	c.logger.Err(err).Msg("media delivery manager shutdown")
 
 	err = c.managers.webRTC.Shutdown()
 	c.logger.Err(err).Msg("webrtc manager shutdown")

@@ -40,7 +40,7 @@ services:
       - -c
       - |
         set -eux
-        go test ./pkg/types ./pkg/auth ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
+        go test ./pkg/types ./pkg/auth ./internal/capture ./internal/media ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
         ./build
 
   metrics-snapshot:
@@ -53,7 +53,7 @@ services:
       - -ec
       - |
         wget -qO- "$$NEKO_METRICS_URL" |
-          grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(connection_state|receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners))'
+          grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|media_(deliveries|delivery_(opens|closes)_total|source_generation|subscriptions_active|subscription_(delivered_(bytes|units)_total|discontinuities_total|dropped_units_total|queue_(capacity|depth)))|webrtc_(connection_state|receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners))'
 
   token-generator:
     image: alpine:latest

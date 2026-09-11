@@ -43,7 +43,7 @@ integration/upstream-20260909
 upstream merge commit: 4e99b8d3ca720d1f184544306820e388716ba23a
 relation at merge commit: 37 commits ahead, 0 behind
 master: fast-forwarded to the reviewed integration history
-testing: deployment reconciliation, accepted opt-in adaptive quality, bounded iOS recovery, server-enforced view-only sharing and completed backend-neutral media-subscription design
+testing: deployment reconciliation, accepted opt-in adaptive quality, bounded iOS recovery, server-enforced view-only sharing, completed backend-neutral media-subscription design and implemented WebRTC compatibility refactor
 master: pinned at d9105ef8 until explicit grouped-promotion authorization
 ```
 
@@ -240,7 +240,26 @@ Decisions now fixed:
 - WebRTC remains the default and is migrated first with unchanged signaling, data-channel, estimator, queue/drop, metrics and configuration behavior;
 - no WebCodecs/WebSocket endpoint, HLS route/packager, automatic fallback or WebTransport implementation belongs to the compatibility-refactor block.
 
-Static status: **design complete / no alternative media backend implemented / no project code, test, build or runtime check executed in Codex**.
+Design-checkpoint status at `04787b55`: **design complete / no alternative media backend implemented / no project code, test, build or runtime check executed in Codex**. The following repository block implements that design without adding an alternative backend.
+
+## COMPLETED IN REPOSITORY — media-subscription/WebRTC compatibility refactor
+
+Implemented and statically reviewed on `testing` on 2026-09-11:
+
+- Added Pion-free encoded-media codecs, sources, units, format/discontinuity/end events, selectors, source-subscription contracts, backend capabilities, participant delivery requests and credential-free leases in `server/pkg/types/media.go`.
+- Extended the GStreamer appsink bridge with buffer PTS/DTS validity, duration and caps-derived resolution/frame rate while retaining the existing `types.Sample` capture input.
+- Added capture pipeline generation and per-generation sequence metadata. A capture-backed provider now exposes ordered sources, starts/stops them on first/last active subscription, gates video on keyframes, normalizes valid GStreamer timestamps to one provider-owned timeline and publishes immutable encoded data.
+- Added bounded manager-owned subscription queues with local non-blocking drop-new overflow, explicit lifecycle transitions and pause/resume/switch/idempotent-close behavior. The WebRTC sender consumes this queue directly; no second queue was stacked in front of it.
+- Added a central participant-delivery manager/registry. It validates the current authenticated session and `CanWatch`, intersects receive requests with backend capabilities, creates a backend/session-scoped lease without login/share credentials, keeps one primary delivery per session and owns replacement, revocation, generic watching state and shutdown ordering.
+- Migrated WebRTC into the first registered backend without adding a route, endpoint, client protocol or configuration. Existing SDP/ICE signaling, data channels, inbound-media enforcement, audio/video messages, private mode and estimator-driven selection retain their current paths.
+- Preserved the effective two-sample WebRTC queue with drop-new behavior and the existing `neko_webrtc_track_dropped_samples_total` meaning. Added low-cardinality `neko_media_*` delivery, subscription, queue, delivered-unit/byte, drop, discontinuity and source-generation metrics; no metric label or lease field carries a credential.
+- Added focused tests for source ordering/selection, first/last demand, keyframe admission, switching, pause/resume, idempotent close, timing/generation/format/discontinuity ordering, local overflow isolation, the WebRTC two-unit policy, `CanWatch` denial, view-only receive allowance, replacement, profile/session revocation and shutdown cleanup.
+- Expanded `docker-compose.validation.yaml` so the target-server server check includes `./internal/capture` and `./internal/media` and its safe metrics snapshot includes the new `neko_media_*` series.
+- Added no WebCodecs/WebSocket endpoint, HLS route/packager, WebTransport or automatic backend selection.
+
+Static review status: **implementation complete in repository / project code, tests, build, Docker image and runtime checks NOT EXECUTED IN CODEX**.
+
+Target-server acceptance remains pending. The compatibility block is not accepted until the focused suites/server build, local image build and ordinary/admin/view-only/adaptive regression smoke checks below pass at one exact `testing` commit.
 
 ## Target-server verification
 
@@ -284,7 +303,7 @@ The container executes the following equivalent checks:
 
 ```bash
 cd server
-go test ./pkg/types ./pkg/auth ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
+go test ./pkg/types ./pkg/auth ./internal/capture ./internal/media ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
 ./build
 ```
 
@@ -397,14 +416,14 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement the first, no-new-transport compatibility refactor in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md): introduce pure encoded-media descriptors/events, a capture-backed provider with bounded subscriptions, a central participant-delivery manager and backend-neutral session watching state; then migrate the existing WebRTC sender behind that boundary.
+Validate the implemented no-new-transport compatibility refactor from [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md) on the real target server at one exact `testing` commit. Do not begin an alternative backend in this checkpoint.
 
-This block must preserve current WebRTC signaling, data channels, adaptive selection, effective two-sample queue/drop behavior, metrics, authorization, API/configuration and default deployment behavior. Add focused unit coverage for lifecycle, keyframe admission, timing/generation/discontinuity, non-blocking overflow, selection, view-only receive authorization and revocation. Do not add a WebCodecs/WebSocket endpoint, HLS route/packager, automatic backend selection or WebTransport yet. Implementation and any later promotion remain separate decisions; `master` must not move without explicit operator authorization.
+Run the expanded containerized server check (`./pkg/types`, `./internal/capture`, `./internal/media`, existing auth/session/WebSocket/WebRTC suites and `./build`), rebuild the local base/Brave images, recreate the accepted adaptive deployment and inspect the new `neko_media_*` metrics. Then verify ordinary/admin/view-only receive and denial behavior, audio/video enable-disable, private-mode pause/resume, manual and estimator-driven tier switching with two healthy viewers, peer-local drop isolation, replacement/reconnect and clean disconnect/shutdown. Current WebRTC signaling, data channels, adaptive selection, effective two-sample queue/drop behavior, existing metrics, authorization, API/configuration and default deployment behavior must remain unchanged. Implementation, validation, later prototypes and any promotion are separate decisions; `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
-1. implement and validate the no-behavior-change media-subscription/WebRTC compatibility refactor;
-2. prototype WebCodecs plus a dedicated media WebSocket for interactive compatibility after that boundary is stable;
+1. validate the implemented no-behavior-change media-subscription/WebRTC compatibility refactor on the target server;
+2. prototype WebCodecs plus a dedicated media WebSocket for interactive compatibility only after that boundary is accepted;
 3. prototype HLS/LL-HLS separately for passive/view-only device compatibility;
 4. compare measured backends and define explicit capability selection before considering automatic fallback;
 5. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
@@ -416,7 +435,7 @@ Alternative media architecture work began after the operator closed the grouped 
 When fallback work begins, separate the two user classes instead of forcing every client through one fallback chain:
 
 1. **completed design:** establish the backend-neutral encoded-source/subscription and participant-delivery contract in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md);
-2. **next implementation:** migrate existing WebRTC behind that contract without adding a transport or changing behavior;
+2. **implemented in repository / target-server validation next:** migrate existing WebRTC behind that contract without adding a transport or changing behavior;
 3. prototype **WebCodecs + dedicated WebSocket media** for interactive clients whose WebRTC/ICE path is unusable;
 4. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
 5. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;

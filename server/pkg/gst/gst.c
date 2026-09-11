@@ -87,17 +87,38 @@ static GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpoin
   GstPipelineCtx *ctx = (GstPipelineCtx *)user_data;
   GstSample *sample = NULL;
   GstBuffer *buffer = NULL;
+  GstCaps *caps = NULL;
   gpointer copy = NULL;
   gsize copy_size = 0;
+  gint width = 0;
+  gint height = 0;
+  gint frame_rate_numerator = 0;
+  gint frame_rate_denominator = 0;
 
   g_signal_emit_by_name(object, "pull-sample", &sample);
   if (sample) {
     buffer = gst_sample_get_buffer(sample);
     if (buffer) {
+      caps = gst_sample_get_caps(sample);
+      if (caps && gst_caps_get_size(caps) > 0) {
+        GstStructure *structure = gst_caps_get_structure(caps, 0);
+        gst_structure_get_int(structure, "width", &width);
+        gst_structure_get_int(structure, "height", &height);
+        gst_structure_get_fraction(structure, "framerate", &frame_rate_numerator, &frame_rate_denominator);
+      }
+
       gst_buffer_extract_dup(buffer, 0, gst_buffer_get_size(buffer), &copy, &copy_size);
       goHandlePipelineBuffer(ctx->pipelineId, copy, copy_size,
+        GST_BUFFER_PTS(buffer),
+        GST_CLOCK_TIME_IS_VALID(GST_BUFFER_PTS(buffer)),
+        GST_BUFFER_DTS(buffer),
+        GST_CLOCK_TIME_IS_VALID(GST_BUFFER_DTS(buffer)),
         GST_BUFFER_DURATION(buffer),
-        GST_BUFFER_FLAG_IS_SET(buffer, GST_BUFFER_FLAG_DELTA_UNIT)
+        GST_BUFFER_FLAG_IS_SET(buffer, GST_BUFFER_FLAG_DELTA_UNIT),
+        width,
+        height,
+        frame_rate_numerator,
+        frame_rate_denominator
       );
     }
     gst_sample_unref(sample);

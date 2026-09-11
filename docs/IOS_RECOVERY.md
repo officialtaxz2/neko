@@ -117,6 +117,8 @@ Geprüfte Pakete:
 ```text
 ./pkg/types
 ./pkg/auth
+./internal/capture
+./internal/media
 ./internal/member/multiuser
 ./internal/session
 ./internal/http/legacy

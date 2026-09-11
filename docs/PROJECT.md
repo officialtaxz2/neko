@@ -127,11 +127,17 @@ Refresh, reconnect and network transitions must not leave peers permanently blac
 
 ## Alternative media direction
 
-### DESIGNED — backend-neutral encoded-media subscription boundary
+### IMPLEMENTED IN REPOSITORY — backend-neutral encoded-media subscription boundary and WebRTC compatibility adapter
 
-The source-subscription and participant-delivery contract is fixed in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It separates demand on shared encoded sources from per-session delivery, centralizes `CanWatch` authorization above all backends, requires bounded non-blocking queues and makes format, GStreamer presentation timing, source generations and discontinuities explicit.
+The source-subscription and participant-delivery contract is fixed and implemented in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It separates demand on shared encoded sources from per-session delivery, centralizes `CanWatch` authorization above all backends, requires bounded non-blocking queues and makes format, GStreamer presentation timing, source generations and discontinuities explicit.
 
-This is an architecture design, not a source implementation. The existing WebRTC sender has not yet been migrated and no alternative endpoint, packager or client exists.
+The capture-backed provider now owns source discovery, keyframe-gated subscriptions, switch/pause/resume/close, generation/format/discontinuity ordering and immutable event publication. The central delivery manager registers backend capabilities, issues credential-free session leases, allows `CanWatch` view-only receivers, rejects non-watchers and owns replacement, revocation, shutdown and generic `IsWatching` state. The existing WebRTC sender consumes the provider queue directly with capacity two and drop-new behavior, so no second queue was added. Its SDP/signaling, data channel, inbound-media authorization, adaptive tier selection and existing per-session metrics remain on the same protocol and configuration.
+
+GStreamer now exports encoded-buffer PTS, DTS, duration and caps-derived resolution/frame rate. Provider normalization maps those timestamps onto a manager-owned timeline, while `CapturedAt` is retained only for the compatibility Pion sample field and is not treated as a cross-backend PTS. Pipeline recreation and format change advance/propagate explicit generations and force video readmission at a keyframe.
+
+Focused repository tests cover ordered selection, demand lifecycle, keyframe admission, switch/pause/resume/idempotent close, timing/generation/format/discontinuity, local non-blocking overflow, the unchanged WebRTC two-unit policy, `CanWatch` denial, view-only receive allowance, replacement/revocation and shutdown. These tests and builds were **NOT EXECUTED IN CODEX**. Target-server validation remains required before the compatibility block is accepted.
+
+No alternative endpoint, packager or client exists. WebCodecs/WebSocket, HLS/LL-HLS, automatic backend selection and WebTransport remain later candidates.
 
 The project distinguishes **interactive** and **passive/view-only** media fallback needs. There is not one mandatory fallback chain for every client.
 
@@ -178,7 +184,7 @@ other constrained client     -> capability-tested alternative
 
 Automatic selection is a TARGET direction, not currently IMPLEMENTED. Manual/explicit selection may be used first for diagnosis and rollout.
 
-None of these alternative-media candidates are IMPLEMENTED here unless repository code proves otherwise. The decided boundary design does not change that status.
+None of these alternative-media candidates are IMPLEMENTED here unless repository code proves otherwise. Implementing the shared boundary and WebRTC adapter does not change that status.
 
 ## Development / verification environment constraint
 

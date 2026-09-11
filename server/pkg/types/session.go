@@ -87,6 +87,11 @@ type Session interface {
 	SetWebRTCPeer(webrtcPeer WebRTCPeer)
 	SetWebRTCConnected(webrtcPeer WebRTCPeer, connected bool)
 	GetWebRTCPeer() WebRTCPeer
+
+	// backend-neutral primary receive-media delivery
+	SetMediaDelivery(delivery MediaDelivery)
+	SetMediaDeliveryActive(delivery MediaDelivery, active bool) bool
+	GetMediaDelivery() MediaDelivery
 }
 
 type SessionManager interface {

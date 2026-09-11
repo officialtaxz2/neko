@@ -211,7 +211,21 @@ func CheckElement(element string) error {
 }
 
 //export goHandlePipelineBuffer
-func goHandlePipelineBuffer(pipelineID C.int, buf C.gpointer, bufLen C.int, duration C.guint64, deltaUnit C.gboolean) {
+func goHandlePipelineBuffer(
+	pipelineID C.int,
+	buf C.gpointer,
+	bufLen C.int,
+	pts C.guint64,
+	ptsValid C.gboolean,
+	dts C.guint64,
+	dtsValid C.gboolean,
+	duration C.guint64,
+	deltaUnit C.gboolean,
+	width C.gint,
+	height C.gint,
+	frameRateNumerator C.gint,
+	frameRateDenominator C.gint,
+) {
 	defer C.g_free(buf)
 
 	pipelinesLock.Lock()
@@ -220,11 +234,19 @@ func goHandlePipelineBuffer(pipelineID C.int, buf C.gpointer, bufLen C.int, dura
 
 	if ok {
 		pipeline.sample <- types.Sample{
-			Data:      C.GoBytes(unsafe.Pointer(buf), bufLen),
-			Length:    int(bufLen),
-			Timestamp: time.Now(),
-			Duration:  time.Duration(duration),
-			DeltaUnit: deltaUnit == C.TRUE,
+			Data:                 C.GoBytes(unsafe.Pointer(buf), bufLen),
+			Length:               int(bufLen),
+			Timestamp:            time.Now(),
+			PTS:                  time.Duration(pts),
+			DTS:                  time.Duration(dts),
+			PTSValid:             ptsValid == C.TRUE,
+			DTSValid:             dtsValid == C.TRUE,
+			Duration:             time.Duration(duration),
+			DeltaUnit:            deltaUnit == C.TRUE,
+			Width:                uint32(width),
+			Height:               uint32(height),
+			FrameRateNumerator:   uint32(frameRateNumerator),
+			FrameRateDenominator: uint32(frameRateDenominator),
 		}
 	} else {
 		log.Warn().

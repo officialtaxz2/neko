@@ -24,6 +24,7 @@ type CaptureManagerCtx struct {
 	screencast *ScreencastManagerCtx
 	audio      *StreamSinkManagerCtx
 	video      *StreamSelectorManagerCtx
+	media      *captureMediaProvider
 
 	// sources
 	webcam     *StreamSrcManagerCtx
@@ -72,7 +73,7 @@ func New(desktop types.DesktopManager, config *config.Capture) *CaptureManagerCt
 		videos[video_id] = streamSinkNew(config.VideoCodec, createPipeline, video_id, pipelineConf.NominalBitrate)
 	}
 
-	return &CaptureManagerCtx{
+	manager := &CaptureManagerCtx{
 		logger:  logger,
 		desktop: desktop,
 		config:  config,
@@ -191,6 +192,8 @@ func New(desktop types.DesktopManager, config *config.Capture) *CaptureManagerCt
 				fmt.Sprintf("! pulsesink device=%s", config.MicrophoneDevice),
 		}, "microphone"),
 	}
+	manager.media = newMediaProvider(manager.audio, manager.video)
+	return manager
 }
 
 func (manager *CaptureManagerCtx) Start() {
@@ -263,6 +266,10 @@ func (manager *CaptureManagerCtx) Audio() types.StreamSinkManager {
 
 func (manager *CaptureManagerCtx) Video() types.StreamSelectorManager {
 	return manager.video
+}
+
+func (manager *CaptureManagerCtx) Media() types.EncodedMediaProvider {
+	return manager.media
 }
 
 func (manager *CaptureManagerCtx) Webcam() types.StreamSrcManager {
