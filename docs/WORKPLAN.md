@@ -265,6 +265,26 @@ The first target-server validation-image build at `637d259f` reached the Go comp
 
 At follow-up commit `5d68ef0b`, the validation image and its embedded server/plugin build succeeded. The expanded container test command then passed `pkg/types`, auth, capture, member, session, legacy HTTP, WebSocket and WebRTC, but `internal/media` stopped at compile time because one test retained an unused fake-backend binding. The next follow-up removes only that binding; the complete container command still requires a clean rerun because its trailing `./build` did not execute after the test-command failure.
 
+At exact follow-up commit `a32027d`, the complete validation service passed `pkg/types`, auth, capture, media, member, session, legacy HTTP, WebSocket and WebRTC followed by `./build`. The local base image `sha256:b83d6eabe71885d54d52bf087240c14862bcec44e4b3394e375f03d7ef9f0c61` and Brave image `sha256:cc4d727a93e27d79c900adcb077252512c4cfc8f9b42f33685ddf7fd010b3061` built successfully; the adaptive service then started healthy with zero restarts and the expected profile/download/policy mounts. A short-lived current `/api/ws` probe passed delivery open/close, video disable/enable, exact low/medium/high selection, auto selection and audio disable/enable. The new metrics showed three active WebRTC deliveries, matching open/close arithmetic, active audio/video subscriptions, capacity-two subscription queues, delivered units/bytes and expected discontinuities without credential or delivery-URL labels. Peer-local audio/video drop counters remained zero.
+
+The normal fork client uses the legacy `/ws` bridge, so sending current-only `signal/video` or `signal/audio` messages through its `$client` object is not a valid manual test; the server correctly logged those attempts as unknown legacy events. Real browser windows still exercised normal legacy receive behavior, while the isolated current-protocol probe exercised the new lifecycle controls.
+
+Fresh same-host browser windows on the candidate selected `high` and then switched immediately to `medium` on their first logged neutral estimator reading. A controlled A/B with the accepted pre-refactor Brave rollback image `sha256:5b5c7747930bc863da05cb3f05d8bb7b97a624386d105bdade2448e5443d36a2` reproduced the same immediate behavior. This rules out the media-subscription refactor as its introduction but exposed a separate inherited estimator startup defect described below. The broader manual ordinary/admin/view-only/private-mode/recovery matrix and a complete adaptive down/up isolation run remain open; the compatibility block is not yet accepted.
+
+## COMPLETED IN REPOSITORY — estimator startup observation-window correction
+
+Static review of the estimator path found the mechanism matching the immediate-start trace:
+
+- `stableSince` began at estimator-reader startup, but `unstableSince` and `stalledSince` began as Go zero times;
+- `time.Since` on those zero values makes the configured observation durations look already expired, so the first qualifying neutral estimate could enter the downgrade path without either intended grace period;
+- the trend detector begins `NEUTRAL` and requires eight non-collapsed values before it can report a trend, making the stalled path particularly relevant during startup;
+- the correction initializes all three observation windows from the same reader-start timestamp and deliberately leaves only the switch-backoff timestamps zero until an actual upgrade/downgrade;
+- a focused WebRTC regression test fixes that initialization contract without changing bitrate targets, thresholds, durations, public APIs, protocols or deployment defaults.
+
+Static review status: **implementation and diff review complete / project tests, build, Docker image and runtime checks NOT EXECUTED IN CODEX**.
+
+Target-server acceptance remains pending. The resulting exact commit must first pass the complete validation service and a fresh single-viewer startup trace, then the remaining media-subscription/WebRTC compatibility matrix. Repository inspection proves the zero-time behavior and its correction; it does not prove that this defect is the sole cause of every sustained `medium` selection.
+
 ## Target-server verification
 
 This phase is performed by the operator on the real server, not by Codex.
@@ -420,13 +440,13 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Validate the implemented no-new-transport compatibility refactor from [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md) on the real target server at one exact `testing` commit. Do not begin an alternative backend in this checkpoint.
+Validate the implemented no-new-transport compatibility refactor and the estimator startup observation-window correction together on the real target server at one exact `testing` commit. Do not begin an alternative backend in this checkpoint.
 
-Run the expanded containerized server check (`./pkg/types`, `./internal/capture`, `./internal/media`, existing auth/session/WebSocket/WebRTC suites and `./build`), rebuild the local base/Brave images, recreate the accepted adaptive deployment and inspect the new `neko_media_*` metrics. Then verify ordinary/admin/view-only receive and denial behavior, audio/video enable-disable, private-mode pause/resume, manual and estimator-driven tier switching with two healthy viewers, peer-local drop isolation, replacement/reconnect and clean disconnect/shutdown. Current WebRTC signaling, data channels, adaptive selection, effective two-sample queue/drop behavior, existing metrics, authorization, API/configuration and default deployment behavior must remain unchanged. Implementation, validation, later prototypes and any promotion are separate decisions; `master` must not move without explicit operator authorization.
+First run the expanded containerized server check (`./pkg/types`, `./internal/capture`, `./internal/media`, existing auth/session/WebSocket/WebRTC suites and `./build`) so the previously passing compatibility suites and the new estimator regression test receive one clean result. Rebuild the local base/Brave images, recreate the accepted adaptive deployment, and perform a fresh single-viewer startup trace before the broader matrix: confirm the viewer starts on `high`, record estimator target/current stream bitrate/trend, and verify that the first neutral/low-headroom estimate cannot downshift solely because an observation timestamp began at zero. A later downgrade caused by sustained insufficient capacity remains valid. Then inspect the new `neko_media_*` metrics and complete the ordinary/admin/view-only receive and denial behavior, audio/video enable-disable, private-mode pause/resume, manual and estimator-driven tier switching with two healthy viewers, peer-local drop isolation, replacement/reconnect and clean disconnect/shutdown. Current WebRTC signaling, data channels, effective two-sample queue/drop behavior, existing metrics, authorization, API/configuration and default deployment behavior must otherwise remain unchanged. Implementation, validation, later prototypes and any promotion are separate decisions; `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
-1. validate the implemented no-behavior-change media-subscription/WebRTC compatibility refactor on the target server;
+1. validate the implemented media-subscription/WebRTC compatibility refactor together with the estimator startup-timing correction on the target server;
 2. prototype WebCodecs plus a dedicated media WebSocket for interactive compatibility only after that boundary is accepted;
 3. prototype HLS/LL-HLS separately for passive/view-only device compatibility;
 4. compare measured backends and define explicit capability selection before considering automatic fallback;
@@ -439,7 +459,7 @@ Alternative media architecture work began after the operator closed the grouped 
 When fallback work begins, separate the two user classes instead of forcing every client through one fallback chain:
 
 1. **completed design:** establish the backend-neutral encoded-source/subscription and participant-delivery contract in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md);
-2. **implemented in repository / target-server validation next:** migrate existing WebRTC behind that contract without adding a transport or changing behavior;
+2. **implemented in repository / target-server validation next:** validate the migrated WebRTC compatibility path together with the estimator startup-timing correction before adding any transport;
 3. prototype **WebCodecs + dedicated WebSocket media** for interactive clients whose WebRTC/ICE path is unusable;
 4. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
 5. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;

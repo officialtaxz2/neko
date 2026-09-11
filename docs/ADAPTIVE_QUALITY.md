@@ -36,6 +36,16 @@ The next measurement-led candidate budgeted transport headroom instead of changi
 
 One deterministic defect remained during that run: at an unchanged 0.7 Mbit/s constraint the estimator reported 613,076 bit/s and briefly upgraded `low` to `medium`, which immediately worsened playback before the downgrade back to `low`. The implementation still referenced the content-dependent measured current rate. Each profile tier now declares `nominal_bitrate`, and the server evaluates an upgrade directly against the next tier's nominal rate. With the normal 0.15 reserve, `low` to `medium` requires at least 861,120 bit/s, so the observed 613,076 bit/s is insufficient; profiles without this metadata retain their previous current-measured-rate fallback.
 
+## Post-acceptance startup-timing correction — target-server validation pending
+
+During the 2026-09-11 media-subscription checkpoint, fresh same-host browser windows selected `high` and then switched to `medium` on their first logged `NEUTRAL` estimator reading. Repeating the observation with the pre-refactor rollback image `sha256:5b5c7747930bc863da05cb3f05d8bb7b97a624386d105bdade2448e5443d36a2` produced the same immediate transition, while the new candidate was `sha256:cc4d727a93e27d79c900adcb077252512c4cfc8f9b42f33685ddf7fd010b3061`. This bounds the observation as pre-existing estimator behavior rather than a media-subscription regression; it does not reproduce the earlier accepted desktop/iPad/iPhone network layout.
+
+Static tracing found a concrete inherited startup defect: `stableSince` began at estimator-reader creation, but `unstableSince` and `stalledSince` used Go's zero `time.Time`. Because `time.Since(time.Time{})` is effectively enormous, the configured `unstable_duration` and `stalled_duration` could be treated as already elapsed on the first qualifying estimate. The observed `high -> medium` transitions had precisely the vulnerable sequence: initial `high`, first `NEUTRAL` estimate with insufficient headroom, immediate downgrade.
+
+The repository follow-up initializes the stable, unstable and stalled observation windows from the same estimator-reader start time. `lastUpgradeTime` and `lastDowngradeTime` intentionally remain zero until an actual switch, preserving switch-backoff semantics. No bitrate, frame rate, threshold, duration, public API, protocol or deployment default changes in this unit.
+
+This correction requires a fresh exact-commit target-server trace. It should prevent an immediate transition caused only by pre-expired timestamps; it does not promise that `high` will remain selected when the receiver's sustained estimate is below the capacity required for `high`. The same-host multi-window result therefore remains a separate usability observation even if startup timing passes.
+
 ## Target-server acceptance — 2026-09-10
 
 The final candidate was built and exercised from `testing` at `bfaca84e0bcf`. The target host intentionally has no Go installation, so the repository's server Docker image ran the focused capture and WebRTC tests; both packages passed. The local base and Brave images then built successfully, Compose started the adaptive service healthy with zero restarts, and the running Brave image ID was `sha256:a3efc4573a26965b0b9ccc54a289278fcd570d206c8ddaea58719f5e1a2c69ca`.
@@ -65,7 +75,7 @@ Run these commands only on the real target server. Preserve the currently workin
 docker image tag my-neko/brave:latest my-neko/brave:pre-adaptive
 cd server
 go test ./internal/capture -run '^(TestSaveSampleBitrateUsesBitsPerSecond|TestNominalBitrate)$'
-go test ./internal/webrtc -run '^(TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade|TestStreamNominalBitrateIsOptional)$'
+go test ./internal/webrtc -run '^(TestInitialEstimatorObservationTimesDoNotStartExpired|TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade|TestStreamNominalBitrateIsOptional)$'
 ./build
 cd ..
 ./build my-neko/base:latest -y
@@ -82,7 +92,7 @@ docker run --rm "$VALIDATION_IMAGE" \
   -run '^(TestSaveSampleBitrateUsesBitsPerSecond|TestNominalBitrate)$'
 docker run --rm "$VALIDATION_IMAGE" \
   go test ./internal/webrtc \
-  -run '^(TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade|TestStreamNominalBitrateIsOptional)$'
+  -run '^(TestInitialEstimatorObservationTimesDoNotStartExpired|TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade|TestStreamNominalBitrateIsOptional)$'
 ./build my-neko/base:latest -y
 ./build my-neko/brave:latest -y
 ```

@@ -1,6 +1,32 @@
 package webrtc
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+func TestInitialEstimatorObservationTimesDoNotStartExpired(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0)
+	stableSince, unstableSince, stalledSince := initialEstimatorObservationTimes(now)
+
+	for _, tt := range []struct {
+		name string
+		got  time.Time
+	}{
+		{name: "stable", got: stableSince},
+		{name: "unstable", got: unstableSince},
+		{name: "stalled", got: stalledSince},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got.IsZero() {
+				t.Fatal("observation window started at zero time")
+			}
+			if !tt.got.Equal(now) {
+				t.Fatalf("observation window = %v, want %v", tt.got, now)
+			}
+		})
+	}
+}
 
 func TestEstimatedBitrateSupportsUpgrade(t *testing.T) {
 	tests := []struct {

@@ -85,9 +85,10 @@ These repository implementation claims were first established by static inspecti
 - Peer-local audio/video queue drops and per-pipeline bitrates are exported as Prometheus metrics.
 - Upgrade headroom is configured separately from the current-tier downgrade margin; the opt-in profile can therefore account for its approximately 2:1 adjacent tiers without changing the compatible server default.
 - Optional `nominal_bitrate` metadata gates an upgrade against the next tier's target; configurations without it retain the previous measured-current-tier fallback.
+- Stable, unstable and stalled estimator observation windows start together instead of leaving the latter two at Go zero time; switch-backoff timestamps remain unset until a real switch.
 - Activation, diagnostics, resource costs, rollback and the target-server acceptance sequence are documented in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
-On 2026-09-10, the operator accepted commit `bfaca84e` on the target server for one desktop, one iPad and one iPhone. The isolated 0.7 Mbit/s rerun held the iPhone on `low` after downgrade, preserved both healthy viewers on `high` with zero peer-local drops, and recovered through `medium` to `high` within 45 seconds after impairment removal. Refresh/rejoin and a transient cellular interruption also preserved both healthy viewers. This is bounded evidence for that deployment and device set, not a universal profile guarantee.
+On 2026-09-10, the operator accepted commit `bfaca84e` on the target server for one desktop, one iPad and one iPhone. The isolated 0.7 Mbit/s rerun held the iPhone on `low` after downgrade, preserved both healthy viewers on `high` with zero peer-local drops, and recovered through `medium` to `high` within 45 seconds after impairment removal. Refresh/rejoin and a transient cellular interruption also preserved both healthy viewers. This is bounded evidence for that deployment and device set, not a universal profile guarantee. The later zero-time startup correction is a separate pending checkpoint and does not retroactively alter that acceptance.
 
 ## Highest-priority target outcomes
 
@@ -135,7 +136,7 @@ The capture-backed provider now owns source discovery, keyframe-gated subscripti
 
 GStreamer now exports encoded-buffer PTS, DTS, duration and caps-derived resolution/frame rate. Provider normalization maps those timestamps onto a manager-owned timeline, while `CapturedAt` is retained only for the compatibility Pion sample field and is not treated as a cross-backend PTS. Pipeline recreation and format change advance/propagate explicit generations and force video readmission at a keyframe.
 
-Focused repository tests cover ordered selection, demand lifecycle, keyframe admission, switch/pause/resume/idempotent close, timing/generation/format/discontinuity, local non-blocking overflow, the unchanged WebRTC two-unit policy, `CanWatch` denial, view-only receive allowance, replacement/revocation and shutdown. These tests and builds were **NOT EXECUTED IN CODEX**. Target-server validation remains required before the compatibility block is accepted.
+Focused repository tests cover ordered selection, demand lifecycle, keyframe admission, switch/pause/resume/idempotent close, timing/generation/format/discontinuity, local non-blocking overflow, the unchanged WebRTC two-unit policy, `CanWatch` denial, view-only receive allowance, replacement/revocation and shutdown. These tests were **NOT EXECUTED IN CODEX**. At `a32027d`, they and the server/plugin build passed in the target-server validation container; local images also built and the deployed compatibility path produced the expected lifecycle metrics. The broader manual matrix and the later estimator startup correction still require one exact-commit target-server checkpoint before the compatibility block is accepted.
 
 No alternative endpoint, packager or client exists. WebCodecs/WebSocket, HLS/LL-HLS, automatic backend selection and WebTransport remain later candidates.
 

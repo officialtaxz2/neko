@@ -1,6 +1,6 @@
 # Backend-neutral encoded-media subscription boundary
 
-Status: **design and first no-new-transport compatibility implementation complete in the repository on `testing` as of 2026-09-11; target-server verification pending; no alternative media backend is implemented**.
+Status: **design and first no-new-transport compatibility implementation complete in the repository on `testing` as of 2026-09-11; target-server verification in progress together with a separate estimator startup-timing correction; no alternative media backend is implemented**.
 
 This document fixes the architecture contract and records its first compatibility implementation. It is intentionally more concrete than a product direction, but it does not claim that WebCodecs/WebSocket, HLS/LL-HLS, DASH or WebTransport exists in the repository.
 
@@ -320,7 +320,7 @@ Required focused tests include:
 - delivery/session revocation and shutdown cleanup;
 - absence of tokens in logs/metric labels by construction.
 
-Runtime/build verification remains target-server work under `AGENTS.md`. The compatibility refactor is not complete until focused Go tests, server/plugin build, local image build and the existing ordinary/admin/view-only/adaptive regression smoke tests pass there.
+Runtime/build verification is target-server work under `AGENTS.md`. The compatibility refactor is not complete until focused Go tests, server/plugin build, local image build and the existing ordinary/admin/view-only/adaptive regression smoke tests pass there at the final exact checkpoint commit.
 
 Repository implementation record:
 
@@ -330,11 +330,15 @@ Repository implementation record:
 - Subscription dispatch uses a manager-owned bounded encoded-unit queue. Consumer slowness never waits in capture fan-out; `drop_newest` remains the WebRTC policy, and lifecycle transitions replace stale queued units rather than being silently dropped.
 - `server/internal/media/manager.go` validates the current session and `CanWatch`, intersects requested receive media with registered backend capabilities, issues an opaque backend/session lease, keeps one primary delivery, revokes on profile/session lifecycle and closes deliveries before capture shutdown.
 - `server/internal/session/` owns generic media attachment/watching state and private-mode pause; WebRTC-named accessors remain compatibility shims for existing signaling handlers.
-- `server/internal/webrtc/` registers as the first backend and maps pure codec descriptors back to the existing Pion codec definitions. Because this compatibility backend also carries the existing control data channel, its private `CreatePeer` call context supplies only that already-authenticated session to the concrete delivery; the generic lease and backend request expose neither the session manager nor a login/share credential. SDP, ICE, data channels, inbound media, estimator behavior, video/audio messages and client protocol remain unchanged.
+- `server/internal/webrtc/` registers as the first backend and maps pure codec descriptors back to the existing Pion codec definitions. Because this compatibility backend also carries the existing control data channel, its private `CreatePeer` call context supplies only that already-authenticated session to the concrete delivery; the generic lease and backend request expose neither the session manager nor a login/share credential. SDP, ICE, data channels, inbound media, estimator behavior, video/audio messages and client protocol were unchanged by the compatibility refactor. A later independent follow-up corrects pre-expired estimator startup observation windows.
 - Existing `neko_webrtc_track_dropped_samples_total` counters remain session-local. New `neko_media_*` metrics cover backend delivery state, subscription demand, queue observations, delivered units/bytes, local drops, discontinuities and source generation without credential labels.
 - Focused tests cover the required selector, demand, keyframe, switch/pause/resume/close, timing/generation/format/discontinuity, overflow/isolation, two-unit WebRTC queue, authorization, replacement, revocation and shutdown cases.
 
-Static status: **implementation and diff review complete in Codex; project code, tests, builds, containers and runtime checks NOT EXECUTED IN CODEX**. The next checkpoint is the exact target-server validation below; no alternative-backend prototype should begin until it is accepted.
+Static status: **implementation and diff review complete in Codex; project code, tests, builds, containers and runtime checks NOT EXECUTED IN CODEX**.
+
+Target-server evidence through `a32027d`: the complete expanded Go package set and trailing server/plugin build passed; local base/Brave images built; the adaptive service started healthy; a current-protocol media lifecycle probe passed; and `neko_media_*` showed consistent delivery/subscription lifecycle, capacity-two queues, delivery traffic and discontinuities without credential labels. A candidate/rollback A/B reproduced the same immediate startup `high -> medium` transition on both images, excluding the media-subscription refactor as its introduction. The inherited estimator zero-time cause and its separate correction are documented in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
+
+The next checkpoint is the exact combined target-server validation below. The broader manual matrix and the estimator correction remain pending; no alternative-backend prototype should begin until they are accepted.
 
 Target-server commands from the repository root:
 

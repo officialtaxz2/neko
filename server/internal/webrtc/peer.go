@@ -167,13 +167,11 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 	ticker := time.NewTicker(conf.ReadInterval)
 	defer ticker.Stop()
 
-	// since when is the estimate stable/unstable
-	stableSince := time.Now() // we asume stable at start
-	unstableSince := time.Time{}
-	// since when are we neutral but cannot accomodate current bitrate
-	// we migt be stalled or estimator just reached zer (very bad connection)
-	stalledSince := time.Time{}
-	// when was the last upgrade/downgrade
+	// Start all observation windows at reader startup. A zero time.Time would
+	// make time.Since(...) appear already expired and could bypass the configured
+	// unstable/stalled grace periods on the first qualifying estimate.
+	stableSince, unstableSince, stalledSince := initialEstimatorObservationTimes(time.Now())
+	// Switch backoff intentionally starts unset and only applies after a switch.
 	lastUpgradeTime := time.Time{}
 	lastDowngradeTime := time.Time{}
 
@@ -348,6 +346,10 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			debugLogger.Info().Msg("upgraded video stream")
 		}
 	}
+}
+
+func initialEstimatorObservationTimes(now time.Time) (stableSince, unstableSince, stalledSince time.Time) {
+	return now, now, now
 }
 
 func referenceBitrateForUpgrade(measuredBitrate, nominalBitrate uint64) uint64 {
