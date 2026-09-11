@@ -1,6 +1,6 @@
 # Project Definition
 
-Last consolidated: 2026-09-10.
+Last consolidated: 2026-09-11.
 
 State labels:
 
@@ -105,7 +105,7 @@ Mobile must reliably join, start media under autoplay rules, recover from transi
 
 The repository now separates the bounded recovery states: eight seconds for automatic recovery of an existing ICE peer; a four-attempt application-level login when the established peer/socket is unrecoverable; and the existing central Play control when Safari blocks playback after media is available. A successful media-element `srcObject` assignment is no longer treated as recovery until playback progress or track unmute occurs, and old stream timers/listeners are removed when the connection store resets.
 
-The 2026-09-10 iPhone check proved successful rejoin after reload and, when required by iOS autoplay policy, a central Play tap; it also proved that this recovery did not disturb the other viewers. The new no-reload path is implemented and statically reviewed on `testing`, but its exact target-server iPhone procedure in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) remains pending for the next grouped checkpoint. Fully automatic in-place recovery is not an accepted device claim until that run passes.
+The 2026-09-10 iPhone check proved successful rejoin after reload and, when required by iOS autoplay policy, a central Play tap; it also proved that this recovery did not disturb the other viewers. The new no-reload path is implemented and statically reviewed on `testing`, and its dependency-free recovery tests passed in the target-server validation container at `913a981e`. On 2026-09-11 the operator deliberately closed the checkpoint without the manual same-peer, replacement-session and bounded-exhaustion iPhone phases because no Safari Web Inspector/Mac was available and accepted the automated evidence for the deployment decision. Fully automatic in-place recovery therefore remains an unverified device claim; [`IOS_RECOVERY.md`](IOS_RECOVERY.md) retains the deferred procedure.
 
 ### TARGET — Smart-TV / constrained browser compatibility
 
@@ -119,13 +119,19 @@ The optional `#/<16-character-Base64URL-token>` link permits passive WebRTC view
 
 Authorization is enforced by a normalized backend-neutral `is_view_only` profile and allow/deny checks across every current ingress path, not by hidden controls or by WebRTC. This leaves the same identity usable by a future different receive-only media backend without creating a separate desktop/session or weakening authorization. Token lifetime, revocation, denial behavior, deployment, rollback and the three-role target-server matrix are specified in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md).
 
-Runtime status: **the full view-only boundary, real inbound-media denial and revocation passed on the target server at `80eeca64` with the prior credential shape. The later compact token/link change is implemented and statically reviewed on `testing` but requires a fresh target-server build and smoke test; the grouped iOS phases remain pending**.
+Runtime status: **the full view-only boundary, real inbound-media denial and revocation passed on the target server through `80eeca64`. At exact commit `913a981e`, fresh client/server checks, image deployment, the HTTP boundary probe and the compact-link browser smoke test also passed. View-only is accepted for the tested deployment; the separately omitted iPhone recovery deep test is not evidence against or for its no-reload behavior**.
 
 ### TARGET — robust recovery
 
 Refresh, reconnect and network transitions must not leave peers permanently black or stuck.
 
 ## Alternative media direction
+
+### DESIGNED — backend-neutral encoded-media subscription boundary
+
+The source-subscription and participant-delivery contract is fixed in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It separates demand on shared encoded sources from per-session delivery, centralizes `CanWatch` authorization above all backends, requires bounded non-blocking queues and makes format, GStreamer presentation timing, source generations and discontinuities explicit.
+
+This is an architecture design, not a source implementation. The existing WebRTC sender has not yet been migrated and no alternative endpoint, packager or client exists.
 
 The project distinguishes **interactive** and **passive/view-only** media fallback needs. There is not one mandatory fallback chain for every client.
 
@@ -172,7 +178,7 @@ other constrained client     -> capability-tested alternative
 
 Automatic selection is a TARGET direction, not currently IMPLEMENTED. Manual/explicit selection may be used first for diagnosis and rollout.
 
-None of these alternative-media candidates are IMPLEMENTED here unless repository code proves otherwise.
+None of these alternative-media candidates are IMPLEMENTED here unless repository code proves otherwise. The decided boundary design does not change that status.
 
 ## Development / verification environment constraint
 

@@ -13,10 +13,12 @@ Immediate sequence:
 5. validate the integrated `master` on the target server — **complete; operator-confirmed on 2026-09-09 after correcting the Brave policy mount filename**,
 6. make the multi-pipeline/bandwidth-estimator path reproducible and observable without changing the stable single-pipeline default — **complete**,
 7. validate and measurement-tune the opt-in adaptive-quality profile on the target server — **complete; operator-accepted on 2026-09-10 for the documented three-viewer scenario at `bfaca84e`**,
-8. implement bounded iOS transient recovery without requiring a page reload while preserving Safari's Play fallback — **complete in the repository on `testing`; target-server no-reload validation pending at the next grouped checkpoint**,
-9. implement server-enforced view-only sharing on `testing` — **complete in the repository; target-server validation pending at the grouped checkpoint**,
-10. validate bounded iOS recovery and server-enforced view-only sharing together at one exact `testing` commit — **NEXT**,
-11. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
+8. implement bounded iOS transient recovery without requiring a page reload while preserving Safari's Play fallback — **complete in the repository on `testing`; exact-commit automated checks passed, but the operator deliberately closed the checkpoint without the manual iPhone deep test, so no no-reload device claim is made**,
+9. implement server-enforced view-only sharing on `testing` — **complete in the repository and target-server verified through the full boundary matrix plus the compact-link follow-up at `913a981e`**,
+10. validate bounded iOS recovery and server-enforced view-only sharing together at one exact `testing` commit — **closed on 2026-09-11 with the explicit iPhone evidence limitation above**,
+11. design the backend-neutral encoded-media subscription boundary for practical non-WebRTC prototypes — **complete on `testing`; design only, no alternative backend implemented**,
+12. implement the no-new-transport compatibility refactor defined in `docs/MEDIA_SUBSCRIPTION_BOUNDARY.md` — **NEXT**,
+13. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
 
 ## Authoritative knowledge
 
@@ -31,6 +33,7 @@ Read before substantial work:
 - `docs/ADAPTIVE_QUALITY.md` — opt-in profile, diagnostics, resource costs, exact target-server acceptance procedure and rollback.
 - `docs/IOS_RECOVERY.md` — implemented bounded reconnect states, exact target-server iPhone procedure, acceptance criteria and rollback.
 - `docs/VIEW_ONLY_SHARING.md` — implemented passive-session boundary, token lifetime/revocation, denial behavior, exact three-role target-server matrix and rollback.
+- `docs/MEDIA_SUBSCRIPTION_BOUNDARY.md` — decided backend-neutral encoded-media/source-subscription and participant-delivery contract, migration order, security boundary and prototype gates.
 - `webpage/docs/` — inherited Neko documentation. Current repository code/config wins on conflicts.
 
 ## Truth rules

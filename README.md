@@ -43,7 +43,7 @@ Current upstream integration (2026-09-09):
 - upstream `m1k1o/neko:master`: `b0f01cedea68893e85a3fd852c0521238c285695`
 - pre-sync merge base: `d74052bb844c43a0cc3c2386d083f7505dc483a2`
 - upstream merge commit on `integration/upstream-20260909`: `4e99b8d3ca720d1f184544306820e388716ba23a`
-- `master` was fast-forwarded to the reviewed integration history; subsequent `testing` work includes the sanitized Brave deployment reconciliation, the accepted opt-in adaptive-quality unit, bounded iOS recovery and server-enforced view-only sharing pending their grouped target-server validation.
+- `master` was fast-forwarded to the reviewed integration history; subsequent `testing` work includes the sanitized Brave deployment reconciliation, the accepted opt-in adaptive-quality unit, bounded iOS recovery, server-enforced view-only sharing and the backend-neutral media-subscription design.
 
 The 97-file upstream delta was reviewed by subsystem. Conflicts in `settings.vue`, `side.vue` and `video.vue` were resolved semantically, preserving the fork's touch/trackpad, UI and cursor/recovery behavior while accepting the upstream permissions, Open-in-App and focus-clipboard changes. A hidden demo-mode payload mismatch caused by the new file-transfer rights fields was also repaired.
 
@@ -60,13 +60,13 @@ Local reconciliation (2026-09-09):
 
 Do not perform a blind upstream overwrite.
 
-The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`. The grouped target-server checkpoint is in progress: the full view-only boundary, real inbound-media denial and revocation passed at `80eeca64`; containerized client/server checks, image build/deployment, the HTTP denial probe and the compact `#/<16-character-token>` browser smoke check then passed at exact commit `913a981e`. The iOS device phases remain pending, so no automatic in-place recovery or complete grouped acceptance claim is made yet.
+The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`. The full view-only boundary, real inbound-media denial and revocation passed at `80eeca64`; containerized client/server checks, image build/deployment, the HTTP denial probe and the compact `#/<16-character-token>` browser smoke check then passed at exact commit `913a981e`. On 2026-09-11 the operator deliberately closed the grouped checkpoint without the manual iPhone deep test because no Safari Web Inspector/Mac was available and the automated evidence was accepted as sufficient for this deployment decision. This is not evidence that same-peer, replacement-session or bounded-exhaustion recovery works on a real iPhone without reload.
 
 ## NEXT
 
-Continue exclusively on `testing`: validate the accumulated bounded iOS recovery and server-enforced view-only blocks together at one exact commit, using the complete procedures in [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md) and [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md). `master` remains pinned at the accepted stable baseline until the operator explicitly authorizes a later grouped promotion.
+Continue exclusively on `testing`: implement the no-new-transport compatibility refactor in [`docs/MEDIA_SUBSCRIPTION_BOUNDARY.md`](docs/MEDIA_SUBSCRIPTION_BOUNDARY.md). Introduce backend-neutral encoded-media/source-subscription and participant-delivery contracts, then migrate the existing WebRTC sender without changing its protocol, defaults, queue/drop behavior or authorization. WebCodecs/WebSocket and HLS remain later opt-in prototypes. `master` remains pinned at the accepted stable baseline until the operator explicitly authorizes a later grouped promotion.
 
-See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md), [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
+See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md), [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md), [`docs/MEDIA_SUBSCRIPTION_BOUNDARY.md`](docs/MEDIA_SUBSCRIPTION_BOUNDARY.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
 ## Local Brave deployment
 
@@ -102,7 +102,7 @@ Do not run the application, install dependencies, execute builds/tests/linters, 
 
 Runtime verification happens separately on the real server. Known server-side commands and the verification matrix are documented in `AGENTS.md` and `docs/WORKPLAN.md`.
 
-For the grouped iOS/view-only checkpoint, [`docker-compose.validation.yaml`](docker-compose.validation.yaml) runs the client checks, focused Go tests/server build, metrics snapshots, token generation and HTTP denial probe in containers. The target host therefore needs no local Node.js/npm, Go or Python installation; the copy/paste sequence and manual device phases are in [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md) and [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md).
+For the completed iOS/view-only checkpoint, [`docker-compose.validation.yaml`](docker-compose.validation.yaml) supplied the client checks, focused Go tests/server build, metrics snapshots, token generation and HTTP denial probe in containers. The target host therefore needed no local Node.js/npm, Go or Python installation. The completed View-only procedure and the deliberately deferred manual iPhone phases remain in [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md) and [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md).
 
 `.env`, `files/`, `downloads/` and `policy.json` remain ignored and must not be committed.
 

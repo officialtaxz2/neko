@@ -1,10 +1,23 @@
 # Begrenzte iOS-Wiederherstellung nach Netzunterbrechungen
 
-Status: **auf `testing` implementiert und statisch geprüft; Docker-Builds und die iPhone-Laufzeitprüfung auf dem Zielserver stehen noch aus**.
+Status: **auf `testing` implementiert und statisch geprüft; die containerisierten Client-/Serverprüfungen sowie Image-Build und -Start bestanden am Zielserver auf `913a981e`. Der Betreiber hat den Checkpoint am 2026-09-11 bewusst ohne die manuellen iPhone-Phasen A–C geschlossen. Damit bleibt No-Reload-Recovery auf einem realen iPhone ausdrücklich unbestätigt**.
 
 Dieses Runbook ist für einen Linux-Zielserver gedacht, auf dem nur Git, Bash, Docker Engine und `docker compose` vorhanden sein müssen. Node.js, npm, Go und Python werden auf dem Host **nicht** benötigt. Die automatisierbaren Prüfungen laufen in kurzlebigen Containern über [`docker-compose.validation.yaml`](../docker-compose.validation.yaml).
 
-Der Checkpoint muss gemeinsam mit der Drei-Rollen-Prüfung aus [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md) auf demselben Commit und demselben Neko-Image erfolgen. Ein bestandenes Runbook ist kein Nachweis für das andere.
+Der ursprüngliche Gruppenplan verlangte die gemeinsame Ausführung mit der Drei-Rollen-Prüfung aus [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md) auf demselben Commit und demselben Neko-Image. Der Checkpoint wurde mit der nachfolgend beschriebenen bewussten Ausnahme geschlossen; ein bestandenes View-only-Runbook ist weiterhin kein Nachweis für iPhone-No-Reload-Recovery.
+
+## Entscheidung zum Checkpoint 2026-09-11
+
+Die automatisierten Recovery-Tests, TypeScript-Prüfung, der Client-Produktionsbuild, die fokussierten Serverprüfungen und der Image-Build liefen auf dem Zielserver erfolgreich. Ein Mac mit Safari Web Inspector stand nicht zur Verfügung. Der Betreiber entschied deshalb ausdrücklich, die manuellen Same-Peer-, Replacement-Session- und Exhaustion-Phasen nicht auszuführen und die vorhandene automatisierte Evidenz für die aktuelle Deployment-Entscheidung ausreichen zu lassen.
+
+Diese Entscheidung schließt den Arbeitsblock mit einer bekannten Evidenzlücke; sie ersetzt keinen Testnachweis. Insbesondere werden nicht als zielserververifiziert behauptet:
+
+- bestehende iPhone-Peer-Erholung innerhalb des Acht-Sekunden-Fensters ohne Reload;
+- Erzeugung genau einer Ersatzsession ohne Reload;
+- höchstens vier tatsächlich gestartete, nicht parallele Versuche unter realer Safari-Netzunterbrechung;
+- Unterdrückung dieser Versuche nach einem echten Admin-Kick bzw. `system/disconnect` auf dem iPhone.
+
+Die folgenden Phasen bleiben als wiederverwendbares optionales Runbook erhalten. Eine spätere Ausführung kann die Evidenzlücke schließen, ist aber keine Voraussetzung für den jetzt folgenden Architektur-/Refactoring-Block.
 
 ## Was geprüft wird
 
@@ -321,7 +334,7 @@ Touch/Trackpad/Keyboard/Orientierung/Vollbild/Audio/Kontrolle/Dateien:
 Abweichungen oder Fehler:
 ```
 
-Der Block ist erst zielserververifiziert, wenn alle Phasen und Regressionspunkte belegt sind. Bis dahin bleibt die Aussage: **implementiert und statisch geprüft; No-Reload-Verhalten auf dem Zielserver ausstehend**.
+Der Checkpoint vom 2026-09-11 ist mit der oben dokumentierten Einschränkung geschlossen. Für eine spätere Aussage, dass No-Reload-Recovery auf einem realen iPhone zielserververifiziert ist, müssen weiterhin alle Phasen und Regressionspunkte belegt werden. Bis dahin gilt ausschließlich: **implementiert, statisch geprüft und automatisiert getestet; reales iPhone-No-Reload-Verhalten unbestätigt**.
 
 ## Rollback
 

@@ -180,6 +180,10 @@ shared capture / encoder outputs
 
 The control/session/auth path must remain independent enough that a receive-only backend does not gain control capability. A passive viewer can therefore use HTTP-streaming media while remaining in the same logical Neko room.
 
+The concrete boundary is now designed in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It distinguishes a backend subscription to an encoded source from the authorized delivery attached to a participant: WebRTC or a media WebSocket may subscribe per participant, while an HLS packager may subscribe once per active variant and issue separate short-lived viewer leases. A central delivery manager checks `CanWatch`; backends never receive login/share credentials or authority over control, plugins or member profiles.
+
+The design also closes gaps in the current `types.Sample`/`SampleListener` seam: format metadata, real GStreamer PTS/DTS, a monotonic timeline, generations and discontinuities become explicit; subscriber queues are bounded and non-blocking; and generic session watching state no longer depends on the name `WebRTC`. This is **DESIGNED**, not implemented. The first implementation must migrate WebRTC behind the new contract without adding a new transport or changing current defaults.
+
 This architecture is directionally aligned with upstream issue #371, which explicitly lists `m3u8`/HLS, WebRTC, QUIC and other media backends and proposes selecting them according to user-device, network and server capabilities.
 
 ### LATER/OPTIONAL
@@ -189,10 +193,10 @@ This architecture is directionally aligned with upstream issue #371, which expli
 - MJPEG only as an ultra-legacy image-only last resort;
 - fully automatic transport/codec selection after explicit capability detection and measured fallback behavior.
 
-Exact final interfaces remain OPEN until the relevant prototype work is designed against the current synchronized baseline.
+The source-subscription and participant-delivery interface semantics are decided. Exact WebCodecs framing, HLS packaging parameters, device codecs and automatic selection remain OPEN until their evidence-led prototype blocks.
 
 ## Verification boundary
 
 Architecture/runtime claims beyond repository inspection must be verified on the real target server, not in Codex. Codex should prepare server-side validation steps but must not execute the application, builds, tests, Docker or media/device checks.
 
-The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction, diagnostics and next-tier nominal upgrade gate were subsequently built, focused-tested and accepted on 2026-09-10 for the documented three-viewer target-server scenario. The view-only boundary, real inbound-media denial and revocation later passed on the target server at `80eeca64` using the prior credential shape; the requested compact token/link follow-up needs a new deployment smoke test. Bounded iOS recovery remains in the grouped procedure in [`IOS_RECOVERY.md`](IOS_RECOVERY.md). Codex did not execute those runtime checks.
+The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction, diagnostics and next-tier nominal upgrade gate were subsequently built, focused-tested and accepted on 2026-09-10 for the documented three-viewer target-server scenario. The view-only boundary, real inbound-media denial and revocation passed through `80eeca64`; exact-commit client/server checks, deployment, HTTP probe and compact-link browser smoke then passed at `913a981e`. The operator closed that grouped checkpoint without executing the manual iPhone deep test, so no no-reload iPhone claim is made. The new media-subscription work is documentation/design only and has no runtime verification requirement until its first code implementation. Codex did not execute any runtime checks.

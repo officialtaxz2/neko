@@ -1,10 +1,10 @@
 # Serverseitig erzwungenes View-only-Sharing
 
-Status: **auf `testing` implementiert und statisch geprüft; die Drei-Rollen-, Eingangsmedia- und Widerrufsmatrix lief auf dem Zielserver erfolgreich. Das anschließend auf Wunsch eingeführte kompakte 16-Zeichen-/Kurzlinkformat bestand am exakten Commit `913a981e` die containerisierten Client-/Serverprüfungen, den Image-Build und -Start, die HTTP-Grenzprüfung sowie den Browser-Smoke-Test. Das gemeinsame iOS-Runbook bleibt offen**.
+Status: **auf `testing` implementiert, statisch geprüft und für die getestete Zielbereitstellung akzeptiert. Die Drei-Rollen-, Eingangsmedia- und Widerrufsmatrix lief erfolgreich; das anschließend auf Wunsch eingeführte kompakte 16-Zeichen-/Kurzlinkformat bestand am exakten Commit `913a981e` die containerisierten Client-/Serverprüfungen, den Image-Build und -Start, die HTTP-Grenzprüfung sowie den Browser-Smoke-Test. Der getrennte iPhone-Tiefentest wurde bewusst nicht ausgeführt und begründet keine No-Reload-Aussage**.
 
 Dieses Runbook ist auf einen Linux-Zielserver ohne lokal installiertes Node.js, npm, Go oder Python zugeschnitten. Die automatisierbaren Prüfungen laufen über [`docker-compose.validation.yaml`](../docker-compose.validation.yaml). Nur die tatsächlichen Browser-, Rollen-, Eingabe-, Mikrofon- und Widerrufstests bleiben manuell.
 
-Der Checkpoint muss gemeinsam mit [`IOS_RECOVERY.md`](IOS_RECOVERY.md) auf demselben exakten `testing`-Commit und demselben Neko-Image erfolgen.
+Der ursprüngliche Gruppenplan sah die gemeinsame Ausführung mit [`IOS_RECOVERY.md`](IOS_RECOVERY.md) auf demselben exakten `testing`-Commit und demselben Neko-Image vor. Der Betreiber schloss diesen Checkpoint am 2026-09-11 ausdrücklich mit bestandener View-only-Evidenz und bewusst offener iPhone-Tiefenvalidierung.
 
 ## Sicherheitsmodell in Kurzform
 
@@ -355,9 +355,9 @@ Der View-only-Block gilt nur dann als zielserververifiziert, wenn:
 - V keine Dateinamen erhält;
 - A V keine Kontrolle geben kann, M/A-Kontroll- und Lock-Semantik aber unverändert bleibt;
 - Rotation plus Service-Neuerstellung alte Links und aktive View-only-Sessions widerruft;
-- normales Mitglied, Admin, Mobile/Touch, Dateiübertragung, adaptive Qualität und das gesamte iOS-Recovery-Runbook bestehen.
+- normales Mitglied, Admin, Mobile/Touch, Dateiübertragung und adaptive Qualität durch den View-only-Pfad nicht regressieren.
 
-Bis alle Punkte belegt sind, lautet der Status weiterhin: **implementiert und statisch geprüft; Zielservervalidierung ausstehend**.
+Für den Checkpoint 2026-09-11 sind die View-only-spezifischen Punkte durch die vollständige Matrix bis `80eeca64` und die exakten Format-/Deployment-/HTTP-/Browserprüfungen auf `913a981e` belegt. Der Betreiber akzeptierte diesen Block für die getestete Bereitstellung. Der bewusst ausgelassene iPhone-Tiefentest bleibt separat in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) dokumentiert und darf nicht als bestandene No-Reload-Evidenz ausgelegt werden.
 
 ## Antwortvorlage für die View-only-Evidenz
 

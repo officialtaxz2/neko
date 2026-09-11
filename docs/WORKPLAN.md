@@ -43,7 +43,7 @@ integration/upstream-20260909
 upstream merge commit: 4e99b8d3ca720d1f184544306820e388716ba23a
 relation at merge commit: 37 commits ahead, 0 behind
 master: fast-forwarded to the reviewed integration history
-testing: deployment reconciliation, accepted opt-in adaptive quality, bounded iOS recovery and server-enforced view-only sharing
+testing: deployment reconciliation, accepted opt-in adaptive quality, bounded iOS recovery, server-enforced view-only sharing and completed backend-neutral media-subscription design
 master: pinned at d9105ef8 until explicit grouped-promotion authorization
 ```
 
@@ -178,7 +178,7 @@ Implemented and statically reviewed on `testing` on 2026-09-10:
 
 Static review status: **implementation complete in repository / client test, lint, build and iPhone runtime verification NOT EXECUTED IN CODEX**.
 
-Target-server status: **pending at the next coherent grouped `testing` checkpoint**. The prior 2026-09-10 reload/Play evidence does not validate the new no-reload implementation, and no automatic iOS claim is made yet.
+Target-server status: **closed by explicit operator decision on 2026-09-11 with a known manual-device evidence gap**. At exact commit `913a981e`, the dependency-free recovery tests passed with the complete containerized client checks, and the focused server tests/build plus image build/start also passed. No Mac/Safari Web Inspector was available; the operator deliberately omitted phases A–C and accepted the automated evidence for the deployment decision. The prior reload/Play evidence does not validate the new no-reload implementation, and no automatic iOS claim is made.
 
 ## COMPLETED IN REPOSITORY — server-enforced view-only sharing
 
@@ -195,7 +195,7 @@ Implemented and statically reviewed on `testing` on 2026-09-10:
 
 Static review status: **implementation complete in repository / client checks, server tests/build and runtime matrix NOT EXECUTED IN CODEX**.
 
-Target-server status: **the security/role matrix through `80eeca64` and the compact-link follow-up at exact commit `913a981e` passed; the coherent grouped checkpoint remains open until the bounded iOS recovery phases and final shared regressions pass on that deployment**.
+Target-server status: **accepted for the tested deployment**. The security/role matrix through `80eeca64` and the compact-link follow-up at exact commit `913a981e` passed. The separately omitted iPhone deep test remains an explicit limitation, not a failed View-only check.
 
 Checkpoint evidence begun on 2026-09-11 at `5387f356` and continued through `913a981e`:
 
@@ -214,7 +214,33 @@ Checkpoint evidence begun on 2026-09-11 at `5387f356` and continued through `913
 - the local base and Brave images rebuilt successfully, and `my-neko/brave:latest` became image `sha256:5b5c7747930bc863da05cb3f05d8bb7b97a624386d105bdade2448e5443d36a2` before the adaptive service was recreated with the new 16-character token;
 - the complete automated HTTP boundary probe passed against the recreated service. The operator then confirmed that the exact compact `#/<16-character-token>` link automatically logged V in, showed desktop and audio, exposed only playback functions and produced no red browser-console error. Six-character and legacy 64-hex rejection are covered by the passing exact-commit client/server tests.
 
-After the successful original matrix, the operator requested the intentionally incompatible compact `#/<16-character-Base64URL-token>` form. Its fresh exact-commit checks, deployment, HTTP probe and new-link browser smoke test are now complete. The full iOS recovery phases and final shared regressions remain open, so no grouped checkpoint acceptance is claimed yet.
+After the successful original matrix, the operator requested the intentionally incompatible compact `#/<16-character-Base64URL-token>` form. Its fresh exact-commit checks, deployment, HTTP probe and new-link browser smoke test are complete.
+
+## CLOSED WITH EXPLICIT LIMITATION — grouped iOS/View-only checkpoint
+
+Closed by operator decision on 2026-09-11:
+
+- View-only is accepted for the tested deployment based on the adversarial role/HTTP/WebSocket/data-channel/inbound-media/revocation evidence through `80eeca64` and the exact compact-format validation at `913a981e`.
+- The exact-commit client recovery tests, TypeScript lint, production build, focused Go suites, server/plugin build, local image build and healthy deployment all passed on the target server.
+- No Mac/Safari Web Inspector was available. The operator deliberately declined the manual iPhone same-peer, replacement-session, bounded-exhaustion and server-directed-disconnect phases and accepted the automated evidence as sufficient to continue repository work.
+- This is an explicit risk acceptance, not fabricated device evidence. Automatic no-reload recovery on a real iPhone remains unverified and the reusable procedure stays in [`IOS_RECOVERY.md`](IOS_RECOVERY.md).
+- `master` remains pinned at `d9105ef8`; closing this checkpoint does not authorize promotion.
+
+## COMPLETED — backend-neutral media-subscription boundary design
+
+Designed and statically reviewed on `testing` on 2026-09-11. The complete contract is in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md).
+
+Decisions now fixed:
+
+- shared encoded capture is exposed through a transport-independent source catalog and bounded source subscriptions;
+- source subscriptions are separate from participant deliveries, allowing per-viewer WebRTC/WebSocket delivery and shared-per-variant HLS packaging without duplicating authorization or capture;
+- one delivery manager validates `CanWatch`, creates scoped leases, owns revocation and updates backend-neutral watching state;
+- media codecs/descriptors do not embed Pion types, and format, GStreamer PTS/DTS, timeline generation, keyframes and discontinuities are first-class contract data;
+- all subscription queues are bounded/non-blocking and backend overflow must drop/resynchronize/close locally instead of blocking capture;
+- WebRTC remains the default and is migrated first with unchanged signaling, data-channel, estimator, queue/drop, metrics and configuration behavior;
+- no WebCodecs/WebSocket endpoint, HLS route/packager, automatic fallback or WebTransport implementation belongs to the compatibility-refactor block.
+
+Static status: **design complete / no alternative media backend implemented / no project code, test, build or runtime check executed in Codex**.
 
 ## Target-server verification
 
@@ -242,7 +268,7 @@ npm run build
 
 Required for the integrated baseline: confirm `npm ci`, TypeScript lint and the Vite production build at integration commit `4e99b8d3`. The operator later confirmed these checks passed, closing verification of the lock/type repair in `2d89027e`.
 
-For the accumulated iOS recovery and view-only blocks on `testing`, run all four commands at the exact candidate commit and then follow [`IOS_RECOVERY.md`](IOS_RECOVERY.md) and [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md). These client blocks have not yet been executed on the target server.
+For the accumulated iOS recovery and view-only blocks on `testing`, the complete containerized client sequence passed at exact commit `913a981e`. The manual View-only matrix and compact-link follow-up are recorded above. The operator deliberately closed the checkpoint without executing the optional remaining iPhone deep-test phases in [`IOS_RECOVERY.md`](IOS_RECOVERY.md).
 
 ### Server and container
 
@@ -340,7 +366,7 @@ Mobile:
 - keyboard/helper;
 - reconnect/recovery.
 
-For the current iOS block, the generic mobile bullets are not sufficient; execute and record the same-peer, replacement-session, bounded-exhaustion and server-directed-disconnect phases in [`IOS_RECOVERY.md`](IOS_RECOVERY.md).
+The same-peer, replacement-session, bounded-exhaustion and server-directed-disconnect phases in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) remain the required procedure for any future claim of automatic no-reload recovery on a real iPhone. They were deliberately not executed for the checkpoint closed on 2026-09-11.
 
 View-only sharing:
 
@@ -371,27 +397,30 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Validate the accumulated bounded iOS recovery and server-enforced view-only blocks together at one exact `testing` commit. Run the client checks, focused server tests/build and image build, then execute every phase and record every acceptance item in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) and [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md). Keep the existing ordinary/admin, touch, playback, file-transfer and adaptive-quality behavior in the regression scope. Do not claim no-reload iOS recovery or target-server view-only acceptance before that evidence exists.
+Implement the first, no-new-transport compatibility refactor in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md): introduce pure encoded-media descriptors/events, a capture-backed provider with bounded subscriptions, a central participant-delivery manager and backend-neutral session watching state; then migrate the existing WebRTC sender behind that boundary.
 
-After the grouped checkpoint is accepted, design the backend-neutral receive-media/subscription boundary for practical non-WebRTC prototypes. Implementation and any later promotion remain separate decisions; `master` must not move without explicit operator authorization.
+This block must preserve current WebRTC signaling, data channels, adaptive selection, effective two-sample queue/drop behavior, metrics, authorization, API/configuration and default deployment behavior. Add focused unit coverage for lifecycle, keyframe admission, timing/generation/discontinuity, non-blocking overflow, selection, view-only receive authorization and revocation. Do not add a WebCodecs/WebSocket endpoint, HLS route/packager, automatic backend selection or WebTransport yet. Implementation and any later promotion remain separate decisions; `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
-1. validate the accumulated iOS/view-only client and server behavior at a coherent `testing` checkpoint;
-2. design and prototype a practical non-WebRTC viewer-media fallback only after that acceptance;
-3. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
+1. implement and validate the no-behavior-change media-subscription/WebRTC compatibility refactor;
+2. prototype WebCodecs plus a dedicated media WebSocket for interactive compatibility after that boundary is stable;
+3. prototype HLS/LL-HLS separately for passive/view-only device compatibility;
+4. compare measured backends and define explicit capability selection before considering automatic fallback;
+5. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
 
-Alternative media work starts only after bounded iOS recovery is target-server validated and the server-enforced view-only boundary is established. It remains on `testing` until the operator explicitly approves a later grouped promotion.
+Alternative media architecture work began after the operator closed the grouped checkpoint with the explicit iPhone evidence limitation recorded above. This does not convert the omitted no-reload device phases into a pass. All work remains on `testing` until the operator explicitly approves a later grouped promotion.
 
 When fallback work begins, separate the two user classes instead of forcing every client through one fallback chain:
 
-1. establish a backend-neutral encoded-media/subscription boundary;
-2. prototype **WebCodecs + dedicated WebSocket media** for interactive clients whose WebRTC/ICE path is unusable;
-3. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
-4. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;
-5. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
+1. **completed design:** establish the backend-neutral encoded-source/subscription and participant-delivery contract in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md);
+2. **next implementation:** migrate existing WebRTC behind that contract without adding a transport or changing behavior;
+3. prototype **WebCodecs + dedicated WebSocket media** for interactive clients whose WebRTC/ICE path is unusable;
+4. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
+5. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;
+6. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 
 The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS is a TARGET candidate now, not merely a generic later idea.
 
@@ -408,7 +437,7 @@ The passive path may trade latency for reliability and compatibility. It must st
 
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
-- Exact WebCodecs/WebSocket framing, queue/drop/backpressure policy and codec set.
+- Exact WebCodecs/WebSocket framing, concrete bounded queue sizes and codec set; the shared non-blocking/drop-to-resync policy is fixed by the boundary design.
 - HLS/LL-HLS latency target, segment/part sizing, codec profile and server resource cost.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
 - Exact per-client media-backend capability/selection rules and rollout order.
