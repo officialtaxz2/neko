@@ -60,7 +60,7 @@ Local reconciliation (2026-09-09):
 
 Do not perform a blind upstream overwrite.
 
-The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`. The grouped target-server checkpoint is in progress: the full view-only boundary, real inbound-media denial and revocation passed with the prior credential format at `80eeca64`; the subsequently requested compact token/link format and the iOS device phases remain pending on their new exact commit. No automatic in-place recovery or complete grouped acceptance claim is made until those checks pass.
+The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`. The grouped target-server checkpoint is in progress: the full view-only boundary, real inbound-media denial and revocation passed at `80eeca64`; containerized client/server checks, image build/deployment, the HTTP denial probe and the compact `#/<16-character-token>` browser smoke check then passed at exact commit `913a981e`. The iOS device phases remain pending, so no automatic in-place recovery or complete grouped acceptance claim is made yet.
 
 ## NEXT
 

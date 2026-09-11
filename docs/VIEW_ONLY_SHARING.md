@@ -1,6 +1,6 @@
 # Serverseitig erzwungenes View-only-Sharing
 
-Status: **auf `testing` implementiert und statisch geprüft; die bisherige Drei-Rollen-, Eingangsmedia- und Widerrufsmatrix lief auf dem Zielserver erfolgreich. Das anschließend auf Wunsch eingeführte kompakte 16-Zeichen-/Kurzlinkformat sowie das gemeinsame iOS-Runbook müssen am neuen exakten Commit geprüft werden**.
+Status: **auf `testing` implementiert und statisch geprüft; die Drei-Rollen-, Eingangsmedia- und Widerrufsmatrix lief auf dem Zielserver erfolgreich. Das anschließend auf Wunsch eingeführte kompakte 16-Zeichen-/Kurzlinkformat bestand am exakten Commit `913a981e` die containerisierten Client-/Serverprüfungen, den Image-Build und -Start, die HTTP-Grenzprüfung sowie den Browser-Smoke-Test. Das gemeinsame iOS-Runbook bleibt offen**.
 
 Dieses Runbook ist auf einen Linux-Zielserver ohne lokal installiertes Node.js, npm, Go oder Python zugeschnitten. Die automatisierbaren Prüfungen laufen über [`docker-compose.validation.yaml`](../docker-compose.validation.yaml). Nur die tatsächlichen Browser-, Rollen-, Eingabe-, Mikrofon- und Widerrufstests bleiben manuell.
 

@@ -195,9 +195,9 @@ Implemented and statically reviewed on `testing` on 2026-09-10:
 
 Static review status: **implementation complete in repository / client checks, server tests/build and runtime matrix NOT EXECUTED IN CODEX**.
 
-Target-server status: **pending at the same coherent grouped `testing` checkpoint as bounded iOS recovery**.
+Target-server status: **the security/role matrix through `80eeca64` and the compact-link follow-up at exact commit `913a981e` passed; the coherent grouped checkpoint remains open until the bounded iOS recovery phases and final shared regressions pass on that deployment**.
 
-Partial checkpoint evidence begun on 2026-09-11 at `5387f356` and continued through `80eeca64`:
+Checkpoint evidence begun on 2026-09-11 at `5387f356` and continued through `913a981e`:
 
 - containerized client checks, focused Go tests/server build, the deployment image build and the automated view-only HTTP boundary probe passed;
 - the first browser role check reached a connected receive-only WebRTC session, but the passive client remained black/silent and raised `Cannot read properties of undefined (reading 'muted')` during autoplay fallback;
@@ -210,8 +210,11 @@ Partial checkpoint evidence begun on 2026-09-11 at `5387f356` and continued thro
 - M delivered a real Opus microphone track to the server and stopped it normally. V delivered the same real track, which the server immediately stopped with `media sharing is disabled for this session`;
 - V refresh and a 12-second offline/online cycle recovered as view-only without disturbing M/A. Both active viewers remained on `high` with zero audio/video sample drops;
 - token rotation recreated the healthy service, disconnected V, made the old link return `Unauthorized`, and passed the HTTP boundary probe with the new token. The new V link and unchanged M/A logins were operator-confirmed.
+- at exact commit `913a981e`, all six dependency-free client tests, TypeScript lint, the Vite production build, focused Go suites and the server/plugin build passed in the Docker validation services;
+- the local base and Brave images rebuilt successfully, and `my-neko/brave:latest` became image `sha256:5b5c7747930bc863da05cb3f05d8bb7b97a624386d105bdade2448e5443d36a2` before the adaptive service was recreated with the new 16-character token;
+- the complete automated HTTP boundary probe passed against the recreated service. The operator then confirmed that the exact compact `#/<16-character-token>` link automatically logged V in, showed desktop and audio, exposed only playback functions and produced no red browser-console error. Six-character and legacy 64-hex rejection are covered by the passing exact-commit client/server tests.
 
-After that successful matrix, the operator requested the intentionally incompatible compact `#/<16-character-Base64URL-token>` form. The repository now rejects six-character and legacy 64-hex values and covers the new parser/generator/validation shape, but the compact format requires fresh client/server checks, image deployment, HTTP probe and a short old/new-link smoke test. The complete iOS recovery phases also remain open, so no grouped checkpoint acceptance is claimed yet.
+After the successful original matrix, the operator requested the intentionally incompatible compact `#/<16-character-Base64URL-token>` form. Its fresh exact-commit checks, deployment, HTTP probe and new-link browser smoke test are now complete. The full iOS recovery phases and final shared regressions remain open, so no grouped checkpoint acceptance is claimed yet.
 
 ## Target-server verification
 
