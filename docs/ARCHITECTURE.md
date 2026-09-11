@@ -136,7 +136,7 @@ A later target-server trace exposed a separate inherited startup-timing edge. `u
 
 A static follow-up found no encoder-quality mutation in the media-subscription refactor: the accepted adaptive Compose/profile files are unchanged since `bfaca84e`, encoder construction/configuration is unchanged, and the same encoded GStreamer payload bytes are passed through the provider into Pion. The reported possibility of softer fast-motion output is compatible with the existing roughly 2-Mbit/s, 25-fps VP8 CBR tier and its full `max-quantizer: 63` range, but remains subjective until a controlled bitrate/quantizer A/B. It is tracked as later tuning rather than attributed to the new boundary.
 
-The current fork still relies on Neko's WebRTC server model. WebRTC is merely the first registered adapter behind the new boundary; issue #690 alternative media prototypes are not established backends in this fork.
+The current fork still relies on Neko's WebRTC server model. WebRTC is merely the first registered adapter behind the new boundary; issue #690 alternative media prototypes are not established backends in this fork. The first `webcodecs-ws` receive prototype is specified, not implemented, in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
 
 The view-only follow-up adds a transport-independent `MemberProfile.IsViewOnly` marker and a fixed multi-user share profile. The marker is normalized before login-lock evaluation and whenever sessions are created or updated. Server enforcement then applies at the authenticated HTTP routes, current and legacy WebSocket dispatchers, both WebRTC data-channel formats, inbound media tracks, host assignment and plugin managers. Only heartbeat and receive-media signalling cross the passive WebSocket boundary; only data-channel ping crosses the modern passive data boundary. Passive sessions cannot be persisted or restored.
 
@@ -195,7 +195,7 @@ shared capture / encoder outputs
         |
         +-- WebRTC -------------------- interactive default
         |
-        +-- WebCodecs + WebSocket ---- interactive fallback candidate
+        +-- WebCodecs + WebSocket ---- interactive-class receive candidate
         |
         +-- HLS / LL-HLS ------------- passive/view-only candidate
         |
@@ -204,7 +204,9 @@ shared capture / encoder outputs
 
 The control/session/auth path must remain independent enough that a receive-only backend does not gain control capability. A passive viewer can therefore use HTTP-streaming media while remaining in the same logical Neko room.
 
-The concrete boundary is implemented in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It distinguishes a backend subscription to an encoded source from the authorized delivery attached to a participant: WebRTC subscribes per participant now; a later media WebSocket may do the same, while a later HLS packager may subscribe once per active variant and issue separate short-lived viewer leases. The central delivery manager checks `CanWatch`; backends never receive login/share credentials or authority over control, plugins or member profiles.
+The concrete boundary is implemented in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It distinguishes a backend subscription to an encoded source from the authorized delivery attached to a participant: WebRTC subscribes per participant now; the specified media WebSocket will do the same, while a later HLS packager may subscribe once per active variant and issue separate short-lived viewer leases. The central delivery manager checks `CanWatch`; backends never receive login/share credentials or authority over control, plugins or member profiles.
+
+The version-1 WebCodecs/media-WebSocket specialization is fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md): an authenticated event-plane exchange creates a short-lived single-use ticket, the dedicated socket carries strict VP8/Opus records, every server/browser queue is bounded, stale generations are rejected, and audio owns the common presentation clock. Both server enablement and client selection are explicit. WebRTC remains the default and no transport fallback is automatic. The design is receive-only because current high-rate input still uses the WebRTC data channel; this is an explicit prototype boundary, not hidden control-path parity.
 
 The implementation closes the planned gaps in the former WebRTC-facing `types.Sample`/`SampleListener` seam: format metadata, real GStreamer PTS/DTS, a manager-owned timeline, generations and discontinuities are explicit; subscriber queues are bounded and non-blocking; and generic session watching state no longer depends on the name `WebRTC`. Legacy stream-sink types remain capture-internal compatibility machinery, while WebRTC depends only on `EncodedMediaProvider`/`MediaSubscription`. No new transport, public API or configuration was added.
 
@@ -217,7 +219,7 @@ This architecture is directionally aligned with upstream issue #371, which expli
 - MJPEG only as an ultra-legacy image-only last resort;
 - fully automatic transport/codec selection after explicit capability detection and measured fallback behavior.
 
-The source-subscription and participant-delivery interface semantics are decided. Exact WebCodecs framing, HLS packaging parameters, device codecs and automatic selection remain OPEN until their evidence-led prototype blocks.
+The source-subscription and participant-delivery interface semantics are decided. Version-1 WebCodecs framing, VP8/Opus negotiation, concrete queue bounds and explicit rollout are also decided, while their implementation and target-device evidence remain open. HLS packaging parameters, the broader device/codec matrix and automatic selection remain OPEN until their evidence-led prototype blocks.
 
 ## Verification boundary
 

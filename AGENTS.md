@@ -19,9 +19,10 @@ Immediate sequence:
 11. design the backend-neutral encoded-media subscription boundary for practical non-WebRTC prototypes — **complete on `testing`; design only, no alternative backend implemented**,
 12. implement the no-new-transport compatibility refactor defined in `docs/MEDIA_SUBSCRIPTION_BOUNDARY.md` — **complete in the repository and bounded target-server checkpoint closed on `testing` at `e5f55bf9`; the repeated full role/recovery matrix and induced three-viewer down/up isolation run are explicitly deferred to final grouped validation**,
 13. correct estimator startup observation-window initialization so configured unstable/stalled delays cannot be bypassed by Go zero-time values — **complete and focused target-server validated at `e5f55bf9`; one fresh viewer remained on `high` throughout the recorded startup window**,
-14. specify the exact opt-in WebCodecs plus dedicated media-WebSocket prototype contract without adding a transport yet — **NEXT**,
-15. implement and validate alternative-media prototypes only in later separate blocks, while retaining WebRTC as the default — **pending**,
-16. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
+14. specify the exact opt-in WebCodecs plus dedicated media-WebSocket prototype contract without adding a transport yet — **complete on `testing`; design only, no endpoint/backend/client transport implemented**,
+15. implement the first default-off WebCodecs plus dedicated media-WebSocket receive prototype from `docs/WEBCODECS_MEDIA_WEBSOCKET.md`, without adding HLS, automatic fallback or a replacement control transport — **NEXT**,
+16. validate alternative-media prototypes only in later separate blocks, while retaining WebRTC as the default — **pending**,
+17. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
 
 ## Authoritative knowledge
 
@@ -37,6 +38,7 @@ Read before substantial work:
 - `docs/IOS_RECOVERY.md` — implemented bounded reconnect states, exact target-server iPhone procedure, acceptance criteria and rollback.
 - `docs/VIEW_ONLY_SHARING.md` — implemented passive-session boundary, token lifetime/revocation, denial behavior, exact three-role target-server matrix and rollback.
 - `docs/MEDIA_SUBSCRIPTION_BOUNDARY.md` — decided backend-neutral encoded-media/source-subscription and participant-delivery contract, migration order, security boundary and prototype gates.
+- `docs/WEBCODECS_MEDIA_WEBSOCKET.md` — exact version-1 authentication, wire-format, codec, queueing, A/V synchronization, recovery, security, rollout and acceptance contract for the default-off receive prototype.
 - `webpage/docs/` — inherited Neko documentation. Current repository code/config wins on conflicts.
 
 ## Truth rules

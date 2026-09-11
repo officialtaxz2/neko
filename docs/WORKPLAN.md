@@ -300,6 +300,28 @@ Explicit limitation: the operator chose not to repeat the ordinary/admin/view-on
 
 The reported impression of softer video during fast scrolling or high-motion playback was also reviewed statically. `deploy/adaptive-quality.yaml` and `docker-compose.adaptive.yaml` are unchanged from the accepted `bfaca84e` profile; the subscription refactor adds media metadata/lifecycle but does not alter encoder construction or configuration, and the GStreamer-to-provider-to-Pion path forwards the same encoded payload bytes. Together with zero video queue drops in the focused run, there is no evidence that the new boundary introduced an image-quality regression. The existing `high` tier is still fixed-rate VP8 at 1,996,800 bit/s, 25 fps and `max-quantizer: 63`, so complex motion can be quantized more heavily than a static desktop and appear temporarily softer. This remains a subjective, non-blocking observation until a controlled same-content bitrate/QP A/B records receiver statistics and comparable captures; no accepted profile value is changed in this checkpoint.
 
+## COMPLETED — WebCodecs plus dedicated media-WebSocket contract
+
+Status: **design complete on `testing` on 2026-09-12 / no endpoint, backend registration, client decoder, deployment enablement or automatic fallback implemented**.
+
+[`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md) now fixes the first default-off `webcodecs-ws` receive prototype:
+
+- an authenticated event-plane negotiation creates a 10-second, 24-byte, single-use ticket without exposing a login/share credential to the backend or a URL;
+- the upgrade path rechecks exact Origin, ticket binding, the current live session and `CanWatch` before opening a credential-free delivery lease;
+- logout, revocation, private mode, replacement, reconnect and shutdown follow the existing central media-manager lifecycle;
+- `neko.media.v1` uses a strict 64-byte binary header for VP8 video and raw Opus audio, including format, per-track delivery generation, sequence, PTS/DTS validity, duration, keyframe and discontinuity semantics;
+- browser and server codec support are both checked explicitly; another configured codec is rejected rather than transcoded or silently substituted;
+- provider, egress, compressed, decoder and render/audio queues have concrete record/byte/time caps; overflow is local and recovers through a new generation and video keyframe;
+- audio is the common presentation clock, stale generations are rejected, and decoder/timing failures use a bounded common resync;
+- server and client opt-ins are both required, retry stays on the selected backend, and returning to unchanged WebRTC requires an explicit action;
+- origin, size, rate, timeout, logging and metric limits are fixed, with credential-bearing subprotocol/event data excluded from logs;
+- target-server gates cover default invariance, authorization, startup, latency, A/V skew, slow-client isolation, reconnect, resources and malformed input;
+- implementation is split into protocol/ticket, server adapter, isolated client path and deployment/validation phases.
+
+The design also records a material product boundary: the current client sends high-rate mouse, keyboard and touch input over the WebRTC data channel. Version 1 is therefore an interactive-class receive prototype, not complete non-WebRTC control parity. It adds no replacement input transport. HLS/LL-HLS stays a separate later passive/view-only block.
+
+This repository work was statically reviewed only. Project code, tests, builds, containers, browsers and media paths were **NOT EXECUTED IN CODEX**.
+
 ## Target-server verification
 
 This phase is performed by the operator on the real server, not by Codex.
@@ -455,14 +477,16 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Specify the exact contract and bounded implementation plan for the first opt-in **WebCodecs plus dedicated media-WebSocket** interactive receive prototype. This is a design-only block: do not add an endpoint, backend registration, client decoder or automatic fallback yet.
+Implement the first default-off **WebCodecs plus dedicated media-WebSocket receive prototype** exactly within [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). This is the implementation block, not its target-server acceptance block.
 
-The design must close the remaining decisions in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md): authenticated delivery creation without exposing the login/share credential to the backend; `CanWatch` enforcement, replacement and revocation; a versioned binary envelope for audio/video format, generation, sequence, PTS/DTS validity, duration, keyframe/discontinuity and bounded payload length; explicit codec capability negotiation covering both audio and video; server and browser queue capacities with non-blocking overflow, drop-to-keyframe recovery and stale-generation rejection; A/V clocking and resynchronization; explicit opt-in selection, failure/rollback to unchanged WebRTC and no automatic fallback; origin, size, rate and timeout limits; credential-safe logs/metrics; and target-server acceptance criteria for latency, startup, resource cost, malformed input, slow-client isolation and reconnect. Existing WebRTC signaling, data channels, control authorization, API/configuration and stable deployment defaults must remain unchanged. HLS/LL-HLS stays a later separate passive/view-only prototype, and `master` must not move without explicit operator authorization.
+Implement the strict envelope and golden/fuzz fixtures, `PTSValid` propagation, one-time ticket negotiation, pre-upgrade origin/session/`CanWatch` enforcement, bounded `MediaDeliveryBackend`, isolated worker/WebCodecs/AudioWorklet path, explicit UI selection/retry/Use-WebRTC actions, credential-safe metrics, default-off configuration and a separate sanitized deployment overlay. Preserve the contract's exact limits and cleanup/revocation behavior. Add all applicable automated checks but do not execute project code in Codex; prepare the exact target-server commands and evidence procedure for the following validation block.
+
+Existing WebRTC signaling, WebRTC data channels and opcodes, input authorization, event-WebSocket reconnect, REST APIs, stable configuration and base Compose behavior must remain unchanged when the two opt-ins are absent. Do not add an automatic fallback, HLS/LL-HLS, WebTransport, a new control transport or claims of full non-WebRTC interactive parity. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
 1. **bounded checkpoint closed with the documented final-matrix limitation:** media-subscription/WebRTC compatibility refactor plus estimator startup correction;
-2. specify, then separately implement, an opt-in WebCodecs plus dedicated media WebSocket for interactive compatibility;
+2. **contract complete / implementation next:** implement, then separately target-server validate, the opt-in WebCodecs plus dedicated media WebSocket receive path;
 3. prototype HLS/LL-HLS separately for passive/view-only device compatibility;
 4. compare measured backends and define explicit capability selection before considering automatic fallback;
 5. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
@@ -475,10 +499,12 @@ When fallback work begins, separate the two user classes instead of forcing ever
 
 1. **completed design:** establish the backend-neutral encoded-source/subscription and participant-delivery contract in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md);
 2. **implemented / bounded target-server checkpoint closed:** the migrated WebRTC compatibility path and estimator startup correction, with the repeated full role/recovery and induced down/up matrix deferred to final grouped validation;
-3. **NEXT design block:** fix the exact protocol, security, queueing, synchronization, rollout and validation contract for **WebCodecs + dedicated WebSocket media**; implement it only in the following block;
-4. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
-5. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;
-6. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
+3. **completed design:** the exact protocol, security, queueing, synchronization, rollout and validation contract for **WebCodecs + dedicated WebSocket media** is fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md);
+4. **NEXT implementation block:** implement that receive prototype behind both explicit opt-ins, with WebRTC unchanged by default and no replacement control transport;
+5. validate the prototype on the target server in its own block, including slow-client isolation and the documented malformed-input/resource matrix;
+6. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
+7. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;
+8. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 
 The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS is a TARGET candidate now, not merely a generic later idea.
 
@@ -497,8 +523,8 @@ The passive path may trade latency for reliability and compatibility. It must st
 - Determine whether fast-motion softness is acceptable at the current 1,996,800-bit/s VP8 `high` tier through a controlled same-content bitrate/quantizer A/B with receiver statistics and comparable captures; current evidence does not identify a subscription-refactor regression.
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
-- Exact WebCodecs/WebSocket framing, concrete bounded queue sizes and codec set; the shared non-blocking/drop-to-resync policy is fixed by the boundary design.
+- Target-device and target-server evidence for the specified VP8/Opus WebCodecs/media-WebSocket contract; framing, queue sizes, synchronization, security limits and rollout behavior are fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
 - HLS/LL-HLS latency target, segment/part sizing, codec profile and server resource cost.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
-- Exact per-client media-backend capability/selection rules and rollout order.
+- Eventual automatic per-client media-backend selection rules after the explicitly selected prototypes have measured evidence; version-1 manual selection and rollback are already fixed.
 - Longer-term legacy Vue 2 migration.

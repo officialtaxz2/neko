@@ -140,13 +140,13 @@ Focused repository tests cover ordered selection, demand lifecycle, keyframe adm
 
 Static comparison found no subscription-refactor change to the accepted adaptive configuration, encoder construction or encoded payload bytes. A possible softer image during fast movement therefore remains an unproven quality observation consistent with the existing fixed-rate roughly 2-Mbit/s VP8 `high` tier and its full quantizer range. A controlled bitrate/quantizer A/B is still required before changing the profile or claiming a regression.
 
-No alternative endpoint, packager or client exists. WebCodecs/WebSocket, HLS/LL-HLS, automatic backend selection and WebTransport remain later candidates.
+No alternative endpoint, packager or client exists. The exact first `webcodecs-ws` receive-prototype contract is now fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md), but that documentation does not make the transport IMPLEMENTED. HLS/LL-HLS, automatic backend selection and WebTransport remain later candidates.
 
 The project distinguishes **interactive** and **passive/view-only** media fallback needs. There is not one mandatory fallback chain for every client.
 
 This direction is consistent with upstream issue #371, which proposes protocol-independent media backends including HLS (`m3u8`), WebRTC and QUIC, with backend selection based on device capabilities, network conditions and server capabilities.
 
-### TARGET candidate — interactive fallback
+### SPECIFIED TARGET candidate — interactive receive fallback
 
 Upstream issue #690 proposes staged work around:
 
@@ -154,7 +154,9 @@ Upstream issue #690 proposes staged work around:
 2. WebCodecs + dedicated WebSocket media;
 3. WebTransport.
 
-For an interactive participant, WebCodecs + WebSocket remains the first practical non-WebRTC candidate to evaluate after the media abstraction. Its purpose is primarily to bypass WebRTC/ICE/browser compatibility failures while retaining a low-latency path.
+For an interactive participant, WebCodecs + WebSocket remains the first practical non-WebRTC receive candidate to evaluate after the media abstraction. Its exact version-1 design uses an explicitly selected, default-off dedicated media socket, a credential-free one-time attachment ticket, server-owned `CanWatch` lifecycle, VP8 plus raw Opus capability probes, a strict binary envelope, bounded non-blocking queues, drop-to-keyframe recovery and a shared A/V clock. It does not silently fall back to or from WebRTC.
+
+This first prototype is intentionally receive-only. The current client sends high-rate mouse, keyboard and touch input through the WebRTC data channel; a replacement control transport is a separate later decision. Until that exists, the prototype must not be represented as complete non-WebRTC interactive parity. The normative contract, security limits, implementation phases, rollback and target-server gates are in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
 
 Do not assume WebSocket is automatically better on a poor or lossy connection: the standard `WebSocket` API has no built-in backpressure, and reliable ordered delivery can accumulate latency if the receiver cannot keep up. Queueing/drop policy, codec support and actual device behavior must be measured.
 
@@ -187,7 +189,7 @@ other constrained client     -> capability-tested alternative
 
 Automatic selection is a TARGET direction, not currently IMPLEMENTED. Manual/explicit selection may be used first for diagnosis and rollout.
 
-None of these alternative-media candidates are IMPLEMENTED here unless repository code proves otherwise. Implementing the shared boundary and WebRTC adapter does not change that status.
+None of these alternative-media candidates are IMPLEMENTED here unless repository code proves otherwise. Implementing the shared boundary and WebRTC adapter, or completing the WebCodecs/media-WebSocket design, does not change that status.
 
 ## Development / verification environment constraint
 
