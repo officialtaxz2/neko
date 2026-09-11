@@ -9,8 +9,6 @@ services:
         source: .
         target: /source
         read_only: true
-    tmpfs:
-      - /work
     command:
       - sh
       - -lc
