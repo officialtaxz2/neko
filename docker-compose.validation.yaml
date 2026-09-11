@@ -11,7 +11,7 @@ services:
         read_only: true
     command:
       - sh
-      - -lc
+      - -c
       - |
         set -eux
         cp -a /source/client /work/client
@@ -37,7 +37,7 @@ services:
     working_dir: /src
     command:
       - sh
-      - -lc
+      - -c
       - |
         set -eux
         go test ./pkg/types ./pkg/auth ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
