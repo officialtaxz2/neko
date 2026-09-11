@@ -2,6 +2,7 @@ import EventEmitter from 'eventemitter3'
 import { OPCODE } from './data'
 import { EVENT, WebSocketEvents } from './events'
 import { shouldCreateClientOffer } from './negotiation'
+import { isViewOnlyToken } from './share'
 
 import {
   WebSocketMessages,
@@ -64,8 +65,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   public connectViewOnly(url: string, token: string, displayname: string) {
-    if (!/^[0-9a-fA-F]{64}$/.test(token)) {
-      this.onDisconnected(new Error('view-only token must contain exactly 64 hexadecimal characters'))
+    if (!isViewOnlyToken(token)) {
+      this.onDisconnected(new Error('view-only token must contain exactly 16 URL-safe characters'))
       return
     }
 

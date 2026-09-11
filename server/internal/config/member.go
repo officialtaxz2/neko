@@ -55,7 +55,7 @@ func (Member) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().String("member.multiuser.view_only_token", "", "member multiuser provider: optional 64-character hexadecimal token for view-only share links")
+	cmd.PersistentFlags().String("member.multiuser.view_only_token", "", "member multiuser provider: optional 16-character URL-safe token for view-only share links")
 	if err := viper.BindPFlag("member.multiuser.view_only_token", cmd.PersistentFlags().Lookup("member.multiuser.view_only_token")); err != nil {
 		return err
 	}

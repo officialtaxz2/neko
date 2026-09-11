@@ -4,6 +4,7 @@ import { BaseClient, BaseEvents } from './base'
 import { Member } from './types'
 import { EVENT } from './events'
 import { reconnectDelayForAttempt, shouldReconnect } from './recovery'
+import { viewOnlyTokenFromHash } from './share'
 import { accessor } from '~/store'
 
 import {
@@ -71,8 +72,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   init(vue: Vue) {
-    const viewOnlyMatch = location.hash.match(/^#\/watch\/([0-9a-fA-F]{64})$/)
-    this.viewOnlyToken = viewOnlyMatch ? viewOnlyMatch[1] : undefined
+    this.viewOnlyToken = viewOnlyTokenFromHash(location.hash)
 
     let port: string | undefined = undefined
     try {

@@ -7,7 +7,7 @@ import (
 	oldEvent "github.com/m1k1o/neko/server/internal/http/legacy/event"
 )
 
-const testViewOnlyToken = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+const testViewOnlyToken = "Ab3dEf7h_Jk9-mN2"
 
 func TestViewOnlyTokenFromRequest(t *testing.T) {
 	r := httptest.NewRequest("GET", "http://example.test/ws?username=Guest", nil)
@@ -23,10 +23,16 @@ func TestViewOnlyTokenFromRequest(t *testing.T) {
 }
 
 func TestViewOnlyTokenFromRequestRejectsInvalidOrDuplicateValues(t *testing.T) {
-	invalid := httptest.NewRequest("GET", "http://example.test/ws", nil)
-	invalid.Header.Set("Sec-WebSocket-Protocol", "neko-view.short")
-	if _, _, err := viewOnlyTokenFromRequest(invalid); err == nil {
-		t.Fatal("invalid token shape was accepted")
+	for _, token := range []string{
+		"short",
+		"Ab3dEf7h+Jk9/mN2",
+		"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+	} {
+		invalid := httptest.NewRequest("GET", "http://example.test/ws", nil)
+		invalid.Header.Set("Sec-WebSocket-Protocol", "neko-view."+token)
+		if _, _, err := viewOnlyTokenFromRequest(invalid); err == nil {
+			t.Fatalf("invalid token shape %q was accepted", token)
+		}
 	}
 
 	duplicate := httptest.NewRequest("GET", "http://example.test/ws", nil)

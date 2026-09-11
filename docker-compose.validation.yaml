@@ -62,8 +62,9 @@ services:
       - sh
       - -ec
       - |
-        dd if=/dev/urandom bs=32 count=1 2>/dev/null | od -An -tx1 | tr -d ' \n'
-        printf '\n'
+        token="$$(dd if=/dev/urandom bs=12 count=1 2>/dev/null | base64 | tr '+/' '-_' | tr -d '=\n')"
+        printf '%s\n' "$$token" | grep -Eq '^[A-Za-z0-9_-]{16}$$'
+        printf '%s\n' "$$token"
 
   view-only-http-checks:
     image: python:3.12-alpine

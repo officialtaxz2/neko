@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import secrets
 import sys
 import urllib.error
@@ -44,8 +45,8 @@ def expect(name: str, actual: int, expected: int) -> None:
 
 
 def main() -> int:
-    if len(VIEW_ONLY_TOKEN) != 64 or any(char not in "0123456789abcdefABCDEF" for char in VIEW_ONLY_TOKEN):
-        print("ERROR NEKO_VIEW_ONLY_TOKEN must contain exactly 64 hexadecimal characters", file=sys.stderr)
+    if re.fullmatch(r"[A-Za-z0-9_-]{16}", VIEW_ONLY_TOKEN) is None:
+        print("ERROR NEKO_VIEW_ONLY_TOKEN must contain exactly 16 URL-safe characters", file=sys.stderr)
         return 2
 
     username = f"http-check-{secrets.token_hex(4)}"

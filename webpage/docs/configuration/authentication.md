@@ -98,7 +98,7 @@ This is the **default provider** that works exactly like the authentication used
 
 This provider allows you to define two interactive user types: **regular** users and **admins**. Which user is an admin is determined by the password they provide when logging in. If the password is correct, the user is an admin; otherwise, they are a regular user. Based on those profiles, the users are generated on demand when they log in and they are removed when they log out. Their username is suffixed with 5 random characters to avoid conflicts when multiple users share the same username.
 
-An optional third credential creates a fixed **view-only** session. Generate the 256-bit bearer token with `openssl rand -hex 32` and share a URL in the form `https://neko.example/#/watch/<token>`. The fragment is not sent in ordinary HTTP request targets; the client carries the token in the WebSocket subprotocol header. It may still remain in browser history, bookmarks, screenshots and copied links. Use TLS, trust every recipient and do not log `Sec-WebSocket-Protocol` headers. The token has no built-in clock expiry: it is valid until removed or rotated and the service is recreated. View-only sessions are never persisted, so recreation also revokes connected viewers.
+An optional third credential creates a fixed **view-only** session. Generate the 96-bit bearer token as exactly 16 Base64URL characters and share a URL in the form `https://neko.example/#/<token>`. The fragment is not sent in ordinary HTTP request targets; the client carries the token in the WebSocket subprotocol header. It may still remain in browser history, bookmarks, screenshots and copied links. Use TLS, trust every recipient and do not log `Sec-WebSocket-Protocol` headers. The token has no built-in clock expiry: it is valid until removed or rotated and the service is recreated. View-only sessions are never persisted, so recreation also revokes connected viewers.
 
 Profiles for regular users and admins are optional, if not provided, the default profiles are used (see below in the example configuration).
 
@@ -122,7 +122,7 @@ Profiles for regular users and admins are optional, if not provided, the default
   },
   "member.multiuser.view_only_token": {
     defaultValue: "",
-    description: "Optional 64-character hexadecimal bearer token for server-enforced view-only share links.",
+    description: "Optional 16-character Base64URL bearer token for server-enforced view-only share links.",
   },
 }} />
 
@@ -136,7 +136,7 @@ Profiles for regular users and admins are optional, if not provided, the default
     provider: multiuser
     multiuser:
       admin_password: "admin"
-      view_only_token: "" # optional; generate with: openssl rand -hex 32
+      view_only_token: "" # optional; generate 12 random bytes as unpadded Base64URL
       admin_profile:
         name: "" # if empty, the login username is used
         is_view_only: false
@@ -181,7 +181,7 @@ For easier configuration, you can specify only passwords using environment varia
 environment:
   NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD: "admin"
   NEKO_MEMBER_MULTIUSER_USER_PASSWORD: "neko"
-  NEKO_MEMBER_MULTIUSER_VIEW_ONLY_TOKEN: "" # optional; exactly 64 hexadecimal characters
+  NEKO_MEMBER_MULTIUSER_VIEW_ONLY_TOKEN: "" # optional; exactly 16 Base64URL characters
 ```
 :::
 

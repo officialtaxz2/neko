@@ -51,7 +51,7 @@ Current behavior includes:
 - initial-login failures, explicit logout, demo mode and server-directed disconnects cannot enter that automatic retry path;
 - old socket/peer/data-channel callbacks are identity-guarded, buffered ICE candidates are cleared during teardown, and the login component does not start a parallel connection;
 - input travels over the WebRTC data channel;
-- a `#/watch/<64-hex-token>` fragment creates a view-only login whose credential is sent as a WebSocket subprotocol, not an HTTP request path/query string;
+- a compact `#/<16-character-Base64URL-token>` fragment creates a view-only login whose 96-bit credential is sent as a WebSocket subprotocol, not an HTTP request path/query string;
 - once the passive member marker arrives, the client renders video/playback controls without room, input, clipboard, file, chat or admin controls;
 - the legacy protocol path requests automatic video-pipeline selection; it becomes active only when multiple pipelines and the per-peer bandwidth estimator are configured;
 - file-transfer capability messages carry separate non-admin download/upload/delete permissions;
@@ -117,7 +117,7 @@ The current fork relies on Neko's WebRTC server model. Issue #690 alternative me
 The view-only follow-up adds a transport-independent `MemberProfile.IsViewOnly` marker and a fixed multi-user share profile. The marker is normalized before login-lock evaluation and whenever sessions are created or updated. Server enforcement then applies at the authenticated HTTP routes, current and legacy WebSocket dispatchers, both WebRTC data-channel formats, inbound media tracks, host assignment and plugin managers. Only heartbeat and receive-media signalling cross the passive WebSocket boundary; only data-channel ping crosses the modern passive data boundary. Passive sessions cannot be persisted or restored.
 
 ```text
-#/watch/<token> fragment
+#/<token> fragment
         |
         | Sec-WebSocket-Protocol: neko-view.<token>
         v
@@ -195,4 +195,4 @@ Exact final interfaces remain OPEN until the relevant prototype work is designed
 
 Architecture/runtime claims beyond repository inspection must be verified on the real target server, not in Codex. Codex should prepare server-side validation steps but must not execute the application, builds, tests, Docker or media/device checks.
 
-The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction, diagnostics and next-tier nominal upgrade gate were subsequently built, focused-tested and accepted on 2026-09-10 for the documented three-viewer target-server scenario. The later iOS recovery and view-only blocks are implemented and statically reviewed on `testing`, with their grouped target-server procedures in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) and [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md) still pending. Codex did not execute those runtime checks.
+The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction, diagnostics and next-tier nominal upgrade gate were subsequently built, focused-tested and accepted on 2026-09-10 for the documented three-viewer target-server scenario. The view-only boundary, real inbound-media denial and revocation later passed on the target server at `80eeca64` using the prior credential shape; the requested compact token/link follow-up needs a new deployment smoke test. Bounded iOS recovery remains in the grouped procedure in [`IOS_RECOVERY.md`](IOS_RECOVERY.md). Codex did not execute those runtime checks.

@@ -20,7 +20,7 @@ Repository implementation is listed here independently of runtime validation. Th
 - ICE disconnect/recovery handling.
 - A bounded application-level reconnect after an established peer cannot recover: four serialized attempts at 1/2/5/10-second delays, suppressed for initial-login failure, explicit logout, demo mode and server-directed disconnects.
 - Stale WebSocket/peer/data-channel callbacks and old stream timers are isolated from a replacement connection; Safari's central Play fallback remains separate from network recovery.
-- Optional server-enforced view-only sharing through `#/watch/<256-bit-token>`: the passive session remains in the same room and receives WebRTC media while HTTP, current/legacy WebSocket, data-channel, plugin, host-assignment, file and inbound-microphone boundaries deny interaction.
+- Optional server-enforced view-only sharing through the compact `#/<16-character-Base64URL-token>` route: the 96-bit passive bearer remains outside normal HTTP request targets, while the session stays in the same room and receives WebRTC media and every interactive boundary remains denied.
 - View-only authorization is represented by a backend-neutral session marker; share sessions are not persisted, and token rotation/removal plus service recreation is the explicit revocation boundary.
 - Demo-mode client infrastructure.
 - Per-peer non-blocking media sample delivery so one backpressured WebRTC track does not block dispatch to other tracks.
@@ -60,7 +60,7 @@ Local reconciliation (2026-09-09):
 
 Do not perform a blind upstream overwrite.
 
-The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`. The grouped target-server checkpoint is in progress: containerized checks and most view-only role/boundary phases have passed, while repaired inbound-media negotiation, revocation and the iOS device phases remain pending. No automatic in-place recovery or complete target-server view-only acceptance claim is made until the remaining phases pass.
+The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`. The grouped target-server checkpoint is in progress: the full view-only boundary, real inbound-media denial and revocation passed with the prior credential format at `80eeca64`; the subsequently requested compact token/link format and the iOS device phases remain pending on their new exact commit. No automatic in-place recovery or complete grouped acceptance claim is made until those checks pass.
 
 ## NEXT
 

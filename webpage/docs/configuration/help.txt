@@ -36,7 +36,7 @@
       --member.multiuser.admin_profile string         member multiuser provider: profile template for admin users (default "{}")
       --member.multiuser.user_password string         member multiuser provider: password for regular users (default "neko")
       --member.multiuser.user_profile string          member multiuser provider: profile template for regular users (default "{}")
-      --member.multiuser.view_only_token string       member multiuser provider: optional 64-character hexadecimal token for view-only share links
+      --member.multiuser.view_only_token string       member multiuser provider: optional 16-character URL-safe token for view-only share links
       --member.object.users string                    member object provider: list of users with their passwords and profiles (default "[]")
       --member.provider string                        selected member provider (default "multiuser")
       --plugins.dir string                            path to neko plugins to load (default "./bin/plugins")

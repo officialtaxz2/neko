@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit",
-    "test": "node --test tests/recovery.test.mjs tests/negotiation.test.mjs"
+    "test": "node --test tests/recovery.test.mjs tests/negotiation.test.mjs tests/share.test.mjs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.2.0",

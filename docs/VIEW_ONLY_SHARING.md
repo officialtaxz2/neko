@@ -1,6 +1,6 @@
 # Serverseitig erzwungenes View-only-Sharing
 
-Status: **auf `testing` implementiert und statisch geprüft; containerisierte Client-/Serverchecks, HTTP-Grenze und der größte Teil der Drei-Rollen-Matrix liefen auf dem Zielserver erfolgreich. Die reparierte Mikrofon-Neuverhandlung, Rotation/Widerruf und das gemeinsame iOS-Runbook stehen noch aus**.
+Status: **auf `testing` implementiert und statisch geprüft; die bisherige Drei-Rollen-, Eingangsmedia- und Widerrufsmatrix lief auf dem Zielserver erfolgreich. Das anschließend auf Wunsch eingeführte kompakte 16-Zeichen-/Kurzlinkformat sowie das gemeinsame iOS-Runbook müssen am neuen exakten Commit geprüft werden**.
 
 Dieses Runbook ist auf einen Linux-Zielserver ohne lokal installiertes Node.js, npm, Go oder Python zugeschnitten. Die automatisierbaren Prüfungen laufen über [`docker-compose.validation.yaml`](../docker-compose.validation.yaml). Nur die tatsächlichen Browser-, Rollen-, Eingabe-, Mikrofon- und Widerrufstests bleiben manuell.
 
@@ -24,11 +24,13 @@ Die erste Umsetzung verwendet WebRTC weiterhin als Empfangspfad. Der passive Mar
 
 ## Token, URL und Geheimhaltung
 
-`member.multiuser.view_only_token` ist leer oder enthält genau 64 hexadezimale Zeichen, also 256 Bit. Die URL lautet:
+`member.multiuser.view_only_token` ist leer oder enthält genau 16 Base64URL-Zeichen (`A–Z`, `a–z`, `0–9`, `_`, `-`). Der Generator erzeugt dafür 12 gleichverteilte Zufallsbytes, also 96 Bit. Sechs Zeichen und das frühere 64-Hex-Format werden abgelehnt. Die kompakte URL lautet:
 
 ```text
-https://neko.example/#/watch/<64-hex-token>
+https://neko.example/#/<16-Zeichen-Token>
 ```
+
+Dies ist eine absichtlich inkompatible Umstellung: Vor dem ersten Start eines Images mit diesem Stand muss ein alter 64-Hex-Wert in `.env` durch einen neu erzeugten 16-Zeichen-Wert ersetzt werden. Andernfalls verweigert der Server den Start, statt unbemerkt ein schwaches oder mehrdeutiges Format zu akzeptieren.
 
 Das Fragment gelangt nicht in den normalen HTTP-Request-Pfad, die Query oder den `Referer`. Der Client überträgt den Token als WebSocket-Subprotokoll `neko-view.<token>`. Der Token kann trotzdem in Browserverlauf, Bookmarks, Screenshots und kopierten Links verbleiben. Daher:
 
@@ -70,7 +72,7 @@ docker compose -f docker-compose.validation.yaml pull token-generator
 docker compose -f docker-compose.validation.yaml run --rm token-generator
 ```
 
-Den ausgegebenen 64-Zeichen-Wert im Editor als `NEKO_VIEW_ONLY_TOKEN=...` in der ignorierten `.env` eintragen. Danach nur die stille Konfigurationsprüfung verwenden:
+Den ausgegebenen 16-Zeichen-Wert im Editor als `NEKO_VIEW_ONLY_TOKEN=...` in der ignorierten `.env` eintragen. Danach nur die stille Konfigurationsprüfung verwenden:
 
 ```bash
 docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml config --quiet
@@ -151,7 +153,7 @@ Ergebnis: M/A müssen sich exakt wie vor dem View-only-Block verhalten.
 
 ## Phase 2 — passive Oberfläche und gemeinsamer Raum
 
-1. V über `#/watch/<token>` verbinden.
+1. V über `#/<token>` verbinden.
 2. Prüfen, dass V denselben wechselnden Desktopinhalt und dasselbe Audio wie M/A erhält.
 3. V darf nur Video-/Playback-Funktionen sehen: Play, Mute, Lautstärke, Vollbild und PiP, soweit der Browser sie unterstützt.
 4. Raum-, Chat-, Datei-, Zwischenablage-, Eingabe-, Mikrofon- und Adminoberflächen dürfen nicht sichtbar sein.
@@ -202,7 +204,7 @@ Der normale Fork-Client verwendet den Legacy-Adapter. Damit zusätzlich der aktu
 
 ```javascript
 (async () => {
-  const shareToken = location.hash.match(/^#\/watch\/([0-9a-fA-F]{64})$/)?.[1]
+  const shareToken = location.hash.match(/^#\/([A-Za-z0-9_-]{16})$/)?.[1]
   if (!shareToken) throw new Error('view-only token missing from fragment')
 
   const prefix = location.pathname

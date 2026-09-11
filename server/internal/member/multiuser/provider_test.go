@@ -7,7 +7,7 @@ import (
 	"github.com/m1k1o/neko/server/pkg/types"
 )
 
-const validViewOnlyToken = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+const validViewOnlyToken = "Ab3dEf7h_Jk9-mN2"
 
 func TestViewOnlyTokenAuthentication(t *testing.T) {
 	provider := &MemberProviderCtx{config: Config{
@@ -54,7 +54,7 @@ func TestViewOnlyTokenRejectsDifferentValidShape(t *testing.T) {
 		ViewOnlyToken: validViewOnlyToken,
 	}}
 
-	wrongToken := "1123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+	wrongToken := "Zb3dEf7h_Jk9-mN2"
 	_, _, err := provider.Authenticate("Guest", wrongToken)
 	if err != types.ErrMemberInvalidPassword {
 		t.Fatalf("wrong view-only token error = %v, want %v", err, types.ErrMemberInvalidPassword)
@@ -67,11 +67,27 @@ func TestViewOnlyTokenConfigurationValidation(t *testing.T) {
 		config Config
 	}{
 		{
-			name: "wrong shape",
+			name: "too short",
 			config: Config{
 				AdminPassword: "admin-password",
 				UserPassword:  "member-password",
 				ViewOnlyToken: "short",
+			},
+		},
+		{
+			name: "non url safe",
+			config: Config{
+				AdminPassword: "admin-password",
+				UserPassword:  "member-password",
+				ViewOnlyToken: "Ab3dEf7h+Jk9/mN2",
+			},
+		},
+		{
+			name: "legacy shape",
+			config: Config{
+				AdminPassword: "admin-password",
+				UserPassword:  "member-password",
+				ViewOnlyToken: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 			},
 		},
 		{

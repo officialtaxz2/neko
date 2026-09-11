@@ -184,7 +184,7 @@ Target-server status: **pending at the next coherent grouped `testing` checkpoin
 
 Implemented and statically reviewed on `testing` on 2026-09-10:
 
-- Added an optional 256-bit multi-user bearer token and the fragment share form `#/watch/<token>`. The browser keeps the token out of HTTP paths/query strings and carries it in a validated WebSocket subprotocol.
+- Added an optional 96-bit multi-user bearer token encoded as exactly 16 Base64URL characters and the compact fragment share form `#/<token>`. The browser keeps the token out of HTTP paths/query strings and carries it in a validated WebSocket subprotocol; six-character and legacy 64-hex forms are rejected.
 - Added the backend-neutral `is_view_only` member/session marker. Login, session creation and profile update normalize it so conflicting admin, host, media-share, clipboard or cursor-send fields cannot restore interaction.
 - Kept the viewer in the same logical room and on the existing receive-only WebRTC media path; the authorization marker does not depend on that transport and can be reused by a later passive backend.
 - Audited and closed the authenticated HTTP room/API, current WebSocket, legacy protocol, modern/legacy data channel, inbound media track and plugin boundaries. View-only input is denied before core/plugin dispatch, host assignment refuses passive targets, microphone/camera input is stopped, and file capability/list data is withheld.
@@ -197,7 +197,7 @@ Static review status: **implementation complete in repository / client checks, s
 
 Target-server status: **pending at the same coherent grouped `testing` checkpoint as bounded iOS recovery**.
 
-Partial checkpoint evidence begun on 2026-09-11 at `5387f356` and continued at `9a449d32`:
+Partial checkpoint evidence begun on 2026-09-11 at `5387f356` and continued through `80eeca64`:
 
 - containerized client checks, focused Go tests/server build, the deployment image build and the automated view-only HTTP boundary probe passed;
 - the first browser role check reached a connected receive-only WebRTC session, but the passive client remained black/silent and raised `Cannot read properties of undefined (reading 'muted')` during autoplay fallback;
@@ -205,9 +205,13 @@ Partial checkpoint evidence begun on 2026-09-11 at `5387f356` and continued at `
 - after the client repair and image rebuild at `9a449d32`, V received desktop/audio, retained only Play/Pause, Mute/Volume, Fullscreen and PiP, and produced no browser-console error;
 - M/A control behavior, refusal to assign V as host, legacy WebSocket/data-channel denial and current WebSocket denial passed without disconnecting V or disturbing M/A;
 - the inbound-media phase did not reach the server: forced microphone enablement for V and the normal M baseline both stopped at the client's existing `negotiation is needed (no-op)` handler. This is a pre-existing microphone-passthrough defect rather than evidence for or against the view-only server boundary;
-- `testing` now restores guarded client-initiated SDP offers after the initial server negotiation, serializes local offer creation, rejects stale peer/socket completion and cleans up microphone streams that resolve after reconnect. Its dependency-free decision tests, client checks, rebuilt image and M/V runtime comparison remain required on the target server.
+- `80eeca64` restored guarded client-initiated SDP offers after the initial server negotiation, serialized local offer creation, rejected stale peer/socket completion and cleaned up microphone streams that resolve after reconnect;
+- all four dependency-free client tests, TypeScript lint and the production build then passed in the target Docker validation service. Rebuilt image `sha256:2dd587c1de59e9d51c1b64abd9c382506949a1a69d3a4645c792f0758096f922` started healthy;
+- M delivered a real Opus microphone track to the server and stopped it normally. V delivered the same real track, which the server immediately stopped with `media sharing is disabled for this session`;
+- V refresh and a 12-second offline/online cycle recovered as view-only without disturbing M/A. Both active viewers remained on `high` with zero audio/video sample drops;
+- token rotation recreated the healthy service, disconnected V, made the old link return `Unauthorized`, and passed the HTTP boundary probe with the new token. The new V link and unchanged M/A logins were operator-confirmed.
 
-The remaining acceptance work is the repaired inbound-media comparison, view-only refresh/reconnect, token rotation/revocation and the complete iOS recovery phases. No grouped checkpoint acceptance is claimed yet.
+After that successful matrix, the operator requested the intentionally incompatible compact `#/<16-character-Base64URL-token>` form. The repository now rejects six-character and legacy 64-hex values and covers the new parser/generator/validation shape, but the compact format requires fresh client/server checks, image deployment, HTTP probe and a short old/new-link smoke test. The complete iOS recovery phases also remain open, so no grouped checkpoint acceptance is claimed yet.
 
 ## Target-server verification
 

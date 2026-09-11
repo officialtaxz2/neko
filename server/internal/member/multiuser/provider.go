@@ -10,7 +10,7 @@ import (
 	"github.com/m1k1o/neko/server/pkg/utils"
 )
 
-var viewOnlyTokenPattern = regexp.MustCompile(`^[0-9a-fA-F]{64}$`)
+var viewOnlyTokenPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{16}$`)
 
 func New(config Config) types.MemberProvider {
 	return &MemberProviderCtx{
@@ -28,7 +28,7 @@ func (provider *MemberProviderCtx) Connect() error {
 	}
 
 	if !viewOnlyTokenPattern.MatchString(provider.config.ViewOnlyToken) {
-		return errors.New("view-only token must contain exactly 64 hexadecimal characters")
+		return errors.New("view-only token must contain exactly 16 URL-safe characters")
 	}
 	if provider.config.ViewOnlyToken == provider.config.AdminPassword ||
 		provider.config.ViewOnlyToken == provider.config.UserPassword {

@@ -58,7 +58,7 @@ The product remains one shared session, not independent per-user browser session
 - Public STUN fallback injection if no STUN URL is configured.
 - Demo mode.
 - Cross-browser fullscreen handling.
-- Optional 256-bit view-only share credential transported by a `#/watch/<token>` fragment and WebSocket subprotocol rather than an HTTP request path/query string.
+- Optional 96-bit view-only share credential encoded as exactly 16 Base64URL characters and transported by a compact `#/<token>` fragment and WebSocket subprotocol rather than an HTTP request path/query string.
 - Fixed view-only profile/session normalization plus HTTP, current/legacy WebSocket, modern/legacy data-channel, inbound-media, host-assignment and plugin enforcement.
 - Non-persisted passive sessions with documented token rotation/removal and service recreation as the hard revocation boundary.
 
@@ -115,11 +115,11 @@ For passive/view-only devices such as Smart-TVs or constrained/older browsers, h
 
 ### IMPLEMENTED IN REPOSITORY — server-enforced view-only share link
 
-The optional `#/watch/<64-hex-token>` link permits passive WebRTC viewing in the same room without mouse, keyboard, touch, clipboard, file, microphone/media-share, control-request or admin capabilities. The token remains in the URL fragment and is carried in a WebSocket subprotocol; it is never placed in the normal share-link HTTP request path or query string.
+The optional `#/<16-character-Base64URL-token>` link permits passive WebRTC viewing in the same room without mouse, keyboard, touch, clipboard, file, microphone/media-share, control-request or admin capabilities. The token remains in the URL fragment and is carried in a WebSocket subprotocol; it is never placed in the normal share-link HTTP request path or query string. Six-character and legacy 64-hex credentials are rejected.
 
-Authorization is enforced by a normalized backend-neutral `is_view_only` profile and allow/deny checks across every current ingress path, not by hidden controls or by WebRTC. This leaves the same identity usable by a future different receive-only media backend without creating a separate desktop/session or weakening authorization. Token lifetime, revocation, denial behavior, deployment, rollback and the pending three-role target-server matrix are specified in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md).
+Authorization is enforced by a normalized backend-neutral `is_view_only` profile and allow/deny checks across every current ingress path, not by hidden controls or by WebRTC. This leaves the same identity usable by a future different receive-only media backend without creating a separate desktop/session or weakening authorization. Token lifetime, revocation, denial behavior, deployment, rollback and the three-role target-server matrix are specified in [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md).
 
-Runtime status: **implementation complete and statically reviewed on `testing`; build/tests and adversarial target-server validation pending at the grouped iOS/view-only checkpoint**.
+Runtime status: **the full view-only boundary, real inbound-media denial and revocation passed on the target server at `80eeca64` with the prior credential shape. The later compact token/link change is implemented and statically reviewed on `testing` but requires a fresh target-server build and smoke test; the grouped iOS phases remain pending**.
 
 ### TARGET — robust recovery
 
@@ -145,7 +145,7 @@ Do not assume WebSocket is automatically better on a poor or lossy connection: t
 
 ### TARGET candidate — passive/view-only HTTP streaming
 
-For passive viewers, especially Smart-TVs, old/constrained browsers, and `/watch/<token>`-style clients, evaluate a conventional adaptive HTTP livestream independently of the interactive path:
+For passive viewers, especially Smart-TVs, old/constrained browsers, and share-link clients, evaluate a conventional adaptive HTTP livestream independently of the interactive path:
 
 - **HLS / Low-Latency HLS** is the primary candidate because it is HTTP-based, supports live audio/video and multiple bitrate variants, and is designed to adapt playback to changing network conditions.
 - **MPEG-DASH** is a secondary candidate where client/platform support makes it useful.

@@ -372,7 +372,7 @@
       "view_only_token"
     ],
     "type": "string",
-    "description": "member multiuser provider: optional 64-character hexadecimal token for view-only share links"
+    "description": "member multiuser provider: optional 16-character URL-safe token for view-only share links"
   },
   {
     "key": [

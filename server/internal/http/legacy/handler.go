@@ -30,7 +30,7 @@ import (
 
 const viewOnlySubprotocolPrefix = "neko-view."
 
-var viewOnlySubprotocolPattern = regexp.MustCompile(`^[0-9a-fA-F]{64}$`)
+var viewOnlySubprotocolPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{16}$`)
 
 var (
 	// DefaultUpgrader specifies the parameters for upgrading an HTTP
@@ -454,7 +454,7 @@ func viewOnlyTokenFromRequest(r *http.Request) (token, selectedSubprotocol strin
 
 		token = strings.TrimPrefix(subprotocol, viewOnlySubprotocolPrefix)
 		if !viewOnlySubprotocolPattern.MatchString(token) {
-			return "", "", errors.New("view-only token must contain exactly 64 hexadecimal characters")
+			return "", "", errors.New("view-only token must contain exactly 16 URL-safe characters")
 		}
 		selectedSubprotocol = subprotocol
 	}
