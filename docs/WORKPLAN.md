@@ -197,6 +197,13 @@ Static review status: **implementation complete in repository / client checks, s
 
 Target-server status: **pending at the same coherent grouped `testing` checkpoint as bounded iOS recovery**.
 
+Partial checkpoint evidence on 2026-09-11 at `5387f356`:
+
+- containerized client checks, focused Go tests/server build, the deployment image build and the automated view-only HTTP boundary probe passed;
+- the first browser role check reached a connected receive-only WebRTC session, but the passive client remained black/silent and raised `Cannot read properties of undefined (reading 'muted')` during autoplay fallback;
+- the same check also confirmed that the view-only shell had hidden the shared playback toolbar together with the interactive room UI;
+- `testing` now keeps a stable media-element reference across the asynchronous autoplay fallback and renders only Play/Pause, Mute/Volume, Fullscreen and PiP for passive sessions. Image rebuild and the complete grouped runtime matrix remain required before acceptance.
+
 ## Target-server verification
 
 This phase is performed by the operator on the real server, not by Codex.

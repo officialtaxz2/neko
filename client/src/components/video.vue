@@ -1027,22 +1027,32 @@
 
     @Watch('playing')
     async onPlayingChanged(playing: boolean) {
-      if (this._video && this._video.paused && playing) {
+      // Keep a stable reference across awaits. Reactive layout changes (for
+      // example switching into the view-only shell after member/init events)
+      // can temporarily clear the decorated ref while play() is rejecting.
+      const video = this._video
+      if (!video) {
+        return
+      }
+
+      if (video.paused && playing) {
         // if autoplay is disabled, play() will throw an error
         // and we need to properly save the state otherwise we
         // would be thinking we're playing when we're not
         try {
-          await this._video.play()
+          await video.play()
         } catch (err: any) {
-          if (!this._video.muted) {
+          if (!video.muted) {
             // video.play() can fail if audio is set due restrictive
             // browsers autoplay policy -> retry with muted audio.
             // This is the PRIMARY mobile fix: iOS Safari and mobile Chrome
             // block unmuted autoplay but allow muted autoplay.
             try {
+              // Update the captured element before the store mutation can
+              // trigger a render and change this._video.
+              video.muted = true
               this.$accessor.video.setMuted(true)
-              this._video.muted = true
-              await this._video.play()
+              await video.play()
               // Show the muted overlay so user can tap to unmute
               this.mutedOverlay = true
             } catch (err2: any) {
@@ -1059,8 +1069,8 @@
         }
       }
 
-      if (this._video && !this._video.paused && !playing) {
-        this.pause()
+      if (!video.paused && !playing) {
+        video.pause()
       }
     }
 

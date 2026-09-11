@@ -1,6 +1,6 @@
 <template>
   <ul>
-    <li v-if="!implicitHosting && (!controlLocked || hosting)">
+    <li v-if="!viewOnly && !implicitHosting && (!controlLocked || hosting)">
       <i
         :class="[
           !disabeld && shakeKbd ? 'shake' : '',
@@ -20,7 +20,7 @@
         @click.stop.prevent="toggleControl"
       />
     </li>
-    <li class="no-pointer" v-if="implicitHosting">
+    <li class="no-pointer" v-if="!viewOnly && implicitHosting">
       <i
         :class="[controlLocked ? 'disabled' : '', 'fas', 'fa-mouse-pointer']"
         v-tooltip="{
@@ -32,7 +32,7 @@
         }"
       />
     </li>
-    <li v-if="implicitHosting || (!implicitHosting && (!controlLocked || hosting))">
+    <li v-if="!viewOnly && (implicitHosting || (!implicitHosting && (!controlLocked || hosting)))">
       <label
         class="switch"
         v-tooltip="{
@@ -404,13 +404,17 @@
       return this.$accessor.remote.implicitHosting
     }
 
+    get viewOnly() {
+      return this.$accessor.user.viewOnly
+    }
+
     // Microphone is allowed when the user is actively controlling (has host).
     // With implicit hosting, the controlling getter is true only when the user
     // has actually been assigned as host (clicked inside the video), not for
     // everyone by default. This prevents multiple users from sharing their
     // microphone simultaneously — only the person in control can.
     get micAllowed() {
-      return this.controlling
+      return !this.viewOnly && this.controlling
     }
 
     get volume() {

@@ -16,16 +16,16 @@
             @control-attempt="controlAttempt"
           />
         </div>
-        <div v-if="!videoOnly" class="room-container">
-          <neko-members />
+        <div v-if="!videoOnly || viewOnly" :class="['room-container', { 'view-only-controls': viewOnly }]">
+          <neko-members v-if="!viewOnly" />
           <div class="room-menu">
-            <div class="settings">
+            <div v-if="!viewOnly" class="settings">
               <neko-menu />
             </div>
             <div class="controls">
               <neko-controls :shakeKbd="shakeKbd" />
             </div>
-            <div class="emotes">
+            <div v-if="!viewOnly" class="emotes">
               <neko-emotes />
             </div>
           </div>
@@ -194,7 +194,7 @@
   }
 
   @media only screen and (max-width: 768px) {
-    #neko .neko-main .room-container {
+    #neko .neko-main .room-container:not(.view-only-controls) {
       display: none;
     }
   }
@@ -361,7 +361,11 @@
     }
 
     get videoOnly() {
-      return this.isCastMode || this.isEmbedMode || this.$accessor.user.viewOnly
+      return this.isCastMode || this.isEmbedMode || this.viewOnly
+    }
+
+    get viewOnly() {
+      return this.$accessor.user.viewOnly
     }
 
     @Watch('volume', { immediate: true })
