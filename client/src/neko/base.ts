@@ -1,6 +1,7 @@
 import EventEmitter from 'eventemitter3'
 import { OPCODE } from './data'
 import { EVENT, WebSocketEvents } from './events'
+import { shouldCreateClientOffer } from './negotiation'
 
 import {
   WebSocketMessages,
@@ -203,7 +204,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   public async enableMicrophone(): Promise<void> {
-    if (!this._peer) {
+    const peer = this._peer
+    if (!peer) {
       this.emit('warn', 'attempting to enable microphone with no peer connection')
       return
     }
@@ -213,19 +215,38 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       return
     }
 
+    let stream: MediaStream | undefined
     try {
-      this._micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const audioTrack = this._micStream.getAudioTracks()[0]
-      if (typeof this._peer.addTrack === 'function') {
-        this._micSender = this._peer.addTrack(audioTrack, this._micStream)
-      } else if (typeof (this._peer as any).addStream === 'function') {
-        ;(this._peer as any).addStream(this._micStream)
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      if (this._peer !== peer) {
+        stream.getTracks().forEach((track) => track.stop())
+        this.emit('warn', 'microphone request completed for a stale peer connection')
+        return
+      }
+
+      const audioTrack = stream.getAudioTracks()[0]
+      if (!audioTrack) {
+        throw new Error('microphone stream contains no audio track')
+      }
+
+      this._micStream = stream
+      if (typeof peer.addTrack === 'function') {
+        this._micSender = peer.addTrack(audioTrack, stream)
+      } else if (typeof (peer as any).addStream === 'function') {
+        ;(peer as any).addStream(stream)
       } else {
         throw new Error('RTCPeerConnection.addTrack is not supported by your browser/environment.')
       }
       this._micActive = true
       this.emit('info', `microphone enabled: ${audioTrack.label}`)
     } catch (err: any) {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop())
+        if (this._micStream === stream) this._micStream = undefined
+      }
+      this._micSender = undefined
+      this._micActive = false
+
       const errMsg = err ? (err.message || String(err)) : ''
       const errName = err ? (err.name || '') : ''
       if (
@@ -477,9 +498,48 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       }
     }
 
-    peer.onnegotiationneeded = () => {
-      if (!isCurrentPeer()) return
-      this.emit('debug', `negotiation is needed (no-op)`)
+    let makingOffer = false
+    peer.onnegotiationneeded = async () => {
+      const socket = this._ws
+      if (
+        !socket ||
+        !shouldCreateClientOffer({
+          currentPeer: isCurrentPeer(),
+          socketOpen: socket.readyState === WebSocket.OPEN,
+          hasRemoteDescription: peer.remoteDescription !== null,
+          signalingState: peer.signalingState,
+          makingOffer,
+        })
+      ) {
+        this.emit('debug', `client negotiation postponed (state: ${peer.signalingState})`)
+        return
+      }
+
+      makingOffer = true
+      try {
+        const offer = await peer.createOffer()
+        if (!isCurrentPeer() || this._ws !== socket || peer.signalingState !== 'stable') return
+
+        await peer.setLocalDescription(offer)
+        if (!isCurrentPeer() || this._ws !== socket || socket.readyState !== WebSocket.OPEN) return
+
+        const description = peer.localDescription
+        if (!description?.sdp || description.type !== 'offer') {
+          throw new Error('client negotiation did not create a local SDP offer')
+        }
+
+        socket.send(
+          JSON.stringify({
+            event: EVENT.SIGNAL.OFFER,
+            sdp: description.sdp,
+          }),
+        )
+        this.emit('debug', `sent client negotiation offer`)
+      } catch (err: any) {
+        if (isCurrentPeer() && this._ws === socket) this.emit('error', err)
+      } finally {
+        makingOffer = false
+      }
     }
 
     const channel = peer.createDataChannel('data')
@@ -528,7 +588,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       // add stereo=1 to answer sdp to enable stereo audio for chromium
       d.sdp = d.sdp?.replace(/(stereo=1;)?useinbandfec=1/, 'useinbandfec=1;stereo=1')
 
-      peer.setLocalDescription(d)
+      await peer.setLocalDescription(d)
       if (this._peer !== peer || this._ws !== socket || socket.readyState !== WebSocket.OPEN) return
 
       socket.send(
@@ -545,12 +605,14 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
 
   public async setRemoteAnswer(sdp: string) {
     const peer = this._peer
-    if (!peer) {
+    const socket = this._ws
+    if (!peer || !socket) {
       this.emit('warn', `attempting to set remote answer while disconnected`)
       return
     }
 
     await peer.setRemoteDescription({ type: 'answer', sdp })
+    if (this._peer !== peer || this._ws !== socket) return
   }
 
   private async onMessage(e: MessageEvent, socket: WebSocket) {

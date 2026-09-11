@@ -1,6 +1,6 @@
 # Serverseitig erzwungenes View-only-Sharing
 
-Status: **auf `testing` implementiert und statisch geprüft; Docker-Builds, fokussierte Servertests und die Drei-Rollen-Laufzeitmatrix auf dem Zielserver stehen noch aus**.
+Status: **auf `testing` implementiert und statisch geprüft; containerisierte Client-/Serverchecks, HTTP-Grenze und der größte Teil der Drei-Rollen-Matrix liefen auf dem Zielserver erfolgreich. Die reparierte Mikrofon-Neuverhandlung, Rotation/Widerruf und das gemeinsame iOS-Runbook stehen noch aus**.
 
 Dieses Runbook ist auf einen Linux-Zielserver ohne lokal installiertes Node.js, npm, Go oder Python zugeschnitten. Die automatisierbaren Prüfungen laufen über [`docker-compose.validation.yaml`](../docker-compose.validation.yaml). Nur die tatsächlichen Browser-, Rollen-, Eingabe-, Mikrofon- und Widerrufstests bleiben manuell.
 
@@ -260,19 +260,36 @@ Die containerisierten Go-Tests aus iOS-Block 2 prüfen zusätzlich die vollstän
 
 ## Phase 6 — eingehendes Mikrofon/Media verweigern
 
-In der Entwicklerkonsole von V ausführen und eine eventuelle Browser-Mikrofonabfrage nur für diesen Test erlauben:
+Das Neko-Mikrofon ist kein Teilnehmer-Sprachchat: Ein erlaubter Track wird als Mikrofoneingang in den gemeinsamen Remote-Desktop eingespeist. Zuerst mit M und anschließend mit V prüfen, damit ein fehlender Client-Track nicht fälschlich als erfolgreiche View-only-Sperre gilt.
+
+1. M erhält Kontrolle. In der Entwicklerkonsole von M ausführen, eine eventuelle Browser-Mikrofonabfrage erlauben, fünf Sekunden warten und wieder deaktivieren:
 
 ```javascript
 await $client.enableMicrophone()
 ```
 
+```javascript
+$client.disableMicrophone()
+```
+
+2. In der Entwicklerkonsole von V denselben Aktivierungsbefehl ausführen, fünf Sekunden warten und wieder deaktivieren:
+
+```javascript
+await $client.enableMicrophone()
+```
+
+```javascript
+$client.disableMicrophone()
+```
+
 Erwartung:
 
-- M und A hören niemals Audio von V;
-- V erhält weder Media-Share- noch Kontrollrechte;
-- der Server stoppt einen tatsächlich eingehenden Track und protokolliert, dass Media-Sharing für die Session deaktiviert ist.
+- für M protokolliert der Server einen neuen Remote-Track, ohne ihn wegen fehlender Media-Rechte zu stoppen;
+- für V protokolliert der Server ebenfalls einen tatsächlich eingehenden Remote-Track, stoppt ihn aber sofort mit `media sharing is disabled for this session`;
+- V erhält weder Media-Share- noch Kontrollrechte, und sein Track erreicht den Mikrofoneingang des Remote-Desktops nicht;
+- M, A und V bleiben verbunden.
 
-Wenn der Browser bereits lokal keinen Track aushandelt, ist nur der Browserpfad fehlgeschlagen und der serverseitige Laufzeittest noch nicht bewiesen. Dies als Abweichung vermerken; der fokussierte Go-Test allein ersetzt keinen tatsächlich beim Server eingehenden Track.
+Wenn bereits M keinen Track zum Server aushandelt, ist die normale Mikrofon-Baseline fehlgeschlagen und der serverseitige View-only-Laufzeittest noch nicht bewiesen. Dies als Abweichung vermerken; der fokussierte Go-Test allein ersetzt keinen tatsächlich beim Server eingehenden Track.
 
 ```bash
 docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs --since=10m --no-color neko 2>&1 | tee "$NEKO_RESULT_DIR/24-view-only-media.log"

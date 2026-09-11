@@ -197,12 +197,17 @@ Static review status: **implementation complete in repository / client checks, s
 
 Target-server status: **pending at the same coherent grouped `testing` checkpoint as bounded iOS recovery**.
 
-Partial checkpoint evidence on 2026-09-11 at `5387f356`:
+Partial checkpoint evidence begun on 2026-09-11 at `5387f356` and continued at `9a449d32`:
 
 - containerized client checks, focused Go tests/server build, the deployment image build and the automated view-only HTTP boundary probe passed;
 - the first browser role check reached a connected receive-only WebRTC session, but the passive client remained black/silent and raised `Cannot read properties of undefined (reading 'muted')` during autoplay fallback;
 - the same check also confirmed that the view-only shell had hidden the shared playback toolbar together with the interactive room UI;
-- `testing` now keeps a stable media-element reference across the asynchronous autoplay fallback and renders only Play/Pause, Mute/Volume, Fullscreen and PiP for passive sessions. Image rebuild and the complete grouped runtime matrix remain required before acceptance.
+- after the client repair and image rebuild at `9a449d32`, V received desktop/audio, retained only Play/Pause, Mute/Volume, Fullscreen and PiP, and produced no browser-console error;
+- M/A control behavior, refusal to assign V as host, legacy WebSocket/data-channel denial and current WebSocket denial passed without disconnecting V or disturbing M/A;
+- the inbound-media phase did not reach the server: forced microphone enablement for V and the normal M baseline both stopped at the client's existing `negotiation is needed (no-op)` handler. This is a pre-existing microphone-passthrough defect rather than evidence for or against the view-only server boundary;
+- `testing` now restores guarded client-initiated SDP offers after the initial server negotiation, serializes local offer creation, rejects stale peer/socket completion and cleans up microphone streams that resolve after reconnect. Its dependency-free decision tests, client checks, rebuilt image and M/V runtime comparison remain required on the target server.
+
+The remaining acceptance work is the repaired inbound-media comparison, view-only refresh/reconnect, token rotation/revocation and the complete iOS recovery phases. No grouped checkpoint acceptance is claimed yet.
 
 ## Target-server verification
 

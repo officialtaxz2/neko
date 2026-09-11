@@ -60,7 +60,7 @@ Local reconciliation (2026-09-09):
 
 Do not perform a blind upstream overwrite.
 
-The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`; their exact device and three-role procedures remain pending for the next grouped target-server checkpoint. No automatic in-place recovery or target-server view-only acceptance claim is made until that run passes.
+The bounded iOS recovery and server-enforced view-only paths are implemented and statically reviewed on `testing`. The grouped target-server checkpoint is in progress: containerized checks and most view-only role/boundary phases have passed, while repaired inbound-media negotiation, revocation and the iOS device phases remain pending. No automatic in-place recovery or complete target-server view-only acceptance claim is made until the remaining phases pass.
 
 ## NEXT
 
