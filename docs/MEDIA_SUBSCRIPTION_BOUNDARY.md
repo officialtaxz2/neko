@@ -1,6 +1,6 @@
 # Backend-neutral encoded-media subscription boundary
 
-Status: **design and first no-new-transport compatibility implementation complete in the repository on `testing` as of 2026-09-11; target-server verification in progress together with a separate estimator startup-timing correction; no alternative media backend is implemented**.
+Status: **design and first no-new-transport compatibility implementation complete on `testing`; bounded target-server checkpoint closed at `e5f55bf9` on 2026-09-12 with the repeated full role/recovery and induced three-viewer down/up matrix explicitly deferred to final grouped validation; no alternative media backend is implemented**.
 
 This document fixes the architecture contract and records its first compatibility implementation. It is intentionally more concrete than a product direction, but it does not claim that WebCodecs/WebSocket, HLS/LL-HLS, DASH or WebTransport exists in the repository.
 
@@ -320,7 +320,7 @@ Required focused tests include:
 - delivery/session revocation and shutdown cleanup;
 - absence of tokens in logs/metric labels by construction.
 
-Runtime/build verification is target-server work under `AGENTS.md`. The compatibility refactor is not complete until focused Go tests, server/plugin build, local image build and the existing ordinary/admin/view-only/adaptive regression smoke tests pass there at the final exact checkpoint commit.
+Runtime/build verification is target-server work under `AGENTS.md`. The focused Go tests, server/plugin build, local image build, lifecycle probe, metrics inspection and estimator-startup trace have target-server evidence below. The operator accepted that bounded checkpoint for continued prototype work while explicitly deferring the repeated complete ordinary/admin/view-only/adaptive matrix to final grouped validation.
 
 Repository implementation record:
 
@@ -336,9 +336,13 @@ Repository implementation record:
 
 Static status: **implementation and diff review complete in Codex; project code, tests, builds, containers and runtime checks NOT EXECUTED IN CODEX**.
 
-Target-server evidence through `a32027d`: the complete expanded Go package set and trailing server/plugin build passed; local base/Brave images built; the adaptive service started healthy; a current-protocol media lifecycle probe passed; and `neko_media_*` showed consistent delivery/subscription lifecycle, capacity-two queues, delivery traffic and discontinuities without credential labels. A candidate/rollback A/B reproduced the same immediate startup `high -> medium` transition on both images, excluding the media-subscription refactor as its introduction. The inherited estimator zero-time cause and its separate correction are documented in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
+Target-server evidence through `a32027d`: the complete expanded Go package set and trailing server/plugin build passed; local base/Brave images built; the adaptive service started healthy; a current-protocol media lifecycle probe passed; and `neko_media_*` showed consistent delivery/subscription lifecycle, capacity-two queues, delivery traffic and discontinuities without credential labels. A candidate/rollback A/B reproduced the same immediate startup `high -> medium` transition on both images, excluding the media-subscription refactor as its introduction.
 
-The next checkpoint is the exact combined target-server validation below. The broader manual matrix and the estimator correction remain pending; no alternative-backend prototype should begin until they are accepted.
+At exact follow-up `e5f55bf9`, the complete validation service and trailing build passed again, fresh local base/Brave images built, and the adaptive service remained healthy with zero restarts. A fresh single viewer stayed on `high` for the full focused startup window: the first estimate arrived with `NEUTRAL` trend after about two seconds, no switch or stall followed, the high pipeline measured about 1.89 Mbit/s, and the active video drop counter remained zero. This confirms the inherited estimator zero-time correction for that run; details are in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
+
+The operator closed the checkpoint with a precise limitation. The ordinary/admin/view-only/private-mode/manual-tier/reconnect matrix was not repeated at `e5f55bf9`, and no fresh independently constrained three-viewer down/up isolation run was made. Both are deferred to final grouped validation, so this record must not be read as exact-commit evidence for those omitted phases. It is sufficient to begin the next design block, not to claim universal device or network coverage.
+
+A static motion-quality audit found the accepted adaptive profile unchanged since `bfaca84e`, no encoder construction/configuration change in this refactor, and unchanged encoded payload bytes along the GStreamer/provider/Pion path. The reported possibility of softer fast-motion output is plausible under the existing fixed-rate roughly 2-Mbit/s VP8 `high` tier with `max-quantizer: 63`, but no evidence currently attributes it to this boundary. A controlled bitrate/quantizer A/B is deferred quality tuning.
 
 Target-server commands from the repository root:
 

@@ -1,6 +1,6 @@
 # Project Definition
 
-Last consolidated: 2026-09-11.
+Last consolidated: 2026-09-12.
 
 State labels:
 
@@ -88,7 +88,7 @@ These repository implementation claims were first established by static inspecti
 - Stable, unstable and stalled estimator observation windows start together instead of leaving the latter two at Go zero time; switch-backoff timestamps remain unset until a real switch.
 - Activation, diagnostics, resource costs, rollback and the target-server acceptance sequence are documented in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
-On 2026-09-10, the operator accepted commit `bfaca84e` on the target server for one desktop, one iPad and one iPhone. The isolated 0.7 Mbit/s rerun held the iPhone on `low` after downgrade, preserved both healthy viewers on `high` with zero peer-local drops, and recovered through `medium` to `high` within 45 seconds after impairment removal. Refresh/rejoin and a transient cellular interruption also preserved both healthy viewers. This is bounded evidence for that deployment and device set, not a universal profile guarantee. The later zero-time startup correction is a separate pending checkpoint and does not retroactively alter that acceptance.
+On 2026-09-10, the operator accepted commit `bfaca84e` on the target server for one desktop, one iPad and one iPhone. The isolated 0.7 Mbit/s rerun held the iPhone on `low` after downgrade, preserved both healthy viewers on `high` with zero peer-local drops, and recovered through `medium` to `high` within 45 seconds after impairment removal. Refresh/rejoin and a transient cellular interruption also preserved both healthy viewers. This is bounded evidence for that deployment and device set, not a universal profile guarantee. The later zero-time startup correction passed its focused target-server trace at `e5f55bf9`; the operator closed that follow-up while explicitly deferring a repeat of the full role/recovery and induced three-viewer adaptive matrix to final grouped validation.
 
 ## Highest-priority target outcomes
 
@@ -136,7 +136,9 @@ The capture-backed provider now owns source discovery, keyframe-gated subscripti
 
 GStreamer now exports encoded-buffer PTS, DTS, duration and caps-derived resolution/frame rate. Provider normalization maps those timestamps onto a manager-owned timeline, while `CapturedAt` is retained only for the compatibility Pion sample field and is not treated as a cross-backend PTS. Pipeline recreation and format change advance/propagate explicit generations and force video readmission at a keyframe.
 
-Focused repository tests cover ordered selection, demand lifecycle, keyframe admission, switch/pause/resume/idempotent close, timing/generation/format/discontinuity, local non-blocking overflow, the unchanged WebRTC two-unit policy, `CanWatch` denial, view-only receive allowance, replacement/revocation and shutdown. These tests were **NOT EXECUTED IN CODEX**. At `a32027d`, they and the server/plugin build passed in the target-server validation container; local images also built and the deployed compatibility path produced the expected lifecycle metrics. The broader manual matrix and the later estimator startup correction still require one exact-commit target-server checkpoint before the compatibility block is accepted.
+Focused repository tests cover ordered selection, demand lifecycle, keyframe admission, switch/pause/resume/idempotent close, timing/generation/format/discontinuity, local non-blocking overflow, the unchanged WebRTC two-unit policy, `CanWatch` denial, view-only receive allowance, replacement/revocation and shutdown. These tests were **NOT EXECUTED IN CODEX**. At `a32027d`, they and the server/plugin build passed in the target-server validation container; local images also built and the deployed compatibility path produced the expected lifecycle metrics. At exact follow-up `e5f55bf9`, the complete suite/build passed again, fresh images deployed healthy, and one fresh viewer remained on `high` throughout the focused estimator-startup trace with no video queue drop. The operator accepted this bounded checkpoint on 2026-09-12 for continued prototype work, while explicitly deferring repetition of the ordinary/admin/view-only/private-mode/reconnect matrix and an induced three-viewer adaptive down/up run to final grouped validation.
+
+Static comparison found no subscription-refactor change to the accepted adaptive configuration, encoder construction or encoded payload bytes. A possible softer image during fast movement therefore remains an unproven quality observation consistent with the existing fixed-rate roughly 2-Mbit/s VP8 `high` tier and its full quantizer range. A controlled bitrate/quantizer A/B is still required before changing the profile or claiming a regression.
 
 No alternative endpoint, packager or client exists. WebCodecs/WebSocket, HLS/LL-HLS, automatic backend selection and WebTransport remain later candidates.
 

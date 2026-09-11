@@ -17,10 +17,11 @@ Immediate sequence:
 9. implement server-enforced view-only sharing on `testing` — **complete in the repository and target-server verified through the full boundary matrix plus the compact-link follow-up at `913a981e`**,
 10. validate bounded iOS recovery and server-enforced view-only sharing together at one exact `testing` commit — **closed on 2026-09-11 with the explicit iPhone evidence limitation above**,
 11. design the backend-neutral encoded-media subscription boundary for practical non-WebRTC prototypes — **complete on `testing`; design only, no alternative backend implemented**,
-12. implement the no-new-transport compatibility refactor defined in `docs/MEDIA_SUBSCRIPTION_BOUNDARY.md` — **complete in the repository on `testing`; target-server validation in progress**,
-13. correct estimator startup observation-window initialization so configured unstable/stalled delays cannot be bypassed by Go zero-time values — **complete in the repository on `testing`; target-server validation pending**,
-14. validate the compatibility refactor and estimator startup-timing correction together on the target server without changing the stable WebRTC/default deployment behavior — **NEXT**,
-15. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
+12. implement the no-new-transport compatibility refactor defined in `docs/MEDIA_SUBSCRIPTION_BOUNDARY.md` — **complete in the repository and bounded target-server checkpoint closed on `testing` at `e5f55bf9`; the repeated full role/recovery matrix and induced three-viewer down/up isolation run are explicitly deferred to final grouped validation**,
+13. correct estimator startup observation-window initialization so configured unstable/stalled delays cannot be bypassed by Go zero-time values — **complete and focused target-server validated at `e5f55bf9`; one fresh viewer remained on `high` throughout the recorded startup window**,
+14. specify the exact opt-in WebCodecs plus dedicated media-WebSocket prototype contract without adding a transport yet — **NEXT**,
+15. implement and validate alternative-media prototypes only in later separate blocks, while retaining WebRTC as the default — **pending**,
+16. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
 
 ## Authoritative knowledge
 
