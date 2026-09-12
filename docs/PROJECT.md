@@ -140,13 +140,13 @@ Focused repository tests cover ordered selection, demand lifecycle, keyframe adm
 
 Static comparison found no subscription-refactor change to the accepted adaptive configuration, encoder construction or encoded payload bytes. A possible softer image during fast movement therefore remains an unproven quality observation consistent with the existing fixed-rate roughly 2-Mbit/s VP8 `high` tier and its full quantizer range. A controlled bitrate/quantizer A/B is still required before changing the profile or claiming a regression.
 
-No alternative endpoint, packager or client exists. The exact first `webcodecs-ws` receive-prototype contract is now fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md), but that documentation does not make the transport IMPLEMENTED. HLS/LL-HLS, automatic backend selection and WebTransport remain later candidates.
+No alternative endpoint, packager or client exists. The exact first `webcodecs-ws` receive-prototype contract is fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md), and its Phase 1 protocol/ticket/negotiation primitives are now implemented behind a default-off server flag. That does not make the transport usable: the media route, delivery backend and client remain unimplemented. HLS/LL-HLS, automatic backend selection and WebTransport remain later candidates.
 
 The project distinguishes **interactive** and **passive/view-only** media fallback needs. There is not one mandatory fallback chain for every client.
 
 This direction is consistent with upstream issue #371, which proposes protocol-independent media backends including HLS (`m3u8`), WebRTC and QUIC, with backend selection based on device capabilities, network conditions and server capabilities.
 
-### SPECIFIED TARGET candidate — interactive receive fallback
+### PARTIALLY IMPLEMENTED TARGET candidate — interactive receive fallback
 
 Upstream issue #690 proposes staged work around:
 
@@ -189,7 +189,7 @@ other constrained client     -> capability-tested alternative
 
 Automatic selection is a TARGET direction, not currently IMPLEMENTED. Manual/explicit selection may be used first for diagnosis and rollout.
 
-None of these alternative-media candidates are IMPLEMENTED here unless repository code proves otherwise. Implementing the shared boundary and WebRTC adapter, or completing the WebCodecs/media-WebSocket design, does not change that status.
+None of these candidates is a usable alternative media path yet. Repository code now proves the default-off WebCodecs/media-WebSocket Phase 1 primitives, but not an endpoint, backend, decoder or validated transport. Implementing the shared boundary, WebRTC adapter or Phase 1 scaffolding alone does not change the default WebRTC behavior.
 
 ## Development / verification environment constraint
 

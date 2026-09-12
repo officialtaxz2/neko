@@ -768,6 +768,7 @@ func (subscription *captureMediaSubscription) normalizeUnitLocked(sample types.S
 		Generation: sample.Generation,
 		Sequence:   sequence,
 		PTS:        pts,
+		PTSValid:   sample.PTSValid,
 		DTS:        dts,
 		DTSValid:   sample.DTSValid,
 		Duration:   sample.Duration,

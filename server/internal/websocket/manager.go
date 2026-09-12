@@ -37,6 +37,12 @@ var nologEvents = []string{
 	// don't log heartbeats
 	event.SYSTEM_HEARTBEAT,
 	event.CLIENT_HEARTBEAT,
+	// Media negotiation can carry a one-time attach ticket and exact source
+	// choices. Never payload-log these credential-adjacent events.
+	event.MEDIA_CAPABILITIES_REQUEST,
+	event.MEDIA_CAPABILITIES,
+	event.MEDIA_CREATE,
+	event.MEDIA_OFFER,
 	// don't log every cursor update
 	event.SESSION_CURSORS,
 }

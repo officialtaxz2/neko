@@ -1,6 +1,6 @@
 # WebCodecs plus dedicated media WebSocket contract
 
-Status: **design complete on `testing` on 2026-09-12; no media-WebSocket endpoint, backend registration, client decoder, deployment enablement or automatic fallback is implemented**.
+Status: **design complete and Phase 1 protocol/ticket/negotiation boundary implemented on `testing` on 2026-09-12; no media-WebSocket endpoint, delivery backend, client decoder, deployment enablement or automatic fallback is implemented**.
 
 This document fixes the version-1 contract and the bounded implementation and acceptance plan for Neko's first non-WebRTC receive-media prototype. It specializes the backend-neutral boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md) without changing that boundary or the current WebRTC implementation.
 
@@ -19,7 +19,7 @@ Version 1 is an explicit, opt-in, low-latency **receive-media** experiment:
 
 The current client sends high-rate keyboard, pointer and touch input through the WebRTC data channel. Version 1 deliberately does not add a replacement control transport and therefore must not be described as complete non-WebRTC interactive parity. It proves an interactive-class receive path. A later, independently reviewed block must decide how a controlling participant sends high-rate input when no WebRTC peer connection exists.
 
-This design block adds documentation only. It does not add a route, event, configuration key, backend, decoder, worker, audio worklet, dependency or deployment overlay.
+Phase 1 now adds the strict envelope/parser and language-neutral fixtures, capture-side `PTSValid` propagation, single-use ticket storage, authenticated current/legacy negotiation events and the default-off server flag. It deliberately adds no media route, provider subscription, delivery backend registration, decoder, worker, audio worklet, dependency or deployment overlay.
 
 ## Invariants
 
@@ -57,9 +57,9 @@ There is no automatic WebRTC-to-WebSocket or WebSocket-to-WebRTC fallback. In pa
 Ticket creation uses the already authenticated event WebSocket. It does not put a durable credential in JavaScript solely for the media backend.
 
 1. The explicitly selected browser sends `media/capabilities/request` on its authenticated event WebSocket.
-2. The server returns `media/capabilities` with protocol version `1`, the enabled backend name, the available VP8 and Opus source formats, and the allowed source selectors.
-3. The browser probes the exact proposed audio and video configurations with `VideoDecoder.isConfigSupported()` and `AudioDecoder.isConfigSupported()`.
-4. The browser sends `media/create` with the exact audio and video choices it successfully probed. Audio may be explicitly disabled; the server must not silently remove a requested kind.
+2. The server returns `media/capabilities` with protocol version `1`, the enabled backend name, available VP8 and Opus source descriptors, and the allowed exact-source selectors. A cold video source may report zero dimensions until a bounded Phase 2 subscription starts its capture pipeline.
+3. The browser first probes the advertised codec family with `VideoDecoder.isConfigSupported()` and `AudioDecoder.isConfigSupported()`. When dimensions are not yet known, this is an advisory generic VP8 probe; exact probing is deferred to the first FORMAT record.
+4. The browser sends `media/create` with exact server-advertised source IDs and codecs that passed the initial probe. Audio may be explicitly disabled; the server must not silently remove a requested kind.
 5. The session/controller layer re-resolves the current session, requires `CanWatch`, validates the choices against server-owned capabilities and creates one pending attach ticket.
 6. The server returns `media/offer` over the authenticated event WebSocket. It contains the protocol name, relative path `/api/media/ws`, ticket and expiry.
 
@@ -93,7 +93,7 @@ The manager supplies the backend only the existing credential-free `MediaLease` 
 
 ### Ready transition
 
-After attachment, the server sends the requested `FORMAT` records. The browser performs exact capability probes once more, configures both requested decoders, and sends one `ready` control record within 5 seconds. Provider subscriptions start only after this transition, and `IsWatching` becomes true only when the lease is active.
+After atomic ticket redemption and authorization, the Phase 2 backend opens the requested provider subscriptions while the lease remains `opening`; this bounded subscription is what starts a cold capture source and allows its first exact FORMAT to emerge. A provider's preliminary zero-dimension format is retained internally and not sent as a protocol FORMAT. The server sends only the first complete nonzero requested FORMAT records and gates UNIT delivery until the browser performs the exact capability probes, configures both requested decoders and sends one `ready` control record within 5 seconds. Only then does the lease become active and `IsWatching` become true.
 
 If format validation, decoder configuration or the deadline fails, the new delivery closes without affecting capture or another session. The implementation must not hold two primary deliveries open to manufacture fallback.
 
@@ -120,7 +120,7 @@ Version 1 intentionally has one narrow interoperable codec set:
 | video | `vp8` | exactly one VP8 frame | `codedWidth`, `codedHeight`, `optimizeForLatency: true`; no description |
 | audio | `opus` | exactly one raw Opus packet | `sampleRate: 48000`, `numberOfChannels: 2`; no description |
 
-The server advertises the actual dimensions, frame-rate ratio, channels and clock rate from the selected `MediaSource`. The browser must probe the exact format record, not only the generic codec name. A positive browser report is advisory; the server still validates the request.
+The server advertises every currently known dimension, frame-rate ratio, channel and clock value from the selected `MediaSource`; a cold video source may advertise zero dimensions before its first subscription. The browser must probe the exact nonzero FORMAT record before sending `ready`, not only the generic codec name. A positive browser report is advisory; the server still validates the request.
 
 If the target deployment is configured for another capture codec, `webcodecs-ws` is unavailable for that kind and the explicit selection fails cleanly. It must not transcode, silently substitute a codec or change the deployment's capture configuration. H.264 is deferred until Annex-B versus AVC framing, decoder-description bytes and profile/level negotiation have an equally exact contract. VP9, AV1, HEVC, G.722, PCMU and PCMA are outside version 1.
 
@@ -154,14 +154,14 @@ The per-record field matrix is strict:
 
 | Record | Kind/track | Flags | Generation | Sequence/timing |
 | --- | --- | --- | --- | --- |
-| FORMAT | audio/1 or video/2 | config-present only when payload is nonempty | new/current value, at least 1 | sequence, PTS, DTS and duration zero |
+| FORMAT | audio/1 or video/2 | zero in version 1; VP8/raw Opus have no config payload | new/current value, at least 1 | sequence, PTS, DTS and duration zero |
 | UNIT | audio/1 or video/2 | PTS-valid/DTS-valid as sourced; keyframe allowed only for video | current value, at least 1 | sequence starts at 0; PTS nonnegative; invalid DTS is zero; duration is positive |
 | DISCONTINUITY | audio/1 or video/2 | zero | new value, at least 1 | sequence, PTS, DTS and duration zero |
 | END | none/0 | zero | zero | sequence, PTS, DTS and duration zero |
 
 A common A/V discontinuity is represented by one DISCONTINUITY per requested track, followed by each track's FORMAT. Version-1 generation, sequence, PTS, DTS and duration values must also fit JavaScript's exact nonnegative integer range, at most `2^53 - 1`; valid duration is at most 10 seconds. A negative timestamp, zero/over-limit duration on UNIT or an invalid-DTS flag paired with nonzero DTS is a protocol error.
 
-Timestamps and duration use microseconds because that is the WebCodecs chunk timebase. Conversion from Go `time.Duration` must be checked for range loss. PTS is always a backend-normalized, nonnegative value suitable for scheduling. The PTS-valid flag records whether the capture source supplied a valid PTS or the provider synthesized one. DTS is zero with its flag clear when unavailable. Supporting this distinction requires the later implementation to add `PTSValid` to `EncodedMediaUnit`; it is not a change made by this design block.
+Timestamps and duration use microseconds because that is the WebCodecs chunk timebase. Conversion from Go `time.Duration` must be checked for range loss. PTS is always a backend-normalized, nonnegative value suitable for scheduling. The PTS-valid flag records whether the capture source supplied a valid PTS or the provider synthesized one. DTS is zero with its flag clear when unavailable. Phase 1 adds and preserves this distinction in `EncodedMediaUnit`; the Phase 2 serializer must map it to the header flag.
 
 UNIT duration must be positive. If capture does not supply one, the adapter may derive video duration from the advertised frame-rate ratio and audio duration from the validated Opus packet; inability to derive a bounded duration is a format/backend error, not permission to send zero.
 
@@ -321,7 +321,9 @@ The first implementation must enforce these defaults before target-server testin
 - invalid attachment: twenty per minute per resolved remote address plus a 64-slot global verifier semaphore; forwarded addresses count only from explicitly trusted proxies;
 - maximum 128 concurrent prototype sockets unless the operator explicitly lowers it;
 - client control records: 4 KiB, ten per second with burst twenty;
+- event-plane capability/create request payloads: 4 KiB; source IDs: 256 UTF-8 bytes;
 - metadata: 4 KiB; codec config: 64 KiB; audio UNIT: 64 KiB; video UNIT: 8 MiB;
+- nonzero coded/display dimensions in FORMAT: at most 16,383 pixels per axis; zero dimensions are allowed only in the preliminary cold-source capability descriptor;
 - server egress: 24 media records and 16 MiB; lifecycle queue: four records;
 - READY timeout 5 seconds; feedback/progress timeout 5 seconds;
 - ping every 10 seconds, pong timeout 20 seconds, write deadline 2 seconds, close deadline 1 second;
@@ -347,9 +349,11 @@ The generic `neko_media_*` backend and delivery metrics remain authoritative for
 
 ## Bounded implementation plan
 
-Implementation is a later block on `testing`, reviewed and committed separately.
+Implementation is staged on `testing` so each security and lifecycle boundary can be reviewed before the next one is added.
 
 ### Phase 1: protocol and ticket boundary
+
+Status: **implemented in the repository and statically reviewed; project tests/builds were not executed in Codex**.
 
 1. Add `PTSValid` to `EncodedMediaUnit` and preserve it through the capture provider; keep the Pion adapter behavior unchanged.
 2. Add an isolated `server/internal/mediaws` package for the envelope encoder, strict parser, ticket store and limit constants.
@@ -358,6 +362,8 @@ Implementation is a later block on `testing`, reviewed and committed separately.
 5. Add default-off configuration without renaming or changing existing keys.
 
 ### Phase 2: server delivery adapter
+
+Status: **NEXT**.
 
 1. Implement one `MediaDeliveryBackend` using the generic provider subscriptions and credential-free lease.
 2. Register the backend and `/api/media/ws` route only while the feature is enabled.

@@ -20,9 +20,11 @@ Immediate sequence:
 12. implement the no-new-transport compatibility refactor defined in `docs/MEDIA_SUBSCRIPTION_BOUNDARY.md` — **complete in the repository and bounded target-server checkpoint closed on `testing` at `e5f55bf9`; the repeated full role/recovery matrix and induced three-viewer down/up isolation run are explicitly deferred to final grouped validation**,
 13. correct estimator startup observation-window initialization so configured unstable/stalled delays cannot be bypassed by Go zero-time values — **complete and focused target-server validated at `e5f55bf9`; one fresh viewer remained on `high` throughout the recorded startup window**,
 14. specify the exact opt-in WebCodecs plus dedicated media-WebSocket prototype contract without adding a transport yet — **complete on `testing`; design only, no endpoint/backend/client transport implemented**,
-15. implement the first default-off WebCodecs plus dedicated media-WebSocket receive prototype from `docs/WEBCODECS_MEDIA_WEBSOCKET.md`, without adding HLS, automatic fallback or a replacement control transport — **NEXT**,
-16. validate alternative-media prototypes only in later separate blocks, while retaining WebRTC as the default — **pending**,
-17. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
+15. implement Phase 1 of the default-off WebCodecs plus dedicated media-WebSocket receive prototype: protocol, fixtures, PTS-validity propagation, authenticated negotiation and one-time tickets — **complete in the repository on `testing`; target-server tests/build not yet executed**,
+16. implement Phase 2: the credential-free server delivery backend, pre-upgrade security boundary, dedicated media route, bounded queues and lifecycle cleanup — **NEXT**,
+17. implement the isolated opt-in client decode/render path only after Phase 2 is reviewed — **pending**,
+18. add separate deployment/observability assets and validate the completed prototype only in later blocks, while retaining WebRTC as the default — **pending**,
+19. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
 
 ## Authoritative knowledge
 
@@ -124,7 +126,7 @@ Use only the checks relevant to the changed areas, with broader verification aft
 - View-only sharing is enforced server-side; hiding controls in the UI is not authorization.
 - WebRTC is the currently implemented primary media path.
 - Future interactive and passive/view-only clients may use different media backends in the same logical room; media transport must not determine authorization.
-- WebCodecs/WebSocket and HLS/LL-HLS are TARGET candidates, not IMPLEMENTED. Do not assume WebSocket is inherently better for poor networks, and do not promote MJPEG beyond an optional ultra-legacy fallback without device evidence.
+- WebCodecs/WebSocket Phase 1 protocol, ticket and negotiation primitives are IMPLEMENTED behind a default-off server flag, but there is no media endpoint, delivery backend or client path yet. HLS/LL-HLS remains a TARGET candidate. Do not assume WebSocket is inherently better for poor networks, and do not promote MJPEG beyond an optional ultra-legacy fallback without device evidence.
 
 ## Definition of Done for Codex work
 

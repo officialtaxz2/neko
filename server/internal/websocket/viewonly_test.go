@@ -16,6 +16,8 @@ func TestViewOnlyEventAllowed(t *testing.T) {
 		event.SIGNAL_CANDIDATE,
 		event.SIGNAL_VIDEO,
 		event.SIGNAL_AUDIO,
+		event.MEDIA_CAPABILITIES_REQUEST,
+		event.MEDIA_CREATE,
 	}
 	for _, eventName := range allowed {
 		if !viewOnlyEventAllowed(eventName) {

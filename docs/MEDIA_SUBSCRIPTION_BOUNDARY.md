@@ -1,8 +1,8 @@
 # Backend-neutral encoded-media subscription boundary
 
-Status: **design and first no-new-transport compatibility implementation complete on `testing`; bounded target-server checkpoint closed at `e5f55bf9` on 2026-09-12 with the repeated full role/recovery and induced three-viewer down/up matrix explicitly deferred to final grouped validation; the first WebCodecs/media-WebSocket specialization is specified, but no alternative media backend is implemented**.
+Status: **design and first no-new-transport compatibility implementation complete on `testing`; bounded target-server checkpoint closed at `e5f55bf9` on 2026-09-12 with the repeated full role/recovery and induced three-viewer down/up matrix explicitly deferred to final grouped validation; WebCodecs/media-WebSocket Phase 1 primitives are implemented, but no alternative media backend is registered**.
 
-This document fixes the architecture contract and records its first compatibility implementation. The WebCodecs/media-WebSocket specialization is now specified separately in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md), but no WebCodecs/WebSocket, HLS/LL-HLS, DASH or WebTransport backend exists in the repository.
+This document fixes the architecture contract and records its first compatibility implementation. The WebCodecs/media-WebSocket specialization is specified separately in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md), and its protocol/ticket/negotiation Phase 1 now exists behind a default-off flag. No WebCodecs/WebSocket, HLS/LL-HLS, DASH or WebTransport delivery backend exists in the repository.
 
 ## Scope
 
@@ -161,6 +161,7 @@ The contract is:
 - `Sequence` increases within one source generation;
 - PTS/DTS use one declared time unit; valid DTS is monotonic within a generation, while PTS may reorder only when the codec requires presentation reordering;
 - `DTSValid == false` explicitly represents codecs or stages without a meaningful decode timestamp;
+- `PTSValid == false` records that the provider synthesized its otherwise usable normalized presentation timestamp;
 - audio and video expose enough common timeline information for a muxer/player to synchronize them;
 - a subscriber first receives `format`, then video begins on a keyframe;
 - overflow, source restart and format change produce an explicit discontinuity rather than an unexplained timestamp jump;
@@ -381,7 +382,7 @@ The first interactive-class receive candidate has the exact version-1 contract i
 - audio-master A/V timing, stale-generation rejection, explicit selection and bounded same-backend reconnect;
 - origin, size, rate, timeout, observability, rollback and target-server acceptance requirements.
 
-It remains a design-only receive prototype. Independent control transport work is still required because the current mouse/keyboard/touch path is a WebRTC data channel. WebSocket is not presumed better on a constrained path merely because it avoids ICE.
+Its Phase 1 protocol, ticket and authenticated-negotiation primitives are implemented, but it remains unusable as a receive transport until the media endpoint/backend and client phases exist. Independent control transport work is still required because the current mouse/keyboard/touch path is a WebRTC data channel. WebSocket is not presumed better on a constrained path merely because it avoids ICE.
 
 ### HLS / Low-Latency HLS
 
@@ -410,7 +411,7 @@ Fixed by this design:
 
 Still open for later evidence-led prototype blocks:
 
-- implementation and target-server validation of the specified WebCodecs/media-WebSocket receive prototype;
+- server delivery, client path and target-server validation of the specified WebCodecs/media-WebSocket receive prototype;
 - codec combinations beyond VP8/Opus and their behavior on the real desktop, iPhone, iPad and target Smart-TV browsers;
 - HLS versus LL-HLS segment/part durations and latency budget;
 - whether DASH materially expands the actual device matrix;

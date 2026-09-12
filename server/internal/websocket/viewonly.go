@@ -14,7 +14,9 @@ func viewOnlyEventAllowed(eventName string) bool {
 		event.SIGNAL_ANSWER,
 		event.SIGNAL_CANDIDATE,
 		event.SIGNAL_VIDEO,
-		event.SIGNAL_AUDIO:
+		event.SIGNAL_AUDIO,
+		event.MEDIA_CAPABILITIES_REQUEST,
+		event.MEDIA_CREATE:
 		return true
 	default:
 		return false

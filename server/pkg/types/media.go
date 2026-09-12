@@ -73,6 +73,9 @@ type EncodedMediaUnit struct {
 	Generation uint64
 	Sequence   uint64
 	PTS        time.Duration
+	// PTSValid distinguishes a source timestamp from the provider's bounded
+	// monotonic fallback. PTS itself is normalized and usable in both cases.
+	PTSValid   bool
 	DTS        time.Duration
 	DTSValid   bool
 	Duration   time.Duration

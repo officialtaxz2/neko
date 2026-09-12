@@ -40,7 +40,7 @@ services:
       - -c
       - |
         set -eux
-        go test ./pkg/types ./pkg/auth ./internal/capture ./internal/media ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
+        go test ./pkg/types ./pkg/auth ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
         ./build
 
   metrics-snapshot:

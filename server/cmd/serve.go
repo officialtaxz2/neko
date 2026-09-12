@@ -15,6 +15,7 @@ import (
 	"github.com/m1k1o/neko/server/internal/desktop"
 	"github.com/m1k1o/neko/server/internal/http"
 	mediadelivery "github.com/m1k1o/neko/server/internal/media"
+	"github.com/m1k1o/neko/server/internal/mediaws"
 	"github.com/m1k1o/neko/server/internal/member"
 	"github.com/m1k1o/neko/server/internal/plugins"
 	"github.com/m1k1o/neko/server/internal/session"
@@ -48,6 +49,7 @@ type serve struct {
 		Capture config.Capture
 		WebRTC  config.WebRTC
 		Member  config.Member
+		Media   config.Media
 		Session config.Session
 		Plugins config.Plugins
 		Server  config.Server
@@ -61,6 +63,7 @@ type serve struct {
 		member    *member.MemberManagerCtx
 		session   *session.SessionManagerCtx
 		webSocket *websocket.WebSocketManagerCtx
+		mediaWS   *mediaws.Negotiator
 		plugins   *plugins.ManagerCtx
 		api       *api.ApiManagerCtx
 		http      *http.HttpManagerCtx
@@ -78,6 +81,9 @@ func (c *serve) Init(cmd *cobra.Command) error {
 		return err
 	}
 	if err := c.configs.Member.Init(cmd); err != nil {
+		return err
+	}
+	if err := c.configs.Media.Init(cmd); err != nil {
 		return err
 	}
 	if err := c.configs.Session.Init(cmd); err != nil {
@@ -122,6 +128,7 @@ func (c *serve) PreRun(cmd *cobra.Command, args []string) {
 	c.configs.Capture.Set()
 	c.configs.WebRTC.Set()
 	c.configs.Member.Set()
+	c.configs.Media.Set()
 	c.configs.Session.Set()
 	c.configs.Plugins.Set()
 	c.configs.Server.Set()
@@ -183,6 +190,10 @@ func (c *serve) Start(cmd *cobra.Command) {
 		c.managers.capture,
 		c.managers.webRTC,
 	)
+	if c.configs.Media.WebCodecsWS.Enabled {
+		c.managers.mediaWS = mediaws.NewNegotiator(c.managers.session, c.managers.capture.Media(), nil)
+		c.managers.webSocket.AddHandler(c.managers.mediaWS.Handler)
+	}
 	c.managers.webSocket.Start()
 
 	c.managers.api = api.New(
