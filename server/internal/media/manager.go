@@ -75,6 +75,11 @@ func New(sessions types.SessionManager) *ManagerCtx {
 			manager.CloseSession(session.ID())
 		}
 	})
+	sessions.OnDisconnected(func(session types.Session) {
+		// This callback runs only after the session manager's reconnect grace
+		// period, so transient event-WebSocket replacement remains possible.
+		manager.CloseSession(session.ID())
+	})
 
 	return manager
 }
@@ -136,6 +141,7 @@ func (manager *ManagerCtx) Open(ctx context.Context, session types.Session, requ
 	capabilities := backend.Capabilities()
 	request.Audio = request.Audio && capabilities.ReceiveAudio
 	request.Video = request.Video && capabilities.ReceiveVideo
+	request.InitialPaused = session.PrivateModeEnabled()
 	if !request.Audio && !request.Video {
 		return nil, types.ErrMediaDeliveryNotAllowed
 	}
@@ -152,7 +158,7 @@ func (manager *ManagerCtx) Open(ctx context.Context, session types.Session, requ
 	mediaDeliveryOpens.WithLabelValues(request.Backend, "attempt").Inc()
 	delivery, err := backend.Open(ctx, lease, request)
 	if err != nil {
-		lease.invalidate()
+		lease.invalidate(types.MediaDeliveryCloseNormal)
 		mediaDeliveryOpens.WithLabelValues(request.Backend, "error").Inc()
 		return nil, err
 	}
@@ -161,12 +167,18 @@ func (manager *ManagerCtx) Open(ctx context.Context, session types.Session, requ
 		done = delivery.Done()
 	}
 	if delivery == nil || done == nil || delivery.ID() != lease.ID() || delivery.SessionID() != session.ID() || delivery.Backend() != request.Backend {
-		lease.invalidate()
+		lease.invalidate(types.MediaDeliveryCloseNormal)
 		if delivery != nil {
 			_ = delivery.Close()
 		}
 		mediaDeliveryOpens.WithLabelValues(request.Backend, "error").Inc()
 		return nil, errors.New("media backend returned a delivery outside its lease")
+	}
+	if err := delivery.SetPaused(session.PrivateModeEnabled()); err != nil {
+		lease.invalidate(types.MediaDeliveryCloseRevoked)
+		closeDelivery(delivery, types.MediaDeliveryCloseRevoked)
+		mediaDeliveryOpens.WithLabelValues(request.Backend, "error").Inc()
+		return nil, fmt.Errorf("apply media delivery pause state: %w", err)
 	}
 
 	entry := &deliveryEntry{
@@ -179,20 +191,23 @@ func (manager *ManagerCtx) Open(ctx context.Context, session types.Session, requ
 	manager.mu.Lock()
 	if manager.shutdown {
 		manager.mu.Unlock()
-		lease.invalidate()
-		_ = delivery.Close()
+		lease.invalidate(types.MediaDeliveryCloseShutdown)
+		closeDelivery(delivery, types.MediaDeliveryCloseShutdown)
 		mediaDeliveryOpens.WithLabelValues(request.Backend, "error").Inc()
 		return nil, errors.New("media delivery manager is shut down")
 	}
 	current, exists := manager.sessions.Get(session.ID())
 	if !exists || current != session || !session.Profile().CanWatch {
 		manager.mu.Unlock()
-		lease.invalidate()
-		_ = delivery.Close()
+		lease.invalidate(types.MediaDeliveryCloseRevoked)
+		closeDelivery(delivery, types.MediaDeliveryCloseRevoked)
 		mediaDeliveryOpens.WithLabelValues(request.Backend, "error").Inc()
 		return nil, types.ErrMediaDeliveryNotAllowed
 	}
 	previous := manager.deliveries[session.ID()]
+	if previous != nil {
+		previous.lease.markClosing(types.MediaDeliveryCloseReplaced)
+	}
 	manager.deliveries[session.ID()] = entry
 	manager.mu.Unlock()
 
@@ -202,9 +217,12 @@ func (manager *ManagerCtx) Open(ctx context.Context, session types.Session, requ
 	lease.activate()
 
 	if previous != nil {
-		previous.lease.invalidate()
-		_ = previous.delivery.Close()
+		closeDelivery(previous.delivery, types.MediaDeliveryCloseReplaced)
+		previous.lease.invalidate(types.MediaDeliveryCloseReplaced)
 		manager.finishPrevious(previous)
+	}
+	if starter, ok := delivery.(types.MediaDeliveryStarter); ok {
+		starter.Start()
 	}
 
 	go func() {
@@ -223,7 +241,11 @@ func (manager *ManagerCtx) finishPrevious(entry *deliveryEntry) {
 func (manager *ManagerCtx) setState(lease *lease, state types.MediaDeliveryState) bool {
 	manager.mu.Lock()
 	entry, ok := manager.deliveries[lease.sessionID]
-	if !ok || entry.lease != lease {
+	lease.mu.Lock()
+	valid := lease.valid
+	closing := lease.closeReason != ""
+	lease.mu.Unlock()
+	if !ok || entry.lease != lease || !valid || (closing && state == types.MediaDeliveryStateActive) {
 		manager.mu.Unlock()
 		return false
 	}
@@ -241,7 +263,7 @@ func (manager *ManagerCtx) setState(lease *lease, state types.MediaDeliveryState
 
 	mediaDeliveries.WithLabelValues(entry.delivery.Backend(), string(oldState)).Dec()
 	if closed {
-		lease.invalidate()
+		lease.invalidate(types.MediaDeliveryCloseNormal)
 		mediaDeliveryCloses.WithLabelValues(entry.delivery.Backend(), string(state)).Inc()
 	} else {
 		mediaDeliveries.WithLabelValues(entry.delivery.Backend(), string(state)).Inc()
@@ -261,9 +283,12 @@ func (manager *ManagerCtx) isCurrent(lease *lease) bool {
 func (manager *ManagerCtx) CloseSession(sessionID string) {
 	manager.mu.Lock()
 	entry := manager.deliveries[sessionID]
+	if entry != nil {
+		entry.lease.markClosing(types.MediaDeliveryCloseRevoked)
+	}
 	manager.mu.Unlock()
 	if entry != nil {
-		_ = entry.delivery.Close()
+		closeDelivery(entry.delivery, types.MediaDeliveryCloseRevoked)
 	}
 }
 
@@ -276,12 +301,13 @@ func (manager *ManagerCtx) Shutdown() error {
 	manager.shutdown = true
 	deliveries := make([]types.MediaDelivery, 0, len(manager.deliveries))
 	for _, entry := range manager.deliveries {
+		entry.lease.markClosing(types.MediaDeliveryCloseShutdown)
 		deliveries = append(deliveries, entry.delivery)
 	}
 	manager.mu.Unlock()
 
 	for _, delivery := range deliveries {
-		_ = delivery.Close()
+		closeDelivery(delivery, types.MediaDeliveryCloseShutdown)
 	}
 
 	deadline := time.NewTimer(deliveryShutdownTimeout)
@@ -297,16 +323,25 @@ func (manager *ManagerCtx) Shutdown() error {
 	return nil
 }
 
+func closeDelivery(delivery types.MediaDelivery, reason types.MediaDeliveryCloseReason) {
+	if closer, ok := delivery.(types.MediaDeliveryReasonCloser); ok {
+		_ = closer.CloseWithReason(reason)
+		return
+	}
+	_ = delivery.Close()
+}
+
 type lease struct {
 	id        string
 	sessionID string
 	backend   string
 	manager   *ManagerCtx
 
-	mu        sync.Mutex
-	state     types.MediaDeliveryState
-	valid     bool
-	activated bool
+	mu          sync.Mutex
+	state       types.MediaDeliveryState
+	valid       bool
+	activated   bool
+	closeReason types.MediaDeliveryCloseReason
 }
 
 func (lease *lease) ID() string {
@@ -334,7 +369,7 @@ func (lease *lease) activate() {
 
 func (lease *lease) SetState(state types.MediaDeliveryState) bool {
 	lease.mu.Lock()
-	if !lease.valid {
+	if !lease.valid || (lease.closeReason != "" && state == types.MediaDeliveryStateActive) {
 		lease.mu.Unlock()
 		return false
 	}
@@ -355,8 +390,25 @@ func (lease *lease) Valid() bool {
 	return valid && (!activated || lease.manager.isCurrent(lease))
 }
 
-func (lease *lease) invalidate() {
+func (lease *lease) CloseReason() types.MediaDeliveryCloseReason {
+	lease.mu.Lock()
+	defer lease.mu.Unlock()
+	return lease.closeReason
+}
+
+func (lease *lease) invalidate(reason types.MediaDeliveryCloseReason) {
 	lease.mu.Lock()
 	lease.valid = false
+	if lease.closeReason == "" {
+		lease.closeReason = reason
+	}
+	lease.mu.Unlock()
+}
+
+func (lease *lease) markClosing(reason types.MediaDeliveryCloseReason) {
+	lease.mu.Lock()
+	if lease.closeReason == "" {
+		lease.closeReason = reason
+	}
 	lease.mu.Unlock()
 }

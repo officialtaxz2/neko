@@ -21,6 +21,7 @@ import (
 	"github.com/m1k1o/neko/server/internal/session"
 	"github.com/m1k1o/neko/server/internal/webrtc"
 	"github.com/m1k1o/neko/server/internal/websocket"
+	"github.com/m1k1o/neko/server/pkg/types"
 )
 
 func init() {
@@ -56,17 +57,19 @@ type serve struct {
 	}
 
 	managers struct {
-		desktop   *desktop.DesktopManagerCtx
-		capture   *capture.CaptureManagerCtx
-		media     *mediadelivery.ManagerCtx
-		webRTC    *webrtc.WebRTCManagerCtx
-		member    *member.MemberManagerCtx
-		session   *session.SessionManagerCtx
-		webSocket *websocket.WebSocketManagerCtx
-		mediaWS   *mediaws.Negotiator
-		plugins   *plugins.ManagerCtx
-		api       *api.ApiManagerCtx
-		http      *http.HttpManagerCtx
+		desktop           *desktop.DesktopManagerCtx
+		capture           *capture.CaptureManagerCtx
+		media             *mediadelivery.ManagerCtx
+		webRTC            *webrtc.WebRTCManagerCtx
+		member            *member.MemberManagerCtx
+		session           *session.SessionManagerCtx
+		webSocket         *websocket.WebSocketManagerCtx
+		mediaWS           *mediaws.Negotiator
+		mediaWSBackend    *mediaws.Backend
+		mediaWSController *mediaws.Controller
+		plugins           *plugins.ManagerCtx
+		api               *api.ApiManagerCtx
+		http              *http.HttpManagerCtx
 	}
 }
 
@@ -191,8 +194,23 @@ func (c *serve) Start(cmd *cobra.Command) {
 		c.managers.webRTC,
 	)
 	if c.configs.Media.WebCodecsWS.Enabled {
-		c.managers.mediaWS = mediaws.NewNegotiator(c.managers.session, c.managers.capture.Media(), nil)
+		tickets := mediaws.NewTicketStore()
+		c.managers.mediaWS = mediaws.NewNegotiator(c.managers.session, c.managers.capture.Media(), tickets)
 		c.managers.webSocket.AddHandler(c.managers.mediaWS.Handler)
+		c.managers.mediaWSBackend = mediaws.NewBackend(c.managers.capture.Media())
+		if err := c.managers.media.Register(c.managers.mediaWSBackend); err != nil {
+			c.logger.Panic().Err(err).Msg("unable to register WebCodecs media WebSocket backend")
+		}
+		controller, err := mediaws.NewController(c.managers.session, c.managers.media, tickets, mediaws.ControllerConfig{
+			AllowedOrigins:        c.configs.Media.WebCodecsWS.AllowedOrigins,
+			TrustedProxies:        c.configs.Media.WebCodecsWS.TrustedProxies,
+			AllowInsecureLoopback: c.configs.Media.WebCodecsWS.AllowInsecureLoopback,
+			MaxConnections:        c.configs.Media.WebCodecsWS.MaxConnections,
+		})
+		if err != nil {
+			c.logger.Panic().Err(err).Msg("unable to configure WebCodecs media WebSocket route")
+		}
+		c.managers.mediaWSController = controller
 	}
 	c.managers.webSocket.Start()
 
@@ -218,10 +236,15 @@ func (c *serve) Start(cmd *cobra.Command) {
 		c.managers.api,
 	)
 
+	var mediaWebSocketHandler types.RouterHandler
+	if c.managers.mediaWSController != nil {
+		mediaWebSocketHandler = c.managers.mediaWSController.Handle
+	}
 	c.managers.http = http.New(
 		c.managers.webSocket,
 		c.managers.api,
 		&c.configs.Server,
+		mediaWebSocketHandler,
 	)
 	c.managers.http.Start()
 }

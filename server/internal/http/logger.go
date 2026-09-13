@@ -3,6 +3,7 @@ package http
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -38,7 +39,13 @@ func (l *logFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
 	req["method"] = r.Method
 	req["remote"] = r.RemoteAddr
 	req["agent"] = r.UserAgent()
-	req["uri"] = fmt.Sprintf("%s://%s%s", scheme, r.Host, r.RequestURI)
+	if strings.HasSuffix(r.URL.Path, "/api/media/ws") {
+		// This route rejects queries, but redact the complete URL before that
+		// validation so an attempted ticket/query credential cannot reach logs.
+		req["route"] = "/api/media/ws"
+	} else {
+		req["uri"] = fmt.Sprintf("%s://%s%s", scheme, r.Host, r.RequestURI)
+	}
 
 	return &logEntry{
 		logger: l.logger.With().Interface("req", req).Logger(),

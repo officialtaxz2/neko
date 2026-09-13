@@ -197,7 +197,7 @@ func (manager *WebRTCManagerCtx) Capabilities() types.MediaBackendCapabilities {
 
 type webRTCSessionContextKey struct{}
 
-func (manager *WebRTCManagerCtx) Open(ctx context.Context, lease types.MediaLease, _ types.MediaDeliveryRequest) (types.MediaDelivery, error) {
+func (manager *WebRTCManagerCtx) Open(ctx context.Context, lease types.MediaLease, request types.MediaDeliveryRequest) (types.MediaDelivery, error) {
 	if ctx == nil {
 		return nil, types.ErrMediaDeliveryNotAllowed
 	}
@@ -205,7 +205,14 @@ func (manager *WebRTCManagerCtx) Open(ctx context.Context, lease types.MediaLeas
 	if !ok || session.ID() != lease.SessionID() || !session.Profile().CanWatch {
 		return nil, types.ErrMediaDeliveryNotAllowed
 	}
-	return manager.openPeer(session, lease)
+	peer, err := manager.openPeer(session, lease)
+	if err != nil {
+		return nil, err
+	}
+	if request.InitialPaused {
+		_ = peer.SetPaused(true)
+	}
+	return peer, nil
 }
 
 func (manager *WebRTCManagerCtx) newPeerConnection(logger zerolog.Logger, codecs []codec.RTPCodec) (*webrtc.PeerConnection, cc.BandwidthEstimator, error) {

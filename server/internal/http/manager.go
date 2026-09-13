@@ -23,11 +23,12 @@ type HttpManagerCtx struct {
 	http   *http.Server
 }
 
-func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, config *config.Server) *HttpManagerCtx {
+func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, config *config.Server, mediaWebSocket types.RouterHandler) *HttpManagerCtx {
 	logger := log.With().Str("module", "http").Logger()
 
 	opts := []RouterOption{
 		WithRequestID(), // create a request id for each request
+		WithOriginalRemoteAddr(),
 	}
 
 	// use real ip if behind proxy
@@ -56,6 +57,9 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 	router.Get("/api/ws", WebSocketManager.Upgrade(func(r *http.Request) bool {
 		return config.AllowOrigin(r.Header.Get("Origin"))
 	}))
+	if mediaWebSocket != nil {
+		router.Get("/api/media/ws", mediaWebSocket)
+	}
 
 	batch := batchHandler{
 		Router:     router,
@@ -63,6 +67,7 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 		Excluded: []string{
 			"/api/batch", // do not allow batchception
 			"/api/ws",
+			"/api/media/ws",
 		},
 	}
 	router.Post("/api/batch", batch.Handle)

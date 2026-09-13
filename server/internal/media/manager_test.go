@@ -55,22 +55,45 @@ func (backend *fakeBackend) request() types.MediaDeliveryRequest {
 }
 
 type fakeDelivery struct {
+	mu        sync.Mutex
 	id        string
 	sessionID string
 	backend   string
 	done      chan struct{}
 	closeOnce sync.Once
 	paused    bool
+	reason    types.MediaDeliveryCloseReason
 }
 
 func (delivery *fakeDelivery) ID() string                 { return delivery.id }
 func (delivery *fakeDelivery) SessionID() string          { return delivery.sessionID }
 func (delivery *fakeDelivery) Backend() string            { return delivery.backend }
 func (delivery *fakeDelivery) Done() <-chan struct{}       { return delivery.done }
-func (delivery *fakeDelivery) SetPaused(paused bool) error { delivery.paused = paused; return nil }
+func (delivery *fakeDelivery) SetPaused(paused bool) error {
+	delivery.mu.Lock()
+	delivery.paused = paused
+	delivery.mu.Unlock()
+	return nil
+}
 func (delivery *fakeDelivery) Close() error {
 	delivery.closeOnce.Do(func() { close(delivery.done) })
 	return nil
+}
+func (delivery *fakeDelivery) CloseWithReason(reason types.MediaDeliveryCloseReason) error {
+	delivery.mu.Lock()
+	delivery.reason = reason
+	delivery.mu.Unlock()
+	return delivery.Close()
+}
+func (delivery *fakeDelivery) closeReason() types.MediaDeliveryCloseReason {
+	delivery.mu.Lock()
+	defer delivery.mu.Unlock()
+	return delivery.reason
+}
+func (delivery *fakeDelivery) isPaused() bool {
+	delivery.mu.Lock()
+	defer delivery.mu.Unlock()
+	return delivery.paused
 }
 
 func eventually(t *testing.T, condition func() bool) {
@@ -150,6 +173,9 @@ func TestDeliveryManagerDeniesCanWatchFalseAndAllowsViewOnly(t *testing.T) {
 
 	manager.CloseSession(viewer.ID())
 	eventually(t, func() bool { return !viewer.State().IsWatching && viewer.GetMediaDelivery() == nil })
+	if reason := delivery.(*fakeDelivery).closeReason(); reason != types.MediaDeliveryCloseRevoked {
+		t.Fatalf("CloseSession() reason = %q, want revoked", reason)
+	}
 }
 
 func TestDeliveryManagerRevokesOnProfileChangeAndSessionDelete(t *testing.T) {
@@ -207,6 +233,9 @@ func TestDeliveryManagerReplacesOnePrimaryDeliveryAndShutsDown(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("replacement did not close the previous primary delivery")
 	}
+	if reason := first.(*fakeDelivery).closeReason(); reason != types.MediaDeliveryCloseReplaced {
+		t.Fatalf("replacement close reason = %q, want replaced", reason)
+	}
 	if member.GetMediaDelivery() != second {
 		t.Fatal("replacement delivery is not attached to the session")
 	}
@@ -218,4 +247,31 @@ func TestDeliveryManagerReplacesOnePrimaryDeliveryAndShutsDown(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("Shutdown() did not close the active delivery")
 	}
+	if reason := second.(*fakeDelivery).closeReason(); reason != types.MediaDeliveryCloseShutdown {
+		t.Fatalf("shutdown close reason = %q, want shutdown", reason)
+	}
+}
+
+func TestDeliveryManagerAppliesPrivateModeBeforeAttachment(t *testing.T) {
+	sessions := session.New(&config.Session{PrivateMode: true})
+	manager := mediadelivery.New(sessions)
+	backend := &fakeBackend{capabilities: types.MediaBackendCapabilities{ReceiveVideo: true}}
+	if err := manager.Register(backend); err != nil {
+		t.Fatalf("Register() error: %v", err)
+	}
+	viewer, _, err := sessions.Create("viewer", types.MemberProfile{CanLogin: true, CanConnect: true, CanWatch: true})
+	if err != nil {
+		t.Fatalf("Create() error: %v", err)
+	}
+	delivery, err := manager.Open(context.Background(), viewer, types.MediaDeliveryRequest{Backend: "fake", Video: true})
+	if err != nil {
+		t.Fatalf("Open() error: %v", err)
+	}
+	if !delivery.(*fakeDelivery).isPaused() {
+		t.Fatal("private-mode delivery was attached before being paused")
+	}
+	if !backend.request().InitialPaused {
+		t.Fatal("private-mode state was not passed into backend creation")
+	}
+	_ = delivery.Close()
 }

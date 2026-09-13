@@ -21,6 +21,17 @@ func WithRequestID() RouterOption {
 	}
 }
 
+func WithOriginalRemoteAddr() RouterOption {
+	return func(r *router) {
+		r.chi.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+				ctx := utils.SetOriginalRemoteAddr(request.Context(), request.RemoteAddr)
+				next.ServeHTTP(w, request.WithContext(ctx))
+			})
+		})
+	}
+}
+
 func WithLogger(logger zerolog.Logger) RouterOption {
 	return func(r *router) {
 		r.chi.Use(middleware.RequestLogger(&logFormatter{logger}))

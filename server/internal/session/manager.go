@@ -169,7 +169,7 @@ func (manager *SessionManagerCtx) Delete(id string) error {
 	}
 
 	if delivery := session.GetMediaDelivery(); delivery != nil {
-		_ = delivery.Close()
+		closeMediaDelivery(delivery, types.MediaDeliveryCloseRevoked)
 	}
 
 	manager.emmiter.Emit("deleted", session)
@@ -192,7 +192,7 @@ func (manager *SessionManagerCtx) Disconnect(id string) error {
 	}
 
 	if delivery := session.GetMediaDelivery(); delivery != nil {
-		_ = delivery.Close()
+		closeMediaDelivery(delivery, types.MediaDeliveryCloseRevoked)
 	}
 
 	return nil

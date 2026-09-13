@@ -304,9 +304,12 @@ type MediaBackendDescriptor struct {
 }
 
 type MediaDeliveryRequest struct {
-	Backend string
-	Audio   bool
-	Video   bool
+	Backend       string
+	Audio         bool
+	Video         bool
+	InitialPaused bool
+	AudioSelector MediaSelector
+	VideoSelector MediaSelector
 }
 
 type MediaDeliveryState string
@@ -328,6 +331,12 @@ type MediaLease interface {
 	Valid() bool
 }
 
+// MediaLeaseCloseReason is optional transport-neutral context for a lease that
+// was invalidated while its backend was concurrently completing attachment.
+type MediaLeaseCloseReason interface {
+	CloseReason() MediaDeliveryCloseReason
+}
+
 type MediaDelivery interface {
 	ID() string
 	SessionID() string
@@ -335,6 +344,28 @@ type MediaDelivery interface {
 	SetPaused(bool) error
 	Close() error
 	Done() <-chan struct{}
+}
+
+// MediaDeliveryStarter lets a backend defer delivery workers until the
+// manager has reconciled private mode and attached the one primary delivery.
+type MediaDeliveryStarter interface {
+	Start()
+}
+
+type MediaDeliveryCloseReason string
+
+const (
+	MediaDeliveryCloseNormal   MediaDeliveryCloseReason = "normal"
+	MediaDeliveryCloseRevoked  MediaDeliveryCloseReason = "revoked"
+	MediaDeliveryCloseReplaced MediaDeliveryCloseReason = "replaced"
+	MediaDeliveryCloseShutdown MediaDeliveryCloseReason = "shutdown"
+)
+
+// MediaDeliveryReasonCloser lets the central lifecycle owner retain a bounded,
+// transport-neutral close reason. Backends that do not need it keep the base
+// MediaDelivery contract and are closed through Close.
+type MediaDeliveryReasonCloser interface {
+	CloseWithReason(MediaDeliveryCloseReason) error
 }
 
 type MediaBackend interface {

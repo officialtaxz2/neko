@@ -1,6 +1,6 @@
 # Work Plan / Handoff State
 
-Last consolidated: 2026-09-11.
+Last consolidated: 2026-09-13.
 
 ## Environment boundary
 
@@ -348,6 +348,36 @@ go test ./internal/mediaws -run '^$' -fuzz '^FuzzParseRecord$' -fuzztime 30s
 
 No runtime behavior can exercise an alternative media transport at this phase because none is registered.
 
+## COMPLETED — WebCodecs/media-WebSocket Phase 2 server delivery adapter
+
+Status: **implemented and statically reviewed on `testing` on 2026-09-13 / target-server tests and build intentionally deferred to later grouped prototype validation / no client decode-render path or deployment overlay implemented**.
+
+The Phase 2 block completes the server-side delivery and security boundary without changing the stable default:
+
+- `webcodecs-ws` is a receive-only `MediaBackend` over the generic encoded provider. It receives only the credential-free lease, normalized exact VP8/Opus source selectors, an initial private-mode state and the upgraded socket attachment; no login/share token enters the backend request.
+- `media.webcodecs_ws.enabled=false` remains the default. Only when true does startup share the Phase 1 ticket store across negotiation and attachment, register the backend and expose `GET /api/media/ws`. Ordinary clients still issue no prototype events, and no client/deployment opt-in exists yet.
+- The pre-upgrade controller rejects query parameters, insecure production transport, non-exact Origin, missing/reordered/extra subprotocols and malformed/unknown/expired/replayed tickets before provider allocation. Ticket redemption is atomic, the current connected session and `CanWatch` are re-resolved, concurrent attach verification is capped at 64, invalid attempts at 20/minute per safely resolved address, and sockets at 128 or a lower configured maximum.
+- Forwarded address/HTTPS headers are trusted only when the captured original socket peer belongs to configured proxy IP/CIDR ranges. Cleartext direct loopback requires the separate `media.webcodecs_ws.allow_insecure_loopback=true` development option and refuses forwarded headers. The media route's logger emits only its fixed route label, never the full attempted URL; subprotocol/ticket and authorization headers are never logged.
+- Per-delivery provider queues are video 4/audio 16 with non-blocking drop-new behavior. A single writer owns the uncompressed socket and gives the four-record lifecycle queue priority over the shared 24-record/16-MiB media queue, with 2-second writes, 10-second ping, 20-second pong, one-second close and a 16-MiB/s five-second outbound cap.
+- Strict 4-KiB `ready`, `feedback`, `resync` and `stop` records enforce exact fields, canonical safe integers, queue/time/skew ranges, 10/s burst-20 controls, one feedback/second and five client resyncs/minute. The lease remains opening until all requested complete FORMATs match READY within five seconds.
+- Delivery-local generations and sequences, provider PTS/DTS validity, bounded video/Opus duration derivation and VP8 keyframe markers are serialized into the Phase 1 envelope. Provider/egress overflow and provider transitions gate units before lifecycle insertion; video resync clears video, common audio failure clears both, DISCONTINUITY precedes FORMAT, and video reopens only on a keyframe. Three resyncs within 30 seconds close rather than loop.
+- Progress tracking records only a bounded sent-unit timestamp history. Client counts cannot claim unsent progress; no feedback for five seconds, no rendered progress for three plus a two-second recovery, or a reconstructable rendered PTS more than 500 ms behind initiates the specified bounded recovery/close behavior.
+- Generic delivery close reasons now preserve revoked, replaced and shutdown semantics. Initial private mode is applied inside backend construction before workers can publish; later private mode pauses subscriptions and resume starts a common new generation. Final session disconnect, profile revocation, deletion, explicit stop/socket loss, primary replacement and shutdown release subscriptions, queues, workers, manager state and the controller connection slot.
+- Fixed low-cardinality `neko_media_websocket_*` connection, handshake, record, byte, drop, resync, write-time, queue-depth/bytes and client-lag metrics contain no ticket, session, IP, Origin, user-agent, URL or source label.
+
+Focused tests were added for strict control schemas and limits, queue caps/priority/terminal behavior, FORMAT/UNIT duration/validity/keyframe serialization, pre-READY and common transition gating, rendered-PTS lag, END/close reasons, exact pre-upgrade policy/statuses, trusted proxy/loopback behavior, attach/rate caps and central private/revoked/replaced/shutdown lifecycle. The validation Compose command now includes the directly changed config and HTTP packages.
+
+Per `AGENTS.md`, project code, tests and builds were **NOT EXECUTED IN CODEX**. At the operator's direction, Phase 1 and Phase 2 are retained for the later grouped prototype checkpoint. At that exact `testing` commit run:
+
+```bash
+cd server
+go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
+go test ./internal/mediaws -run '^$' -fuzz '^FuzzParseRecord$' -fuzztime 30s
+./build
+```
+
+This repository completion is not target-server evidence and does not make the alternative path usable without Phase 3's explicit client.
+
 ## Target-server verification
 
 This phase is performed by the operator on the real server, not by Codex.
@@ -390,7 +420,7 @@ The container executes the following equivalent checks:
 
 ```bash
 cd server
-go test ./pkg/types ./pkg/auth ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http/legacy ./internal/websocket ./internal/webrtc
+go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
 ./build
 ```
 
@@ -503,16 +533,16 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement **Phase 2 of the default-off WebCodecs plus dedicated media-WebSocket receive prototype** exactly within [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). This server-delivery block follows the completed Phase 1 prerequisites and remains separate from the client and target-server acceptance blocks.
+Implement **Phase 3 of the default-off WebCodecs plus dedicated media-WebSocket receive prototype** exactly within [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). This isolated client block follows the completed Phase 1 protocol/ticket and Phase 2 server-delivery boundaries; target-server acceptance remains a later grouped block as directed by the operator.
 
-Implement the credential-free `MediaDeliveryBackend`, pre-upgrade exact-origin/subprotocol/ticket/session/`CanWatch` boundary, conditionally registered `/api/media/ws` route, bounded provider and egress queues, lifecycle-priority writer, READY/progress timeouts, drop-to-keyframe/common-resync behavior, private-mode/replacement/revocation/shutdown cleanup and credential-safe metrics. Preserve the contract's exact limits. Add focused automated checks but do not execute project code in Codex; prepare exact target-server commands for this phase. Do not add the isolated client worker/WebCodecs/AudioWorklet path or deployment overlay until their later phases.
+Implement the strict TypeScript parser against the shared golden fixtures, a dedicated worker that owns the media socket/support probes/decoder queues/stale-generation rejection, VP8 `VideoDecoder`, Opus `AudioDecoder`, bounded AudioWorklet and video renderer with the fixed common clock/reset sequence, both explicit opt-ins, central Play/mute/resize/fullscreen/touch geometry integration, visible prototype limitations, four bounded same-backend reconnect attempts and the explicit **Retry WebCodecs** / **Use WebRTC** actions. Do not add the deployment overlay or claim target-device acceptance until Phase 4. Do not add automatic fallback, HLS/LL-HLS, WebTransport or a replacement control transport.
 
 Existing WebRTC signaling, WebRTC data channels and opcodes, input authorization, event-WebSocket reconnect, REST APIs, stable configuration and base Compose behavior must remain unchanged when the two opt-ins are absent. Do not add an automatic fallback, HLS/LL-HLS, WebTransport, a new control transport or claims of full non-WebRTC interactive parity. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
 1. **bounded checkpoint closed with the documented final-matrix limitation:** media-subscription/WebRTC compatibility refactor plus estimator startup correction;
-2. **Phase 1 implemented / Phase 2 next:** add the server delivery backend and route, then the isolated client and deployment/validation phases for the opt-in WebCodecs plus dedicated media WebSocket receive path;
+2. **Phases 1–2 implemented / Phase 3 next:** add the isolated client path, then the separate deployment/observability and grouped validation phase for the opt-in WebCodecs plus dedicated media WebSocket receive path;
 3. prototype HLS/LL-HLS separately for passive/view-only device compatibility;
 4. compare measured backends and define explicit capability selection before considering automatic fallback;
 5. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
@@ -527,8 +557,8 @@ When fallback work begins, separate the two user classes instead of forcing ever
 2. **implemented / bounded target-server checkpoint closed:** the migrated WebRTC compatibility path and estimator startup correction, with the repeated full role/recovery and induced down/up matrix deferred to final grouped validation;
 3. **completed design:** the exact protocol, security, queueing, synchronization, rollout and validation contract for **WebCodecs + dedicated WebSocket media** is fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md);
 4. **implemented Phase 1:** strict framing/fixtures, PTS-validity propagation, authenticated negotiation, one-time tickets and default-off server negotiation;
-5. **NEXT Phase 2:** implement the credential-free server delivery backend, secure media route, bounded queues and lifecycle cleanup;
-6. implement the isolated client worker/WebCodecs/AudioWorklet and explicit UI path, then add separate deployment/observability assets;
+5. **implemented Phase 2:** credential-free server delivery backend, secure media route, bounded queues, recovery and lifecycle cleanup;
+6. **NEXT Phase 3:** implement the isolated client worker/WebCodecs/AudioWorklet and explicit UI path, then add separate deployment/observability assets;
 7. validate the completed prototype on the target server in its own block, including slow-client isolation and the documented malformed-input/resource matrix;
 8. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
 9. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;

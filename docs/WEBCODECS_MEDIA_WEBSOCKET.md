@@ -1,6 +1,6 @@
 # WebCodecs plus dedicated media WebSocket contract
 
-Status: **design complete and Phase 1 protocol/ticket/negotiation boundary implemented on `testing` on 2026-09-12; no media-WebSocket endpoint, delivery backend, client decoder, deployment enablement or automatic fallback is implemented**.
+Status: **design complete; Phase 1 protocol/ticket/negotiation and Phase 2 server delivery adapter implemented and statically reviewed on `testing` through 2026-09-13; target-server tests/build are intentionally deferred to grouped prototype validation; no client decoder/render path, deployment enablement or automatic fallback is implemented**.
 
 This document fixes the version-1 contract and the bounded implementation and acceptance plan for Neko's first non-WebRTC receive-media prototype. It specializes the backend-neutral boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md) without changing that boundary or the current WebRTC implementation.
 
@@ -19,7 +19,7 @@ Version 1 is an explicit, opt-in, low-latency **receive-media** experiment:
 
 The current client sends high-rate keyboard, pointer and touch input through the WebRTC data channel. Version 1 deliberately does not add a replacement control transport and therefore must not be described as complete non-WebRTC interactive parity. It proves an interactive-class receive path. A later, independently reviewed block must decide how a controlling participant sends high-rate input when no WebRTC peer connection exists.
 
-Phase 1 now adds the strict envelope/parser and language-neutral fixtures, capture-side `PTSValid` propagation, single-use ticket storage, authenticated current/legacy negotiation events and the default-off server flag. It deliberately adds no media route, provider subscription, delivery backend registration, decoder, worker, audio worklet, dependency or deployment overlay.
+Phase 1 adds the strict envelope/parser and language-neutral fixtures, capture-side `PTSValid` propagation, single-use ticket storage, authenticated current/legacy negotiation events and the default-off server flag. Phase 2 adds the conditionally registered secure media route, credential-free provider-backed delivery, bounded queues/control/lifecycle recovery and fixed metrics. Neither phase adds the decoder worker, audio worklet, render path, client selection, dependency or deployment overlay.
 
 ## Invariants
 
@@ -363,7 +363,7 @@ Status: **implemented in the repository and statically reviewed; project tests/b
 
 ### Phase 2: server delivery adapter
 
-Status: **NEXT**.
+Status: **implemented and statically reviewed on `testing` on 2026-09-13; project tests/build were NOT EXECUTED IN CODEX and are intentionally deferred to grouped prototype validation**.
 
 1. Implement one `MediaDeliveryBackend` using the generic provider subscriptions and credential-free lease.
 2. Register the backend and `/api/media/ws` route only while the feature is enabled.
@@ -371,7 +371,29 @@ Status: **NEXT**.
 4. Implement the single writer, lifecycle priority, queue caps, drop-to-keyframe state machine, progress timeout and complete cleanup.
 5. Preserve manager replacement, `CanWatch` revocation, private-mode pause and shutdown behavior with focused tests.
 
+Implementation notes:
+
+- The same `media.webcodecs_ws.enabled` flag gates negotiation, backend registration and the exact `/api/media/ws` route. Additional server policy keys are `allowed_origins`, `trusted_proxies`, `allow_insecure_loopback` and `max_connections`; cleartext loopback is rejected unless its dedicated option is explicitly set, and forwarded headers disable that direct-development exception.
+- The route records the original socket peer before generic real-IP rewriting, validates transport/Origin/query/ordered subprotocol/ticket/live session/`CanWatch`, then passes the backend only the normalized selectors, an initial private-mode state, its lease and the upgraded socket attachment. Ticket-bearing headers and complete media-route URLs are not logged.
+- Provider queues are fixed at video 4/audio 16 with drop-new callbacks. The per-delivery writer owns the socket and drains a four-record lifecycle queue before the shared 24-record/16-MiB media queue; write, rate, ping/pong, READY, feedback, progress and resync limits use the values above.
+- FORMAT and UNIT serialization preserves the strict Phase 1 envelope, PTS/DTS validity, bounded derived VP8/Opus duration, delivery-local generations/sequences and raw VP8 keyframe admission. Provider or egress overflow gates media, clears only the affected video or the common A/V timeline, queues DISCONTINUITY followed by FORMAT, and resumes video only at a keyframe.
+- Client rendered counts are checked against a bounded sent-unit timestamp history so a reported generation cannot claim unsent progress and a reconstructable rendered PTS more than 500 ms behind the newest sent PTS initiates the one bounded common recovery.
+- Central close reasons preserve normal, revoked, replaced and shutdown END/close behavior. Initial private mode is propagated into backend construction before delivery workers can publish media, and every delivery waits for its reader/provider/monitor/resync workers to exit before `Done` closes.
+- Focused repository tests cover strict controls, queue record/byte/lifecycle bounds, generation/keyframe and duration serialization, deferred lifecycle transitions, rendered-PTS lag, close reasons, pre-upgrade statuses/policies, trusted-proxy address handling, connection/invalid-attempt limits and manager private/revocation/replacement/shutdown behavior.
+
+The prepared target-server command is:
+
+```bash
+cd server
+go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
+./build
+```
+
+This is not an end-to-end prototype acceptance: Phase 3 and Phase 4 remain required, and the operator requested grouped target-server testing after the accumulated implementation phases.
+
 ### Phase 3: isolated client path
+
+Status: **NEXT**.
 
 1. Add a strict TypeScript envelope parser using the shared golden fixtures and checked 64-bit handling.
 2. Add a dedicated worker that owns the socket, support probes, decoder queues and stale-generation rejection.

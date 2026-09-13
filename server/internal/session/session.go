@@ -57,7 +57,7 @@ func (session *SessionCtx) profileChanged() {
 			// The delivery may have been removed if the user disconnected while
 			// waiting for the delayed teardown.
 			if delivery := session.GetMediaDelivery(); delivery != nil {
-				_ = delivery.Close()
+				closeMediaDelivery(delivery, types.MediaDeliveryCloseRevoked)
 			}
 		})
 	}
@@ -330,13 +330,8 @@ func (session *SessionCtx) GetWebRTCPeer() types.WebRTCPeer {
 
 func (session *SessionCtx) SetMediaDelivery(delivery types.MediaDelivery) {
 	session.mediaMu.Lock()
-	previous := session.mediaDelivery
 	session.mediaDelivery = delivery
 	session.mediaMu.Unlock()
-
-	if previous != nil && previous != delivery {
-		_ = previous.Close()
-	}
 }
 
 func (session *SessionCtx) SetMediaDeliveryActive(delivery types.MediaDelivery, active bool) bool {
@@ -371,4 +366,12 @@ func (session *SessionCtx) GetMediaDelivery() types.MediaDelivery {
 	session.mediaMu.Lock()
 	defer session.mediaMu.Unlock()
 	return session.mediaDelivery
+}
+
+func closeMediaDelivery(delivery types.MediaDelivery, reason types.MediaDeliveryCloseReason) {
+	if closer, ok := delivery.(types.MediaDeliveryReasonCloser); ok {
+		_ = closer.CloseWithReason(reason)
+		return
+	}
+	_ = delivery.Close()
 }
