@@ -2,7 +2,11 @@
   <div ref="component" class="video">
     <div
       ref="player"
-      :class="['player', hosted ? 'has-control' : 'no-control', { fullscreen: fullscreen }]"
+      :class="[
+        'player',
+        hosted ? 'has-control' : 'no-control',
+        { fullscreen: fullscreen, 'fallback-fullscreen': fallbackFullscreen },
+      ]"
       :style="{ '--horizontal': horizontal, '--vertical': vertical }"
     >
       <div ref="container" class="player-container">
@@ -57,11 +61,18 @@
         />
         <div ref="aspect" class="player-aspect" />
       </div>
-      <ul v-if="!fullscreen && !hideControls" class="video-menu top">
-        <li><i @click.stop.prevent="requestFullscreen" class="fas fa-expand"></i></li>
-        <li v-if="admin && !webCodecsSelected"><i @click.stop.prevent="openResolution" class="fas fa-desktop"></i></li>
+      <ul v-if="(!fullscreen || fallbackFullscreen) && !hideControls" class="video-menu top">
+        <li>
+          <i
+            @click.stop.prevent="requestFullscreen"
+            :class="['fas', fallbackFullscreen ? 'fa-compress' : 'fa-expand']"
+          ></i>
+        </li>
+        <li v-if="!fallbackFullscreen && admin && !webCodecsSelected">
+          <i @click.stop.prevent="openResolution" class="fas fa-desktop"></i>
+        </li>
         <li
-          v-if="!webCodecsSelected && !controlLocked && !implicitHosting"
+          v-if="!fallbackFullscreen && !webCodecsSelected && !controlLocked && !implicitHosting"
           :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]"
         >
           <i
@@ -75,7 +86,7 @@
           />
         </li>
       </ul>
-      <ul v-if="!fullscreen && !hideControls" class="video-menu bottom">
+      <ul v-if="!fullscreen && !fallbackFullscreen && !hideControls" class="video-menu bottom">
         <li v-if="hosting">
           <i
             @click.stop.prevent="openClipboard"
@@ -285,6 +296,25 @@
       }
       &.fullscreen {
         @include fullscreen-active;
+      }
+
+      // iPhone Safari and similar mobile browsers cannot natively fullscreen a
+      // WebCodecs canvas. Keep a user-visible exit control in this viewport
+      // fallback; it does not claim to hide browser chrome.
+      &.fallback-fullscreen {
+        @include fullscreen-active;
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        z-index: 2147483647;
+
+        .video-menu.top {
+          display: flex !important;
+          top: max(18px, env(safe-area-inset-top));
+          right: max(18px, env(safe-area-inset-right));
+        }
       }
 
       .player-container {
@@ -515,6 +545,8 @@
     private observer = new ResizeObserver(this.onResize.bind(this))
     private focused = false
     private fullscreen = false
+    private fallbackFullscreen = false
+    private bodyOverflowBeforeFallback: string | null = null
     private mutedOverlay = true
     private lastTextAreaValue = ''
 
@@ -694,10 +726,30 @@
       }
     }
 
-    private onFullscreenChangeHandler = () => {
+    private onFullscreenChangeHandler() {
       this.fullscreen = isFullscreen()
-      this.fullscreen ? lockKeyboard() : unlockKeyboard()
+      this.fullscreen || this.fallbackFullscreen ? lockKeyboard() : unlockKeyboard()
       this.onResize()
+    }
+
+    private enterFallbackFullscreen() {
+      if (this.fallbackFullscreen) return
+      this.bodyOverflowBeforeFallback = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      this.fallbackFullscreen = true
+      lockKeyboard()
+      this.$nextTick(() => this.onResize())
+    }
+
+    private exitFallbackFullscreen(resize = true) {
+      if (!this.fallbackFullscreen) return
+      this.fallbackFullscreen = false
+      if (this.bodyOverflowBeforeFallback !== null) {
+        document.body.style.overflow = this.bodyOverflowBeforeFallback
+        this.bodyOverflowBeforeFallback = null
+      }
+      unlockKeyboard()
+      if (resize) this.$nextTick(() => this.onResize())
     }
 
     get admin() {
@@ -1407,6 +1459,7 @@
       this.$client.off('cursor-position', this.onCursorPosition)
       this.$client.off('media-video-frame', this.onWebCodecsFrame)
       this.$client.off('media-clock-reset', this.onWebCodecsClockReset)
+      this.exitFallbackFullscreen(false)
       this.stopWebCodecsRenderer()
       this.clearWebCodecsFrames()
       /* Guacamole Keyboard does not provide destroy functions */
@@ -1540,43 +1593,38 @@
       this.$accessor.remote.request()
     }
 
-    requestFullscreen() {
-      // Try to fullscreen the player element.
-      // Use the Promise returned by requestFullscreen() to guarantee
-      // state is updated, since the fullscreenchange event may not
-      // fire reliably in all browsers.
-      if (typeof this._player.requestFullscreen === 'function') {
-        this._player.requestFullscreen().then(() => {
-          this.onFullscreenChangeHandler()
-        }).catch(() => {})
-        return
-        //@ts-ignore
-      } else if (typeof this._player.webkitRequestFullscreen === 'function') {
-        //@ts-ignore
-        this._player.webkitRequestFullscreen()
-        // Prefixed variants don't return Promises, use a short delay
-        setTimeout(() => this.onFullscreenChangeHandler(), 100)
-        return
-        //@ts-ignore
-      } else if (typeof this._player.mozRequestFullScreen === 'function') {
-        //@ts-ignore
-        this._player.mozRequestFullScreen()
-        setTimeout(() => this.onFullscreenChangeHandler(), 100)
-        return
-        //@ts-ignore
-      } else if (typeof this._player.msRequestFullScreen === 'function') {
-        //@ts-ignore
-        this._player.msRequestFullScreen()
-        setTimeout(() => this.onFullscreenChangeHandler(), 100)
+    async requestFullscreen() {
+      if (this.fallbackFullscreen) {
+        this.exitFallbackFullscreen()
         return
       }
 
-      // Fallback: fullscreen the video itself (mobile devices)
-      const surface = this.webCodecsSelected ? this._webCodecsCanvas : this._video
-      if (elementRequestFullscreen(surface)) {
+      // iPhone Safari's video-only API must be invoked during the original
+      // user gesture, before awaiting an unsupported container request.
+      const videoSurface = this._video as HTMLVideoElement & { webkitEnterFullscreen?: () => void }
+      if (!this.webCodecsSelected && typeof videoSurface.webkitEnterFullscreen === 'function') {
+        if (await elementRequestFullscreen(videoSurface)) {
+          this.onResize()
+          return
+        }
+      }
+
+      // Prefer the complete player so canvas/status/controls stay together.
+      // A rejected Promise must continue into the mobile surface fallback.
+      if (await elementRequestFullscreen(this._player)) {
+        this.onFullscreenChangeHandler()
+        return
+      }
+
+      const surface = this.webCodecsSelected ? this._webCodecsCanvas : videoSurface
+      if (await elementRequestFullscreen(surface)) {
         this.onResize()
         return
       }
+
+      // Canvas fullscreen is unavailable on iPhone Safari. Fill the visual
+      // viewport while retaining an explicit in-app exit button.
+      this.enterFallbackFullscreen()
     }
 
     requestPictureInPicture() {
@@ -1979,7 +2027,7 @@
       let offsetWidth: number
       let offsetHeight: number
 
-      if (this.fullscreen) {
+      if (this.fullscreen || this.fallbackFullscreen) {
         // In fullscreen, use the actual viewport dimensions.
         // Clear inline width/height on the player so the browser's
         // native fullscreen sizing takes effect unobstructed.
