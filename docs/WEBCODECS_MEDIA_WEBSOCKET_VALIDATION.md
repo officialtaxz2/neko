@@ -2,6 +2,8 @@
 
 This is the operator/Codex hand-off runbook for the default-off WebCodecs plus dedicated media-WebSocket receive prototype. Execute it only on the real target server, one block at a time. Return each block's complete terminal output before continuing so failures and deployment-specific values can be assessed without guessing.
 
+The operator closed a bounded checkpoint at exact documentation commit `6b6cd328` on 2026-09-14 after the recorded automated/build/security, accumulated functional and corrected foreground-iPhone gates passed. The numeric latency/pacing, induced slow-client/adaptive isolation, five-minute resource comparison and remaining live hostile-input sections were deliberately not executed. They remain here as the required procedure for any later full prototype-acceptance or automatic/default-backend claim; the bounded closure does not mark them passed.
+
 Never paste `.env`, passwords, cookies, view-only tokens, browser storage, event payloads, packet captures, media WebSocket URLs or `Sec-WebSocket-Protocol` values from a successful attachment. The supplied HTTP check uses a fixed invalid ticket and suppresses response bodies. Store raw evidence outside the Git worktree with mode `0700`.
 
 The stable rollback path is always the base deployment without [`../docker-compose.webcodecs-ws.yaml`](../docker-compose.webcodecs-ws.yaml). Do not change or push `master` during this checkpoint.
