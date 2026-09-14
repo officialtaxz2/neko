@@ -372,6 +372,10 @@ func (delivery *Delivery) handleClientResync(resync resyncControl, now time.Time
 	}
 	delivery.clientResyncs = append(kept, now)
 	delivery.mu.Unlock()
+	delivery.logger.Info().
+		Str("resync_kind", resync.Kind).
+		Str("resync_reason", resync.Reason).
+		Msg("client requested media resync")
 	if kind == KindAudio {
 		kind = KindNone
 	}
@@ -571,7 +575,7 @@ func metricResyncReason(reason string) string {
 	switch reason {
 	case "server_overflow", "source_switch", "source_restart", "format_change", "timestamp_reset", "resumed", "progress_timeout", "av_skew":
 		return reason
-	case "client_queue_overflow", "client_decoder_error", "client_timestamp", "client_audio_underflow", "client_av_skew":
+	case "client_queue_overflow", "client_video_compressed_overflow", "client_audio_compressed_overflow", "client_audio_output_overflow", "client_audio_worklet_overflow", "client_decoder_error", "client_timestamp", "client_audio_underflow", "client_av_skew":
 		return reason
 	default:
 		return "other"

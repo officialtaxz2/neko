@@ -290,7 +290,7 @@ func parseResync(data []byte) (resyncControl, error) {
 		return resyncControl{}, fmt.Errorf("%w: resync kind", ErrInvalidControl)
 	}
 	switch wire.Reason {
-	case "queue_overflow", "decoder_error", "timestamp", "audio_underflow", "av_skew":
+	case "queue_overflow", "video_compressed_overflow", "audio_compressed_overflow", "audio_output_overflow", "audio_worklet_overflow", "decoder_error", "timestamp", "audio_underflow", "av_skew":
 	default:
 		return resyncControl{}, fmt.Errorf("%w: resync reason", ErrInvalidControl)
 	}

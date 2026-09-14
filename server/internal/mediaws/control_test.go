@@ -56,6 +56,23 @@ func TestParseFeedbackAndResyncBounds(t *testing.T) {
 	if err != nil || resync.Resync.Generation != 3 || resync.Resync.Kind != "video" {
 		t.Fatalf("resync control = %#v, err = %v", resync, err)
 	}
+	for _, reason := range []string{"queue_overflow", "video_compressed_overflow", "audio_compressed_overflow", "audio_output_overflow", "audio_worklet_overflow"} {
+		if _, err := parseControl([]byte(`{"type":"resync","kind":"all","generation":"3","reason":"` + reason + `"}`)); err != nil {
+			t.Fatalf("bounded overflow reason %q rejected: %v", reason, err)
+		}
+	}
+}
+
+func TestClientOverflowResyncReasonsStayBounded(t *testing.T) {
+	for _, reason := range []string{"queue_overflow", "video_compressed_overflow", "audio_compressed_overflow", "audio_output_overflow", "audio_worklet_overflow"} {
+		internal := "client_" + reason
+		if got := metricResyncReason(internal); got != internal {
+			t.Fatalf("metric reason %q = %q", internal, got)
+		}
+		if got := normalizeResyncProtocolReason(internal); got != "browser_resync" {
+			t.Fatalf("protocol reason %q = %q", internal, got)
+		}
+	}
 }
 
 func TestParseControlLengthAndSafeIntegers(t *testing.T) {

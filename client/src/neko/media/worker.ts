@@ -1,7 +1,17 @@
 import { FLAG, KIND, MEDIA_BACKEND, MEDIA_PROTOCOL, RECORD, parseMediaRecord } from './protocol'
-import { hasVideoDecodeCapacity, isMediaRetryCloseCode, shouldAwaitMediaCloseForEnd } from './recovery.js'
+import { isMediaRetryCloseCode, shouldAwaitMediaCloseForEnd, shouldDropDecodedVideoOutput } from './recovery.js'
 
 type MediaKindName = 'audio' | 'video'
+type ResyncReason =
+  | 'queue_overflow'
+  | 'video_compressed_overflow'
+  | 'audio_compressed_overflow'
+  | 'audio_output_overflow'
+  | 'audio_worklet_overflow'
+  | 'decoder_error'
+  | 'timestamp'
+  | 'audio_underflow'
+  | 'av_skew'
 
 interface TrackState {
   name: MediaKindName
@@ -20,7 +30,6 @@ interface TrackState {
   rendered: number
   drops: number
   outstandingVideo: number
-  pendingVideoOutputs: number
   bufferedAudioMS: number
   pendingAudioMS: number
   decoder?: VideoDecoder | AudioDecoder
@@ -51,7 +60,6 @@ const makeTrack = (name: MediaKindName, kind: number): TrackState => ({
   rendered: 0,
   drops: 0,
   outstandingVideo: 0,
-  pendingVideoOutputs: 0,
   bufferedAudioMS: 0,
   pendingAudioMS: 0,
 })
@@ -79,7 +87,6 @@ function resetTrack(track: TrackState, clearGeneration = false) {
   track.lastPTS = -1
   track.awaitingKeyframe = track.name === 'video'
   track.outstandingVideo = 0
-  track.pendingVideoOutputs = 0
   track.bufferedAudioMS = 0
   track.pendingAudioMS = 0
   track.received = 0
@@ -169,7 +176,7 @@ function sendFeedback() {
   })
 }
 
-function requestResync(reason: 'queue_overflow' | 'decoder_error' | 'timestamp' | 'audio_underflow' | 'av_skew') {
+function requestResync(reason: ResyncReason) {
   if (resyncPending || socket?.readyState !== WebSocket.OPEN) return
   resyncPending = true
   const generation = Math.max(video.generation, 1)
@@ -313,16 +320,18 @@ function maybeReady() {
 }
 
 function onVideoOutput(track: TrackState, frame: VideoFrame) {
-  track.pendingVideoOutputs = Math.max(0, track.pendingVideoOutputs - 1)
   if (!track.configured || track.generation === 0) {
     frame.close()
     return
   }
   track.decoded++
-  if (track.outstandingVideo >= VIDEO_RENDER_CAP) {
+  if (shouldDropDecodedVideoOutput(track.outstandingVideo, VIDEO_RENDER_CAP)) {
     track.drops++
+    // The decoder has consumed this VP8 chunk, so discarding only its decoded
+    // output preserves reference continuity. Keep at most two transferred
+    // frames without turning normal renderer throttling into a server resync.
+    if (track.rendered < track.decoded) track.rendered++
     frame.close()
-    requestResync('queue_overflow')
     return
   }
   track.outstandingVideo++
@@ -356,7 +365,7 @@ function onAudioOutput(track: TrackState, data: AudioData) {
   ) {
     track.drops++
     data.close()
-    requestResync('queue_overflow')
+    requestResync('audio_output_overflow')
     return
   }
 
@@ -415,7 +424,7 @@ function enqueueUnit(track: TrackState, record: any) {
   const cap = track.name === 'video' ? VIDEO_COMPRESSED_CAP : AUDIO_COMPRESSED_CAP
   if (track.compressed.length >= cap) {
     track.drops++
-    requestResync('queue_overflow')
+    requestResync(track.name === 'video' ? 'video_compressed_overflow' : 'audio_compressed_overflow')
     return
   }
   track.lastSequence = record.sequence
@@ -436,12 +445,6 @@ function drain(track: TrackState) {
         if (track.decoder.decodeQueueSize >= decodeCap) return
         const record = track.compressed[0]
         if (
-          track.name === 'video' &&
-          !hasVideoDecodeCapacity(track.outstandingVideo, track.pendingVideoOutputs, VIDEO_RENDER_CAP)
-        ) {
-          return
-        }
-        if (
           track.name === 'audio' &&
           track.bufferedAudioMS + track.pendingAudioMS + record.duration / 1000 > AUDIO_BUFFER_CAP_MS
         ) {
@@ -449,10 +452,6 @@ function drain(track: TrackState) {
         }
         track.compressed.shift()
         if (track.name === 'video') {
-          // decodeQueueSize can fall before the corresponding output callback
-          // runs. Reserve a render slot across that gap so a normal decoder
-          // burst cannot be mistaken for a decoded-queue overflow.
-          track.pendingVideoOutputs++
           ;(track.decoder as VideoDecoder).decode(
             new EncodedVideoChunk({
               type: (record.flags & FLAG.KEYFRAME) !== 0 ? 'key' : 'delta',

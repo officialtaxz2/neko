@@ -7,7 +7,7 @@ import {
   WebSocketPayloads,
 } from '../messages'
 import { MEDIA_BACKEND, MEDIA_PROTOCOL } from './protocol'
-import { MEDIA_RETRY_DELAYS_MS, mediaRetryDelayForAttempt } from './recovery.js'
+import { MEDIA_RETRY_DELAYS_MS, MEDIA_RETRY_STABILITY_MS, mediaRetryDelayForAttempt } from './recovery.js'
 
 export interface ScheduledVideoFrame {
   frame: VideoFrame
@@ -45,6 +45,7 @@ export class WebCodecsMediaController {
   private choice?: { audio: MediaCreateChoice | null; video: MediaCreateChoice }
   private negotiationTimer?: number
   private retryTimer?: number
+  private retryStabilityTimer?: number
   private retryAttempt = 0
   private awaitingOffer = false
   private recovering = false
@@ -199,7 +200,7 @@ export class WebCodecsMediaController {
         break
       case 'ready':
         this.recovering = false
-        this.retryAttempt = 0
+        if (this.retryAttempt > 0) this.armRetryStabilityReset()
         this.callbacks.setStatus('streaming', this.audioEnabled ? 'VP8 video and Opus audio' : 'VP8 video; audio disabled')
         break
       case 'video-format':
@@ -251,6 +252,7 @@ export class WebCodecsMediaController {
 
   private scheduleRetry(detail: string) {
     this.clearNegotiationTimer()
+    this.clearRetryStabilityTimer()
     this.awaitingOffer = false
     if (this.retryTimer !== undefined) return
     const delay = mediaRetryDelayForAttempt(this.retryAttempt)
@@ -303,7 +305,10 @@ export class WebCodecsMediaController {
             rendered: true,
           })
         } else if (data?.type === 'underflow' || data?.type === 'overflow') {
-          this.worker?.postMessage({ type: data.type === 'underflow' ? 'audio-underflow' : 'resync', reason: 'queue_overflow' })
+          this.worker?.postMessage({
+            type: data.type === 'underflow' ? 'audio-underflow' : 'resync',
+            reason: 'audio_worklet_overflow',
+          })
         }
       }
       this.audioContext = context
@@ -430,8 +435,22 @@ export class WebCodecsMediaController {
     this.negotiationTimer = undefined
   }
 
+  private armRetryStabilityReset() {
+    this.clearRetryStabilityTimer()
+    this.retryStabilityTimer = window.setTimeout(() => {
+      this.retryStabilityTimer = undefined
+      this.retryAttempt = 0
+    }, MEDIA_RETRY_STABILITY_MS)
+  }
+
+  private clearRetryStabilityTimer() {
+    if (this.retryStabilityTimer !== undefined) window.clearTimeout(this.retryStabilityTimer)
+    this.retryStabilityTimer = undefined
+  }
+
   private clearTimers() {
     this.clearNegotiationTimer()
+    this.clearRetryStabilityTimer()
     if (this.retryTimer !== undefined) window.clearTimeout(this.retryTimer)
     this.retryTimer = undefined
   }
