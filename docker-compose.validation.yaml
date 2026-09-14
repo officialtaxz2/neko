@@ -41,6 +41,7 @@ services:
       - |
         set -eux
         go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
+        go test ./internal/mediaws -run '^$$' -fuzz '^FuzzParseRecord$$' -fuzztime 30s
         ./build
 
   metrics-snapshot:
@@ -53,7 +54,7 @@ services:
       - -ec
       - |
         wget -qO- "$$NEKO_METRICS_URL" |
-          grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|media_(deliveries|delivery_(opens|closes)_total|source_generation|subscriptions_active|subscription_(delivered_(bytes|units)_total|discontinuities_total|dropped_units_total|queue_(capacity|depth)))|webrtc_(connection_state|receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners))'
+          grep -E '^(go_goroutines|go_memstats_heap_alloc_bytes|process_(cpu_seconds_total|resident_memory_bytes)|neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|media_(deliveries|delivery_(opens|closes)_total|source_generation|subscriptions_active|subscription_(delivered_(bytes|units)_total|discontinuities_total|dropped_units_total|queue_(capacity|depth))|websocket_(connections|handshakes_total|records_total|bytes_total|drops_total|resyncs_total|write_duration_seconds|queue_depth|queue_bytes|client_lag_milliseconds))|webrtc_(connection_state|receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners)))'
 
   token-generator:
     image: alpine:latest

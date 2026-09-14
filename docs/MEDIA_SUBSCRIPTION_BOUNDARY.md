@@ -1,6 +1,6 @@
 # Backend-neutral encoded-media subscription boundary
 
-Status: **design and first no-new-transport compatibility implementation complete on `testing`; bounded target-server checkpoint closed at `e5f55bf9` on 2026-09-12 with the repeated full role/recovery and induced three-viewer down/up matrix explicitly deferred to final grouped validation; WebCodecs/media-WebSocket Phases 1–3 are implemented behind a default-off flag and exact client query, but no deployment enablement or validated alternative transport exists yet**.
+Status: **design and first no-new-transport compatibility implementation complete on `testing`; bounded target-server checkpoint closed at `e5f55bf9` on 2026-09-12 with the repeated full role/recovery and induced three-viewer down/up matrix explicitly deferred to final grouped validation; WebCodecs/media-WebSocket Phases 1–3 and separate Phase 4 opt-in deployment/observability assets are implemented, but no validated alternative transport exists yet**.
 
 This document fixes the architecture contract and records its first compatibility implementation. The WebCodecs/media-WebSocket specialization is specified separately in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md); its protocol/ticket/negotiation Phase 1, credential-free server delivery Phase 2 and isolated browser receive Phase 3 now exist behind one default-off flag plus exact client selection. It remains undeployed and unvalidated pending Phase 4. No HLS/LL-HLS, DASH or WebTransport delivery backend exists in the repository.
 
@@ -382,7 +382,7 @@ The first interactive-class receive candidate has the exact version-1 contract i
 - audio-master A/V timing, stale-generation rejection, explicit selection and bounded same-backend reconnect;
 - origin, size, rate, timeout, observability, rollback and target-server acceptance requirements.
 
-Its Phase 1 protocol/ticket/authenticated-negotiation primitives, Phase 2 default-off server endpoint/backend and Phase 3 isolated receive-only client are implemented. It remains outside the stable deployment and has no target-server/browser acceptance until Phase 4. Independent control transport work is still required because the current mouse/keyboard/touch path is a WebRTC data channel. WebSocket is not presumed better on a constrained path merely because it avoids ICE.
+Its Phase 1 protocol/ticket/authenticated-negotiation primitives, Phase 2 default-off server endpoint/backend, Phase 3 isolated receive-only client and separate Phase 4 deployment/observability assets are implemented. It remains outside the stable deployment and has no target-server/browser acceptance until the grouped Phase 4 matrix completes. Independent control transport work is still required because the current mouse/keyboard/touch path is a WebRTC data channel. WebSocket is not presumed better on a constrained path merely because it avoids ICE.
 
 ### HLS / Low-Latency HLS
 

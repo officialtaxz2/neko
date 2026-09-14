@@ -23,7 +23,7 @@ Immediate sequence:
 15. implement Phase 1 of the default-off WebCodecs plus dedicated media-WebSocket receive prototype: protocol, fixtures, PTS-validity propagation, authenticated negotiation and one-time tickets — **complete in the repository on `testing`; target-server tests/build intentionally deferred to grouped prototype validation**,
 16. implement Phase 2: the credential-free server delivery backend, pre-upgrade security boundary, dedicated media route, bounded queues and lifecycle cleanup — **complete in the repository on `testing`; statically reviewed, target-server tests/build intentionally deferred to grouped prototype validation**,
 17. implement the isolated opt-in client decode/render path — **complete in the repository on `testing`; statically reviewed, target-server client/server tests, builds and browser/media acceptance intentionally deferred to grouped prototype validation**,
-18. add separate deployment/observability assets and validate the completed prototype only in later blocks, while retaining WebRTC as the default — **NEXT**,
+18. add separate deployment/observability assets and validate the completed prototype only in later blocks, while retaining WebRTC as the default — **repository assets complete on `testing`; grouped target-server validation NEXT/in progress**,
 19. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
 
 ## Authoritative knowledge
@@ -41,6 +41,8 @@ Read before substantial work:
 - `docs/VIEW_ONLY_SHARING.md` — implemented passive-session boundary, token lifetime/revocation, denial behavior, exact three-role target-server matrix and rollback.
 - `docs/MEDIA_SUBSCRIPTION_BOUNDARY.md` — decided backend-neutral encoded-media/source-subscription and participant-delivery contract, migration order, security boundary and prototype gates.
 - `docs/WEBCODECS_MEDIA_WEBSOCKET.md` — exact version-1 authentication, wire-format, codec, queueing, A/V synchronization, recovery, security, rollout and acceptance contract for the default-off receive prototype.
+- `docs/WEBCODECS_MEDIA_WEBSOCKET_OBSERVABILITY.md` — credential-safe fixed metrics, PromQL and evidence collection for the opt-in prototype.
+- `docs/WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md` — exact interactive target-server Phase 4 procedure and rollback.
 - `webpage/docs/` — inherited Neko documentation. Current repository code/config wins on conflicts.
 
 ## Truth rules
@@ -126,7 +128,7 @@ Use only the checks relevant to the changed areas, with broader verification aft
 - View-only sharing is enforced server-side; hiding controls in the UI is not authorization.
 - WebRTC is the currently implemented primary media path.
 - Future interactive and passive/view-only clients may use different media backends in the same logical room; media transport must not determine authorization.
-- WebCodecs/WebSocket Phases 1–3 are IMPLEMENTED: protocol/ticket/negotiation, the credential-free server route/delivery backend and the exact-query receive-only client parser/worker/WebCodecs/AudioWorklet/canvas path. The server remains default-off, no deployment overlay or target-server/browser acceptance exists yet, and ordinary clients remain on WebRTC. HLS/LL-HLS remains a TARGET candidate. Do not assume WebSocket is inherently better for poor networks, and do not promote MJPEG beyond an optional ultra-legacy fallback without device evidence.
+- WebCodecs/WebSocket Phases 1–3 are IMPLEMENTED: protocol/ticket/negotiation, the credential-free server route/delivery backend and the exact-query receive-only client parser/worker/WebCodecs/AudioWorklet/canvas path. Phase 4 repository assets add only a separate explicit deployment overlay, credential-safe observability and an interactive acceptance runbook. The server remains default-off when that overlay is omitted, target-server/browser acceptance is still pending, and ordinary clients remain on WebRTC. HLS/LL-HLS remains a TARGET candidate. Do not assume WebSocket is inherently better for poor networks, and do not promote MJPEG beyond an optional ultra-legacy fallback without device evidence.
 
 ## Definition of Done for Codex work
 

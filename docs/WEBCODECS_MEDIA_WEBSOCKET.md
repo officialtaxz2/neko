@@ -1,6 +1,6 @@
 # WebCodecs plus dedicated media WebSocket contract
 
-Status: **design complete; Phases 1–3 protocol/ticket/negotiation, server delivery and isolated client receive path implemented and statically reviewed on `testing` through 2026-09-14; target-server tests/build/browser acceptance are intentionally deferred to grouped prototype validation; no deployment enablement or automatic fallback is implemented**.
+Status: **design complete; Phases 1–3 protocol/ticket/negotiation, server delivery and isolated client receive path plus Phase 4's separate opt-in deployment/observability assets are implemented and statically reviewed on `testing` through 2026-09-14; exact-commit target-server tests/build/browser acceptance are NEXT/in progress; no automatic fallback is implemented**.
 
 This document fixes the version-1 contract and the bounded implementation and acceptance plan for Neko's first non-WebRTC receive-media prototype. It specializes the backend-neutral boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md) without changing that boundary or the current WebRTC implementation.
 
@@ -393,7 +393,7 @@ This was not an end-to-end prototype acceptance: Phases 3 and 4 remained require
 
 ### Phase 3: isolated client path
 
-Status: **implemented and statically reviewed on `testing` on 2026-09-14; target-server client/server tests, builds and browser/media acceptance intentionally deferred to Phase 4 grouped validation; no deployment overlay implemented**.
+Status: **implemented and statically reviewed on `testing` on 2026-09-14; target-server client/server tests, builds and browser/media acceptance intentionally deferred to Phase 4 grouped validation**.
 
 1. Add a strict TypeScript envelope parser using the shared golden fixtures and checked 64-bit handling.
 2. Add a dedicated worker that owns the socket, support probes, decoder queues and stale-generation rejection.
@@ -429,11 +429,14 @@ go test ./internal/mediaws -run '^$' -fuzz '^FuzzParseRecord$' -fuzztime 30s
 
 ### Phase 4: deployment and validation assets
 
-Status: **NEXT**.
+Status: **repository assets implemented and statically reviewed on `testing` on 2026-09-14; exact-commit grouped target-server/browser validation is NEXT/in progress and no acceptance criterion is yet claimed as passed**.
 
-1. Add a separate sanitized opt-in Compose overlay; leave stable base Compose unchanged.
-2. Add credential-safe dashboards/queries for the fixed queue, drop, resync, connection and resource metrics.
-3. Complete static security review and the target-server matrix below before calling the prototype validated.
+1. **Implemented:** [`../docker-compose.webcodecs-ws.yaml`](../docker-compose.webcodecs-ws.yaml) enables only the existing server feature and bounded policy values when explicitly composed; stable base Compose is byte-unchanged and omission remains authoritative disablement.
+2. **Implemented:** [`WEBCODECS_MEDIA_WEBSOCKET_OBSERVABILITY.md`](WEBCODECS_MEDIA_WEBSOCKET_OBSERVABILITY.md), [`../deploy/collect-webcodecs-media.sh`](../deploy/collect-webcodecs-media.sh) and the extended validation snapshot define credential-safe fixed-label PromQL, queue/drop/resync/connection/byte/write/lag signals and process/capture/delivery resource evidence.
+3. **Implemented:** [`../deploy/check-media-websocket-http.sh`](../deploy/check-media-websocket-http.sh), [`WEBCODECS_MEDIA_WEBSOCKET_RESULTS_TEMPLATE.md`](WEBCODECS_MEDIA_WEBSOCKET_RESULTS_TEMPLATE.md) and [`WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md`](WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md) provide fixed-invalid pre-upgrade checks, a no-secret evidence record, exact-commit automated checks and blockwise rollback.
+4. **Pending on the target server:** complete the full matrix below before calling the prototype validated.
+
+The overlay requires an exact public Origin and an explicitly reviewed immediate trusted-proxy IP/CIDR, defaults cleartext loopback allowance to false and preserves the server's 128-connection default. It contains no credentials, no client opt-in and no automatic backend selection. Compose consumes the ignored `.env` only for deployment interpolation; the evidence collector never prints or archives that file, tickets, credential headers or event payloads, and raw snapshots remain outside Git.
 
 No phase includes HLS, LL-HLS, WebTransport, automatic backend choice or a new control transport.
 

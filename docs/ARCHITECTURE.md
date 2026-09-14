@@ -221,7 +221,7 @@ This architecture is directionally aligned with upstream issue #371, which expli
 - MJPEG only as an ultra-legacy image-only last resort;
 - fully automatic transport/codec selection after explicit capability detection and measured fallback behavior.
 
-The source-subscription and participant-delivery interface semantics are decided. Version-1 WebCodecs framing/negotiation, the server media endpoint/backend/queue state machines and the isolated receive-only client are implemented through Phase 3. Separate deployment enablement, observability assets, grouped target-server validation and target-device evidence remain open. HLS packaging parameters, the broader device/codec matrix and automatic selection remain OPEN until their evidence-led prototype blocks.
+The source-subscription and participant-delivery interface semantics are decided. Version-1 WebCodecs framing/negotiation, the server media endpoint/backend/queue state machines and the isolated receive-only client are implemented through Phase 3. Phase 4 adds only a separate explicit Compose enablement overlay, credential-safe fixed-metric collection/PromQL and the grouped-validation record; omitting the overlay leaves the stable deployment unchanged. Grouped target-server validation and target-device evidence remain open. HLS packaging parameters, the broader device/codec matrix and automatic selection remain OPEN until their evidence-led prototype blocks.
 
 ## Verification boundary
 

@@ -43,7 +43,7 @@ integration/upstream-20260909
 upstream merge commit: 4e99b8d3ca720d1f184544306820e388716ba23a
 relation at merge commit: 37 commits ahead, 0 behind
 master: fast-forwarded to the reviewed integration history
-testing: deployment reconciliation, accepted opt-in adaptive quality, bounded iOS recovery, server-enforced view-only sharing, completed backend-neutral media-subscription design and implemented WebRTC compatibility refactor
+testing: deployment reconciliation, accepted opt-in adaptive quality, bounded iOS recovery, server-enforced view-only sharing, implemented media-subscription/WebRTC compatibility, WebCodecs/media-WebSocket receive path and separate Phase 4 deployment/observability assets
 master: pinned at d9105ef8 until explicit grouped-promotion authorization
 ```
 
@@ -380,7 +380,7 @@ This Phase 2 repository completion is not target-server evidence and did not by 
 
 ## COMPLETED — WebCodecs/media-WebSocket Phase 3 isolated client path
 
-Status: **implemented and statically reviewed on `testing` on 2026-09-14 / accumulated client and server tests, builds and target-browser/media acceptance intentionally deferred to Phase 4 grouped validation / no deployment overlay implemented**.
+Status: **implemented and statically reviewed on `testing` on 2026-09-14 / accumulated client and server tests, builds and target-browser/media acceptance intentionally deferred to Phase 4 grouped validation**.
 
 The Phase 3 block completes the repository receive path without changing the ordinary WebRTC default:
 
@@ -408,7 +408,21 @@ go test ./internal/mediaws -run '^$' -fuzz '^FuzzParseRecord$' -fuzztime 30s
 ./build
 ```
 
-This repository path is not deployment or browser evidence. The server flag remains false by default, no opt-in Compose overlay exists, and no WebCodecs/media-WebSocket acceptance criterion is claimed as passed.
+This repository path is not deployment or browser evidence. The server flag remains false by default; Phase 4 now supplies a separate explicit overlay, but no WebCodecs/media-WebSocket acceptance criterion is claimed as passed until the grouped target-server matrix completes.
+
+## IN PROGRESS — WebCodecs/media-WebSocket Phase 4 deployment, observability and grouped validation
+
+Status: **repository assets implemented and statically reviewed on `testing` on 2026-09-14 / exact-commit target-server tests, builds and the full browser/security/isolation/resource matrix NEXT/in progress / no runtime acceptance claimed**.
+
+- Added `docker-compose.webcodecs-ws.yaml` as the only deployment enablement. It sets the existing feature flag and requires an exact public Origin plus an explicitly reviewed immediate trusted-proxy address/CIDR; cleartext loopback remains false and the server's 128-connection default is preserved. `docker-compose.yaml` is unchanged, so omitting the overlay keeps the route absent.
+- Added inactive example values to `.env.example`; the overlay itself contains no credentials and refuses activation when its two security-boundary values are empty.
+- Extended `docker-compose.validation.yaml` with the accumulated 30-second media-record fuzz target and the fixed WebCodecs, central delivery, capture and Go/process metric families.
+- Added `deploy/check-media-websocket-http.sh`, which uses no login credential and only a fixed invalid ticket to verify the disabled route plus query/origin/subprotocol/ticket pre-upgrade statuses without printing response bodies.
+- Added `deploy/collect-webcodecs-media.sh` and [`WEBCODECS_MEDIA_WEBSOCKET_OBSERVABILITY.md`](WEBCODECS_MEDIA_WEBSOCKET_OBSERVABILITY.md) for private exact-commit/container/resource records, fixed-label metrics, PromQL and filtered credential-safe logs. Compose consumes ignored `.env` for normal interpolation, but the collector never prints or archives it, a ticket-bearing URL/header or event/control payload.
+- Added [`WEBCODECS_MEDIA_WEBSOCKET_RESULTS_TEMPLATE.md`](WEBCODECS_MEDIA_WEBSOCKET_RESULTS_TEMPLATE.md) and [`WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md`](WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md) for blockwise operator/Codex execution, the ten-join timing table, role/private-mode/revocation cases, slow-viewer/adaptive isolation, five-minute resource comparison, hostile inputs and state-free rollback.
+- Static inspection found no change to the base Compose, WebRTC signaling/data channels, authorization, REST/event protocol, capture encoder configuration or client backend selection. The overlay does not add a client query, fallback or persistent state.
+
+Per `AGENTS.md`, project code, tests, linters, builds, Docker and the helper scripts were **NOT EXECUTED IN CODEX**. Phase 4 remains open until the operator supplies the exact-commit target-server outputs and every applicable acceptance item is recorded.
 
 ## Target-server verification
 
@@ -455,6 +469,7 @@ The container executes the following equivalent checks:
 ```bash
 cd server
 go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
+go test ./internal/mediaws -run '^$' -fuzz '^FuzzParseRecord$' -fuzztime 30s
 ./build
 ```
 
@@ -567,16 +582,16 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement **Phase 4 of the default-off WebCodecs plus dedicated media-WebSocket receive prototype** exactly within [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). Phases 1–3 now provide the protocol/ticket, server-delivery and isolated client receive boundaries; Phase 4 owns separate deployment/observability assets and the operator-directed grouped target-server/browser acceptance.
+Execute and record **Phase 4 of the default-off WebCodecs plus dedicated media-WebSocket receive prototype** at the exact `testing` commit through [`WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md`](WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md). Phases 1–3 provide the protocol/ticket, server-delivery and isolated client receive boundaries; Phase 4's separate deployment/observability assets are now implemented and the operator-directed grouped target-server/browser acceptance is the remaining work.
 
-Add a separate sanitized opt-in Compose overlay that enables the existing server flag/policies without modifying base Compose, plus credential-safe dashboards or documented queries for the fixed connection, queue, byte, drop, resync, write-time, lag and resource signals. Then run and record the exact commit, images, overlays, browser/device versions and the full default-invariance, role/authorization/private-mode, startup/latency/A/V, slow-client/reconnect, cleanup/resource and hostile-input matrix. Do not claim acceptance from repository inspection alone.
+Run and record the exact commit, images, overlays, browser/device versions and the full default-invariance, role/authorization/private-mode, startup/latency/A/V, slow-client/reconnect, cleanup/resource and hostile-input matrix. Use the fixed safe HTTP probe, evidence collector, PromQL and result template; do not expose credentials/tickets and do not claim acceptance from repository inspection alone.
 
 Existing WebRTC signaling, WebRTC data channels and opcodes, input authorization, event-WebSocket reconnect, REST APIs, stable configuration and base Compose behavior must remain unchanged when the two opt-ins are absent. Do not add an automatic fallback, HLS/LL-HLS, WebTransport, a new control transport or claims of full non-WebRTC interactive parity. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
 1. **bounded checkpoint closed with the documented final-matrix limitation:** media-subscription/WebRTC compatibility refactor plus estimator startup correction;
-2. **Phases 1–3 implemented / Phase 4 next:** add separate deployment/observability assets and perform grouped validation for the opt-in WebCodecs plus dedicated media WebSocket receive path;
+2. **Phases 1–3 and Phase 4 repository assets implemented / grouped validation next:** perform exact-commit acceptance for the opt-in WebCodecs plus dedicated media WebSocket receive path;
 3. prototype HLS/LL-HLS separately for passive/view-only device compatibility;
 4. compare measured backends and define explicit capability selection before considering automatic fallback;
 5. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
@@ -593,7 +608,7 @@ When fallback work begins, separate the two user classes instead of forcing ever
 4. **implemented Phase 1:** strict framing/fixtures, PTS-validity propagation, authenticated negotiation, one-time tickets and default-off server negotiation;
 5. **implemented Phase 2:** credential-free server delivery backend, secure media route, bounded queues, recovery and lifecycle cleanup;
 6. **implemented Phase 3:** isolated strict client parser/worker/WebCodecs/AudioWorklet/canvas receive path, explicit UI actions and bounded same-backend recovery;
-7. **NEXT Phase 4:** add separate deployment/observability assets and validate the completed prototype on the target server, including slow-client isolation and the documented malformed-input/resource matrix;
+7. **Phase 4 assets implemented / validation NEXT:** validate the completed prototype on the target server, including slow-client isolation and the documented malformed-input/resource matrix;
 8. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
 9. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;
 10. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
