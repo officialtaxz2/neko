@@ -1,5 +1,5 @@
 import { FLAG, KIND, MEDIA_BACKEND, MEDIA_PROTOCOL, RECORD, parseMediaRecord } from './protocol'
-import { isMediaRetryCloseCode } from './recovery.js'
+import { hasVideoDecodeCapacity, isMediaRetryCloseCode, shouldAwaitMediaCloseForEnd } from './recovery.js'
 
 type MediaKindName = 'audio' | 'video'
 
@@ -20,6 +20,7 @@ interface TrackState {
   rendered: number
   drops: number
   outstandingVideo: number
+  pendingVideoOutputs: number
   bufferedAudioMS: number
   pendingAudioMS: number
   decoder?: VideoDecoder | AudioDecoder
@@ -50,6 +51,7 @@ const makeTrack = (name: MediaKindName, kind: number): TrackState => ({
   rendered: 0,
   drops: 0,
   outstandingVideo: 0,
+  pendingVideoOutputs: 0,
   bufferedAudioMS: 0,
   pendingAudioMS: 0,
 })
@@ -77,6 +79,7 @@ function resetTrack(track: TrackState, clearGeneration = false) {
   track.lastPTS = -1
   track.awaitingKeyframe = track.name === 'video'
   track.outstandingVideo = 0
+  track.pendingVideoOutputs = 0
   track.bufferedAudioMS = 0
   track.pendingAudioMS = 0
   track.received = 0
@@ -310,6 +313,7 @@ function maybeReady() {
 }
 
 function onVideoOutput(track: TrackState, frame: VideoFrame) {
+  track.pendingVideoOutputs = Math.max(0, track.pendingVideoOutputs - 1)
   if (!track.configured || track.generation === 0) {
     frame.close()
     return
@@ -431,7 +435,12 @@ function drain(track: TrackState) {
         const decodeCap = track.name === 'video' ? VIDEO_DECODE_CAP : AUDIO_DECODE_CAP
         if (track.decoder.decodeQueueSize >= decodeCap) return
         const record = track.compressed[0]
-        if (track.name === 'video' && track.outstandingVideo + track.decoder.decodeQueueSize >= VIDEO_RENDER_CAP) return
+        if (
+          track.name === 'video' &&
+          !hasVideoDecodeCapacity(track.outstandingVideo, track.pendingVideoOutputs, VIDEO_RENDER_CAP)
+        ) {
+          return
+        }
         if (
           track.name === 'audio' &&
           track.bufferedAudioMS + track.pendingAudioMS + record.duration / 1000 > AUDIO_BUFFER_CAP_MS
@@ -440,6 +449,10 @@ function drain(track: TrackState) {
         }
         track.compressed.shift()
         if (track.name === 'video') {
+          // decodeQueueSize can fall before the corresponding output callback
+          // runs. Reserve a render slot across that gap so a normal decoder
+          // burst cannot be mistaken for a decoded-queue overflow.
+          track.pendingVideoOutputs++
           ;(track.decoder as VideoDecoder).decode(
             new EncodedVideoChunk({
               type: (record.flags & FLAG.KEYFRAME) !== 0 ? 'key' : 'delta',
@@ -473,6 +486,13 @@ function handleRecord(data: ArrayBuffer) {
   }
 
   if (record.type === RECORD.END) {
+    if (shouldAwaitMediaCloseForEnd(record.metadata.reason)) {
+      // A backend_error END deliberately precedes the authoritative private
+      // close code. Keep the close handler attached so only 4413 or 4500 can
+      // enter the bounded same-backend retry policy.
+      resetRuntime()
+      return
+    }
     post({ type: 'end', reason: record.metadata.reason })
     intentionalClose = true
     closeSocket(1000, 'end')

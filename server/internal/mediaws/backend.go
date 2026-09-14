@@ -416,6 +416,11 @@ func (delivery *Delivery) finish(result closeRequest) {
 		} else {
 			delivery.lease.SetState(types.MediaDeliveryStateClosed)
 		}
+		delivery.logger.Info().
+			Int("close_code", result.code).
+			Str("close_reason", result.reason).
+			Bool("failed", result.failed).
+			Msg("media delivery closed")
 		delivery.clearConnectionState()
 		close(delivery.done)
 	})

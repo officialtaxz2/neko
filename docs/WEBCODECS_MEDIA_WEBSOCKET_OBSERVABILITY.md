@@ -24,6 +24,8 @@ Use [`../docker-compose.webcodecs-ws.yaml`](../docker-compose.webcodecs-ws.yaml)
 
 Queue and lag metrics are histograms of observations, not per-participant current-value gauges. Use them for distributions and cap evidence together with drop/close counters, lifecycle counts and the test matrix; do not infer a particular participant from an aggregate bucket.
 
+Every upgraded media delivery writes one completion log with bounded `close_code`, internal `close_reason` and `failed` fields. These fields distinguish backpressure causes such as `resync_limit` from backend failures without recording a ticket, URL, Origin, address, media payload or control payload. The delivery logger also carries the existing session identifier, so collected raw logs remain private evidence and must be sanitized before anything is committed.
+
 ## PromQL panels and checks
 
 Connection lifecycle and handshakes:
