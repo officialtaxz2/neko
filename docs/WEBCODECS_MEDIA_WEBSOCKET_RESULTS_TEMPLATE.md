@@ -43,6 +43,7 @@ Evidence/notes:
 | Case | Expected | Evidence/result |
 | --- | --- | --- |
 | Ordinary opt-in viewer | VP8 video + 48 kHz stereo Opus |  |
+| Desktop + phone fullscreen enter/exit | Native where supported; explicit app fallback for canvas otherwise |  |
 | Admin opt-in viewer | VP8 video + 48 kHz stereo Opus |  |
 | View-only `CanWatch` viewer | Receive succeeds; input stays denied |  |
 | Session without `CanWatch` | Denied before upgrade |  |
