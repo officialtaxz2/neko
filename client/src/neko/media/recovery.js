@@ -15,6 +15,16 @@ export function shouldDropDecodedVideoOutput(outstanding, cap) {
   return outstanding >= cap
 }
 
+export function deliverOrReleaseVideoFrame(deliver, release) {
+  let delivered = false
+  try {
+    delivered = deliver() === true
+    return delivered
+  } finally {
+    if (!delivered) release()
+  }
+}
+
 export function mediaRetryDelayForAttempt(attempt) {
   return reconnectDelayForAttempt(attempt, MEDIA_RETRY_DELAYS_MS)
 }

@@ -7,6 +7,7 @@ import { reconnectDelayForAttempt, shouldReconnect } from './recovery'
 import { viewOnlyTokenFromHash } from './share'
 import { accessor } from '~/store'
 import { ScheduledVideoFrame, WebCodecsMediaController } from './media/controller'
+import { deliverOrReleaseVideoFrame } from './media/recovery.js'
 
 import {
   SystemMessagePayload,
@@ -863,7 +864,16 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
           if (playable && this.$accessor.settings.autoplay) this.$accessor.video.play()
         },
         onVideoFormat: (format) => this.$accessor.video.setResolution(format),
-        onVideoFrame: (frame) => this.emit('media-video-frame', frame),
+        onVideoFrame: (frame) => {
+          // The controller can produce frames before the video component has
+          // mounted and subscribed. EventEmitter reports that race as false;
+          // release the transferred frame so the worker's two-slot hand-off
+          // cannot remain permanently saturated.
+          deliverOrReleaseVideoFrame(
+            () => this.emit('media-video-frame', frame),
+            () => controller.releaseVideoFrame(frame, false, 0),
+          )
+        },
         onClockReset: () => this.emit('media-clock-reset'),
       })
       this.mediaController = controller

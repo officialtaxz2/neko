@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 import {
   MEDIA_RETRY_DELAYS_MS,
   MEDIA_RETRY_STABILITY_MS,
+  deliverOrReleaseVideoFrame,
   isMediaRetryCloseCode,
   mediaRetryDelayForAttempt,
   shouldAwaitMediaCloseForEnd,
@@ -37,4 +39,28 @@ test('decoded video saturation drops output at the fixed renderer bound', () => 
   assert.equal(shouldDropDecodedVideoOutput(1, 2), false)
   assert.equal(shouldDropDecodedVideoOutput(2, 2), true)
   assert.equal(shouldDropDecodedVideoOutput(3, 2), true)
+})
+
+test('video frames without a mounted renderer listener are released', () => {
+  let releases = 0
+  assert.equal(deliverOrReleaseVideoFrame(() => false, () => releases++), false)
+  assert.equal(releases, 1)
+
+  assert.equal(deliverOrReleaseVideoFrame(() => true, () => releases++), true)
+  assert.equal(releases, 1)
+
+  assert.throws(
+    () => deliverOrReleaseVideoFrame(() => { throw new Error('listener failed') }, () => releases++),
+    /listener failed/,
+  )
+  assert.equal(releases, 2)
+})
+
+test('Vue WebCodecs callbacks keep live component state', async () => {
+  const source = await readFile(new URL('../src/components/video.vue', import.meta.url), 'utf8')
+
+  for (const method of ['onWebCodecsFrame', 'onWebCodecsClockReset', 'renderWebCodecsFrame']) {
+    assert.match(source, new RegExp(`private ${method}\\([^)]*\\) \\{`))
+    assert.doesNotMatch(source, new RegExp(`private ${method}\\s*=\\s*\\(`))
+  }
 })

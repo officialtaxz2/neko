@@ -1183,7 +1183,11 @@
       }
     }
 
-    private onWebCodecsFrame = (frame: ScheduledVideoFrame) => {
+    // These WebCodecs callbacks must stay Vue prototype methods. In
+    // vue-class-component 7, class-field arrow functions are created while a
+    // synthetic data instance is collected; their lexical `this` can then
+    // retain primitive renderer state outside the live Vue instance.
+    private onWebCodecsFrame(frame: ScheduledVideoFrame) {
       if (!this.webCodecsSelected || !this.playing) {
         this.$client.releaseWebCodecsFrame(frame, false, 0)
         return
@@ -1201,7 +1205,7 @@
       this.startWebCodecsRenderer()
     }
 
-    private onWebCodecsClockReset = () => {
+    private onWebCodecsClockReset() {
       this.webCodecsGeneration = 0
       this.videoWidth = 0
       this.videoHeight = 0
@@ -1227,7 +1231,7 @@
       this.webCodecsAnimation = undefined
     }
 
-    private renderWebCodecsFrame = () => {
+    private renderWebCodecsFrame() {
       this.webCodecsAnimation = undefined
       if (!this.webCodecsSelected || !this.playing) return
 
