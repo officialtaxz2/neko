@@ -48,6 +48,7 @@ Evidence/notes:
 | View-only `CanWatch` viewer | Receive succeeds; input stays denied |  |
 | Session without `CanWatch` | Denied before upgrade |  |
 | Private mode pause/resume | Clean new generation |  |
+| Foreground iPhone continuous interval | At least 10 min; no canvas clear, server `client_audio_underflow`, `resync_limit` or retry |  |
 | Logout/kick/revocation/replacement | Output stops within 2 s; no retry |  |
 | Unsupported codec/browser | Explicit rejection; session survives |  |
 | **Use WebRTC** | Unchanged WebRTC A/V and control path |  |

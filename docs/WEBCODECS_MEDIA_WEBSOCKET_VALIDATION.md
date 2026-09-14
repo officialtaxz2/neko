@@ -105,6 +105,8 @@ printf 'result_dir=%s\n' "$RESULT_DIR"
 
 Retain that path for later blocks. Use one normal member, one admin and one view-only `CanWatch` session in turn with the exact query `?media=webcodecs-ws`. Confirm VP8 video plus 48-kHz stereo Opus, central Play/mute/volume/fullscreen, the receive-only limitation and denied view-only input. Test fullscreen enter and exit on desktop and the available target phone: native element fullscreen is preferred, while a phone that cannot natively fullscreen the WebCodecs canvas must enter the viewport-filling app mode and expose its compress/exit button; browser chrome may remain on iPhone. Exercise private-mode pause/resume, explicit **Use WebRTC**, unsupported-browser/codec behavior, logout, kick, authorization revocation and session replacement exactly as specified in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). Output must stop within two seconds where required and terminal policy/auth failures must not retry.
 
+After any client recovery correction, keep one iPhone WebCodecs client visible in the foreground for at least ten continuous minutes with no role/window switching. Short local audio rebuffering may be audible, but it must not clear the canvas, emit a server `client_audio_underflow`, reach `resync_limit` or start a media-only retry. Record before/after metrics and the operator's visible-picture/audio observation; a desktop-only interval cannot close this regression.
+
 Record results in the private copy of [`WEBCODECS_MEDIA_WEBSOCKET_RESULTS_TEMPLATE.md`](WEBCODECS_MEDIA_WEBSOCKET_RESULTS_TEMPLATE.md), then take a labeled snapshot and filtered logs.
 
 ## 6. Startup, latency and synchronization
