@@ -162,6 +162,29 @@ test('AudioWorklet reports only a sustained 100 ms underflow', async () => {
     })
     recovered.process([], outputs())
     assert.equal(messages.filter((message) => message.type === 'underflow').length, 1)
+
+    const rebuffered = new Processor()
+    rebuffered.port.onmessage({
+      data: {
+        type: 'chunk',
+        id: 2,
+        generation: 3,
+        durationMS: 20,
+        startTime: 2,
+        numberOfFrames: 960,
+        planes: [new Float32Array(960).buffer, new Float32Array(960).buffer],
+      },
+    })
+    rebuffered.port.onmessage({ data: { type: 'rebuffer' } })
+    assert.deepEqual(messages.at(-1), {
+      type: 'discarded',
+      id: 2,
+      generation: 3,
+      durationMS: 20,
+    })
+    assert.equal(rebuffered.queue.length, 0)
+    assert.equal(rebuffered.bufferedFrames, 0)
+    assert.equal(rebuffered.active, false)
   } finally {
     if (originalProcessor === undefined) delete globalThis.AudioWorkletProcessor
     else globalThis.AudioWorkletProcessor = originalProcessor
@@ -172,4 +195,18 @@ test('AudioWorklet reports only a sustained 100 ms underflow', async () => {
     if (originalCurrentTime === undefined) delete globalThis.currentTime
     else globalThis.currentTime = originalCurrentTime
   }
+})
+
+test('AudioWorklet underflow locally rebuffers instead of requesting a common server resync', async () => {
+  const controller = await readFile(new URL('../src/neko/media/controller.ts', import.meta.url), 'utf8')
+  const worker = await readFile(new URL('../src/neko/media/worker.ts', import.meta.url), 'utf8')
+
+  assert.match(controller, /const AUDIO_REBUFFER_LEAD_MS = 160/)
+  assert.match(controller, /else if \(data\?\.type === 'underflow'\) \{\s*this\.rebufferAudio\(node\)/)
+  assert.match(controller, /rendered: data\.type === 'consumed'/)
+  assert.match(controller, /node\.port\.postMessage\(\{ type: 'rebuffer' \}\)/)
+  assert.match(controller, /this\.audioLeadMS = Math\.max\(this\.audioLeadMS, AUDIO_REBUFFER_LEAD_MS\)/)
+  assert.match(controller, /if \(!localRebuffer\) \{\s*this\.callbacks\.onClockReset\(\)/)
+  assert.doesNotMatch(controller, /type: data\.type === 'underflow' \? 'audio-underflow'/)
+  assert.doesNotMatch(worker, /case 'audio-underflow'/)
 })

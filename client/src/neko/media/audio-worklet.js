@@ -9,7 +9,17 @@ class NekoMediaAudioProcessor extends AudioWorkletProcessor {
     this.underflowReported = false
     this.underflowStartedAt = null
     this.port.onmessage = ({ data }) => {
-      if (data?.type === 'reset') {
+      if (data?.type === 'reset' || data?.type === 'rebuffer') {
+        if (data.type === 'rebuffer') {
+          for (const chunk of this.queue) {
+            this.port.postMessage({
+              type: 'discarded',
+              id: chunk.id,
+              generation: chunk.generation,
+              durationMS: chunk.durationMS,
+            })
+          }
+        }
         this.queue = []
         this.bufferedFrames = 0
         this.active = false

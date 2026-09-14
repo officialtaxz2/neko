@@ -29,6 +29,8 @@ export interface WebCodecsControllerCallbacks {
 }
 
 const NEGOTIATION_TIMEOUT_MS = 5000
+const INITIAL_MEDIA_LEAD_MS = 80
+const AUDIO_REBUFFER_LEAD_MS = 160
 
 export class WebCodecsMediaController {
   private worker?: Worker
@@ -41,6 +43,8 @@ export class WebCodecsMediaController {
   private audioAnchorTime?: number
   private videoAnchorPTS?: number
   private videoAnchorTime?: number
+  private audioLeadMS = INITIAL_MEDIA_LEAD_MS
+  private audioRebuffering = false
   private audioChunkID = 0
   private choice?: { audio: MediaCreateChoice | null; video: MediaCreateChoice }
   private negotiationTimer?: number
@@ -63,6 +67,8 @@ export class WebCodecsMediaController {
     this.choice = undefined
     this.audioAllowed = false
     this.audioEnabled = false
+    this.audioLeadMS = INITIAL_MEDIA_LEAD_MS
+    this.audioRebuffering = false
     this.callbacks.setPlayable(false)
     this.callbacks.setAudioEnabled(false)
     this.callbacks.setStatus('negotiating', 'Checking browser and server capabilities')
@@ -297,16 +303,18 @@ export class WebCodecsMediaController {
       node.connect(gain).connect(context.destination)
       node.port.onmessage = ({ data }) => {
         if (this.audioNode !== node || this.stopped) return
-        if (data?.type === 'consumed') {
+        if (data?.type === 'consumed' || data?.type === 'discarded') {
           this.worker?.postMessage({
             type: 'audio-release',
             generation: data.generation,
             durationMS: data.durationMS,
-            rendered: true,
+            rendered: data.type === 'consumed',
           })
-        } else if (data?.type === 'underflow' || data?.type === 'overflow') {
+        } else if (data?.type === 'underflow') {
+          this.rebufferAudio(node)
+        } else if (data?.type === 'overflow') {
           this.worker?.postMessage({
-            type: data.type === 'underflow' ? 'audio-underflow' : 'resync',
+            type: 'resync',
             reason: 'audio_worklet_overflow',
           })
         }
@@ -320,6 +328,27 @@ export class WebCodecsMediaController {
       if (context) await context.close().catch(() => {})
       return false
     }
+  }
+
+  private rebufferAudio(node: AudioWorkletNode) {
+    if (
+      this.audioNode !== node ||
+      !this.audioEnabled ||
+      this.audioContext?.state !== 'running'
+    ) {
+      return
+    }
+    // A short iOS main-thread/AudioWorklet scheduling gap must not consume the
+    // server's bounded common-resync budget or blank the canvas. Re-anchor the
+    // next PCM chunk locally with extra lead; the server remains authoritative
+    // for sustained rendered lag, A/V skew, decoder failure and overflow.
+    this.audioLeadMS = Math.max(this.audioLeadMS, AUDIO_REBUFFER_LEAD_MS)
+    this.audioAnchorPTS = undefined
+    this.audioAnchorTime = undefined
+    this.videoAnchorPTS = undefined
+    this.videoAnchorTime = undefined
+    this.audioRebuffering = true
+    node.port.postMessage({ type: 'rebuffer' })
   }
 
   private onAudioData(message: any) {
@@ -337,12 +366,16 @@ export class WebCodecsMediaController {
     }
 
     if (this.audioAnchorPTS === undefined || this.audioAnchorTime === undefined) {
+      const localRebuffer = this.audioRebuffering
+      this.audioRebuffering = false
       this.audioAnchorPTS = message.timestamp
-      this.audioAnchorTime = context.currentTime + 0.08
+      this.audioAnchorTime = context.currentTime + this.audioLeadMS / 1000
       this.videoAnchorPTS = undefined
       this.videoAnchorTime = undefined
-      this.callbacks.onClockReset()
-      node.port.postMessage({ type: 'reset' })
+      if (!localRebuffer) {
+        this.callbacks.onClockReset()
+        node.port.postMessage({ type: 'reset' })
+      }
     }
     const startTime = this.audioAnchorTime + (message.timestamp - this.audioAnchorPTS) / 1_000_000
     const id = ++this.audioChunkID
@@ -387,6 +420,7 @@ export class WebCodecsMediaController {
   }
 
   private resetClock() {
+    this.audioRebuffering = false
     this.audioAnchorPTS = undefined
     this.audioAnchorTime = undefined
     this.audioNode?.port.postMessage({ type: 'reset' })
@@ -404,6 +438,7 @@ export class WebCodecsMediaController {
   }
 
   private releaseAudioGraph() {
+    this.audioRebuffering = false
     if (this.audioNode) this.audioNode.disconnect()
     if (this.gainNode) this.gainNode.disconnect()
     this.audioNode = undefined

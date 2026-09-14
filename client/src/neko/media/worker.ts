@@ -629,9 +629,6 @@ scope.onmessage = (event: MessageEvent) => {
         drain(audio)
       }
       break
-    case 'audio-underflow':
-      requestResync('audio_underflow')
-      break
     case 'resync':
       requestResync(message.reason || 'timestamp')
       break
