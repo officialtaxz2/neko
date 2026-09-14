@@ -64,3 +64,73 @@ test('Vue WebCodecs callbacks keep live component state', async () => {
     assert.doesNotMatch(source, new RegExp(`private ${method}\\s*=\\s*\\(`))
   }
 })
+
+test('AudioWorklet reports only a sustained 100 ms underflow', async () => {
+  const originalProcessor = globalThis.AudioWorkletProcessor
+  const originalRegister = globalThis.registerProcessor
+  const originalSampleRate = globalThis.sampleRate
+  const originalCurrentTime = globalThis.currentTime
+  let Processor
+  const messages = []
+
+  globalThis.AudioWorkletProcessor = class {
+    constructor() {
+      this.port = {
+        onmessage: null,
+        postMessage: (message) => messages.push(message),
+      }
+    }
+  }
+  globalThis.registerProcessor = (name, constructor) => {
+    assert.equal(name, 'neko-media-audio')
+    Processor = constructor
+  }
+  globalThis.sampleRate = 48_000
+  globalThis.currentTime = 0
+
+  try {
+    const workletURL = new URL('../src/neko/media/audio-worklet.js', import.meta.url)
+    workletURL.searchParams.set('test', String(Date.now()))
+    await import(workletURL)
+    assert.equal(typeof Processor, 'function')
+
+    const outputs = () => [[new Float32Array(128), new Float32Array(128)]]
+    const sustained = new Processor()
+    sustained.active = true
+    sustained.process([], outputs())
+    globalThis.currentTime = 0.05
+    sustained.process([], outputs())
+    assert.equal(messages.some((message) => message.type === 'underflow'), false)
+    globalThis.currentTime = 0.101
+    sustained.process([], outputs())
+    assert.equal(messages.filter((message) => message.type === 'underflow').length, 1)
+
+    const recovered = new Processor()
+    globalThis.currentTime = 1
+    recovered.active = true
+    recovered.process([], outputs())
+    globalThis.currentTime = 1.05
+    recovered.port.onmessage({
+      data: {
+        type: 'chunk',
+        id: 1,
+        generation: 1,
+        durationMS: 128 / 48,
+        startTime: 1.05,
+        numberOfFrames: 128,
+        planes: [new Float32Array(128).buffer, new Float32Array(128).buffer],
+      },
+    })
+    recovered.process([], outputs())
+    assert.equal(messages.filter((message) => message.type === 'underflow').length, 1)
+  } finally {
+    if (originalProcessor === undefined) delete globalThis.AudioWorkletProcessor
+    else globalThis.AudioWorkletProcessor = originalProcessor
+    if (originalRegister === undefined) delete globalThis.registerProcessor
+    else globalThis.registerProcessor = originalRegister
+    if (originalSampleRate === undefined) delete globalThis.sampleRate
+    else globalThis.sampleRate = originalSampleRate
+    if (originalCurrentTime === undefined) delete globalThis.currentTime
+    else globalThis.currentTime = originalCurrentTime
+  }
+})

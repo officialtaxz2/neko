@@ -1,3 +1,5 @@
+const AUDIO_UNDERFLOW_GRACE_SECONDS = 0.1
+
 class NekoMediaAudioProcessor extends AudioWorkletProcessor {
   constructor() {
     super()
@@ -5,12 +7,14 @@ class NekoMediaAudioProcessor extends AudioWorkletProcessor {
     this.bufferedFrames = 0
     this.active = false
     this.underflowReported = false
+    this.underflowStartedAt = null
     this.port.onmessage = ({ data }) => {
       if (data?.type === 'reset') {
         this.queue = []
         this.bufferedFrames = 0
         this.active = false
         this.underflowReported = false
+        this.underflowStartedAt = null
         return
       }
       if (data?.type !== 'chunk' || !Array.isArray(data.planes) || data.planes.length !== 2) return
@@ -42,6 +46,7 @@ class NekoMediaAudioProcessor extends AudioWorkletProcessor {
       this.bufferedFrames += frames
       this.active = true
       this.underflowReported = false
+      this.underflowStartedAt = null
     }
   }
 
@@ -81,9 +86,16 @@ class NekoMediaAudioProcessor extends AudioWorkletProcessor {
     }
 
     if (this.active && this.queue.length === 0 && outputOffset < output[0].length && !this.underflowReported) {
-      this.underflowReported = true
-      this.active = false
-      this.port.postMessage({ type: 'underflow' })
+      if (this.underflowStartedAt === null) {
+        this.underflowStartedAt = currentTime
+      } else if (currentTime - this.underflowStartedAt >= AUDIO_UNDERFLOW_GRACE_SECONDS) {
+        this.underflowReported = true
+        this.active = false
+        this.underflowStartedAt = null
+        this.port.postMessage({ type: 'underflow' })
+      }
+    } else {
+      this.underflowStartedAt = null
     }
     return true
   }
