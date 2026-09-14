@@ -3,6 +3,7 @@ import { OPCODE } from './data'
 import { EVENT, WebSocketEvents } from './events'
 import { shouldCreateClientOffer } from './negotiation'
 import { isViewOnlyToken } from './share'
+import type { ScheduledVideoFrame } from './media/controller'
 
 import {
   WebSocketMessages,
@@ -11,6 +12,7 @@ import {
   SignalCandidatePayload,
   SignalOfferPayload,
   SignalAnswerMessage,
+  SystemInitPayload,
 } from './messages'
 
 export interface BaseEvents {
@@ -19,6 +21,8 @@ export interface BaseEvents {
   debug: (...message: any[]) => void
   error: (error: Error) => void
   'cursor-position': (position: { x: number; y: number }) => void
+  'media-video-frame': (frame: ScheduledVideoFrame) => void
+  'media-clock-reset': () => void
 }
 
 export abstract class BaseClient extends EventEmitter<BaseEvents> {
@@ -36,13 +40,29 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   protected _micActive = false
   protected _disconnecting = false
   protected _iceRecoveryTimeout?: number
+  protected _mediaBackend?: 'webcodecs-ws'
+  protected _eventConnected = false
 
   get id() {
     return this._id
   }
 
   get supported() {
+    if (this._mediaBackend === 'webcodecs-ws') {
+      // Keep the authenticated event plane available so the isolated media
+      // controller can report missing Worker/WebCodecs support and expose the
+      // explicit WebRTC action instead of failing before the prototype UI.
+      return typeof WebSocket !== 'undefined'
+    }
     return typeof RTCPeerConnection !== 'undefined' && typeof RTCPeerConnection.prototype.addTransceiver !== 'undefined'
+  }
+
+  get mediaBackend() {
+    return this._mediaBackend
+  }
+
+  public selectMediaBackend(backend?: 'webcodecs-ws') {
+    this._mediaBackend = backend
   }
 
   get socketOpen() {
@@ -54,6 +74,9 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   get connected() {
+    if (this._mediaBackend === 'webcodecs-ws') {
+      return this._eventConnected && this.socketOpen
+    }
     return this.peerConnected && this.socketOpen
   }
 
@@ -84,11 +107,19 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     }
 
     if (!this.supported) {
-      this.onDisconnected(new Error('browser does not support webrtc (RTCPeerConnection missing)'))
+      const requirement = this._mediaBackend === 'webcodecs-ws' ? 'WebSocket' : 'WebRTC'
+      this.onDisconnected(new Error(`browser does not support the selected media path (${requirement} missing)`))
       return
     }
 
+    if (this._mediaBackend) {
+      const selectedURL = new URL(url)
+      selectedURL.searchParams.set('media', this._mediaBackend)
+      url = selectedURL.toString()
+    }
+
     this._displayname = displayname
+    this._eventConnected = false
     this[EVENT.CONNECTING]()
 
     try {
@@ -192,6 +223,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       this.disableMicrophone()
 
       this._state = 'disconnected'
+      this._eventConnected = false
       this._displayname = undefined
       this._id = ''
       this._candidates = []
@@ -350,7 +382,11 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       this.emit('warn', `attempting to send message while disconnected`)
       return
     }
-    this.emit('debug', `sending event '${event}' ${payload ? `with payload: ` : ''}`, payload)
+    if (event.startsWith('media/')) {
+      this.emit('debug', `sending event '${event}' (payload redacted)`)
+    } else {
+      this.emit('debug', `sending event '${event}' ${payload ? `with payload: ` : ''}`, payload)
+    }
     this._ws!.send(JSON.stringify({ event, ...payload }))
   }
 
@@ -620,7 +656,16 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     if (this._ws !== socket) return
     const { event, ...payload } = JSON.parse(e.data) as WebSocketMessages
 
-    this.emit('debug', `received websocket event ${event} ${payload ? `with payload: ` : ''}`, payload)
+    if (event.startsWith('media/')) {
+      this.emit('debug', `received websocket event ${event} (payload redacted)`)
+    } else {
+      this.emit('debug', `received websocket event ${event} ${payload ? `with payload: ` : ''}`, payload)
+    }
+
+    if (this._mediaBackend === 'webcodecs-ws' && event.startsWith('signal/')) {
+      this.emit('warn', 'ignoring WebRTC signal for explicitly selected WebCodecs media')
+      return
+    }
 
     if (event === EVENT.SIGNAL.PROVIDE) {
       const { sdp, lite, ice, id } = payload as SignalProvidePayload
@@ -667,6 +712,16 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       this[event](payload)
     } else {
       this[EVENT.MESSAGE](event, payload)
+    }
+
+    if (event === EVENT.SYSTEM.INIT && this._mediaBackend === 'webcodecs-ws' && !this._eventConnected) {
+      const { session_id } = payload as SystemInitPayload
+      if (!session_id) {
+        throw new Error('WebCodecs event session did not provide a session id')
+      }
+      this._id = session_id
+      this._eventConnected = true
+      this.onConnected()
     }
   }
 
@@ -727,6 +782,10 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   protected [EVENT.MESSAGE](event: string, payload: any) {
+    if (event.startsWith('media/')) {
+      this.emit('warn', `unhandled websocket event '${event}' (payload redacted)`)
+      return
+    }
     this.emit('warn', `unhandled websocket event '${event}':`, payload)
   }
 

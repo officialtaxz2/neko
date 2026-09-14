@@ -138,22 +138,26 @@ func (h *LegacyHandler) Route(r types.Router) {
 		defer connBackend.Close()
 		s.connBackend = connBackend
 
-		// request signal
-		videoAuto := true
-		if err = s.toBackend(event.SIGNAL_REQUEST, message.SignalRequest{
-			Video: types.PeerVideoRequest{
-				Auto: &videoAuto,
-			},
-		}); err != nil {
-			h.logger.Error().Err(err).Msg("couldn't request signal")
-			s.toClient(&oldMessage.SystemMessage{
-				Event:   oldEvent.SYSTEM_DISCONNECT,
-				Title:   "couldn't request signal",
-				Message: err.Error(),
-			})
+		// The explicit Phase 3 receive prototype keeps this authenticated event
+		// socket but must not start the normal WebRTC signaling path. With no
+		// exact opt-in the existing WebRTC signaling behavior remains unchanged.
+		if !webCodecsMediaSelected(r) {
+			videoAuto := true
+			if err = s.toBackend(event.SIGNAL_REQUEST, message.SignalRequest{
+				Video: types.PeerVideoRequest{
+					Auto: &videoAuto,
+				},
+			}); err != nil {
+				h.logger.Error().Err(err).Msg("couldn't request signal")
+				s.toClient(&oldMessage.SystemMessage{
+					Event:   oldEvent.SYSTEM_DISCONNECT,
+					Title:   "couldn't request signal",
+					Message: err.Error(),
+				})
 
-			// we can't return HTTP error here because the connection is already upgraded
-			return nil
+				// we can't return HTTP error here because the connection is already upgraded
+				return nil
+			}
 		}
 
 		// copy messages between the client and the backend

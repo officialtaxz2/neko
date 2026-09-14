@@ -1,6 +1,6 @@
 # Project Definition
 
-Last consolidated: 2026-09-13.
+Last consolidated: 2026-09-14.
 
 State labels:
 
@@ -140,7 +140,7 @@ Focused repository tests cover ordered selection, demand lifecycle, keyframe adm
 
 Static comparison found no subscription-refactor change to the accepted adaptive configuration, encoder construction or encoded payload bytes. A possible softer image during fast movement therefore remains an unproven quality observation consistent with the existing fixed-rate roughly 2-Mbit/s VP8 `high` tier and its full quantizer range. A controlled bitrate/quantizer A/B is still required before changing the profile or claiming a regression.
 
-The exact first `webcodecs-ws` receive-prototype contract is fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). Its Phase 1 protocol/ticket/negotiation primitives and Phase 2 credential-free server delivery endpoint are implemented behind one default-off server flag. The endpoint owns strict pre-upgrade policy, bounded provider/egress/lifecycle queues, exact VP8/Opus serialization, READY/progress/resync state, private-mode and central delivery cleanup, and credential-safe metrics. That still does not make the transport usable: the isolated client worker, WebCodecs/AudioWorklet/render path and deployment opt-ins remain unimplemented. HLS/LL-HLS, automatic backend selection and WebTransport remain later candidates.
+The exact first `webcodecs-ws` receive-prototype contract is fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). Its Phase 1 protocol/ticket/negotiation primitives, Phase 2 credential-free server delivery endpoint and Phase 3 isolated browser receive path are implemented. The endpoint owns strict pre-upgrade policy, bounded provider/egress/lifecycle queues, exact VP8/Opus serialization, READY/progress/resync state, private-mode and central delivery cleanup, and credential-safe metrics. Only the exact client query selects a dedicated worker with strict parsing, WebCodecs decoders, bounded AudioWorklet/canvas presentation and explicit recovery/fallback actions; without that query, or while the server flag is false, WebRTC remains unchanged. A sanitized deployment overlay and target-server/browser acceptance remain unimplemented/unverified. HLS/LL-HLS, automatic backend selection and WebTransport remain later candidates.
 
 The project distinguishes **interactive** and **passive/view-only** media fallback needs. There is not one mandatory fallback chain for every client.
 
@@ -189,7 +189,7 @@ other constrained client     -> capability-tested alternative
 
 Automatic selection is a TARGET direction, not currently IMPLEMENTED. Manual/explicit selection may be used first for diagnosis and rollout.
 
-None of these candidates is a usable alternative media path yet. Repository code now implements the default-off WebCodecs/media-WebSocket Phase 1 primitives and Phase 2 server endpoint/backend, but not the decoder/render client, deployment enablement or a validated transport. The server feature remains absent unless explicitly enabled, and without the later client opt-in an ordinary client sends no prototype requests; default WebRTC behavior remains unchanged.
+The repository now implements the WebCodecs/media-WebSocket receive path through Phase 3, but it is not yet a deployed or validated alternative. The server feature remains absent unless explicitly enabled, the client requires exactly `?media=webcodecs-ws`, and an ordinary client sends no prototype requests or starts no prototype worker. Phase 4 must still add separate sanitized deployment/observability assets and produce target-server/browser evidence; default WebRTC behavior remains unchanged.
 
 ## Development / verification environment constraint
 

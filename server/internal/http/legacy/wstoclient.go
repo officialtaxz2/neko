@@ -285,8 +285,14 @@ func (s *session) wsToClient(msg []byte) error {
 			return err
 		}
 
+		sessionID := ""
+		if webCodecsMediaSelected(s.r) {
+			sessionID = request.SessionId
+		}
+
 		return s.toClient(&oldMessage.SystemInit{
 			Event:           oldEvent.SYSTEM_INIT,
+			SessionID:       sessionID,
 			ImplicitHosting: request.Settings.ImplicitHosting,
 			Locks:           locks,
 			// TODO: hack - we don't know if file transfer is enabled, we would need to check the global config.

@@ -6,7 +6,8 @@
       :style="{ '--horizontal': horizontal, '--vertical': vertical }"
     >
       <div ref="container" class="player-container">
-        <video ref="video" playsinline webkit-playsinline />
+        <video v-show="!webCodecsSelected" ref="video" playsinline webkit-playsinline />
+        <canvas v-show="webCodecsSelected" ref="webCodecsCanvas" class="webcodecs-canvas" />
         <div class="emotes">
           <template v-for="(emote, index) in emotes">
             <neko-emote :id="index" :key="index" />
@@ -40,6 +41,15 @@
         <div v-else-if="mutedOverlay && muted" class="player-overlay" @click.stop.prevent="unmute">
           <i class="fas fa-volume-up" />
         </div>
+        <div v-if="webCodecsSelected" class="webcodecs-status" role="status">
+          <strong>WebCodecs receive prototype</strong>
+          <span>{{ webCodecsStatusText }}</span>
+          <small>Receive-only: no input transport or Picture-in-Picture. WebRTC fallback is never automatic.</small>
+          <div v-if="webCodecsTerminal" class="webcodecs-actions">
+            <button type="button" @click.stop.prevent="retryWebCodecs">Retry WebCodecs</button>
+            <button type="button" @click.stop.prevent="useWebRTC">Use WebRTC</button>
+          </div>
+        </div>
         <div
           v-if="trackpadActive && hosting && !locked && !trackpadCursorHidden"
           :class="['trackpad-cursor', { active: trackpadTouching }]"
@@ -49,8 +59,11 @@
       </div>
       <ul v-if="!fullscreen && !hideControls" class="video-menu top">
         <li><i @click.stop.prevent="requestFullscreen" class="fas fa-expand"></i></li>
-        <li v-if="admin"><i @click.stop.prevent="openResolution" class="fas fa-desktop"></i></li>
-        <li v-if="!controlLocked && !implicitHosting" :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]">
+        <li v-if="admin && !webCodecsSelected"><i @click.stop.prevent="openResolution" class="fas fa-desktop"></i></li>
+        <li
+          v-if="!webCodecsSelected && !controlLocked && !implicitHosting"
+          :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]"
+        >
           <i
             :class="[
               hosted && !hosting ? 'disabled' : '',
@@ -96,7 +109,7 @@
           <i class="fas fa-keyboard" />
         </li>
       </ul>
-      <neko-resolution ref="resolution" v-if="admin" />
+      <neko-resolution ref="resolution" v-if="admin && !webCodecsSelected" />
       <neko-clipboard ref="clipboard" v-if="hosting" />
       <neko-keyboard-helper ref="keyboardHelper" :keyboard="keyboard" />
     </div>
@@ -284,7 +297,8 @@
         transition: border-color var(--transition-fluid), box-shadow var(--transition-fluid);
         isolation: isolate;
 
-        video {
+        video,
+        .webcodecs-canvas {
           position: absolute;
           top: 0;
           bottom: 0;
@@ -296,6 +310,48 @@
 
           &::-webkit-media-controls {
             display: none !important;
+          }
+        }
+
+        .webcodecs-status {
+          position: absolute;
+          left: 14px;
+          bottom: 14px;
+          z-index: 22;
+          max-width: min(440px, calc(100% - 28px));
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding: 10px 12px;
+          color: #fff;
+          background: rgba(5, 5, 8, 0.82);
+          border: 1px solid rgba(124, 58, 237, 0.45);
+          border-radius: 10px;
+          pointer-events: auto;
+
+          span,
+          small {
+            line-height: 1.35;
+          }
+
+          small {
+            color: rgba(255, 255, 255, 0.72);
+          }
+
+          .webcodecs-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+
+            button {
+              padding: 6px 10px;
+              color: #fff;
+              background: rgba(99, 102, 241, 0.35);
+              border: 1px solid rgba(255, 255, 255, 0.24);
+              border-radius: 7px;
+              cursor: pointer;
+            }
           }
         }
 
@@ -422,6 +478,7 @@
   import Resolution from './resolution.vue'
   import Clipboard from './clipboard.vue'
   import KeyboardHelper from './keyboard_helper.vue'
+  import { ScheduledVideoFrame } from '~/neko/media/controller'
 
   // @ts-ignore
   import GuacamoleKeyboard from '~/utils/guacamole-keyboard.ts'
@@ -444,6 +501,7 @@
     @Ref('aspect') readonly _aspect!: HTMLElement
     @Ref('player') readonly _player!: HTMLElement
     @Ref('video') readonly _video!: HTMLVideoElement
+    @Ref('webCodecsCanvas') readonly _webCodecsCanvas!: HTMLCanvasElement
     @Ref('resolution') readonly _resolution!: Resolution
     @Ref('clipboard') readonly _clipboard!: Clipboard
     @Ref('keyboardHelper') readonly _keyboardHelper!: any
@@ -484,8 +542,16 @@
 
     private videoWidth = 0
     private videoHeight = 0
+    private webCodecsFrames: ScheduledVideoFrame[] = []
+    private webCodecsGeneration = 0
+    private webCodecsAnimation?: number
 
     private updateVideoDimensions() {
+      if (this.webCodecsSelected && this._webCodecsCanvas && this.webCodecsGeneration > 0) {
+        this.videoWidth = this._webCodecsCanvas.width
+        this.videoHeight = this._webCodecsCanvas.height
+        return
+      }
       if (this._video) {
         this.videoWidth = this._video.videoWidth
         this.videoHeight = this._video.videoHeight
@@ -647,23 +713,37 @@
     }
 
     get controlling() {
-      return !this.viewOnly && this.$accessor.remote.controlling
+      return !this.viewOnly && !this.webCodecsSelected && this.$accessor.remote.controlling
     }
 
     get hosting() {
-      return !this.viewOnly && this.$accessor.remote.hosting
+      return !this.viewOnly && !this.webCodecsSelected && this.$accessor.remote.hosting
     }
 
     get implicitHosting() {
-      return !this.viewOnly && this.$accessor.remote.implicitHosting
+      return !this.viewOnly && !this.webCodecsSelected && this.$accessor.remote.implicitHosting
     }
 
     get hosted() {
-      return !this.viewOnly && this.$accessor.remote.hosted
+      return !this.viewOnly && !this.webCodecsSelected && this.$accessor.remote.hosted
     }
 
     get viewOnly() {
       return this.$accessor.user.viewOnly
+    }
+
+    get webCodecsSelected() {
+      return this.$accessor.media.selected
+    }
+
+    get webCodecsTerminal() {
+      return this.$accessor.media.status === 'terminal'
+    }
+
+    get webCodecsStatusText() {
+      const media = this.$accessor.media
+      const attempt = media.retryAttempt > 0 ? ` (attempt ${media.retryAttempt}/4)` : ''
+      return `${media.status}${attempt}${media.detail ? ` — ${media.detail}` : ''}`
     }
 
     get volume() {
@@ -716,6 +796,7 @@
     }
 
     get pip_available() {
+      if (this.webCodecsSelected) return false
       //@ts-ignore
       return typeof document.createElement('video').requestPictureInPicture === 'function'
     }
@@ -787,7 +868,8 @@
     }
 
     getVideoRect() {
-      const rect = (this._video || this._overlay).getBoundingClientRect()
+      const surface = this.webCodecsSelected ? this._webCodecsCanvas : this._video
+      const rect = (surface || this._overlay).getBoundingClientRect()
       const { w, h } = this.$accessor.video.resolution
 
       if (rect.width <= 0 || rect.height <= 0 || w <= 0 || h <= 0) {
@@ -872,6 +954,11 @@
     onVolumeChanged(volume: number) {
       volume /= 100
 
+      if (this.webCodecsSelected) {
+        this.$client.setWebCodecsVolume(volume)
+        return
+      }
+
       if (this._video && this._video.volume != volume) {
         this._video.volume = volume
       }
@@ -879,6 +966,12 @@
 
     @Watch('muted')
     onMutedChanged(muted: boolean) {
+      if (this.webCodecsSelected) {
+        this.$client.setWebCodecsMuted(muted)
+        if (!muted) this.mutedOverlay = false
+        return
+      }
+
       if (this._video && this._video.muted != muted) {
         this._video.muted = muted
 
@@ -894,7 +987,7 @@
       // Otherwise an old removetrack callback can race a replacement peer.
       this.detachStreamListeners()
 
-      if (!this._video) {
+      if (this.webCodecsSelected || !this._video) {
         return
       }
 
@@ -905,6 +998,7 @@
         if ('srcObject' in this._video) {
           this._video.srcObject = null
         }
+
         return
       }
 
@@ -1027,6 +1121,21 @@
 
     @Watch('playing')
     async onPlayingChanged(playing: boolean) {
+      if (this.webCodecsSelected) {
+        if (playing) {
+          const audioRunning = await this.$client.playWebCodecs()
+          if (!audioRunning && this.$accessor.media.audioEnabled) {
+            this.$accessor.video.setMuted(true)
+            this.mutedOverlay = true
+          }
+          this.startWebCodecsRenderer()
+        } else {
+          this.stopWebCodecsRenderer()
+          this.clearWebCodecsFrames()
+        }
+        return
+      }
+
       // Keep a stable reference across awaits. Reactive layout changes (for
       // example switching into the view-only shell after member/init events)
       // can temporarily clear the decorated ref while play() is rejecting.
@@ -1072,6 +1181,103 @@
       if (!video.paused && !playing) {
         video.pause()
       }
+    }
+
+    private onWebCodecsFrame = (frame: ScheduledVideoFrame) => {
+      if (!this.webCodecsSelected || !this.playing) {
+        this.$client.releaseWebCodecsFrame(frame, false, 0)
+        return
+      }
+      if (this.webCodecsGeneration !== frame.generation) {
+        this.clearWebCodecsFrames()
+        this.webCodecsGeneration = frame.generation
+      }
+      while (this.webCodecsFrames.length >= 2) {
+        const dropped = this.webCodecsFrames.shift()!
+        this.$client.releaseWebCodecsFrame(dropped, false, 0)
+      }
+      this.webCodecsFrames.push(frame)
+      this.webCodecsFrames.sort((left, right) => left.targetTime - right.targetTime)
+      this.startWebCodecsRenderer()
+    }
+
+    private onWebCodecsClockReset = () => {
+      this.webCodecsGeneration = 0
+      this.videoWidth = 0
+      this.videoHeight = 0
+      this.clearWebCodecsFrames()
+      if (this._webCodecsCanvas) {
+        this._webCodecsCanvas.getContext('2d')?.clearRect(0, 0, this._webCodecsCanvas.width, this._webCodecsCanvas.height)
+      }
+    }
+
+    private clearWebCodecsFrames() {
+      for (const frame of this.webCodecsFrames.splice(0)) {
+        this.$client.releaseWebCodecsFrame(frame, false, 0)
+      }
+    }
+
+    private startWebCodecsRenderer() {
+      if (this.webCodecsAnimation !== undefined || !this.playing) return
+      this.webCodecsAnimation = window.requestAnimationFrame(this.renderWebCodecsFrame)
+    }
+
+    private stopWebCodecsRenderer() {
+      if (this.webCodecsAnimation !== undefined) window.cancelAnimationFrame(this.webCodecsAnimation)
+      this.webCodecsAnimation = undefined
+    }
+
+    private renderWebCodecsFrame = () => {
+      this.webCodecsAnimation = undefined
+      if (!this.webCodecsSelected || !this.playing) return
+
+      const now = performance.now()
+      while (this.webCodecsFrames.length > 0 && this.webCodecsFrames[0].targetTime < now - 80) {
+        const dropped = this.webCodecsFrames.shift()!
+        this.$client.releaseWebCodecsFrame(dropped, false, now - dropped.targetTime)
+      }
+
+      let chosenIndex = -1
+      let closest = Number.POSITIVE_INFINITY
+      for (let index = 0; index < this.webCodecsFrames.length; index++) {
+        const frame = this.webCodecsFrames[index]
+        const dueAt = Math.min(frame.targetTime, frame.receivedAt + 100)
+        if (dueAt > now) continue
+        const distance = Math.abs(frame.targetTime - now)
+        if (distance < closest) {
+          closest = distance
+          chosenIndex = index
+        }
+      }
+
+      if (chosenIndex >= 0) {
+        for (let index = 0; index < chosenIndex; index++) {
+          const dropped = this.webCodecsFrames.shift()!
+          this.$client.releaseWebCodecsFrame(dropped, false, now - dropped.targetTime)
+        }
+        const scheduled = this.webCodecsFrames.shift()!
+        const canvas = this._webCodecsCanvas
+        const context = canvas?.getContext('2d', { alpha: false })
+        try {
+          if (!canvas || !context) throw new Error('2D canvas is unavailable')
+          const width = scheduled.frame.displayWidth || scheduled.frame.codedWidth
+          const height = scheduled.frame.displayHeight || scheduled.frame.codedHeight
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width
+            canvas.height = height
+            this.videoWidth = width
+            this.videoHeight = height
+            this.onResize()
+          }
+          context.drawImage(scheduled.frame, 0, 0, canvas.width, canvas.height)
+          this.$client.releaseWebCodecsFrame(scheduled, true, now - scheduled.targetTime)
+        } catch (_) {
+          this.$client.releaseWebCodecsFrame(scheduled, false, 0)
+          this.$client.resyncWebCodecs('decoder_error')
+        }
+      }
+
+      this.startWebCodecsRenderer()
     }
 
     @Watch('clipboard')
@@ -1144,7 +1350,13 @@
       }
       this.keyboard.listenTo(this._overlay)
       this.$client.on('cursor-position', this.onCursorPosition)
+      this.$client.on('media-video-frame', this.onWebCodecsFrame)
+      this.$client.on('media-clock-reset', this.onWebCodecsClockReset)
       window.addEventListener('focus', this._onWindowFocus)
+
+      if (this.webCodecsSelected && this.autoplay) {
+        this.$accessor.video.play()
+      }
     }
 
     beforeDestroy() {
@@ -1189,6 +1401,10 @@
         this.longPressTimer = null
       }
       this.$client.off('cursor-position', this.onCursorPosition)
+      this.$client.off('media-video-frame', this.onWebCodecsFrame)
+      this.$client.off('media-clock-reset', this.onWebCodecsClockReset)
+      this.stopWebCodecsRenderer()
+      this.clearWebCodecsFrames()
       /* Guacamole Keyboard does not provide destroy functions */
     }
 
@@ -1238,6 +1454,10 @@
     }
 
     async play() {
+      if (this.webCodecsSelected) {
+        if (this.playable) await this.$client.playWebCodecs()
+        return
+      }
       if (!this._video.paused || !this.playable) {
         return
       }
@@ -1255,6 +1475,10 @@
     }
 
     pause() {
+      if (this.webCodecsSelected) {
+        this.$accessor.video.pause()
+        return
+      }
       if (this._video.paused || !this.playable) {
         return
       }
@@ -1281,6 +1505,19 @@
 
     unmute() {
       this.$accessor.video.setMuted(false)
+      if (this.webCodecsSelected) {
+        this.$client.playWebCodecs().then((running) => {
+          if (!running && this.$accessor.media.audioEnabled) this.$accessor.video.setMuted(true)
+        })
+      }
+    }
+
+    retryWebCodecs() {
+      this.$client.retryWebCodecs()
+    }
+
+    useWebRTC() {
+      this.$client.useWebRTC()
     }
 
     toggleControl() {
@@ -1331,13 +1568,15 @@
       }
 
       // Fallback: fullscreen the video itself (mobile devices)
-      if (elementRequestFullscreen(this._video)) {
+      const surface = this.webCodecsSelected ? this._webCodecsCanvas : this._video
+      if (elementRequestFullscreen(surface)) {
         this.onResize()
         return
       }
     }
 
     requestPictureInPicture() {
+      if (this.webCodecsSelected) return
       //@ts-ignore
       this._video.requestPictureInPicture()
       this.onResize()
@@ -1377,7 +1616,8 @@
 
     sendMousePos(e: MouseEvent) {
       const { w, h } = this.$accessor.video.resolution
-      const rect = (this._video || this._overlay).getBoundingClientRect()
+      const surface = this.webCodecsSelected ? this._webCodecsCanvas : this._video
+      const rect = (surface || this._overlay).getBoundingClientRect()
       const vRect = this.getVideoRect()
 
       if (vRect.width <= 0 || vRect.height <= 0) return

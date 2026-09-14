@@ -1,6 +1,6 @@
 # Work Plan / Handoff State
 
-Last consolidated: 2026-09-13.
+Last consolidated: 2026-09-14.
 
 ## Environment boundary
 
@@ -302,7 +302,7 @@ The reported impression of softer video during fast scrolling or high-motion pla
 
 ## COMPLETED — WebCodecs plus dedicated media-WebSocket contract
 
-Status: **design complete on `testing` on 2026-09-12 / no endpoint, backend registration, client decoder, deployment enablement or automatic fallback implemented**.
+Status: **design complete on `testing` on 2026-09-12 / Phases 1–3 subsequently implemented in the repository / deployment enablement, grouped acceptance and automatic fallback not implemented**.
 
 [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md) now fixes the first default-off `webcodecs-ws` receive prototype:
 
@@ -350,12 +350,12 @@ No runtime behavior can exercise an alternative media transport at this phase be
 
 ## COMPLETED — WebCodecs/media-WebSocket Phase 2 server delivery adapter
 
-Status: **implemented and statically reviewed on `testing` on 2026-09-13 / target-server tests and build intentionally deferred to later grouped prototype validation / no client decode-render path or deployment overlay implemented**.
+Status: **implemented and statically reviewed on `testing` on 2026-09-13 / target-server tests and build intentionally deferred to later grouped prototype validation / at this Phase 2 closure no client decode-render path or deployment overlay was implemented**.
 
 The Phase 2 block completes the server-side delivery and security boundary without changing the stable default:
 
 - `webcodecs-ws` is a receive-only `MediaBackend` over the generic encoded provider. It receives only the credential-free lease, normalized exact VP8/Opus source selectors, an initial private-mode state and the upgraded socket attachment; no login/share token enters the backend request.
-- `media.webcodecs_ws.enabled=false` remains the default. Only when true does startup share the Phase 1 ticket store across negotiation and attachment, register the backend and expose `GET /api/media/ws`. Ordinary clients still issue no prototype events, and no client/deployment opt-in exists yet.
+- `media.webcodecs_ws.enabled=false` remains the default. Only when true does startup share the Phase 1 ticket store across negotiation and attachment, register the backend and expose `GET /api/media/ws`. At the Phase 2 closure, ordinary clients still issued no prototype events and no client/deployment opt-in existed.
 - The pre-upgrade controller rejects query parameters, insecure production transport, non-exact Origin, missing/reordered/extra subprotocols and malformed/unknown/expired/replayed tickets before provider allocation. Ticket redemption is atomic, the current connected session and `CanWatch` are re-resolved, concurrent attach verification is capped at 64, invalid attempts at 20/minute per safely resolved address, and sockets at 128 or a lower configured maximum.
 - Forwarded address/HTTPS headers are trusted only when the captured original socket peer belongs to configured proxy IP/CIDR ranges. Cleartext direct loopback requires the separate `media.webcodecs_ws.allow_insecure_loopback=true` development option and refuses forwarded headers. The media route's logger emits only its fixed route label, never the full attempted URL; subprotocol/ticket and authorization headers are never logged.
 - Per-delivery provider queues are video 4/audio 16 with non-blocking drop-new behavior. A single writer owns the uncompressed socket and gives the four-record lifecycle queue priority over the shared 24-record/16-MiB media queue, with 2-second writes, 10-second ping, 20-second pong, one-second close and a 16-MiB/s five-second outbound cap.
@@ -376,7 +376,39 @@ go test ./internal/mediaws -run '^$' -fuzz '^FuzzParseRecord$' -fuzztime 30s
 ./build
 ```
 
-This repository completion is not target-server evidence and does not make the alternative path usable without Phase 3's explicit client.
+This Phase 2 repository completion is not target-server evidence and did not by itself make the alternative path usable; Phase 3 has since supplied the explicit client while retaining the same deferred-validation status.
+
+## COMPLETED — WebCodecs/media-WebSocket Phase 3 isolated client path
+
+Status: **implemented and statically reviewed on `testing` on 2026-09-14 / accumulated client and server tests, builds and target-browser/media acceptance intentionally deferred to Phase 4 grouped validation / no deployment overlay implemented**.
+
+The Phase 3 block completes the repository receive path without changing the ordinary WebRTC default:
+
+- Exactly one client `media=webcodecs-ws` query selects the prototype. The selected legacy event socket suppresses only its automatic WebRTC `signal/request` and receives its current authenticated session ID in `system/init`; the ordinary signal request and init JSON remain unchanged when selection is absent, wrong or duplicated.
+- `client/src/neko/media/protocol.ts` is the strict browser parser for the shared language-neutral golden fixture. It rejects invalid magic/version/type/kind/track/flags/reserved fields, unsafe 64-bit values, inexact lengths, duplicate/unknown metadata fields, schema/value bounds and inconsistent VP8 keyframe markers before decoder admission.
+- A dedicated module worker owns generic and exact codec probes, the ticket-bearing media socket, the exact selected subprotocol, FORMAT timeout, VP8/Opus decoders, stale generation/sequence/timestamp rejection and browser feedback. Its compressed/decode queues are capped at video 4/audio 16, decoded video at two outstanding frames and decoded PCM at 200 ms.
+- Recovery uses decoder reset plus a new generation and keyframe rather than `flush()`. Common server resync ordering is handled without returning a stale video generation; a video-only server generation clears stale canvas output while retaining the normalized audio master, whereas an audio/common discontinuity clears both presentation paths.
+- The controller creates a credential-free media URL, never logs the ticket, requests exact advertised sources and a new one-time ticket per attempt, and schedules the 80-ms audio-master or monotonic video-master clock. A bounded stereo AudioWorklet owns PCM and the canvas renderer closes every frame, drops frames over 80 ms late and holds an early frame for no more than 100 ms.
+- Central Play, mute/volume, resize, fullscreen and surface geometry are integrated without changing the ordinary video element. The opt-in UI labels receive-only/no-Picture-in-Picture/no-automatic-fallback limitations, hides input/control/microphone actions and exposes terminal **Retry WebCodecs** and **Use WebRTC** actions.
+- Only media close codes 4413 and 4500 schedule the four serialized 1/2/5/10-second same-backend attempts. Every attempt requests a new ticket; logout, event-session loss, policy/protocol/codec failure and explicit stop do not auto-retry or create WebRTC.
+- Focused tests are prepared for shared-fixture parsing in the exact browser parser source, malformed records, media retry bounds, exact server query selection and ordinary-versus-selected legacy init serialization; the client performs the same one-value exact comparison directly at initialization. The shared video-key fixture was corrected from inconsistent marker bytes to a minimal marker-valid VP8 key prefix so both server and browser validations describe the same record.
+
+Per `AGENTS.md`, project code, tests, linters and builds were **NOT EXECUTED IN CODEX**. Phase 4 must run the complete exact-commit client sequence plus the accumulated Phase 1–3 server suite/fuzz/build before any runtime claim:
+
+```bash
+cd client
+npm ci
+npm test
+npm run lint
+npm run build
+
+cd ../server
+go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
+go test ./internal/mediaws -run '^$' -fuzz '^FuzzParseRecord$' -fuzztime 30s
+./build
+```
+
+This repository path is not deployment or browser evidence. The server flag remains false by default, no opt-in Compose overlay exists, and no WebCodecs/media-WebSocket acceptance criterion is claimed as passed.
 
 ## Target-server verification
 
@@ -405,6 +437,8 @@ npm run build
 Required for the integrated baseline: confirm `npm ci`, TypeScript lint and the Vite production build at integration commit `4e99b8d3`. The operator later confirmed these checks passed, closing verification of the lock/type repair in `2d89027e`.
 
 For the accumulated iOS recovery and view-only blocks on `testing`, the complete containerized client sequence passed at exact commit `913a981e`. The manual View-only matrix and compact-link follow-up are recorded above. The operator deliberately closed the checkpoint without executing the optional remaining iPhone deep-test phases in [`IOS_RECOVERY.md`](IOS_RECOVERY.md).
+
+For WebCodecs/media-WebSocket Phases 1–3, the same complete client sequence and the accumulated server sequence below remain pending for the Phase 4 exact-commit grouped checkpoint. No Phase 3 test/build/browser result was produced in Codex.
 
 ### Server and container
 
@@ -533,16 +567,16 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement **Phase 3 of the default-off WebCodecs plus dedicated media-WebSocket receive prototype** exactly within [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). This isolated client block follows the completed Phase 1 protocol/ticket and Phase 2 server-delivery boundaries; target-server acceptance remains a later grouped block as directed by the operator.
+Implement **Phase 4 of the default-off WebCodecs plus dedicated media-WebSocket receive prototype** exactly within [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). Phases 1–3 now provide the protocol/ticket, server-delivery and isolated client receive boundaries; Phase 4 owns separate deployment/observability assets and the operator-directed grouped target-server/browser acceptance.
 
-Implement the strict TypeScript parser against the shared golden fixtures, a dedicated worker that owns the media socket/support probes/decoder queues/stale-generation rejection, VP8 `VideoDecoder`, Opus `AudioDecoder`, bounded AudioWorklet and video renderer with the fixed common clock/reset sequence, both explicit opt-ins, central Play/mute/resize/fullscreen/touch geometry integration, visible prototype limitations, four bounded same-backend reconnect attempts and the explicit **Retry WebCodecs** / **Use WebRTC** actions. Do not add the deployment overlay or claim target-device acceptance until Phase 4. Do not add automatic fallback, HLS/LL-HLS, WebTransport or a replacement control transport.
+Add a separate sanitized opt-in Compose overlay that enables the existing server flag/policies without modifying base Compose, plus credential-safe dashboards or documented queries for the fixed connection, queue, byte, drop, resync, write-time, lag and resource signals. Then run and record the exact commit, images, overlays, browser/device versions and the full default-invariance, role/authorization/private-mode, startup/latency/A/V, slow-client/reconnect, cleanup/resource and hostile-input matrix. Do not claim acceptance from repository inspection alone.
 
 Existing WebRTC signaling, WebRTC data channels and opcodes, input authorization, event-WebSocket reconnect, REST APIs, stable configuration and base Compose behavior must remain unchanged when the two opt-ins are absent. Do not add an automatic fallback, HLS/LL-HLS, WebTransport, a new control transport or claims of full non-WebRTC interactive parity. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
 1. **bounded checkpoint closed with the documented final-matrix limitation:** media-subscription/WebRTC compatibility refactor plus estimator startup correction;
-2. **Phases 1–2 implemented / Phase 3 next:** add the isolated client path, then the separate deployment/observability and grouped validation phase for the opt-in WebCodecs plus dedicated media WebSocket receive path;
+2. **Phases 1–3 implemented / Phase 4 next:** add separate deployment/observability assets and perform grouped validation for the opt-in WebCodecs plus dedicated media WebSocket receive path;
 3. prototype HLS/LL-HLS separately for passive/view-only device compatibility;
 4. compare measured backends and define explicit capability selection before considering automatic fallback;
 5. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
@@ -558,8 +592,8 @@ When fallback work begins, separate the two user classes instead of forcing ever
 3. **completed design:** the exact protocol, security, queueing, synchronization, rollout and validation contract for **WebCodecs + dedicated WebSocket media** is fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md);
 4. **implemented Phase 1:** strict framing/fixtures, PTS-validity propagation, authenticated negotiation, one-time tickets and default-off server negotiation;
 5. **implemented Phase 2:** credential-free server delivery backend, secure media route, bounded queues, recovery and lifecycle cleanup;
-6. **NEXT Phase 3:** implement the isolated client worker/WebCodecs/AudioWorklet and explicit UI path, then add separate deployment/observability assets;
-7. validate the completed prototype on the target server in its own block, including slow-client isolation and the documented malformed-input/resource matrix;
+6. **implemented Phase 3:** isolated strict client parser/worker/WebCodecs/AudioWorklet/canvas receive path, explicit UI actions and bounded same-backend recovery;
+7. **NEXT Phase 4:** add separate deployment/observability assets and validate the completed prototype on the target server, including slow-client isolation and the documented malformed-input/resource matrix;
 8. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
 9. compare device support, failure behavior, server resource cost, latency and recovery, then define explicit capability-based selection;
 10. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.

@@ -1,6 +1,6 @@
 <template>
   <ul>
-    <li v-if="!viewOnly && !implicitHosting && (!controlLocked || hosting)">
+    <li v-if="!viewOnly && !webCodecsReceiveOnly && !implicitHosting && (!controlLocked || hosting)">
       <i
         :class="[
           !disabeld && shakeKbd ? 'shake' : '',
@@ -20,7 +20,7 @@
         @click.stop.prevent="toggleControl"
       />
     </li>
-    <li class="no-pointer" v-if="!viewOnly && implicitHosting">
+    <li class="no-pointer" v-if="!viewOnly && !webCodecsReceiveOnly && implicitHosting">
       <i
         :class="[controlLocked ? 'disabled' : '', 'fas', 'fa-mouse-pointer']"
         v-tooltip="{
@@ -32,7 +32,7 @@
         }"
       />
     </li>
-    <li v-if="!viewOnly && (implicitHosting || (!implicitHosting && (!controlLocked || hosting)))">
+    <li v-if="!viewOnly && !webCodecsReceiveOnly && (implicitHosting || (!implicitHosting && (!controlLocked || hosting)))">
       <label
         class="switch"
         v-tooltip="{
@@ -47,7 +47,7 @@
         <span />
       </label>
     </li>
-    <li>
+    <li v-if="!webCodecsReceiveOnly || !playing">
       <i
         :class="[{ disabled: !playable }, playing ? 'fa-pause-circle' : 'fa-play-circle', 'fas', 'play']"
         @click.stop.prevent="toggleMedia"
@@ -389,23 +389,27 @@
     }
 
     get disabeld() {
-      return this.$accessor.remote.hosted
+      return this.webCodecsReceiveOnly || this.$accessor.remote.hosted
     }
 
     get hosting() {
-      return this.$accessor.remote.hosting
+      return !this.$accessor.media.selected && this.$accessor.remote.hosting
     }
 
     get controlling() {
-      return this.$accessor.remote.controlling
+      return !this.$accessor.media.selected && this.$accessor.remote.controlling
     }
 
     get implicitHosting() {
-      return this.$accessor.remote.implicitHosting
+      return !this.webCodecsReceiveOnly && this.$accessor.remote.implicitHosting
     }
 
     get viewOnly() {
       return this.$accessor.user.viewOnly
+    }
+
+    get webCodecsReceiveOnly() {
+      return this.$accessor.media.selected
     }
 
     // Microphone is allowed when the user is actively controlling (has host).
@@ -414,7 +418,7 @@
     // everyone by default. This prevents multiple users from sharing their
     // microphone simultaneously — only the person in control can.
     get micAllowed() {
-      return !this.viewOnly && this.controlling
+      return !this.viewOnly && !this.$accessor.media.selected && this.controlling
     }
 
     get volume() {

@@ -1,6 +1,6 @@
 # WebCodecs plus dedicated media WebSocket contract
 
-Status: **design complete; Phase 1 protocol/ticket/negotiation and Phase 2 server delivery adapter implemented and statically reviewed on `testing` through 2026-09-13; target-server tests/build are intentionally deferred to grouped prototype validation; no client decoder/render path, deployment enablement or automatic fallback is implemented**.
+Status: **design complete; Phases 1–3 protocol/ticket/negotiation, server delivery and isolated client receive path implemented and statically reviewed on `testing` through 2026-09-14; target-server tests/build/browser acceptance are intentionally deferred to grouped prototype validation; no deployment enablement or automatic fallback is implemented**.
 
 This document fixes the version-1 contract and the bounded implementation and acceptance plan for Neko's first non-WebRTC receive-media prototype. It specializes the backend-neutral boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md) without changing that boundary or the current WebRTC implementation.
 
@@ -19,7 +19,7 @@ Version 1 is an explicit, opt-in, low-latency **receive-media** experiment:
 
 The current client sends high-rate keyboard, pointer and touch input through the WebRTC data channel. Version 1 deliberately does not add a replacement control transport and therefore must not be described as complete non-WebRTC interactive parity. It proves an interactive-class receive path. A later, independently reviewed block must decide how a controlling participant sends high-rate input when no WebRTC peer connection exists.
 
-Phase 1 adds the strict envelope/parser and language-neutral fixtures, capture-side `PTSValid` propagation, single-use ticket storage, authenticated current/legacy negotiation events and the default-off server flag. Phase 2 adds the conditionally registered secure media route, credential-free provider-backed delivery, bounded queues/control/lifecycle recovery and fixed metrics. Neither phase adds the decoder worker, audio worklet, render path, client selection, dependency or deployment overlay.
+Phase 1 adds the strict server envelope/fixtures, capture-side `PTSValid` propagation, single-use ticket storage, authenticated current/legacy negotiation events and the default-off server flag. Phase 2 adds the conditionally registered secure media route, credential-free provider-backed delivery, bounded queues/control/lifecycle recovery and fixed metrics. Phase 3 adds the exact-query client selection, shared-fixture parser, dedicated socket/decoder worker, AudioWorklet/canvas presentation and explicit recovery UI. Phase 4 alone owns deployment/observability assets and grouped acceptance.
 
 ## Invariants
 
@@ -389,11 +389,11 @@ go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/m
 ./build
 ```
 
-This is not an end-to-end prototype acceptance: Phase 3 and Phase 4 remain required, and the operator requested grouped target-server testing after the accumulated implementation phases.
+This was not an end-to-end prototype acceptance: Phases 3 and 4 remained required at the Phase 2 closure, and the operator requested grouped target-server testing after the accumulated implementation phases.
 
 ### Phase 3: isolated client path
 
-Status: **NEXT**.
+Status: **implemented and statically reviewed on `testing` on 2026-09-14; target-server client/server tests, builds and browser/media acceptance intentionally deferred to Phase 4 grouped validation; no deployment overlay implemented**.
 
 1. Add a strict TypeScript envelope parser using the shared golden fixtures and checked 64-bit handling.
 2. Add a dedicated worker that owns the socket, support probes, decoder queues and stale-generation rejection.
@@ -402,7 +402,34 @@ Status: **NEXT**.
 5. Integrate central Play, mute, resize, fullscreen and touch-coordinate geometry; expose prototype limitations such as Picture-in-Picture.
 6. Implement only the four bounded same-backend reconnect attempts and the two explicit operator/user actions.
 
+Implementation notes:
+
+- Exactly one `media=webcodecs-ws` query selects the client path. The legacy authenticated event socket then suppresses only its automatic WebRTC signal request and returns its current authenticated session ID in `system/init`; without that exact selection the original signal request and init wire shape remain unchanged.
+- The browser parser consumes the shared language-neutral server fixture and enforces the 64-byte network-order header, safe 64-bit range, exact lengths/fields, duplicate-key rejection, format/lifecycle schemas, payload bounds, track mapping and VP8 keyframe-envelope agreement before decoding. The shared keyframe fixture now contains a minimal marker-valid VP8 key prefix rather than inconsistent sample bytes.
+- A dedicated module worker owns capability probes, the ticket-bearing socket construction, binary parsing and VP8/Opus decoders. It requires the exact server-selected `neko.media.v1` subprotocol, never puts the one-time ticket in the URL/logs, enforces the 4/16 compressed and decoder limits, caps outstanding video at two and PCM at 200 ms, rejects stale generations/sequences/timestamps and resets rather than flushing on recovery.
+- The main-thread controller selects exact advertised sources, requests a fresh ticket for every serialized attempt and owns the 80-ms clock anchors. A bounded stereo AudioWorklet is master when its 48-kHz context is running; otherwise video uses `performance.now()`. A video-only server generation clears stale canvas output but retains its valid normalized audio master; audio/common discontinuities clear both paths. The canvas renderer closes every rendered/dropped frame, drops video over 80 ms late and holds early frames for at most 100 ms.
+- Central Play resumes audio and starts rendering, mute/volume stay in the audio graph, and resize/fullscreen geometry uses the selected canvas without changing the existing video element/touch geometry. The opt-in UI labels the path receive-only, hides input/control/microphone and Picture-in-Picture actions, and exposes terminal **Retry WebCodecs** and **Use WebRTC** actions.
+- Automatic media-only retry is limited to close codes 4413 and 4500 at 1/2/5/10 seconds, obtains a new ticket each time and never falls back to WebRTC. Terminal cleanup releases worker, socket, frames and audio resources; explicit WebRTC selection removes the query and reloads.
+- Focused repository tests cover exact server query selection, ordinary-versus-selected legacy init serialization, shared-fixture acceptance and malformed framing/metadata/keyframe rejection in the exact browser parser source, plus the reused bounded retry schedule/code allowlist. The client applies the same one-value exact comparison directly before opening its event socket.
+
+Per `AGENTS.md`, project code, tests, linters and builds were **NOT EXECUTED IN CODEX**. Run the accumulated exact-commit checks on the real target server during Phase 4:
+
+```bash
+cd client
+npm ci
+npm test
+npm run lint
+npm run build
+
+cd ../server
+go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
+go test ./internal/mediaws -run '^$' -fuzz '^FuzzParseRecord$' -fuzztime 30s
+./build
+```
+
 ### Phase 4: deployment and validation assets
+
+Status: **NEXT**.
 
 1. Add a separate sanitized opt-in Compose overlay; leave stable base Compose unchanged.
 2. Add credential-safe dashboards/queries for the fixed queue, drop, resync, connection and resource metrics.

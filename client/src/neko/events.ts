@@ -23,6 +23,12 @@ export const EVENT = {
     PROVIDE: 'signal/provide',
     CANDIDATE: 'signal/candidate',
   },
+  MEDIA: {
+    CAPABILITIES_REQUEST: 'media/capabilities/request',
+    CAPABILITIES: 'media/capabilities',
+    CREATE: 'media/create',
+    OFFER: 'media/offer',
+  },
   MEMBER: {
     LIST: 'member/list',
     CONNECTED: 'member/connected',
@@ -80,6 +86,7 @@ export type WebSocketEvents =
   | ControlEvents
   | MemberEvents
   | SignalEvents
+  | MediaEvents
   | ChatEvents
   | FileTransferEvents
   | OpenInAppEvents
@@ -104,6 +111,12 @@ export type SignalEvents =
   | typeof EVENT.SIGNAL.ANSWER
   | typeof EVENT.SIGNAL.PROVIDE
   | typeof EVENT.SIGNAL.CANDIDATE
+
+export type MediaEvents =
+  | typeof EVENT.MEDIA.CAPABILITIES_REQUEST
+  | typeof EVENT.MEDIA.CAPABILITIES
+  | typeof EVENT.MEDIA.CREATE
+  | typeof EVENT.MEDIA.OFFER
 
 export type ChatEvents = typeof EVENT.CHAT.MESSAGE | typeof EVENT.CHAT.EMOTE
 
