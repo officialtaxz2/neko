@@ -15,6 +15,8 @@ services:
       - |
         set -eux
         cp -a /source/client /work/client
+        mkdir -p /work/server/internal/mediaws/testdata
+        cp /source/server/internal/mediaws/testdata/neko_media_v1_golden.json /work/server/internal/mediaws/testdata/
         cd /work/client
         npm ci
         npm test

@@ -424,6 +424,8 @@ Status: **repository assets implemented and statically reviewed on `testing` on 
 
 Per `AGENTS.md`, project code, tests, linters, builds, Docker and the helper scripts were **NOT EXECUTED IN CODEX**. Phase 4 remains open until the operator supplies the exact-commit target-server outputs and every applicable acceptance item is recorded.
 
+The first target-server client-validation attempt at exact Phase 4 asset commit `b91c6fdd` reached `npm ci` and passed the eight recovery/negotiation/share/media-recovery tests, then stopped before the three media-protocol cases, lint and build because the isolated validation work directory contained only `client/` while that test intentionally reads the shared server golden fixture at `server/internal/mediaws/testdata/neko_media_v1_golden.json`. The repository fixture and test path were correct; the validation container packaging was incomplete. The follow-up copies only that fixture into the matching isolated `/work/server/...` path. The complete client sequence requires a clean rerun at the follow-up commit and no client acceptance is inferred from the partial attempt.
+
 ## Target-server verification
 
 This phase is performed by the operator on the real server, not by Codex.
