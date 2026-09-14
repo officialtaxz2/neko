@@ -302,7 +302,18 @@ func (delivery *Delivery) handleFeedback(feedback feedbackControl, now time.Time
 func (delivery *Delivery) feedbackRateExceeded(now time.Time) bool {
 	delivery.mu.Lock()
 	defer delivery.mu.Unlock()
-	return !delivery.lastFeedbackAt.IsZero() && now.Sub(delivery.lastFeedbackAt) < time.Second
+	if now.After(delivery.feedbackRefillAt) {
+		delivery.feedbackTokens += now.Sub(delivery.feedbackRefillAt).Seconds() * FeedbackRecordsPerSecond
+		if delivery.feedbackTokens > FeedbackRecordBurst {
+			delivery.feedbackTokens = FeedbackRecordBurst
+		}
+		delivery.feedbackRefillAt = now
+	}
+	if delivery.feedbackTokens < 1 {
+		return true
+	}
+	delivery.feedbackTokens--
+	return false
 }
 
 func feedbackMatchesTrack(feedback *feedbackKind, track *deliveryTrack) bool {
@@ -403,6 +414,14 @@ func (delivery *Delivery) handleResyncs() {
 				}
 			}
 		drained:
+			resyncKind := "all"
+			if request.kind != KindNone {
+				resyncKind = metricKind(request.kind)
+			}
+			delivery.logger.Info().
+				Str("resync_kind", resyncKind).
+				Str("resync_reason", request.reason).
+				Msg("processing media resync")
 			if !delivery.allowResync(request.reason, time.Now()) {
 				delivery.close(backpressureClose("resync_limit"))
 				return
@@ -486,7 +505,16 @@ func (delivery *Delivery) performResync(kind Kind, reason string) error {
 		}
 		records = append(records, format)
 	}
+	now := time.Now()
+	delivery.lastFeedbackAt = now
+	delivery.lastProgressAt = now
 	delivery.sentSinceProgress = false
+	delivery.skewExceededAt = time.Time{}
+	if reason == "progress_timeout" {
+		delivery.progressRecoveryDeadline = now.Add(ProgressRecoveryTimeout)
+	} else {
+		delivery.progressRecoveryDeadline = time.Time{}
+	}
 	delivery.mu.Unlock()
 
 	for _, currentKind := range kinds {

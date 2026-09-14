@@ -182,7 +182,7 @@ logs_record() {
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   output_file="$output_dir/$stamp-media.log"
   compose logs --no-color --since "$since" neko \
-    | grep -E 'module=(mediaws|media)|"module":"(mediaws|media)"|media websocket|media delivery|got bitrate from estimator|downgraded video stream|upgraded video stream|set video|dropping sample|don.t have enough bitrate' \
+    | grep -E 'module=(mediaws|media)|"module":"(mediaws|media)"|media websocket|media delivery|media resync|got bitrate from estimator|downgraded video stream|upgraded video stream|set video|dropping sample|don.t have enough bitrate' \
     >"$output_file" || true
   printf 'Recorded filtered logs: %s\n' "$output_file"
 }

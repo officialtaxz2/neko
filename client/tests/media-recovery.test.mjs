@@ -65,6 +65,14 @@ test('Vue WebCodecs callbacks keep live component state', async () => {
   }
 })
 
+test('media feedback is self-scheduled and leaves skew recovery to the server', async () => {
+  const source = await readFile(new URL('../src/neko/media/worker.ts', import.meta.url), 'utf8')
+
+  assert.match(source, /feedbackTimer = scope\.setTimeout\(\(\) => \{/)
+  assert.doesNotMatch(source, /setInterval\(sendFeedback/)
+  assert.doesNotMatch(source, /requestResync\('av_skew'\)/)
+})
+
 test('AudioWorklet reports only a sustained 100 ms underflow', async () => {
   const originalProcessor = globalThis.AudioWorkletProcessor
   const originalRegister = globalThis.registerProcessor

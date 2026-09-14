@@ -186,7 +186,13 @@ func TestDeliveryResyncClearsMediaAndAdvancesGeneration(t *testing.T) {
 	track.formatSent = true
 	track.lastProviderGen = 1
 	delivery.ready = true
+	delivery.lastFeedbackAt = time.Unix(1, 0)
+	delivery.lastProgressAt = time.Unix(1, 0)
+	delivery.progressRecoveryDeadline = time.Unix(2, 0)
+	delivery.sentSinceProgress = true
+	delivery.skewExceededAt = time.Unix(1, 0)
 	delivery.queue.pushMedia(testQueuedUnit(KindVideo, 10))
+	startedAt := time.Now()
 	if err := delivery.performResync(KindVideo, "server_overflow"); err != nil {
 		t.Fatal(err)
 	}
@@ -203,6 +209,38 @@ func TestDeliveryResyncClearsMediaAndAdvancesGeneration(t *testing.T) {
 	}
 	if !track.awaitKeyframe || track.nextSequence != 0 || track.transitioning {
 		t.Fatalf("resynchronized track = %#v", track)
+	}
+	if delivery.lastFeedbackAt.Before(startedAt) || delivery.lastProgressAt.Before(startedAt) || delivery.sentSinceProgress || !delivery.skewExceededAt.IsZero() || !delivery.progressRecoveryDeadline.IsZero() {
+		t.Fatalf("resync observation windows were not refreshed")
+	}
+}
+
+func TestDeliveryProgressResyncArmsRecoveryDeadline(t *testing.T) {
+	delivery, track := newBackendTestDelivery(KindVideo, videoTestSource())
+	track.formatSent = true
+	track.lastProviderGen = 1
+	delivery.ready = true
+	startedAt := time.Now()
+	if err := delivery.performResync(KindVideo, "progress_timeout"); err != nil {
+		t.Fatal(err)
+	}
+	minimum := startedAt.Add(ProgressRecoveryTimeout)
+	if delivery.progressRecoveryDeadline.Before(minimum) {
+		t.Fatalf("progress recovery deadline = %s, want at least %s", delivery.progressRecoveryDeadline, minimum)
+	}
+}
+
+func TestDeliveryFeedbackRateAllowsOneCoalescedBurst(t *testing.T) {
+	delivery, _ := newBackendTestDelivery(KindVideo, videoTestSource())
+	now := delivery.feedbackRefillAt
+	if delivery.feedbackRateExceeded(now) || delivery.feedbackRateExceeded(now) {
+		t.Fatal("bounded two-record feedback burst was rejected")
+	}
+	if !delivery.feedbackRateExceeded(now) {
+		t.Fatal("third immediate feedback record escaped the bounded burst")
+	}
+	if delivery.feedbackRateExceeded(now.Add(time.Second)) {
+		t.Fatal("feedback token did not refill after one second")
 	}
 }
 

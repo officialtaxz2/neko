@@ -26,6 +26,8 @@ const (
 	CloseTimeout               = time.Second
 	ControlRecordsPerSecond    = 10
 	ControlRecordBurst         = 20
+	FeedbackRecordsPerSecond   = 1
+	FeedbackRecordBurst        = 2
 	ClientResyncsPerMinute     = 5
 	MaximumResyncsPerWindow    = 3
 	ResyncWindow               = 30 * time.Second
@@ -212,6 +214,8 @@ type Delivery struct {
 	skewExceededAt           time.Time
 	controlTokens            float64
 	controlRefillAt          time.Time
+	feedbackTokens           float64
+	feedbackRefillAt         time.Time
 	clientResyncs            []time.Time
 	resyncs                  []time.Time
 	pendingCommonResync      string
@@ -234,9 +238,11 @@ func newDelivery(lease types.MediaLease, connection *websocket.Conn) *Delivery {
 		closing:         make(chan closeRequest, 1),
 		resync:          make(chan resyncRequest, 8),
 		tracks:          make(map[Kind]*deliveryTrack),
-		createdAt:       now,
-		controlTokens:   ControlRecordBurst,
-		controlRefillAt: now,
+		createdAt:        now,
+		controlTokens:    ControlRecordBurst,
+		controlRefillAt:  now,
+		feedbackTokens:   FeedbackRecordBurst,
+		feedbackRefillAt: now,
 	}
 }
 

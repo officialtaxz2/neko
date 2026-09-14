@@ -42,6 +42,7 @@ const VIDEO_DECODE_CAP = 4
 const AUDIO_DECODE_CAP = 16
 const VIDEO_RENDER_CAP = 2
 const AUDIO_BUFFER_CAP_MS = 200
+const FEEDBACK_INTERVAL_MS = 1100
 
 const makeTrack = (name: MediaKindName, kind: number): TrackState => ({
   name,
@@ -73,7 +74,6 @@ let formatTimer: number | undefined
 let feedbackTimer: number | undefined
 let resyncPending = false
 let avSkewMS = 0
-let skewExceededAt = 0
 
 const post = (message: any, transfer: Transferable[] = []) => scope.postMessage(message, transfer)
 const currentTrack = (kind: number) => (kind === KIND.AUDIO ? audio : kind === KIND.VIDEO ? video : undefined)
@@ -111,9 +111,8 @@ function resetRuntime(clearGeneration = true) {
   readySent = false
   resyncPending = false
   avSkewMS = 0
-  skewExceededAt = 0
   if (formatTimer !== undefined) scope.clearTimeout(formatTimer)
-  if (feedbackTimer !== undefined) scope.clearInterval(feedbackTimer)
+  if (feedbackTimer !== undefined) scope.clearTimeout(feedbackTimer)
   formatTimer = undefined
   feedbackTimer = undefined
 }
@@ -174,6 +173,15 @@ function sendFeedback() {
     video: trackFeedback(video),
     av_skew_ms: Math.max(-10_000, Math.min(10_000, Math.round(avSkewMS))),
   })
+}
+
+function scheduleFeedback() {
+  if (feedbackTimer !== undefined || socket?.readyState !== WebSocket.OPEN) return
+  feedbackTimer = scope.setTimeout(() => {
+    feedbackTimer = undefined
+    sendFeedback()
+    scheduleFeedback()
+  }, FEEDBACK_INTERVAL_MS)
 }
 
 function requestResync(reason: ResyncReason) {
@@ -557,7 +565,7 @@ function startMedia(url: string, ticket: string, requestedAudio: boolean) {
       }
       post({ type: 'socket-open' })
       formatTimer = scope.setTimeout(() => terminal('media FORMAT deadline exceeded'), 5000)
-      feedbackTimer = scope.setInterval(sendFeedback, 1100)
+      scheduleFeedback()
     }
     candidate.onmessage = (event) => {
       if (socket !== candidate) return
@@ -607,12 +615,9 @@ scope.onmessage = (event: MessageEvent) => {
         if (video.rendered < video.decoded) video.rendered++
         if (!message.rendered) video.drops++
         avSkewMS = Math.max(-10_000, Math.min(10_000, Number(message.skewMS) || 0))
-        if (Math.abs(avSkewMS) > 200) {
-          if (skewExceededAt === 0) skewExceededAt = performance.now()
-          if (performance.now() - skewExceededAt >= 1000) requestResync('av_skew')
-        } else {
-          skewExceededAt = 0
-        }
+        // The server evaluates the reported skew over consecutive feedback
+        // windows. Keeping one recovery authority avoids a client request and
+        // server observation racing into the bounded resync limit.
         drain(video)
       }
       break
