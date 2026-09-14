@@ -216,11 +216,14 @@ func TestControllerAttachAndInvalidAttemptBounds(t *testing.T) {
 	if status := controller.reserve("viewer"); status != http.StatusConflict {
 		t.Fatalf("overlapping replacement status = %d", status)
 	}
-	if status := controller.reserve("other"); status != http.StatusTooManyRequests {
+	if status := controller.reserve("other"); status != 0 {
+		t.Fatalf("second session reservation status = %d", status)
+	}
+	if status := controller.reserve("third"); status != http.StatusTooManyRequests {
 		t.Fatalf("connection-limit status = %d", status)
 	}
 	controller.releaseReservation("viewer")
-	controller.releaseConnection()
+	controller.releaseReservation("other")
 
 	for attempt := 0; attempt < InvalidAttachesPerMinute; attempt++ {
 		if controller.invalidBlocked("203.0.113.9", now) {
