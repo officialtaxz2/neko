@@ -21,6 +21,39 @@
           <span />
         </label>
       </li>
+      <li class="media-backend-setting">
+        <div class="setting-row">
+          <span>{{ $t('setting.media_backend') }}</span>
+          <label class="select">
+            <select v-model="media_backend">
+              <option value="webrtc">{{ $t('setting.media_backend_webrtc') }}</option>
+              <option value="webcodecs-ws">{{ $t('setting.media_backend_webcodecs') }}</option>
+            </select>
+            <span />
+          </label>
+        </div>
+        <div class="media-backend-status" role="status">
+          <i :class="['fas', media_backend_status_icon]" />
+          <small>{{ media_backend_status }}</small>
+        </div>
+        <div v-if="media_backend_override" class="media-backend-override">
+          <small class="media-backend-note">
+            {{
+              $t(
+                media_backend_invalid_override
+                  ? 'setting.media_backend_invalid_override'
+                  : 'setting.media_backend_override',
+              )
+            }}
+          </small>
+          <button type="button" @click.stop.prevent="$client.clearMediaBackendOverride()">
+            {{ $t('setting.media_backend_clear_override') }}
+          </button>
+        </div>
+        <small v-if="webcodecs_selected" class="media-backend-note">
+          {{ $t('media.webcodecs_limitations') }}
+        </small>
+      </li>
       <li>
         <span>{{ $t('setting.ignore_emotes') }}</span>
         <label class="switch">
@@ -438,6 +471,60 @@
           }
         }
 
+        &.media-backend-setting {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 8px;
+          white-space: normal;
+
+          .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+          }
+
+          .media-backend-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--text-subtle);
+
+            i {
+              flex: 0 0 auto;
+              color: var(--color-cyber-mint);
+              font-size: 8px;
+              filter: drop-shadow(0 0 5px var(--color-cyber-mint-glow));
+            }
+
+            small {
+              line-height: 1.35;
+            }
+          }
+
+          .media-backend-note {
+            color: var(--text-muted-ok);
+            line-height: 1.35;
+          }
+
+          .media-backend-override {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 7px;
+
+            button {
+              width: auto;
+              padding: 6px 10px;
+              color: var(--text-pure);
+              background: rgba(99, 102, 241, 0.2);
+              border: 1px solid var(--glass-border);
+              box-shadow: none;
+              font-size: 11px;
+            }
+          }
+        }
+
         &.disabled-setting {
           opacity: 0.4;
 
@@ -487,6 +574,44 @@
 
     set autoplay(value: boolean) {
       this.$accessor.settings.setAutoplay(value)
+    }
+
+    get media_backend() {
+      return this.$accessor.settings.media_backend
+    }
+
+    set media_backend(value: string) {
+      this.$accessor.settings.setMediaBackend(value)
+      this.$client.changeMediaBackend(value)
+    }
+
+    get webcodecs_selected() {
+      return this.$accessor.media.selected
+    }
+
+    get media_backend_override() {
+      return this.$client.mediaBackendOverridden
+    }
+
+    get media_backend_invalid_override() {
+      return this.$client.mediaBackendOverrideInvalid
+    }
+
+    get media_backend_status_icon() {
+      if (!this.webcodecs_selected || this.$accessor.media.status === 'streaming') return 'fa-circle'
+      if (this.$accessor.media.status === 'terminal') return 'fa-exclamation-circle'
+      return 'fa-circle-notch fa-spin'
+    }
+
+    get media_backend_status() {
+      if (!this.webcodecs_selected) {
+        return `${this.$t('setting.media_backend_current')}: ${this.$t('setting.media_backend_webrtc')}`
+      }
+
+      const status = this.$t(`media.status.${this.$accessor.media.status}`)
+      return `${this.$t('setting.media_backend_current')}: ${this.$t(
+        'setting.media_backend_webcodecs',
+      )} — ${status}${this.$accessor.media.detail ? `: ${this.$accessor.media.detail}` : ''}`
     }
 
     get ignore_emotes() {

@@ -452,6 +452,21 @@ The operator then declined the cumbersome induced three-client constraint run an
 
 The exact URL selector and persistent in-video status were deliberate prototype surfaces. After the bounded Phase 4 closure, the operator selected their productization as the next implementation block: persist an explicit per-client backend selector in sidebar settings, retain the query as a diagnostic override, show a compact current-backend/status indicator and collapse the large overlay during healthy streaming. This remains manual selection with WebRTC as the default; it does not add automatic fallback or expand the receive-only transport boundary.
 
+## IMPLEMENTED IN REPOSITORY — explicit per-client media-backend productization
+
+Status: **implemented and statically reviewed on `testing` on 2026-09-15 / project tests, type-check, build, image and browser/runtime checks NOT EXECUTED IN CODEX / exact-commit target-server validation NEXT**.
+
+- Added the pure `client/src/neko/media-selection.js` policy boundary. Only `webrtc` and `webcodecs-ws` are valid persisted values; missing, inaccessible or invalid browser storage resolves to WebRTC.
+- Added a persisted **Default Media Backend** selector to the existing sidebar settings. Changing it stores the normalized per-browser choice, removes only the stateless `media` diagnostic parameter and reloads through the existing startup path while preserving unrelated query parameters and the view-only fragment.
+- Retained exactly one `?media=webcodecs-ws` value as the highest-priority stateless diagnostic override without mutating the stored default. A present wrong or duplicated selector remains on the safe WebRTC path instead of accidentally activating a stored experimental backend. Settings show the effective backend, override state and an explicit action to remove the override and return to the saved default.
+- A stored WebCodecs choice now selects the same isolated receive path without requiring a query. A new/unset client still selects WebRTC and sends no media-prototype event. The separately configured server feature remains default-off.
+- Replaced the always-large healthy `WebCodecs receive prototype` panel with a compact localized `WebCodecs · streaming · receive-only · no PiP` indicator. Idle, negotiation, connection, recovery and terminal states retain the prominent localized panel, the full receive-only/no-Picture-in-Picture/no-automatic-fallback explanation and terminal **Retry WebCodecs** / **Use WebRTC** actions.
+- **Use WebRTC** now also persists WebRTC before removing the diagnostic selector and reloading, so a prior stored WebCodecs preference cannot immediately reactivate the receive path.
+- Added dependency-free focused coverage for persistence, absent/invalid/default behavior, storage denial, exact URL precedence, wrong/duplicate URL safety, query/fragment-preserving selection navigation, healthy-versus-recovery status treatment and source-level sidebar/action wiring. The complete client test command now includes `tests/media-selection.test.mjs`.
+- No server, protocol, authorization, event WebSocket, WebRTC signaling/data-channel/opcode, capture, deployment or Compose source was changed. No automatic fallback, HLS/LL-HLS, WebTransport or replacement input transport was added.
+
+Static review confirms that default WebRTC still uses the existing `undefined` internal backend marker, so `BaseClient.connectSocket` does not append a media selector and continues its unchanged WebRTC offer/signaling path. Only the explicit stored or exact-query WebCodecs result sets the existing `webcodecs-ws` marker and suppresses WebRTC signaling. Target-server evidence is still required before treating the new selector/status UI as runtime-verified.
+
 ## Target-server verification
 
 This phase is performed by the operator on the real server, not by Codex.
@@ -480,7 +495,7 @@ Required for the integrated baseline: confirm `npm ci`, TypeScript lint and the 
 
 For the accumulated iOS recovery and view-only blocks on `testing`, the complete containerized client sequence passed at exact commit `913a981e`. The manual View-only matrix and compact-link follow-up are recorded above. The operator deliberately closed the checkpoint without executing the optional remaining iPhone deep-test phases in [`IOS_RECOVERY.md`](IOS_RECOVERY.md).
 
-For WebCodecs/media-WebSocket Phases 1–3, the same complete client sequence and the accumulated server sequence below remain pending for the Phase 4 exact-commit grouped checkpoint. No Phase 3 test/build/browser result was produced in Codex.
+For the WebCodecs/media-WebSocket implementation through the bounded Phase 4 checkpoint, the earlier exact results are recorded above. The newer per-client selection/status productization must rerun the complete client sequence on its exact commit and then pass the focused deployed-browser matrix in the current `NEXT`. No productization test/build/browser result was produced in Codex.
 
 ### Server and container
 
@@ -610,17 +625,17 @@ Browser/runtime images, when relevant to the deployment:
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement the **explicit per-client media-backend productization block**. Add a persisted `WebRTC`/`WebCodecs` choice to the existing sidebar settings, with absent/invalid state resolving to WebRTC. Retain `?media=webcodecs-ws` as the highest-priority stateless diagnostic override so existing test links remain reproducible; do not require the query for a client that explicitly stored WebCodecs.
+Validate the **explicit per-client media-backend productization block** on one exact `testing` commit. Run the complete containerized client sequence (`npm ci`, all tests including `media-selection.test.mjs`, TypeScript and Vite build), build the target image and deploy it with the already reviewed WebCodecs overlay. Do not repeat the complete server/fuzz suite solely for this client-only block unless the image/build path or observed behavior exposes a server-side concern.
 
-Replace the always-large healthy-stream prototype overlay with a compact current-backend/status indicator integrated into settings or the existing status surface. Keep the prominent overlay/actions for negotiation, recovery and terminal failure, including explicit **Retry WebCodecs** and **Use WebRTC**. Clearly retain the receive-only/input and Picture-in-Picture limitations whenever WebCodecs is selected. Add focused tests for persistence/default/invalid values, URL-override precedence, selection changes and healthy-versus-recovery indicator behavior.
+Use a normal browser profile or isolated origin storage and prove: missing storage starts unchanged WebRTC; an invalid stored value safely starts WebRTC; choosing WebCodecs in sidebar settings reloads into WebCodecs without a query and survives another reload; choosing WebRTC returns to working WebRTC A/V/control; exact `?media=webcodecs-ws` overrides a saved WebRTC default without changing it; removing the URL override returns to that saved default; unrelated query parameters and a compact view-only fragment survive selection changes. Confirm settings report the effective backend/override and the receive-only/no-Picture-in-Picture limitation. Healthy WebCodecs streaming must show only the compact status chip; a deliberately unavailable/disabled WebCodecs attempt must remain explicit and diagnosable with the prominent terminal panel plus **Retry WebCodecs** and **Use WebRTC**, and must never start WebRTC automatically.
 
-Existing WebRTC signaling, WebRTC data channels and opcodes, input authorization, event-WebSocket reconnect, REST APIs, stable configuration and base Compose behavior must remain unchanged when the two opt-ins are absent. The server feature stays separately default-off, new/unset clients stay on WebRTC, and unsupported/unavailable WebCodecs remains an explicit diagnosable state rather than silently falling back. Do not add HLS/LL-HLS, WebTransport, a new control transport or claims of full non-WebRTC interactive parity. The deferred Phase 4 matrix remains in the validation runbook. `master` must not move without explicit operator authorization.
+Keep this verification bounded to the new preference/precedence/navigation/status behavior plus a short ordinary WebRTC/WebCodecs smoke. The previously deferred Phase 4 numeric latency/pacing, induced slow-client/adaptive isolation, five-minute resource and remaining live hostile-input matrix stays deferred unless the operator explicitly reopens full acceptance. The server remains default-off without its separate overlay. Do not add HLS/LL-HLS, WebTransport, a new control transport or full non-WebRTC parity claims. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
 1. **bounded checkpoint closed with the documented final-matrix limitation:** media-subscription/WebRTC compatibility refactor plus estimator startup correction;
 2. **bounded checkpoint closed with explicit final-matrix limitations:** WebCodecs plus dedicated media WebSocket receive path;
-3. **NEXT:** productize explicit per-client selection in sidebar settings with a compact backend/status indicator while retaining WebRTC as default and the query as a diagnostic override;
+3. **implemented / target-server validation NEXT:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. prototype HLS/LL-HLS separately for passive/view-only device compatibility;
 5. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
@@ -637,7 +652,7 @@ When fallback work begins, separate the two user classes instead of forcing ever
 5. **implemented Phase 2:** credential-free server delivery backend, secure media route, bounded queues, recovery and lifecycle cleanup;
 6. **implemented Phase 3:** isolated strict client parser/worker/WebCodecs/AudioWorklet/canvas receive path, explicit UI actions and bounded same-backend recovery;
 7. **bounded Phase 4 checkpoint closed:** exact automated/build/security, accumulated functional and corrected foreground-iPhone gates passed; numeric latency/pacing, induced isolation, resource and remaining live hostile-input cases stay deferred;
-8. **NEXT:** productize persisted manual per-client `WebRTC`/`WebCodecs` selection and compact healthy status without automatic fallback;
+8. **implemented / target-server validation NEXT:** persisted manual per-client `WebRTC`/`WebCodecs` selection and compact healthy status without automatic fallback;
 9. prototype **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers;
 10. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
 11. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
@@ -663,4 +678,5 @@ The passive path may trade latency for reliability and compatibility. It must st
 - HLS/LL-HLS latency target, segment/part sizing, codec profile and server resource cost.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
 - Eventual automatic per-client media-backend selection rules after the explicitly selected prototypes have measured evidence; version-1 manual selection and rollback are already fixed.
+- Exact-commit target-server evidence for the persisted manual selector, URL precedence, navigation preservation and compact-versus-prominent status UX.
 - Longer-term legacy Vue 2 migration.

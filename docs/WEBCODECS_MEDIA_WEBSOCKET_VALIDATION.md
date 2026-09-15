@@ -2,7 +2,7 @@
 
 This is the operator/Codex hand-off runbook for the default-off WebCodecs plus dedicated media-WebSocket receive prototype. Execute it only on the real target server, one block at a time. Return each block's complete terminal output before continuing so failures and deployment-specific values can be assessed without guessing.
 
-The operator closed a bounded checkpoint at exact documentation commit `6b6cd328` on 2026-09-14 after the recorded automated/build/security, accumulated functional and corrected foreground-iPhone gates passed. The numeric latency/pacing, induced slow-client/adaptive isolation, five-minute resource comparison and remaining live hostile-input sections were deliberately not executed. They remain here as the required procedure for any later full prototype-acceptance or automatic/default-backend claim; the bounded closure does not mark them passed.
+The operator closed a bounded checkpoint at exact documentation commit `6b6cd328` on 2026-09-14 after the recorded automated/build/security, accumulated functional and corrected foreground-iPhone gates passed. Persisted manual per-client selection and compact healthy status were implemented afterward and require the focused exact-commit checkpoint below. The numeric latency/pacing, induced slow-client/adaptive isolation, five-minute resource comparison and remaining live hostile-input sections were deliberately not executed. They remain here as the required procedure for any later full prototype-acceptance or automatic/default-backend claim; the bounded closure does not mark them passed.
 
 Never paste `.env`, passwords, cookies, view-only tokens, browser storage, event payloads, packet captures, media WebSocket URLs or `Sec-WebSocket-Protocol` values from a successful attachment. The supplied HTTP check uses a fixed invalid ticket and suppresses response bodies. Store raw evidence outside the Git worktree with mode `0700`.
 
@@ -67,7 +67,7 @@ export NEKO_PUBLIC_ORIGIN='https://neko.example'
 ./deploy/check-media-websocket-http.sh disabled
 ```
 
-Replace the example with the exact browser-visible origin, with no path or trailing route. Then open one ordinary URL without `media=webcodecs-ws` and confirm normal WebRTC login, A/V, control/data channel, refresh/reconnect and applicable view-only/iOS behavior. Browser developer tools must show no `media/capabilities/request`, `media/create`, prototype worker or `/api/media/ws` attempt.
+Replace the example with the exact browser-visible origin, with no path or trailing route. Then remove the browser-local `media_backend` value (or use a fresh profile), open one ordinary URL without `media=webcodecs-ws` and confirm normal WebRTC login, A/V, control/data channel, refresh/reconnect and applicable view-only/iOS behavior. Browser developer tools must show no `media/capabilities/request`, `media/create`, prototype worker or `/api/media/ws` attempt. An intentionally invalid stored value must produce the same WebRTC result.
 
 ## 4. Opt-in configuration and activation
 
@@ -106,6 +106,18 @@ printf 'result_dir=%s\n' "$RESULT_DIR"
 ```
 
 Retain that path for later blocks. Use one normal member, one admin and one view-only `CanWatch` session in turn with the exact query `?media=webcodecs-ws`. Confirm VP8 video plus 48-kHz stereo Opus, central Play/mute/volume/fullscreen, the receive-only limitation and denied view-only input. Test fullscreen enter and exit on desktop and the available target phone: native element fullscreen is preferred, while a phone that cannot natively fullscreen the WebCodecs canvas must enter the viewport-filling app mode and expose its compress/exit button; browser chrome may remain on iPhone. Exercise private-mode pause/resume, explicit **Use WebRTC**, unsupported-browser/codec behavior, logout, kick, authorization revocation and session replacement exactly as specified in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). Output must stop within two seconds where required and terminal policy/auth failures must not retry.
+
+For the post-`6b6cd328` productization checkpoint, also execute this bounded preference/precedence matrix before continuing to later full-acceptance sections:
+
+1. With no `media` query, remove `media_backend` in browser storage and reload. Confirm WebRTC A/V/control and no prototype negotiation.
+2. Store an invalid value such as `invalid`, reload without a query and confirm the same safe WebRTC result.
+3. In sidebar settings choose **WebCodecs**. Confirm the reload URL has no `media` parameter, the dedicated path reaches streaming, settings report WebCodecs, and another reload remains on WebCodecs.
+4. Confirm healthy streaming shows only the compact `WebCodecs · streaming · receive-only · no PiP` indicator. During a deliberate unavailable/disabled attempt, confirm the full limitation panel and terminal **Retry WebCodecs** / **Use WebRTC** actions remain visible and WebRTC never starts automatically.
+5. Choose **WebRTC** and confirm normal WebRTC A/V/control returns and remains selected after reload.
+6. With WebRTC stored, open exact `?media=webcodecs-ws`. Confirm WebCodecs wins only for that navigation, settings report the URL override, and stored state remains WebRTC. Use **Use saved default** (or the terminal **Use WebRTC**) and confirm the query is removed and WebRTC returns.
+7. Repeat a selection change with another harmless query parameter and, where applicable, a compact `#/<16-character-token>` fragment. Confirm only `media` is removed and the remaining query/fragment survives. Do not expose the fragment/token in evidence output.
+
+The focused productization checkpoint requires the complete client test/type/build sequence and deployed browser observations above, but does not by itself reopen the numeric latency, induced isolation, resource or hostile-input sections that the operator explicitly deferred.
 
 After any client recovery correction, keep one iPhone WebCodecs client visible in the foreground for at least ten continuous minutes with no role/window switching. Short local audio rebuffering may be audible, but it must not clear the canvas, emit a server `client_audio_underflow`, reach `resync_limit` or start a media-only retry. Record before/after metrics and the operator's visible-picture/audio observation; a desktop-only interval cannot close this regression.
 
@@ -162,4 +174,4 @@ docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml ps
 ./deploy/check-media-websocket-http.sh disabled
 ```
 
-Remove the prototype query from clients and confirm ordinary WebRTC A/V and control once more. The unused WebCodecs values may remain in ignored `.env`, but omitting the overlay is the authoritative disablement. Acceptance may be recorded only after every applicable matrix item has evidence; otherwise record the checkpoint as incomplete or rejected.
+Choose WebRTC in clients (or clear their browser-local `media_backend` value), remove the prototype query and confirm ordinary WebRTC A/V and control once more. The unused WebCodecs values may remain in ignored `.env`, but omitting the overlay is the authoritative server-side disablement. Acceptance may be recorded only after every applicable matrix item has evidence; otherwise record the checkpoint as incomplete or rejected.

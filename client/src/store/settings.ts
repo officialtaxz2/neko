@@ -2,6 +2,11 @@ import { getterTree, mutationTree, actionTree } from 'typed-vuex'
 import { get, set } from '~/utils/localstorage'
 import { EVENT } from '~/neko/events'
 import { accessor } from '~/store'
+import {
+  normalizeMediaBackendPreference,
+  readMediaBackendPreference,
+  writeMediaBackendPreference,
+} from '~/neko/media-selection.js'
 
 export const namespaced = true
 
@@ -21,7 +26,7 @@ export const state = () => {
     trackpad_mode: get<boolean>('trackpad_mode', false),
     trackpad_cursor_hidden: get<boolean>('trackpad_cursor_hidden', false),
     force_touch: get<boolean>('force_touch', false),
-
+    media_backend: readMediaBackendPreference(),
 
     keyboard_layouts_list: {} as KeyboardLayouts,
 
@@ -83,7 +88,10 @@ export const mutations = mutationTree(state, {
     set('force_touch', value)
   },
 
-
+  setMediaBackend(state, value: string) {
+    state.media_backend = normalizeMediaBackendPreference(value)
+    writeMediaBackendPreference(state.media_backend)
+  },
 
   setKeyboardLayoutsList(state, value: KeyboardLayouts) {
     state.keyboard_layouts_list = value

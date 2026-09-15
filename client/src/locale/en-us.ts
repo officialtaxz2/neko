@@ -95,8 +95,34 @@ export const setting = {
   keyboard_layout: 'Keyboard Layout',
   trackpad_mode: 'Trackpad Mode',
   trackpad_cursor_hidden: 'Hide Trackpad Cursor',
+  media_backend: 'Default Media Backend',
+  media_backend_webrtc: 'WebRTC',
+  media_backend_webcodecs: 'WebCodecs',
+  media_backend_current: 'Current',
+  media_backend_override: 'The URL diagnostic override is active and takes priority over the saved default.',
+  media_backend_invalid_override: 'The URL media selector is invalid, so the safe WebRTC path is active instead of the saved default.',
+  media_backend_clear_override: 'Use saved default',
 
   broadcast_title: 'Live Broadcast',
+}
+
+export const media = {
+  backend_webcodecs: 'WebCodecs',
+  webcodecs_title: 'WebCodecs media',
+  webcodecs_limitations: 'Receive-only: no input transport or Picture-in-Picture. WebRTC fallback is never automatic.',
+  receive_only_short: 'receive-only',
+  no_pip_short: 'no PiP',
+  retry_webcodecs: 'Retry WebCodecs',
+  use_webrtc: 'Use WebRTC',
+  status: {
+    off: 'off',
+    idle: 'idle',
+    negotiating: 'negotiating',
+    connecting: 'connecting',
+    streaming: 'streaming',
+    reconnecting: 'reconnecting',
+    terminal: 'failed',
+  },
 }
 
 export const connection = {

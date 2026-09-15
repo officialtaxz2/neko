@@ -8,6 +8,13 @@ import { viewOnlyTokenFromHash } from './share'
 import { accessor } from '~/store'
 import { ScheduledVideoFrame, WebCodecsMediaController } from './media/controller'
 import { deliverOrReleaseVideoFrame } from './media/recovery.js'
+import {
+  MEDIA_BACKEND_WEBRTC,
+  MEDIA_BACKEND_WEBCODECS,
+  mediaBackendNavigationURL,
+  normalizeMediaBackendPreference,
+  resolveMediaBackendSelection,
+} from './media-selection.js'
 
 import {
   SystemMessagePayload,
@@ -51,6 +58,8 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   private reconnectEligible = false
   private reconnectSuppressed = false
   private mediaController?: WebCodecsMediaController
+  private mediaBackendURLOverride = false
+  private mediaBackendInvalidURLOverride = false
 
   public isDemo = false
   private demoInterval?: any
@@ -80,10 +89,24 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     return this.mediaBackend === 'webcodecs-ws'
   }
 
+  public get effectiveMediaBackend() {
+    return this.webCodecsSelected ? MEDIA_BACKEND_WEBCODECS : MEDIA_BACKEND_WEBRTC
+  }
+
+  public get mediaBackendOverridden() {
+    return this.mediaBackendURLOverride
+  }
+
+  public get mediaBackendOverrideInvalid() {
+    return this.mediaBackendInvalidURLOverride
+  }
+
   init(vue: Vue) {
-    const mediaParameters = new URLSearchParams(location.search).getAll('media')
-    const webCodecsSelected = mediaParameters.length === 1 && mediaParameters[0] === 'webcodecs-ws'
-    this.selectMediaBackend(webCodecsSelected ? 'webcodecs-ws' : undefined)
+    const mediaSelection = resolveMediaBackendSelection(location.search, vue.$accessor.settings.media_backend)
+    const webCodecsSelected = mediaSelection.backend === MEDIA_BACKEND_WEBCODECS
+    this.mediaBackendURLOverride = mediaSelection.overridden
+    this.mediaBackendInvalidURLOverride = mediaSelection.invalidOverride
+    this.selectMediaBackend(webCodecsSelected ? MEDIA_BACKEND_WEBCODECS : undefined)
     vue.$accessor.media.select(webCodecsSelected)
     this.viewOnlyToken = viewOnlyTokenFromHash(location.hash)
 
@@ -270,12 +293,27 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
 
   public useWebRTC() {
     if (!this.webCodecsSelected) return
+    this.$accessor.settings.setMediaBackend(MEDIA_BACKEND_WEBRTC)
+    this.changeMediaBackend(MEDIA_BACKEND_WEBRTC)
+  }
+
+  public changeMediaBackend(backend: string) {
+    const normalized = normalizeMediaBackendPreference(backend)
+    if (normalized === this.effectiveMediaBackend && !this.mediaBackendURLOverride) return
+
+    this.reloadForMediaBackendSelection()
+  }
+
+  public clearMediaBackendOverride() {
+    if (!this.mediaBackendURLOverride) return
+    this.reloadForMediaBackendSelection()
+  }
+
+  private reloadForMediaBackendSelection() {
     this.reconnectSuppressed = true
     this.stopReconnect(true)
     this.mediaController?.stop()
-    const url = new URL(window.location.href)
-    url.searchParams.delete('media')
-    window.location.assign(url.toString())
+    window.location.assign(mediaBackendNavigationURL(window.location.href))
   }
 
   public playWebCodecs() {

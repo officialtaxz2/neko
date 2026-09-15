@@ -45,14 +45,31 @@
         <div v-else-if="mutedOverlay && muted" class="player-overlay" @click.stop.prevent="unmute">
           <i class="fas fa-volume-up" />
         </div>
-        <div v-if="webCodecsSelected" class="webcodecs-status" role="status">
-          <strong>WebCodecs receive prototype</strong>
-          <span>{{ webCodecsStatusText }}</span>
-          <small>Receive-only: no input transport or Picture-in-Picture. WebRTC fallback is never automatic.</small>
-          <div v-if="webCodecsTerminal" class="webcodecs-actions">
-            <button type="button" @click.stop.prevent="retryWebCodecs">Retry WebCodecs</button>
-            <button type="button" @click.stop.prevent="useWebRTC">Use WebRTC</button>
-          </div>
+        <div
+          v-if="webCodecsSelected"
+          :class="['webcodecs-status', { compact: webCodecsCompactStatus }]"
+          role="status"
+        >
+          <template v-if="webCodecsCompactStatus">
+            <i class="fas fa-circle" />
+            <span>
+              {{ $t('media.backend_webcodecs') }} · {{ $t('media.status.streaming') }} ·
+              {{ $t('media.receive_only_short') }} · {{ $t('media.no_pip_short') }}
+            </span>
+          </template>
+          <template v-else>
+            <strong>{{ $t('media.webcodecs_title') }}</strong>
+            <span>{{ webCodecsStatusText }}</span>
+            <small>{{ $t('media.webcodecs_limitations') }}</small>
+            <div v-if="webCodecsTerminal" class="webcodecs-actions">
+              <button type="button" @click.stop.prevent="retryWebCodecs">
+                {{ $t('media.retry_webcodecs') }}
+              </button>
+              <button type="button" @click.stop.prevent="useWebRTC">
+                {{ $t('media.use_webrtc') }}
+              </button>
+            </div>
+          </template>
         </div>
         <div
           v-if="trackpadActive && hosting && !locked && !trackpadCursorHidden"
@@ -359,6 +376,34 @@
           border-radius: 10px;
           pointer-events: auto;
 
+          &.compact {
+            max-width: calc(100% - 28px);
+            flex-direction: row;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 9px;
+            color: rgba(255, 255, 255, 0.84);
+            background: rgba(5, 5, 8, 0.7);
+            border-color: rgba(38, 230, 180, 0.3);
+            border-radius: 999px;
+            pointer-events: none;
+
+            i {
+              flex: 0 0 auto;
+              color: var(--color-cyber-mint);
+              font-size: 7px;
+              filter: drop-shadow(0 0 5px var(--color-cyber-mint-glow));
+            }
+
+            span {
+              overflow: hidden;
+              font-size: 11px;
+              line-height: 1.2;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+          }
+
           span,
           small {
             line-height: 1.35;
@@ -509,6 +554,7 @@
   import Clipboard from './clipboard.vue'
   import KeyboardHelper from './keyboard_helper.vue'
   import { ScheduledVideoFrame } from '~/neko/media/controller'
+  import { useCompactMediaStatus } from '~/neko/media-selection.js'
 
   // @ts-ignore
   import GuacamoleKeyboard from '~/utils/guacamole-keyboard.ts'
@@ -792,10 +838,14 @@
       return this.$accessor.media.status === 'terminal'
     }
 
+    get webCodecsCompactStatus() {
+      return useCompactMediaStatus(this.$accessor.media.status)
+    }
+
     get webCodecsStatusText() {
       const media = this.$accessor.media
       const attempt = media.retryAttempt > 0 ? ` (attempt ${media.retryAttempt}/4)` : ''
-      return `${media.status}${attempt}${media.detail ? ` — ${media.detail}` : ''}`
+      return `${this.$t(`media.status.${media.status}`)}${attempt}${media.detail ? ` — ${media.detail}` : ''}`
     }
 
     get volume() {
