@@ -121,4 +121,5 @@ webrtc:
   #   downgrade_backoff: 10s
   #   upgrade_backoff: 30s
   #   diff_threshold: 0.5
+  #   transport_reserve: 0.05
   #   upgrade_diff_threshold: 0.5

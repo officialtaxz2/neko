@@ -35,8 +35,12 @@ type WebRTCEstimator struct {
 	DowngradeBackoff time.Duration
 	// how long to wait before upgrading again after previous upgrade
 	UpgradeBackoff time.Duration
-	// how much spare estimated bitrate keeps the current stream from being downgraded
-	DiffThreshold float64
+	// how much sustained estimated-bitrate deficit below the current delivery
+	// requirement is tolerated before downgrading
+	DowngradeDeficitThreshold float64
+	// fractional RTP/RTCP and network-overhead reserve added to media bitrate
+	// references before downgrade and upgrade thresholds are evaluated
+	TransportReserve float64
 	// how much spare estimated bitrate over the upgrade stream reference is required before upgrading
 	UpgradeDiffThreshold float64
 }
@@ -161,8 +165,13 @@ func (WebRTC) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().Float64("webrtc.estimator.diff_threshold", 0.15, "how much spare estimated bitrate keeps the current stream from being downgraded")
+	cmd.PersistentFlags().Float64("webrtc.estimator.diff_threshold", 0.15, "maximum sustained estimated-bitrate deficit below the current delivery requirement before downgrading")
 	if err := viper.BindPFlag("webrtc.estimator.diff_threshold", cmd.PersistentFlags().Lookup("webrtc.estimator.diff_threshold")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Float64("webrtc.estimator.transport_reserve", 0.05, "fractional RTP/RTCP and network-overhead reserve added to media bitrate references")
+	if err := viper.BindPFlag("webrtc.estimator.transport_reserve", cmd.PersistentFlags().Lookup("webrtc.estimator.transport_reserve")); err != nil {
 		return err
 	}
 
@@ -321,7 +330,8 @@ func (s *WebRTC) Set() {
 	s.Estimator.StalledDuration = viper.GetDuration("webrtc.estimator.stalled_duration")
 	s.Estimator.DowngradeBackoff = viper.GetDuration("webrtc.estimator.downgrade_backoff")
 	s.Estimator.UpgradeBackoff = viper.GetDuration("webrtc.estimator.upgrade_backoff")
-	s.Estimator.DiffThreshold = viper.GetFloat64("webrtc.estimator.diff_threshold")
+	s.Estimator.DowngradeDeficitThreshold = viper.GetFloat64("webrtc.estimator.diff_threshold")
+	s.Estimator.TransportReserve = viper.GetFloat64("webrtc.estimator.transport_reserve")
 	s.Estimator.UpgradeDiffThreshold = viper.GetFloat64("webrtc.estimator.upgrade_diff_threshold")
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"math"
 	"sync"
 	"time"
 
@@ -167,15 +168,10 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 	ticker := time.NewTicker(conf.ReadInterval)
 	defer ticker.Stop()
 
-	// Start all observation windows at reader startup. A zero time.Time would
-	// make time.Since(...) appear already expired and could bypass the configured
-	// unstable/stalled grace periods on the first qualifying estimate.
-	stableSince, unstableSince, stalledSince := initialEstimatorObservationTimes(time.Now())
-	// Switch backoff intentionally starts unset and only applies after a switch.
-	lastUpgradeTime := time.Time{}
-	lastDowngradeTime := time.Time{}
+	state := newEstimatorObservationState(time.Now())
 
 	for range ticker.C {
+		now := time.Now()
 		targetBitrate := peer.estimator.GetTargetBitrate()
 		peer.metrics.SetReceiverEstimatedTargetBitrate(float64(targetBitrate))
 
@@ -193,7 +189,9 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		peer.estimateTrend.AddValue(int64(targetBitrate))
 		direction := peer.estimateTrend.GetDirection()
 
-		// get current stream bitrate
+		// Get the current measured and configured tier rates. The estimator target
+		// covers the peer's complete RTP delivery, so the downgrade reference also
+		// includes this peer's audio plus a small transport reserve.
 		stream, ok := peer.videoTrack.Source()
 		if !ok {
 			debugLogger.Warn().Msg("looks like we don't have a stream yet, skipping bitrate estimation")
@@ -207,61 +205,49 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			continue
 		}
 
-		// check whats the difference between target and stream bitrate
-		diff := float64(targetBitrate) / float64(streamBitrate)
+		audioBitrate := uint64(0)
+		if !peer.audioDisabled && peer.audioTrack != nil {
+			if audioStream, ok := peer.audioTrack.Source(); ok {
+				audioBitrate = audioStream.Bitrate
+			}
+		}
+
+		downgradeReferenceBitrate := deliveryBitrateReference(
+			streamBitrate,
+			stream.NominalBitrate,
+			audioBitrate,
+			conf.TransportReserve,
+		)
+		decision := state.observe(
+			now,
+			direction,
+			targetBitrate,
+			downgradeReferenceBitrate,
+			conf,
+		)
 
 		debugLogger.Info().
-			Float64("diff", diff).
+			Float64("current_video_diff", bitrateRatio(targetBitrate, streamBitrate)).
+			Float64("current_delivery_diff", bitrateRatio(targetBitrate, downgradeReferenceBitrate)).
 			Int("target_bitrate", targetBitrate).
 			Uint64("stream_bitrate", streamBitrate).
+			Uint64("stream_nominal_bitrate", stream.NominalBitrate).
+			Uint64("audio_bitrate", audioBitrate).
+			Uint64("downgrade_reference_bitrate", downgradeReferenceBitrate).
+			Uint64("downgrade_floor_bitrate", downgradeBitrateFloor(downgradeReferenceBitrate, conf.DowngradeDeficitThreshold)).
+			Float64("transport_reserve", conf.TransportReserve).
+			Float64("downgrade_deficit_threshold", conf.DowngradeDeficitThreshold).
+			Bool("insufficient", decision.insufficient).
 			Str("direction", direction.String()).
 			Msg("got bitrate from estimator")
 
-		// if we can accomodate current stream or we are not netural anymore,
-		// we are not stalled so we reset the stalled time
-		if direction != utils.TrendDirectionNeutral || diff > 1+conf.DiffThreshold {
-			stalledSince = time.Now()
-		}
-
-		// if we are neutral and stalled for too long, we might be congesting
-		stalled := direction == utils.TrendDirectionNeutral && time.Since(stalledSince) > conf.StalledDuration
-		if stalled {
+		if decision.stalled {
 			debugLogger.Warn().
-				Time("stalled_since", stalledSince).
-				Msgf("it looks like we are stalled")
+				Time("stalled_since", state.stalledSince).
+				Msg("neutral estimate remains materially below the current delivery requirement")
 		}
 
-		// if we have an downward trend or are stalled, we might be congesting
-		if direction == utils.TrendDirectionDownward || stalled {
-			// we reset the stable time because we are congesting
-			stableSince = time.Now()
-
-			// if we downgraded recently, we wait for some more time
-			if time.Since(lastDowngradeTime) < conf.DowngradeBackoff {
-				debugLogger.Debug().
-					Time("last_downgrade", lastDowngradeTime).
-					Msgf("downgraded recently, waiting for at least %v", conf.DowngradeBackoff)
-				continue
-			}
-
-			// if we are not unstable but we fluctuate we should wait for some more time
-			if time.Since(unstableSince) < conf.UnstableDuration {
-				debugLogger.Debug().
-					Time("unstable_since", unstableSince).
-					Msgf("we are not unstable long enough, waiting for at least %v", conf.UnstableDuration)
-				continue
-			}
-
-			// if we still have a big difference between target and stream bitrate, we wait for some more time
-			if conf.DiffThreshold >= 0 && diff > 1+conf.DiffThreshold {
-				debugLogger.Debug().
-					Float64("diff", diff).
-					Float64("threshold", conf.DiffThreshold).
-					Msgf("we still have a big difference between target and stream bitrate, " +
-						"therefore we still should be able to accomodate current stream")
-				continue
-			}
-
+		if decision.downgrade {
 			err := peer.SetVideo(types.PeerVideoRequest{
 				Selector: &types.StreamSelector{
 					ID:   streamId,
@@ -271,7 +257,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			if err != nil && err != types.ErrWebRTCStreamNotFound {
 				peer.logger.Warn().Err(err).Msg("failed to downgrade video stream")
 			}
-			lastDowngradeTime = time.Now()
+			state.markDowngrade(now)
 
 			if err == types.ErrWebRTCStreamNotFound {
 				debugLogger.Info().Msg("looks like we are already on the lowest stream")
@@ -281,27 +267,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			continue
 		}
 
-		// we reset the unstable time because we are not congesting
-		unstableSince = time.Now()
-
-		// if we have a neutral or upward trend, that means our estimate is stable
-		// if we are on the highest stream, we don't need to do anything
-		// but if there is a higher stream, we should try to upgrade and see if it works
-
-		// if we upgraded recently, we wait for some more time
-		if time.Since(lastUpgradeTime) < conf.UpgradeBackoff {
-			debugLogger.Debug().
-				Time("last_upgrade", lastUpgradeTime).
-				Msgf("upgraded recently, waiting for at least %v", conf.UpgradeBackoff)
-			continue
-		}
-
-		// if we are not stable for long enough, we wait for some more time
-		// because bandwidth estimation might fluctuate
-		if time.Since(stableSince) < conf.StableDuration {
-			debugLogger.Debug().
-				Time("stable_since", stableSince).
-				Msgf("we are not stable long enough, waiting for at least %v", conf.StableDuration)
+		if !decision.upgradeReady {
 			continue
 		}
 
@@ -318,10 +284,15 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		}
 
 		upgradeNominalBitrate := upgradeStream.NominalBitrate
-		upgradeReferenceBitrate := referenceBitrateForUpgrade(streamBitrate, upgradeNominalBitrate)
+		upgradeReferenceBitrate := deliveryBitrateReference(
+			referenceBitrateForUpgrade(streamBitrate, upgradeNominalBitrate),
+			0,
+			audioBitrate,
+			conf.TransportReserve,
+		)
 		if !estimatedBitrateSupportsUpgrade(targetBitrate, upgradeReferenceBitrate, conf.UpgradeDiffThreshold) {
 			debugLogger.Debug().
-				Float64("current_stream_diff", diff).
+				Float64("current_delivery_diff", bitrateRatio(targetBitrate, downgradeReferenceBitrate)).
 				Float64("upgrade_diff", float64(targetBitrate)/float64(upgradeReferenceBitrate)).
 				Str("upgrade_stream_id", upgradeStream.ID).
 				Uint64("upgrade_reference_bitrate", upgradeReferenceBitrate).
@@ -340,7 +311,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		if err != nil && err != types.ErrWebRTCStreamNotFound {
 			peer.logger.Warn().Err(err).Msg("failed to upgrade video stream")
 		}
-		lastUpgradeTime = time.Now()
+		state.markUpgrade(now)
 
 		if err != types.ErrWebRTCStreamNotFound {
 			debugLogger.Info().Msg("upgraded video stream")
@@ -348,8 +319,129 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 	}
 }
 
+type estimatorDecision struct {
+	downgrade    bool
+	upgradeReady bool
+	insufficient bool
+	stalled      bool
+}
+
+type estimatorObservationState struct {
+	stableSince       time.Time
+	unstableSince     time.Time
+	stalledSince      time.Time
+	lastUpgradeTime   time.Time
+	lastDowngradeTime time.Time
+}
+
+func newEstimatorObservationState(now time.Time) estimatorObservationState {
+	stableSince, unstableSince, stalledSince := initialEstimatorObservationTimes(now)
+	return estimatorObservationState{
+		stableSince:   stableSince,
+		unstableSince: unstableSince,
+		stalledSince:  stalledSince,
+	}
+}
+
+func (state *estimatorObservationState) observe(
+	now time.Time,
+	direction utils.TrendDirection,
+	targetBitrate int,
+	currentReferenceBitrate uint64,
+	conf config.WebRTCEstimator,
+) estimatorDecision {
+	insufficient := estimatedBitrateRequiresDowngrade(
+		targetBitrate,
+		currentReferenceBitrate,
+		conf.DowngradeDeficitThreshold,
+	)
+
+	if direction != utils.TrendDirectionNeutral || !insufficient {
+		state.stalledSince = now
+	}
+	stalled := direction == utils.TrendDirectionNeutral &&
+		insufficient &&
+		now.Sub(state.stalledSince) > conf.StalledDuration
+
+	// A downward trend is not itself proof that the current tier no longer
+	// fits. Conversely, an insufficient estimate must not count toward the
+	// stable window used for an opposite-direction upgrade.
+	if direction == utils.TrendDirectionDownward || insufficient {
+		state.stableSince = now
+	}
+
+	congested := insufficient && (direction == utils.TrendDirectionDownward || stalled)
+	if congested {
+		if now.Sub(state.lastDowngradeTime) < conf.DowngradeBackoff ||
+			now.Sub(state.unstableSince) < conf.UnstableDuration {
+			return estimatorDecision{insufficient: true, stalled: stalled}
+		}
+		return estimatorDecision{downgrade: true, insufficient: true, stalled: stalled}
+	}
+
+	state.unstableSince = now
+	if direction == utils.TrendDirectionDownward ||
+		now.Sub(state.lastUpgradeTime) < conf.UpgradeBackoff ||
+		now.Sub(state.stableSince) < conf.StableDuration {
+		return estimatorDecision{insufficient: insufficient, stalled: stalled}
+	}
+
+	return estimatorDecision{upgradeReady: true, insufficient: insufficient, stalled: stalled}
+}
+
+func (state *estimatorObservationState) markDowngrade(now time.Time) {
+	state.lastDowngradeTime = now
+}
+
+func (state *estimatorObservationState) markUpgrade(now time.Time) {
+	state.lastUpgradeTime = now
+}
+
 func initialEstimatorObservationTimes(now time.Time) (stableSince, unstableSince, stalledSince time.Time) {
 	return now, now, now
+}
+
+func deliveryBitrateReference(measuredVideoBitrate, nominalVideoBitrate, audioBitrate uint64, transportReserve float64) uint64 {
+	videoBitrate := measuredVideoBitrate
+	if nominalVideoBitrate > videoBitrate {
+		videoBitrate = nominalVideoBitrate
+	}
+
+	mediaBitrate := videoBitrate + audioBitrate
+	if transportReserve <= 0 {
+		return mediaBitrate
+	}
+	return uint64(math.Ceil(float64(mediaBitrate) * (1 + transportReserve)))
+}
+
+func downgradeBitrateFloor(referenceBitrate uint64, toleratedDeficit float64) uint64 {
+	if referenceBitrate == 0 {
+		return 0
+	}
+	if toleratedDeficit < 0 {
+		return referenceBitrate
+	}
+	if toleratedDeficit >= 1 {
+		return 0
+	}
+	return uint64(math.Ceil(float64(referenceBitrate) * (1 - toleratedDeficit)))
+}
+
+func estimatedBitrateRequiresDowngrade(targetBitrate int, referenceBitrate uint64, toleratedDeficit float64) bool {
+	if toleratedDeficit < 0 {
+		return true
+	}
+	if referenceBitrate == 0 {
+		return false
+	}
+	return targetBitrate < int(downgradeBitrateFloor(referenceBitrate, toleratedDeficit))
+}
+
+func bitrateRatio(targetBitrate int, referenceBitrate uint64) float64 {
+	if referenceBitrate == 0 {
+		return 0
+	}
+	return float64(targetBitrate) / float64(referenceBitrate)
 }
 
 func referenceBitrateForUpgrade(measuredBitrate, nominalBitrate uint64) uint64 {

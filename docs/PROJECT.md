@@ -83,12 +83,14 @@ These repository implementation claims were first established by static inspecti
 - The Brave deployment has a separate opt-in adaptive-quality overlay with ordered `high`, `medium` and `low` VP8 pipelines; the stable base Compose file remains single-pipeline.
 - Encoded stream rates are measured and compared with the Pion target in bit/s.
 - Peer-local audio/video queue drops and per-pipeline bitrates are exported as Prometheus metrics.
-- Upgrade headroom is configured separately from the current-tier downgrade margin; the opt-in profile can therefore account for its approximately 2:1 adjacent tiers without changing the compatible server default.
-- Optional `nominal_bitrate` metadata gates an upgrade against the next tier's target; configurations without it retain the previous measured-current-tier fallback.
+- Downgrade deficit and upgrade reserve are separate decisions. Neutral estimation and the mere absence of upgrade-style headroom do not by themselves make the current tier congested.
+- Current-tier fit uses the greater of measured and nominal video rate plus the active measured audio rate and a configurable transport reserve. Upgrade gating applies its separate reserve to the next tier's nominal complete-delivery reference, with measured video retained as the fallback where nominal metadata is absent.
 - Stable, unstable and stalled estimator observation windows start together instead of leaving the latter two at Go zero time; switch-backoff timestamps remain unset until a real switch.
 - Activation, diagnostics, resource costs, rollback and the target-server acceptance sequence are documented in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
 On 2026-09-10, the operator accepted commit `bfaca84e` on the target server for one desktop, one iPad and one iPhone. The isolated 0.7 Mbit/s rerun held the iPhone on `low` after downgrade, preserved both healthy viewers on `high` with zero peer-local drops, and recovered through `medium` to `high` within 45 seconds after impairment removal. Refresh/rejoin and a transient cellular interruption also preserved both healthy viewers. This is bounded evidence for that deployment and device set, not a universal profile guarantee. The later zero-time startup correction passed its focused target-server trace at `e5f55bf9`; the operator closed that follow-up while explicitly deferring a repeat of the full role/recovery and induced three-viewer adaptive matrix to final grouped validation.
+
+On 2026-09-19, operator-supplied evidence confirmed a separate false-downgrade case: one healthy direct-UDP WebRTC session had zero reported packet loss, NACKs and local video drops but repeatedly switched `high -> medium -> high -> medium`. Repository code now requires a sustained material deficit against the current complete delivery reference before either a downward trend or the neutral-stall path may downgrade. The startup, stable, unstable, stalled and switch-backoff durations are unchanged. Focused tests and static review are complete in the repository; target-server execution is pending.
 
 ## Highest-priority target outcomes
 
@@ -98,7 +100,7 @@ The integrated per-peer non-blocking delivery mechanism is the intended code-lev
 
 ### TARGET — per-viewer adaptive quality
 
-The repository contains a reproducible, opt-in three-tier VP8 profile, estimator diagnostics, resource/rollback documentation and an exact healthy-plus-constrained-viewer acceptance procedure. Target-server measurements confirmed the corrected bit/s accounting; focused bitrate, nominal-rate and estimator tests passed. Lower constrained-tier rates, the full VP8 quantizer range and next-tier nominal upgrade gating made both shaped phases acceptably usable for the tested iPhone while preserving the healthy desktop and iPad. The profile was accepted for this bounded target-server scenario on 2026-09-10. The stable single-pipeline deployment remains the default. See [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
+The repository contains a reproducible, opt-in three-tier VP8 profile, estimator diagnostics, resource/rollback documentation and an exact healthy-plus-constrained-viewer acceptance procedure. Target-server measurements confirmed the corrected bit/s accounting; lower constrained-tier rates, the full VP8 quantizer range and next-tier nominal upgrade gating made both shaped phases acceptably usable for the tested iPhone while preserving the healthy desktop and iPad. A later repository correction prevents a healthy application-limited estimate from being treated as congestion merely because it lacks 15% spare; real sustained shortage still steps down and a separate higher threshold governs recovery. The original profile was accepted for the bounded 2026-09-10 scenario, while this later decision correction still requires its focused target-server rerun. The stable single-pipeline deployment remains the default. See [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
 
 ### TARGET — mobile robustness
 

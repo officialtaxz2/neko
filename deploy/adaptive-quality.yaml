@@ -78,7 +78,11 @@ webrtc:
     stalled_duration: 8s
     downgrade_backoff: 30s
     upgrade_backoff: 5s
+    # A neutral estimate may sit close to the application-limited send rate.
+    # Downgrade only after a sustained deficit of more than 15% below the
+    # current video + audio + transport delivery requirement.
     diff_threshold: 0.15
+    transport_reserve: 0.05
     # Require 15% headroom over the nominal rate of the next tier.
     upgrade_diff_threshold: 0.15
 

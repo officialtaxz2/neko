@@ -159,7 +159,28 @@ Operator-reported evidence on 2026-09-10 from the `testing` branch:
 - Removing impairment returned the iPhone through `medium` to `high` within 45 seconds. The final state had three `high` listeners, inactive zero-listener `medium`/`low` pipelines, a 2,001,544 bit/s high stream, 102.74% container CPU and 903.1 MiB RAM on the eight-CPU host. The host qdisc was restored to its original `fq_codel` configuration.
 - Refresh/rejoin created a healthy new iPhone session on `high`. After a 15-second flight-mode interruption, another new iPhone session was already healthy on `high` at the first 10-second sample and stayed connected for the full 90-second observation; the desktop and iPad remained smooth on `high` with zero drop deltas. The operator confirmed playback after reload and an iOS Play tap when required. This accepts the manual recovery fallback and cross-peer isolation, but does not claim automatic in-place iOS recovery without user action.
 
-Status: **accepted on 2026-09-10 as an opt-in profile for the documented target deployment and three-viewer scenario**. The stable base Compose remains single-pipeline, and profiles without `nominal_bitrate` retain their previous estimator behavior. This bounded acceptance must not be generalized to untested devices, architectures or network conditions.
+Status: **accepted on 2026-09-10 as an opt-in profile for the documented target deployment and three-viewer scenario**. The stable base Compose remains single-pipeline, and profiles without `nominal_bitrate` retain the measured-video fallback. The later correction below deliberately changes downgrade/reference semantics and therefore requires a focused rerun. This bounded acceptance must not be generalized to untested devices, architectures or network conditions.
+
+## COMPLETED IN REPOSITORY — steady-state adaptive downgrade correction
+
+Operator-supplied target evidence on 2026-09-19 established a new issue independently of the earlier startup-window bug and encoder tuning:
+
+- one healthy active WebRTC session used direct UDP and recorded zero receiver loss, zero NACKs and zero local video drops;
+- automatic selection nevertheless changed `high -> medium -> high -> medium`;
+- reload recreated the peer/estimator and only temporarily restored `high`;
+- `max-quantizer` can explain softer motion inside a tier but is not the cause of the recorded tier switches.
+
+Implemented and statically reviewed on `testing`:
+
+- Replaced the old downgrade interpretation of `target / measured_video <= 1 + diff_threshold`. A neutral/application-limited estimate no longer needs upgrade-style spare capacity merely to retain its current tier.
+- Current-tier fit now uses `max(measured video, nominal video) + measured active audio`, plus the explicit `transport_reserve` (0.05 in the opt-in profile). `diff_threshold: 0.15` is the tolerated sustained deficit below that complete-delivery reference.
+- Downward trend and neutral stall remain signals, but either can downgrade only while the material deficit persists through the existing windows. Insufficient samples reset the stable-upgrade window.
+- Upgrade remains separately gated by `upgrade_diff_threshold` over the next tier's nominal complete-delivery reference, including audio and transport reserve. The gap between current-tier downgrade floor and next-tier upgrade requirement is intentional hysteresis.
+- The 12-second stable, 6-second unstable, 8-second stalled, 30-second downgrade-backoff and 5-second upgrade-backoff profile values are unchanged. Estimator state remains per peer, so no selection signal is shared between viewers.
+- Added focused tests for a healthy neutral estimate without 15% spare, sustained insufficient neutral/downward estimates, stable recovery, the hysteresis deadband, measured/nominal/audio/transport reference construction and exact startup/backoff boundaries.
+- WebRTC remains the default. No WebCodecs/HLS path, client selection or encoder quantizer/bitrate was changed.
+
+Static status: **implementation and review complete in repository / builds, tests, containers and live media NOT EXECUTED IN CODEX**. The compact exact-commit healthy-plus-constrained target-server gate in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md) is pending.
 
 ## COMPLETED IN REPOSITORY — bounded iOS transient recovery
 
@@ -643,9 +664,9 @@ No HLS route, packager, encoder, player, dependency, Compose overlay, automatic 
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement **Phase 1 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without starting media packaging or adding a player. Add the default-off validated `media.hls` configuration and capability descriptors; authenticated `media/hls/*` event models; ten-second single-use bootstrap ticket; path-scoped playback-lease/cookie state; exact secure-transport/origin/trusted-proxy/path/query/range/rate/redaction helpers; and pure playlist/object/generation models with conventional and LL-HLS golden fixtures.
+Validate the steady-state adaptive downgrade correction on one exact clean `testing` commit with the compact two-viewer procedure in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md): one healthy viewer must remain on `high` through the baseline and all constrained phases, while one independently shaped viewer must step `high -> medium -> low` and recover `low -> medium -> high` without cross-peer drops or rapid reversal. Run the focused server tests/build and image/deployment checks only on the target server, retain filtered metrics/logs, and restore the host shaper.
 
-Focused tests must cover configuration defaults/validation, ticket entropy/digest/single-use/expiry/binding/invalidation, independent public ID and cookie-secret handling, idle renewal and central revocation, uniform invalid-lease behavior, exact Origin/proxy rules, path traversal and directive allowlists, range/size/concurrency/rate bounds, credential-safe logs/metrics by construction, deterministic playlist rendering, target/part/hold-back tags, aligned sequences/maps/discontinuities and bounded object retention. The phase must not register a usable HLS media route, start a provider subscription/transcoder/muxer, add an HLS client/dependency/selection, or change base/stable deployment behavior. WebRTC and WebCodecs remain unchanged and no fallback is automatic. Runtime/build/test evidence remains target-server work. `master` must not move without explicit operator authorization.
+After that focused gate passes or its evidence is explicitly dispositioned, implement **Phase 1 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without starting media packaging or adding a player. Its already specified configuration, access, lease, security, deterministic playlist/object and focused-test scope remains unchanged. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -653,8 +674,9 @@ Focused tests must cover configuration defaults/validation, ticket entropy/diges
 2. **bounded checkpoint closed with explicit final-matrix limitations:** WebCodecs plus dedicated media WebSocket receive path;
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
-5. **NEXT:** implement HLS/LL-HLS Phase 1 access and deterministic-media foundations without a packager, route or player;
-6. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
+5. **NEXT:** focused exact-commit healthy-plus-constrained target validation of the adaptive downgrade correction;
+6. **queued after that gate:** implement HLS/LL-HLS Phase 1 access and deterministic-media foundations without a packager, route or player;
+7. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
 
@@ -690,6 +712,7 @@ The passive path may trade latency for reliability and compatibility. It must st
 ## OPEN
 
 - Final grouped validation must repeat the ordinary/admin/view-only/private-mode/manual-tier/reconnect matrix and the independently constrained three-viewer adaptive down/up isolation run; neither was rerun at `e5f55bf9`.
+- The steady-state downgrade correction still needs its compact exact-commit two-viewer target-server gate; repository tests/builds were not executed in Codex.
 - Determine whether fast-motion softness is acceptable at the current 1,996,800-bit/s VP8 `high` tier through a controlled same-content bitrate/quantizer A/B with receiver statistics and comparable captures; current evidence does not identify a subscription-refactor regression.
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.

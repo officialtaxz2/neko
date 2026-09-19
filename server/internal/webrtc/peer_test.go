@@ -3,7 +3,23 @@ package webrtc
 import (
 	"testing"
 	"time"
+
+	"github.com/m1k1o/neko/server/internal/config"
+	"github.com/m1k1o/neko/server/pkg/utils"
 )
+
+func adaptiveEstimatorTestConfig() config.WebRTCEstimator {
+	return config.WebRTCEstimator{
+		StableDuration:             12 * time.Second,
+		UnstableDuration:           6 * time.Second,
+		StalledDuration:            8 * time.Second,
+		DowngradeBackoff:           30 * time.Second,
+		UpgradeBackoff:             5 * time.Second,
+		DowngradeDeficitThreshold: 0.15,
+		TransportReserve:           0.05,
+		UpgradeDiffThreshold:       0.15,
+	}
+}
 
 func TestInitialEstimatorObservationTimesDoNotStartExpired(t *testing.T) {
 	now := time.Unix(1_700_000_000, 0)
@@ -25,6 +41,182 @@ func TestInitialEstimatorObservationTimesDoNotStartExpired(t *testing.T) {
 				t.Fatalf("observation window = %v, want %v", tt.got, now)
 			}
 		})
+	}
+}
+
+func TestNeutralLossFreeEstimateDoesNotDowngradeWithoutUpgradeReserve(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start)
+	reference := deliveryBitrateReference(1_900_000, 1_996_800, 128_000, conf.TransportReserve)
+
+	// 2.0 Mbit/s does not provide 15% upgrade-style headroom over the high
+	// video tier, but it is above the tolerated-deficit floor for the current
+	// complete delivery. A neutral application-limited estimate must hold high.
+	for elapsed := 2 * time.Second; elapsed <= 60*time.Second; elapsed += 2 * time.Second {
+		decision := state.observe(start.Add(elapsed), utils.TrendDirectionNeutral, 2_000_000, reference, conf)
+		if decision.insufficient {
+			t.Fatalf("estimate classified insufficient at %v", elapsed)
+		}
+		if decision.downgrade {
+			t.Fatalf("unexpected downgrade at %v", elapsed)
+		}
+	}
+}
+
+func TestSustainedInsufficientNeutralEstimateDowngrades(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start)
+	reference := deliveryBitrateReference(1_996_800, 1_996_800, 128_000, conf.TransportReserve)
+
+	var downgradedAt time.Duration
+	for elapsed := 2 * time.Second; elapsed <= 30*time.Second; elapsed += 2 * time.Second {
+		decision := state.observe(start.Add(elapsed), utils.TrendDirectionNeutral, 1_300_000, reference, conf)
+		if decision.downgrade {
+			downgradedAt = elapsed
+			break
+		}
+	}
+
+	if got, want := downgradedAt, 14*time.Second; got != want {
+		t.Fatalf("first sustained neutral downgrade at %v, want %v", got, want)
+	}
+}
+
+func TestEstimatorRecoveryRequiresStableCapacityBeforeUpgrade(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start)
+	mediumReference := deliveryBitrateReference(748_800, 748_800, 128_000, conf.TransportReserve)
+	lowReference := deliveryBitrateReference(332_800, 332_800, 128_000, conf.TransportReserve)
+	highReference := deliveryBitrateReference(1_996_800, 1_996_800, 128_000, conf.TransportReserve)
+
+	for elapsed := 2 * time.Second; elapsed <= 6*time.Second; elapsed += 2 * time.Second {
+		decision := state.observe(start.Add(elapsed), utils.TrendDirectionDownward, 600_000, mediumReference, conf)
+		if elapsed < conf.UnstableDuration && decision.downgrade {
+			t.Fatalf("downgraded before unstable duration at %v", elapsed)
+		}
+		if elapsed == conf.UnstableDuration {
+			if !decision.downgrade {
+				t.Fatal("sustained insufficient downward estimate did not downgrade")
+			}
+			state.markDowngrade(start.Add(elapsed))
+		}
+	}
+
+	for elapsed := 8 * time.Second; elapsed < 18*time.Second; elapsed += 2 * time.Second {
+		decision := state.observe(start.Add(elapsed), utils.TrendDirectionUpward, 3_000_000, lowReference, conf)
+		if decision.upgradeReady {
+			t.Fatalf("upgrade became ready before stable duration at %v", elapsed)
+		}
+	}
+
+	decision := state.observe(start.Add(18*time.Second), utils.TrendDirectionNeutral, 3_000_000, lowReference, conf)
+	if !decision.upgradeReady {
+		t.Fatal("recovered low tier did not become upgrade-ready after stable duration")
+	}
+	if !estimatedBitrateSupportsUpgrade(3_000_000, mediumReference, conf.UpgradeDiffThreshold) {
+		t.Fatal("recovered estimate did not satisfy medium delivery reserve")
+	}
+	state.markUpgrade(start.Add(18 * time.Second))
+
+	decision = state.observe(start.Add(20*time.Second), utils.TrendDirectionNeutral, 3_000_000, mediumReference, conf)
+	if decision.upgradeReady {
+		t.Fatal("second recovery upgrade ignored upgrade backoff")
+	}
+	decision = state.observe(start.Add(23*time.Second), utils.TrendDirectionNeutral, 3_000_000, mediumReference, conf)
+	if !decision.upgradeReady {
+		t.Fatal("second recovery upgrade was not ready after upgrade backoff")
+	}
+	if !estimatedBitrateSupportsUpgrade(3_000_000, highReference, conf.UpgradeDiffThreshold) {
+		t.Fatal("recovered estimate did not satisfy high delivery reserve")
+	}
+}
+
+func TestEstimatorHysteresisPreventsRapidOscillation(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start)
+	currentReference := deliveryBitrateReference(748_800, 748_800, 128_000, conf.TransportReserve)
+	upgradeReference := deliveryBitrateReference(1_996_800, 0, 128_000, conf.TransportReserve)
+	targetBitrate := 850_000
+
+	if estimatedBitrateRequiresDowngrade(targetBitrate, currentReference, conf.DowngradeDeficitThreshold) {
+		t.Fatal("deadband estimate unexpectedly requires downgrade")
+	}
+	if estimatedBitrateSupportsUpgrade(targetBitrate, upgradeReference, conf.UpgradeDiffThreshold) {
+		t.Fatal("deadband estimate unexpectedly supports upgrade")
+	}
+
+	for elapsed := 2 * time.Second; elapsed <= 60*time.Second; elapsed += 2 * time.Second {
+		decision := state.observe(start.Add(elapsed), utils.TrendDirectionNeutral, targetBitrate, currentReference, conf)
+		if decision.downgrade {
+			t.Fatalf("deadband estimate caused downgrade at %v", elapsed)
+		}
+		if decision.upgradeReady && estimatedBitrateSupportsUpgrade(targetBitrate, upgradeReference, conf.UpgradeDiffThreshold) {
+			t.Fatalf("deadband estimate caused upgrade at %v", elapsed)
+		}
+	}
+}
+
+func TestEstimatorStartupAndBackoffWindowsRemainBounded(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	reference := deliveryBitrateReference(1_996_800, 1_996_800, 128_000, conf.TransportReserve)
+
+	state := newEstimatorObservationState(start)
+	decision := state.observe(start.Add(conf.StalledDuration), utils.TrendDirectionNeutral, 1_300_000, reference, conf)
+	if decision.stalled || decision.downgrade {
+		t.Fatal("stalled window expired at its boundary instead of after it")
+	}
+
+	state = newEstimatorObservationState(start)
+	for elapsed := 2 * time.Second; elapsed <= conf.UnstableDuration; elapsed += 2 * time.Second {
+		decision = state.observe(start.Add(elapsed), utils.TrendDirectionDownward, 1_300_000, reference, conf)
+	}
+	if !decision.downgrade {
+		t.Fatal("downgrade was not ready at the unchanged unstable-duration boundary")
+	}
+	state.markDowngrade(start.Add(conf.UnstableDuration))
+
+	decision = state.observe(start.Add(conf.UnstableDuration+conf.DowngradeBackoff-time.Second), utils.TrendDirectionDownward, 1_300_000, reference, conf)
+	if decision.downgrade {
+		t.Fatal("downgrade backoff expired early")
+	}
+	decision = state.observe(start.Add(conf.UnstableDuration+conf.DowngradeBackoff), utils.TrendDirectionDownward, 1_300_000, reference, conf)
+	if !decision.downgrade {
+		t.Fatal("downgrade backoff did not expire at the configured boundary")
+	}
+
+	state = newEstimatorObservationState(start)
+	state.markUpgrade(start.Add(conf.StableDuration))
+	decision = state.observe(start.Add(conf.StableDuration+conf.UpgradeBackoff-time.Second), utils.TrendDirectionNeutral, 3_000_000, reference, conf)
+	if decision.upgradeReady {
+		t.Fatal("upgrade backoff expired early")
+	}
+	decision = state.observe(start.Add(conf.StableDuration+conf.UpgradeBackoff), utils.TrendDirectionNeutral, 3_000_000, reference, conf)
+	if !decision.upgradeReady {
+		t.Fatal("upgrade backoff did not expire at the configured boundary")
+	}
+}
+
+func TestDeliveryBitrateReferenceUsesNominalMeasuredAudioAndTransport(t *testing.T) {
+	if got, want := deliveryBitrateReference(1_900_000, 1_996_800, 128_000, 0.05), uint64(2_231_040); got != want {
+		t.Fatalf("nominal delivery reference = %d, want %d", got, want)
+	}
+	if got, want := deliveryBitrateReference(2_100_000, 1_996_800, 128_000, 0.05), uint64(2_339_400); got != want {
+		t.Fatalf("measured delivery reference = %d, want %d", got, want)
+	}
+}
+
+func TestEstimatedBitrateRequiresDowngrade(t *testing.T) {
+	reference := uint64(2_231_040)
+	if estimatedBitrateRequiresDowngrade(2_000_000, reference, 0.15) {
+		t.Fatal("estimate inside tolerated deficit unexpectedly requires downgrade")
+	}
+	if !estimatedBitrateRequiresDowngrade(1_800_000, reference, 0.15) {
+		t.Fatal("materially insufficient estimate did not require downgrade")
 	}
 }
 

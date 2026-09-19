@@ -679,7 +679,7 @@
     ],
     "type": "float",
     "defaultValue": "0.15",
-    "description": "how much spare estimated bitrate keeps the current stream from being downgraded"
+    "description": "maximum sustained estimated-bitrate deficit below the current delivery requirement before downgrading"
   },
   {
     "key": [
@@ -750,6 +750,16 @@
     "type": "duration",
     "defaultValue": "24s",
     "description": "how long to wait for stalled bandwidth estimation before downgrading"
+  },
+  {
+    "key": [
+      "webrtc",
+      "estimator",
+      "transport_reserve"
+    ],
+    "type": "float",
+    "defaultValue": "0.05",
+    "description": "fractional RTP/RTCP and network-overhead reserve added to media bitrate references"
   },
   {
     "key": [
