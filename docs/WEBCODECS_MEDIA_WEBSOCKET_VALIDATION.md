@@ -2,7 +2,7 @@
 
 This is the operator/Codex hand-off runbook for the default-off WebCodecs plus dedicated media-WebSocket receive prototype. Execute it only on the real target server, one block at a time. Return each block's complete terminal output before continuing so failures and deployment-specific values can be assessed without guessing.
 
-The operator closed a bounded checkpoint at exact documentation commit `6b6cd328` on 2026-09-14 after the recorded automated/build/security, accumulated functional and corrected foreground-iPhone gates passed. Persisted manual per-client selection and compact healthy status were implemented afterward and require the focused exact-commit checkpoint below. The numeric latency/pacing, induced slow-client/adaptive isolation, five-minute resource comparison and remaining live hostile-input sections were deliberately not executed. They remain here as the required procedure for any later full prototype-acceptance or automatic/default-backend claim; the bounded closure does not mark them passed.
+The operator closed a bounded checkpoint at exact documentation commit `6b6cd328` on 2026-09-14 after the recorded automated/build/security, accumulated functional and corrected foreground-iPhone gates passed. Persisted manual per-client selection and compact healthy status subsequently passed their focused target-server checkpoint at exact implementation commit `12cfe43b` on 2026-09-19, with live view-only fragment preservation explicitly not repeated. The numeric latency/pacing, induced slow-client/adaptive isolation, five-minute resource comparison and remaining live hostile-input sections were deliberately not executed. They remain here as the required procedure for any later full prototype-acceptance or automatic/default-backend claim; the bounded closures do not mark them passed.
 
 Never paste `.env`, passwords, cookies, view-only tokens, browser storage, event payloads, packet captures, media WebSocket URLs or `Sec-WebSocket-Protocol` values from a successful attachment. The supplied HTTP check uses a fixed invalid ticket and suppresses response bodies. Store raw evidence outside the Git worktree with mode `0700`.
 
@@ -118,6 +118,19 @@ For the post-`6b6cd328` productization checkpoint, also execute this bounded pre
 7. Repeat a selection change with another harmless query parameter and, where applicable, a compact `#/<16-character-token>` fragment. Confirm only `media` is removed and the remaining query/fragment survives. Do not expose the fragment/token in evidence output.
 
 The focused productization checkpoint requires the complete client test/type/build sequence and deployed browser observations above, but does not by itself reopen the numeric latency, induced isolation, resource or hostile-input sections that the operator explicitly deferred.
+
+Recorded result at exact `12cfe43b` on 2026-09-19:
+
+- the containerized client sequence passed all 26 tests, TypeScript and the Vite production build;
+- fresh base and Brave images built, and Brave image `sha256:2295d7198e020a9ebf365c610188d15cf3e5c3950ceffa41d81d9d5a33b8a71b` deployed healthy with zero restarts;
+- every recorded public enabled-route and direct cleartext-denial probe passed; the deliberately disabled route returned 404, and the enabled stack was restored healthy afterward;
+- missing and invalid storage selected working WebRTC; stored WebCodecs selected working VP8/Opus without a query and survived reload; explicit return to WebRTC restored A/V/control;
+- exact `?media=webcodecs-ws` overrode the stored WebRTC default without mutating it, **Use saved default** removed only `media`, and the unrelated diagnostic query value survived;
+- healthy WebCodecs used the compact indicator. With the server overlay deliberately omitted, the prominent terminal panel reported `The server did not advertise the opt-in backend`, exposed the explicit actions and did not start WebRTC automatically; **Use WebRTC** restored working WebRTC;
+- the browser loaded the expected `index-VIhuYnVV.js` asset. Browser Permissions-Policy warnings and the pre-gesture AudioContext warning did not prevent the operator-confirmed A/V result;
+- live compact view-only fragment preservation was not executed in this follow-up. The dependency-free focused navigation test passed, and the earlier view-only boundary/browser checkpoints remain separate evidence rather than being represented as a rerun here.
+
+Credential-safe evidence was stored outside the worktree in `../neko-productization-results-12cfe43b`. This is a focused productization closure with the stated live-fragment limitation, not full prototype acceptance.
 
 After any client recovery correction, keep one iPhone WebCodecs client visible in the foreground for at least ten continuous minutes with no role/window switching. Short local audio rebuffering may be audible, but it must not clear the canvas, emit a server `client_audio_underflow`, reach `resync_limit` or start a media-only retry. Record before/after metrics and the operator's visible-picture/audio observation; a desktop-only interval cannot close this regression.
 

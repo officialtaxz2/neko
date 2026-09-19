@@ -1,8 +1,8 @@
 # Backend-neutral encoded-media subscription boundary
 
-Status: **design and first no-new-transport compatibility implementation complete on `testing`; bounded target-server checkpoint closed at `e5f55bf9` on 2026-09-12 with the repeated full role/recovery and induced three-viewer down/up matrix explicitly deferred to final grouped validation; WebCodecs/media-WebSocket Phases 1–4 reached a separate bounded target checkpoint at `6b6cd328`, and persisted manual per-client selection/compact status is implemented afterward with its focused target validation pending; no fully accepted alternative transport exists yet**.
+Status: **design and first no-new-transport compatibility implementation complete on `testing`; bounded target-server checkpoint closed at `e5f55bf9` on 2026-09-12 with the repeated full role/recovery and induced three-viewer down/up matrix explicitly deferred to final grouped validation; WebCodecs/media-WebSocket Phases 1–4 reached a separate bounded target checkpoint at `6b6cd328`, and persisted manual per-client selection/compact status passed its focused target checkpoint at `12cfe43b` with live view-only fragment preservation explicitly omitted; no fully accepted alternative transport exists yet**.
 
-This document fixes the architecture contract and records its first compatibility implementation. The WebCodecs/media-WebSocket specialization is specified separately in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md); its protocol/ticket/negotiation Phase 1, credential-free server delivery Phase 2, isolated browser receive Phase 3 and separate Phase 4 deployment/observability assets exist behind one default-off server flag plus explicit client selection. A bounded Phase 4 target checkpoint passed at `6b6cd328`; the deliberately deferred full-acceptance matrix remains open. The client later added a persisted manual WebRTC/WebCodecs default with exact URL override and compact healthy status, which still needs its focused target-server check. No HLS/LL-HLS, DASH or WebTransport delivery backend exists in the repository.
+This document fixes the architecture contract and records its first compatibility implementation. The WebCodecs/media-WebSocket specialization is specified separately in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md); its protocol/ticket/negotiation Phase 1, credential-free server delivery Phase 2, isolated browser receive Phase 3 and separate Phase 4 deployment/observability assets exist behind one default-off server flag plus explicit client selection. A bounded Phase 4 target checkpoint passed at `6b6cd328`; the deliberately deferred full-acceptance matrix remains open. The client later added a persisted manual WebRTC/WebCodecs default with exact URL override and compact healthy status, and its focused target-server checkpoint passed at `12cfe43b` except for the explicitly omitted live view-only fragment case. No HLS/LL-HLS, DASH or WebTransport delivery backend exists in the repository.
 
 ## Scope
 
@@ -382,7 +382,7 @@ The first interactive-class receive candidate has the exact version-1 contract i
 - audio-master A/V timing, stale-generation rejection, explicit selection and bounded same-backend reconnect;
 - origin, size, rate, timeout, observability, rollback and target-server acceptance requirements.
 
-Its Phase 1 protocol/ticket/authenticated-negotiation primitives, Phase 2 default-off server endpoint/backend, Phase 3 isolated receive-only client and separate Phase 4 deployment/observability assets are implemented. It remains outside the stable deployment and has no target-server/browser acceptance until the grouped Phase 4 matrix completes. Independent control transport work is still required because the current mouse/keyboard/touch path is a WebRTC data channel. WebSocket is not presumed better on a constrained path merely because it avoids ICE.
+Its Phase 1 protocol/ticket/authenticated-negotiation primitives, Phase 2 default-off server endpoint/backend, Phase 3 isolated receive-only client and separate Phase 4 deployment/observability assets are implemented. It remains outside the stable deployment and has bounded target-server/browser evidence, not full acceptance, because the wider grouped Phase 4 matrix remains deliberately incomplete. Independent control transport work is still required because the current mouse/keyboard/touch path is a WebRTC data channel. WebSocket is not presumed better on a constrained path merely because it avoids ICE.
 
 ### HLS / Low-Latency HLS
 
@@ -411,7 +411,8 @@ Fixed by this design:
 
 Still open for later evidence-led prototype blocks:
 
-- exact-commit target-server/browser validation of the persisted selector/status productization and the still-deferred full WebCodecs acceptance matrix;
+- live view-only fragment preservation for the productized selector if that exact UI/navigation edge is reopened; focused automated coverage passed at `12cfe43b`, but the live case was not repeated;
+- the still-deferred full WebCodecs acceptance matrix;
 - codec combinations beyond VP8/Opus and their behavior on the real desktop, iPhone, iPad and target Smart-TV browsers;
 - HLS versus LL-HLS segment/part durations and latency budget;
 - whether DASH materially expands the actual device matrix;
