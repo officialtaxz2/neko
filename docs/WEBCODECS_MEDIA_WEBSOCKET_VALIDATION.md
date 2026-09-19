@@ -112,7 +112,7 @@ For the post-`6b6cd328` productization checkpoint, also execute this bounded pre
 1. With no `media` query, remove `media_backend` in browser storage and reload. Confirm WebRTC A/V/control and no prototype negotiation.
 2. Store an invalid value such as `invalid`, reload without a query and confirm the same safe WebRTC result.
 3. In sidebar settings choose **WebCodecs**. Confirm the reload URL has no `media` parameter, the dedicated path reaches streaming, settings report WebCodecs, and another reload remains on WebCodecs.
-4. Confirm healthy streaming shows only the compact `WebCodecs · streaming · receive-only · no PiP` indicator. During a deliberate unavailable/disabled attempt, confirm the full limitation panel and terminal **Retry WebCodecs** / **Use WebRTC** actions remain visible and WebRTC never starts automatically.
+4. Confirm healthy streaming shows only the compact `WebCodecs` indicator. During a deliberate unavailable/disabled attempt, confirm the full limitation panel and terminal **Retry WebCodecs** / **Use WebRTC** actions remain visible and WebRTC never starts automatically.
 5. Choose **WebRTC** and confirm normal WebRTC A/V/control returns and remains selected after reload.
 6. With WebRTC stored, open exact `?media=webcodecs-ws`. Confirm WebCodecs wins only for that navigation, settings report the URL override, and stored state remains WebRTC. Use **Use saved default** (or the terminal **Use WebRTC**) and confirm the query is removed and WebRTC returns.
 7. Repeat a selection change with another harmless query parameter and, where applicable, a compact `#/<16-character-token>` fragment. Confirm only `media` is removed and the remaining query/fragment survives. Do not expose the fragment/token in evidence output.

@@ -118,5 +118,13 @@ test('sidebar changes persist and re-enter startup while the WebRTC action persi
   assert.match(client, /public clearMediaBackendOverride\(\) \{\s*if \(!this\.mediaBackendURLOverride\) return/)
   assert.match(client, /window\.location\.assign\(mediaBackendNavigationURL\(window\.location\.href\)\)/)
   assert.match(video, /\{ compact: webCodecsCompactStatus \}/)
+  const compactStatus = video.match(
+    /<template v-if="webCodecsCompactStatus">([\s\S]*?)<\/template>/,
+  )?.[1]
+  assert.ok(compactStatus)
+  assert.match(compactStatus, /media\.backend_webcodecs/)
+  assert.doesNotMatch(compactStatus, /fa-circle/)
+  assert.doesNotMatch(compactStatus, /media\.status\.streaming/)
+  assert.doesNotMatch(compactStatus, /media\.(receive_only_short|no_pip_short)/)
   assert.match(video, /v-if="webCodecsTerminal" class="webcodecs-actions"/)
 })

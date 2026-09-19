@@ -20,7 +20,7 @@ Die Autorisierung beruht auf `MemberProfile.IsViewOnly` und serverseitigen Einga
 - Chat, Dateiübertragung und Open-in-App;
 - Sessionpersistenz und Widerruf.
 
-Die erste Umsetzung verwendet WebRTC weiterhin als Empfangspfad. Der passive Marker ist absichtlich transportneutral, damit ein späterer HLS-/LL-HLS-Empfänger dieselbe Autorisierungsgrenze verwenden kann.
+Die erste Umsetzung verwendet WebRTC weiterhin als Empfangspfad. Der passive Marker ist absichtlich transportneutral, damit der in [`HLS_LL_HLS.md`](HLS_LL_HLS.md) spezifizierte, aber noch nicht implementierte HLS-/LL-HLS-Empfänger dieselbe Autorisierungsgrenze verwenden kann.
 
 ## Token, URL und Geheimhaltung
 

@@ -2,7 +2,7 @@
 
 Status: **design and first no-new-transport compatibility implementation complete on `testing`; bounded target-server checkpoint closed at `e5f55bf9` on 2026-09-12 with the repeated full role/recovery and induced three-viewer down/up matrix explicitly deferred to final grouped validation; WebCodecs/media-WebSocket Phases 1–4 reached a separate bounded target checkpoint at `6b6cd328`, and persisted manual per-client selection/compact status passed its focused target checkpoint at `12cfe43b` with live view-only fragment preservation explicitly omitted; no fully accepted alternative transport exists yet**.
 
-This document fixes the architecture contract and records its first compatibility implementation. The WebCodecs/media-WebSocket specialization is specified separately in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md); its protocol/ticket/negotiation Phase 1, credential-free server delivery Phase 2, isolated browser receive Phase 3 and separate Phase 4 deployment/observability assets exist behind one default-off server flag plus explicit client selection. A bounded Phase 4 target checkpoint passed at `6b6cd328`; the deliberately deferred full-acceptance matrix remains open. The client later added a persisted manual WebRTC/WebCodecs default with exact URL override and compact healthy status, and its focused target-server checkpoint passed at `12cfe43b` except for the explicitly omitted live view-only fragment case. No HLS/LL-HLS, DASH or WebTransport delivery backend exists in the repository.
+This document fixes the architecture contract and records its first compatibility implementation. The WebCodecs/media-WebSocket specialization is specified separately in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md); its protocol/ticket/negotiation Phase 1, credential-free server delivery Phase 2, isolated browser receive Phase 3 and separate Phase 4 deployment/observability assets exist behind one default-off server flag plus explicit client selection. A bounded Phase 4 target checkpoint passed at `6b6cd328`; the deliberately deferred full-acceptance matrix remains open. The client later added a persisted manual WebRTC/WebCodecs default with exact URL override and compact healthy status, and its focused target-server checkpoint passed at `12cfe43b` except for the explicitly omitted live view-only fragment case. The HLS/LL-HLS specialization is now fixed in [`HLS_LL_HLS.md`](HLS_LL_HLS.md), but no HLS/LL-HLS, DASH or WebTransport delivery backend exists in the repository.
 
 ## Scope
 
@@ -17,7 +17,7 @@ It covers:
 - backend registration, capability reporting and observability;
 - a compatibility migration of the existing WebRTC sender.
 
-It deliberately leaves transport-specific contracts to separate documents. [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md) now fixes the first receive prototype's wire format and bounded implementation plan; HLS segment duration, automatic fallback, the Smart-TV support matrix and a new control transport still belong to later prototypes and measurements.
+It deliberately leaves transport-specific contracts to separate documents. [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md) fixes the first interactive-class receive prototype. [`HLS_LL_HLS.md`](HLS_LL_HLS.md) fixes the first passive HTTP-streaming contract, while actual device evidence, automatic fallback and a new control transport remain later work.
 
 ## Pre-refactor code seam
 
@@ -386,14 +386,7 @@ Its Phase 1 protocol/ticket/authenticated-negotiation primitives, Phase 2 defaul
 
 ### HLS / Low-Latency HLS
 
-The first passive prototype must:
-
-- use the same delivery authorization and room session;
-- share one packager output per active variant rather than one encoder per viewer;
-- begin with an opt-in codec set supported by actual target devices; current VP8/Opus must not be assumed to provide native HLS compatibility;
-- define segment/part retention, discontinuity and cleanup limits;
-- prove that slow HTTP clients cannot block capture or healthy WebRTC viewers;
-- measure startup time, end-to-end latency, CPU, memory and storage/I/O before choosing HLS versus LL-HLS defaults.
+[`HLS_LL_HLS.md`](HLS_LL_HLS.md) now fixes the first passive specialization. It keeps the same central delivery/session authorization while sharing one bounded memory-only packager set across viewers. Current VP8/Opus is an input, not a native-HLS assumption: version 1 specifies H.264 High 3.1 plus AAC-LC in separate fMP4 renditions, six-second parents, one-second LL parts, aligned two-second GOPs, short-lived path-scoped HttpOnly playback leases and exact security, retention, isolation, observability and device/resource gates. The design is complete; no HLS route, packager or client is implemented.
 
 ## Fixed decisions and remaining open choices
 
@@ -408,13 +401,13 @@ Fixed by this design:
 - backend selection is explicit/opt-in before any automatic fallback;
 - WebCodecs/WebSocket is evaluated for interactive compatibility, HLS/LL-HLS separately for passive compatibility, and WebTransport only afterward.
 - `webcodecs-ws` version 1 uses explicit default-off selection, a dedicated socket, VP8 plus raw Opus, fixed binary framing, fixed queue/security limits and no automatic fallback, as specified in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
+- HLS/LL-HLS version 1 uses explicit default-off selection, shared H.264/AAC fMP4 packaging, fixed six-second parents/one-second LL parts, per-viewer cookie leases without URL credentials, bounded in-memory retention and no automatic fallback, as specified in [`HLS_LL_HLS.md`](HLS_LL_HLS.md).
 
 Still open for later evidence-led prototype blocks:
 
 - live view-only fragment preservation for the productized selector if that exact UI/navigation edge is reopened; focused automated coverage passed at `12cfe43b`, but the live case was not repeated;
 - the still-deferred full WebCodecs acceptance matrix;
-- codec combinations beyond VP8/Opus and their behavior on the real desktop, iPhone, iPad and target Smart-TV browsers;
-- HLS versus LL-HLS segment/part durations and latency budget;
+- actual HLS/LL-HLS behavior on the real desktop, iPhone, iPad and target Smart-TV browsers against the fixed codec/timing/latency contract;
 - whether DASH materially expands the actual device matrix;
 - eventual automatic backend-selection rules after explicit prototype evidence;
 - whether broadcast/screencast should later consume the same provider.

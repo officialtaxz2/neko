@@ -51,11 +51,7 @@
           role="status"
         >
           <template v-if="webCodecsCompactStatus">
-            <i class="fas fa-circle" />
-            <span>
-              {{ $t('media.backend_webcodecs') }} · {{ $t('media.status.streaming') }} ·
-              {{ $t('media.receive_only_short') }} · {{ $t('media.no_pip_short') }}
-            </span>
+            <span>{{ $t('media.backend_webcodecs') }}</span>
           </template>
           <template v-else>
             <strong>{{ $t('media.webcodecs_title') }}</strong>
@@ -387,13 +383,6 @@
             border-color: rgba(38, 230, 180, 0.3);
             border-radius: 999px;
             pointer-events: none;
-
-            i {
-              flex: 0 0 auto;
-              color: var(--color-cyber-mint);
-              font-size: 7px;
-              filter: drop-shadow(0 0 5px var(--color-cyber-mint-glow));
-            }
 
             span {
               overflow: hidden;

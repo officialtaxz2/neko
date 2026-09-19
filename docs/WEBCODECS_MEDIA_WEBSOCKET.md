@@ -17,7 +17,7 @@ Version 1 is an explicit, opt-in, low-latency **receive-media** experiment:
 - the existing authenticated event WebSocket remains the session, authorization, chat and control plane;
 - the existing WebRTC path, signaling and data channels remain the default and remain unchanged;
 - no backend is chosen automatically and no failure automatically changes transports;
-- HLS/LL-HLS remains a separate later passive/view-only prototype.
+- HLS/LL-HLS remains a separate passive/view-only prototype whose design is fixed in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); no HLS transport is implemented.
 
 The current client sends high-rate keyboard, pointer and touch input through the WebRTC data channel. Version 1 deliberately does not add a replacement control transport and therefore must not be described as complete non-WebRTC interactive parity. It proves an interactive-class receive path. A later, independently reviewed block must decide how a controlling participant sends high-rate input when no WebRTC peer connection exists.
 
@@ -45,7 +45,7 @@ The implementation has two independent opt-ins, with these names and defaults:
 
 The exact client URL selection `?media=webcodecs-ws` remains the highest-priority stateless diagnostic override. It never mutates the stored preference. With no `media` query, the normalized stored value is used. Missing, inaccessible or invalid storage resolves to WebRTC. If a `media` parameter is present but not exactly one `webcodecs-ws` value, the safe WebRTC path wins instead of activating a stored experimental choice. Both the server enablement and an effective WebCodecs client selection must be present. A selected client must not also start the normal `signal/request` flow. An unselected client must not send prototype capability or ticket events. Disabling the server flag must leave the new route unregistered and the backend unadvertised.
 
-The existing sidebar exposes the persisted WebRTC/WebCodecs default and reports the effective backend plus URL-override state. Changing the default removes only the diagnostic `media` query and reloads through normal startup, retaining other query parameters and the fragment. Healthy WebCodecs streaming uses a compact status indicator; negotiation, recovery and terminal failure retain the prominent limitation/action surface.
+The existing sidebar exposes the persisted WebRTC/WebCodecs default and reports the effective backend plus URL-override state. Changing the default removes only the diagnostic `media` query and reloads through normal startup, retaining other query parameters and the fragment. Healthy WebCodecs streaming uses a compact indicator containing only `WebCodecs`; negotiation, recovery and terminal failure retain the prominent limitation/action surface.
 
 An explicitly selected client that cannot use the prototype shows a terminal explanation plus two deliberate actions:
 

@@ -110,8 +110,6 @@ export const media = {
   backend_webcodecs: 'WebCodecs',
   webcodecs_title: 'WebCodecs media',
   webcodecs_limitations: 'Receive-only: no input transport or Picture-in-Picture. WebRTC fallback is never automatic.',
-  receive_only_short: 'receive-only',
-  no_pip_short: 'no PiP',
   retry_webcodecs: 'Retry WebCodecs',
   use_webrtc: 'Use WebRTC',
   status: {

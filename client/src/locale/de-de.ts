@@ -107,8 +107,6 @@ export const media = {
   backend_webcodecs: 'WebCodecs',
   webcodecs_title: 'WebCodecs-Medienpfad',
   webcodecs_limitations: 'Nur Empfang: keine Eingabesteuerung und kein Bild-in-Bild. Ein Wechsel zu WebRTC erfolgt nie automatisch.',
-  receive_only_short: 'nur Empfang',
-  no_pip_short: 'kein PiP',
   retry_webcodecs: 'WebCodecs erneut versuchen',
   use_webrtc: 'WebRTC verwenden',
   status: {

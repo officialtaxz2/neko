@@ -460,7 +460,7 @@ Status: **implemented and statically reviewed on `testing` on 2026-09-15 / focus
 - Added a persisted **Default Media Backend** selector to the existing sidebar settings. Changing it stores the normalized per-browser choice, removes only the stateless `media` diagnostic parameter and reloads through the existing startup path while preserving unrelated query parameters and the view-only fragment.
 - Retained exactly one `?media=webcodecs-ws` value as the highest-priority stateless diagnostic override without mutating the stored default. A present wrong or duplicated selector remains on the safe WebRTC path instead of accidentally activating a stored experimental backend. Settings show the effective backend, override state and an explicit action to remove the override and return to the saved default.
 - A stored WebCodecs choice now selects the same isolated receive path without requiring a query. A new/unset client still selects WebRTC and sends no media-prototype event. The separately configured server feature remains default-off.
-- Replaced the always-large healthy `WebCodecs receive prototype` panel with a compact localized `WebCodecs · streaming · receive-only · no PiP` indicator. Idle, negotiation, connection, recovery and terminal states retain the prominent localized panel, the full receive-only/no-Picture-in-Picture/no-automatic-fallback explanation and terminal **Retry WebCodecs** / **Use WebRTC** actions.
+- Replaced the always-large healthy `WebCodecs receive prototype` panel with a compact localized `WebCodecs` indicator. Idle, negotiation, connection, recovery and terminal states retain the prominent localized panel, the full receive-only/no-Picture-in-Picture/no-automatic-fallback explanation and terminal **Retry WebCodecs** / **Use WebRTC** actions.
 - **Use WebRTC** now also persists WebRTC before removing the diagnostic selector and reloading, so a prior stored WebCodecs preference cannot immediately reactivate the receive path.
 - Added dependency-free focused coverage for persistence, absent/invalid/default behavior, storage denial, exact URL precedence, wrong/duplicate URL safety, query/fragment-preserving selection navigation, healthy-versus-recovery status treatment and source-level sidebar/action wiring. The complete client test command now includes `tests/media-selection.test.mjs`.
 - No server, protocol, authorization, event WebSocket, WebRTC signaling/data-channel/opcode, capture, deployment or Compose source was changed. No automatic fallback, HLS/LL-HLS, WebTransport or replacement input transport was added.
@@ -625,23 +625,36 @@ Browser/runtime images, when relevant to the deployment:
 - on ARM64, verify Widevine installation and actual DRM playback;
 - on NVIDIA deployments, verify encoder-element selection with the installed driver/GStreamer version.
 
+## HLS/LL-HLS design block — complete in repository
+
+[`HLS_LL_HLS.md`](HLS_LL_HLS.md) now fixes the default-off version-1 passive delivery contract without implementing the transport. It specializes the existing encoded-provider and central participant-delivery boundary as follows:
+
+- one shared in-memory packager set consumes bounded provider subscriptions; its one AAC audio rendition and at most three H.264 video renditions are shared across viewers and across conventional/low-latency playlist views;
+- current VP8/Opus is explicitly not treated as native HLS. The first evidence-led output is separate fMP4 H.264 High 3.1 video plus 48-kHz stereo AAC-LC, with exact initial target variants and a required desktop/Apple/actual-Smart-TV matrix;
+- conventional HLS uses six-second parents and an 18-second hold-back. LL-HLS adds one-second parts, three-second part hold-back, blocking reloads, preload hints and rendition reports over the same objects;
+- every viewer remains one centrally owned `MediaDelivery`. A ten-second one-time ticket bootstraps a 30-second sliding playback lease using an independent path-scoped Secure/HttpOnly/SameSite cookie; no login/share credential or playback bearer appears in a playlist URL;
+- same-origin HTTPS, exact Origin on mutating requests, trusted-proxy CIDRs, uniform invalid-lease responses, no CORS/CDN/shared cache, fixed request/rate/object limits, memory-only 64-MiB retention and credential-free metrics are normative;
+- private mode, revocation, replacement and shutdown remain central lifecycle operations. Already downloaded HTTP bytes cannot be revoked retroactively, so the exact visible-window bound and cooperative/server stop deadlines are explicit acceptance evidence;
+- repository Phases 1–4 and the exact security, role, device, latency, adaptation, slow-reader, resource and cross-backend isolation gates are fixed.
+
+No HLS route, packager, encoder, player, dependency, Compose overlay, automatic selection, DASH/WebTransport implementation or new control transport was added in this block. Runtime/build/test status for the design follow-up is **NOT EXECUTED IN CODEX**. The small client follow-up in the same repository block reduces the already-compact healthy WebCodecs indicator to only `WebCodecs`; prominent negotiation/recovery/terminal behavior is unchanged.
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Specify the **default-off HLS/Low-Latency HLS passive/view-only prototype contract** before implementing any HTTP-streaming transport. Create one authoritative design that specializes the existing encoded-source/subscription and participant-delivery boundary without creating a second desktop capture. It must distinguish one shared bounded packager per active variant from per-viewer authorization leases and preserve the same logical room, `CanWatch`, private-mode, revocation, shutdown and view-only no-input guarantees.
+Implement **Phase 1 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without starting media packaging or adding a player. Add the default-off validated `media.hls` configuration and capability descriptors; authenticated `media/hls/*` event models; ten-second single-use bootstrap ticket; path-scoped playback-lease/cookie state; exact secure-transport/origin/trusted-proxy/path/query/range/rate/redaction helpers; and pure playlist/object/generation models with conventional and LL-HLS golden fixtures.
 
-Fix the version-1 access/security model for master/media playlists, parts and segments: short lifetime, credential transport, replay/scope behavior, URL/log/referrer leakage prevention, CORS/origin and reverse-proxy trust, cache/CDN policy, connection/rate limits and cleanup. Decide the first evidence-led codec/container/device matrix rather than assuming the current VP8/Opus capture is natively HLS-compatible. Define HLS versus LL-HLS segment/part duration, startup/latency targets, discontinuity/generation mapping, keyframe alignment, bounded retention/storage/I/O, variant activation, slow-client isolation, observability and rollback. Include exact repository phases and a target-server/device acceptance matrix for desktop, iPhone/iPad and the actual Smart-TV/constrained clients.
-
-This NEXT is design-only. Do not add an endpoint, packager, client player, automatic backend selection, DASH/WebTransport implementation, new control transport or stable-deployment change in this block. WebRTC remains the default interactive path, the explicit WebCodecs path and its documented limitations remain unchanged, and all previously deferred WebCodecs/full-grouped gates stay deferred. `master` must not move without explicit operator authorization.
+Focused tests must cover configuration defaults/validation, ticket entropy/digest/single-use/expiry/binding/invalidation, independent public ID and cookie-secret handling, idle renewal and central revocation, uniform invalid-lease behavior, exact Origin/proxy rules, path traversal and directive allowlists, range/size/concurrency/rate bounds, credential-safe logs/metrics by construction, deterministic playlist rendering, target/part/hold-back tags, aligned sequences/maps/discontinuities and bounded object retention. The phase must not register a usable HLS media route, start a provider subscription/transcoder/muxer, add an HLS client/dependency/selection, or change base/stable deployment behavior. WebRTC and WebCodecs remain unchanged and no fallback is automatic. Runtime/build/test evidence remains target-server work. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
 1. **bounded checkpoint closed with the documented final-matrix limitation:** media-subscription/WebRTC compatibility refactor plus estimator startup correction;
 2. **bounded checkpoint closed with explicit final-matrix limitations:** WebCodecs plus dedicated media WebSocket receive path;
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
-4. **NEXT:** specify the exact default-off HLS/LL-HLS passive/view-only prototype contract before implementation;
-5. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
+4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
+5. **NEXT:** implement HLS/LL-HLS Phase 1 access and deterministic-media foundations without a packager, route or player;
+6. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
 
@@ -657,11 +670,13 @@ When fallback work begins, separate the two user classes instead of forcing ever
 6. **implemented Phase 3:** isolated strict client parser/worker/WebCodecs/AudioWorklet/canvas receive path, explicit UI actions and bounded same-backend recovery;
 7. **bounded Phase 4 checkpoint closed:** exact automated/build/security, accumulated functional and corrected foreground-iPhone gates passed; numeric latency/pacing, induced isolation, resource and remaining live hostile-input cases stay deferred;
 8. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted manual per-client `WebRTC`/`WebCodecs` selection and compact healthy status without automatic fallback;
-9. **NEXT design block:** specify **HLS / Low-Latency HLS** for passive/view-only clients such as Smart-TVs and constrained browsers before implementing it;
-10. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
-11. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
+9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
+10. **NEXT Phase 1:** default-off access, lease, security and deterministic playlist/object foundations without a packager or client;
+11. later Phases 2–4 add the shared packager/HTTP delivery, isolated passive client and grouped target-server validation in that order;
+12. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
+13. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 
-The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS is a TARGET candidate now, not merely a generic later idea.
+The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract, but no implementation or device evidence yet.
 
 ## LATER / OPTIONAL
 
@@ -679,7 +694,7 @@ The passive path may trade latency for reliability and compatibility. It must st
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
 - Target-device and target-server evidence for the specified VP8/Opus WebCodecs/media-WebSocket contract; framing, queue sizes, synchronization, security limits and rollout behavior are fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
-- HLS/LL-HLS latency target, segment/part sizing, codec profile and server resource cost.
+- Actual HLS/LL-HLS device, latency and resource evidence against the fixed targets in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); no transport is implemented yet.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
 - Eventual automatic per-client media-backend selection rules after the explicitly selected prototypes have measured evidence; version-1 manual selection and rollback are already fixed.
 - Live compact view-only fragment preservation for the productized selector was not repeated at `12cfe43b`; focused automated coverage passed, and earlier view-only boundary/browser evidence remains separate.
