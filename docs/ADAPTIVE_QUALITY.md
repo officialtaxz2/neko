@@ -48,20 +48,25 @@ At exact commit `e5f55bf9`, the complete target-server validation service passed
 
 The operator closed the combined compatibility/estimator checkpoint with an explicit limitation: the ordinary/admin/view-only/private-mode/manual-tier/reconnect matrix and a fresh independently constrained three-viewer down/up isolation run were not repeated at `e5f55bf9`. They remain deferred to final grouped validation. The focused result does not promise that `high` will remain selected when a receiver's sustained estimate is below the capacity required for `high`, and it does not identify the startup defect as the sole cause of every sustained `medium` selection.
 
-## Post-acceptance steady-state downgrade correction — target-server validation pending
+## Post-acceptance steady-state downgrade correction — first target candidate rejected, revised validation pending
 
 Operator evidence on 2026-09-19 confirmed a different steady-state failure. One active healthy WebRTC peer used direct UDP and reported zero receiver loss, zero NACKs and zero local video drops, yet its automatic selection changed `high -> medium -> high -> medium`. Reload recreated the peer and estimator and temporarily returned it to `high`. This is a tier-selection defect; `max-quantizer` can affect motion detail within a tier but does not cause those tier changes.
 
-The old neutral-stall test required the estimate to exceed the current measured video rate by `1 + diff_threshold`. With the profile's `0.15`, a neutral application-limited estimate could therefore be treated as stalled solely because it lacked 15% spare. The corrected policy separates the two questions:
+The first correction at exact commit `2d037f39` separated current-tier deficit from next-tier upgrade reserve. Its focused server tests/build, image rebuild and initial 180-second healthy-client gate passed on the target server. Longer unshaped observation then rejected it: the same direct-UDP peer, still with zero receiver loss, zero NACKs and zero local video drops, changed `high -> medium` at `12:11:00Z`, `medium -> low` at `12:11:34Z`, and recovered `low -> medium -> high` around `12:19Z`. The target estimate had fallen as low as roughly 0.47 Mbit/s even though the host shaper was absent and its qdisc recorded no drop. The first correction therefore fixed the 15% reserve error but still treated the estimator target itself as sufficient proof of congestion.
+
+The revised policy separates three questions:
 
 - The current complete-delivery reference is `max(measured video, nominal video) + measured active audio`, multiplied by `1 + transport_reserve` (0.05 in the tracked profile).
-- `diff_threshold` is now the tolerated sustained deficit below that current reference. With `0.15`, downgrade eligibility begins only below 85% of the complete-delivery reference; absence of 15% spare is no longer a downgrade condition.
-- A downward trend or neutral stall can request a downgrade only while that material insufficiency persists through the unchanged `unstable_duration`, `stalled_duration` and `downgrade_backoff` windows.
-- Insufficient observations reset the stable-upgrade window. Upgrade remains separate and requires `1 + upgrade_diff_threshold` over the next tier's nominal complete-delivery reference, including current audio and transport reserve.
+- `diff_threshold` is the tolerated deficit below that current reference. With `0.15`, the estimator target becomes materially insufficient below 85% of the complete-delivery reference; absence of 15% spare is not a downgrade condition.
+- A materially insufficient target is advisory until fresh, peer-local receiver feedback confirms congestion. Confirmation is the latest RTCP receiver report with non-zero `FractionLost`, or a received NACK, no older than two estimator read intervals. A clean, missing or stale report cannot authorize a downgrade.
+- The confirmed shortage must still persist through the unchanged downward/neutral, `unstable_duration`, `stalled_duration` and `downgrade_backoff` gates. A transient loss/NACK cannot keep that window alive by itself.
+- Congestion feedback also resets the stable-upgrade window. Upgrade remains separate and requires a clean stable interval plus `1 + upgrade_diff_threshold` over the next tier's nominal complete-delivery reference, including current audio and transport reserve.
 
-For the tracked rates and an illustrative 128 kbit/s audio stream, a measured 1.90 Mbit/s `high` stream produces a 2,231,040 bit/s complete-delivery reference and an approximately 1,896,384 bit/s downgrade floor. A neutral 2.00 Mbit/s estimate therefore holds `high` even though it does not have 15% spare. By contrast, a sustained 1.30 Mbit/s estimate is materially insufficient and still steps down. On `medium`, the downgrade floor and the `high` upgrade requirement form a deliberate deadband, preventing an estimate near the current tier from immediately reversing direction.
+For the tracked rates and an illustrative 128 kbit/s audio stream, a measured 1.90 Mbit/s `high` stream produces a 2,231,040 bit/s complete-delivery reference and an approximately 1,896,384 bit/s downgrade floor. A neutral 2.00 Mbit/s estimate holds `high` because it is above that floor. The reproduced 0.47 Mbit/s phantom estimate is below the floor, but now also holds `high` while receiver loss and NACK evidence remain zero. By contrast, the documented shaped phases deliberately produce sustained receiver loss and remain eligible to step down. On `medium`, the downgrade floor and the `high` upgrade requirement retain a deliberate deadband.
 
-The implementation remains entirely peer-local, keeps WebRTC as the default, leaves WebCodecs/HLS selection unchanged, and does not alter the profile's 12-second stable, 6-second unstable, 8-second stalled, 30-second downgrade-backoff or 5-second upgrade-backoff values. Focused repository tests cover healthy neutral capacity, sustained shortage, stable recovery, hysteresis, the bitrate-reference formula and exact timing boundaries. They are **NOT EXECUTED IN CODEX**; target-server execution and the compact live gate below remain pending.
+The estimator still drives target/trend/shortage classification and recovery; it is neither disabled nor replaced by forced `high`. The receiver-evidence requirement is deliberately conservative because this deployment's Pion GCC target proved capable of a prolonged loss-free false collapse. A future verified queue-limited path that is genuinely unusable but produces neither receiver loss nor NACKs would need a separately validated delay signal rather than restoring target-only downgrades.
+
+The implementation remains entirely peer-local, keeps WebRTC as the default, leaves WebCodecs/HLS selection unchanged, and does not alter the profile's 12-second stable, 6-second unstable, 8-second stalled, 30-second downgrade-backoff or 5-second upgrade-backoff values. New metrics expose raw receiver-report fraction loss and the current policy evidence bit; estimator logs include feedback freshness, loss and NACK classification. Focused repository tests cover the exact severe loss-free collapse, fresh/stale receiver evidence, sustained shortage, transient congestion, peer isolation, stable recovery, hysteresis, bitrate-reference construction and exact timing boundaries. They are **NOT EXECUTED IN CODEX**; target-server execution and the compact live gate below remain pending.
 
 ## Fast-motion softness observation
 
@@ -98,7 +103,7 @@ Run these commands only on the real target server. Preserve the currently workin
 docker image tag my-neko/brave:latest my-neko/brave:pre-adaptive
 cd server
 go test ./internal/capture -run '^(TestSaveSampleBitrateUsesBitsPerSecond|TestNominalBitrate)$'
-go test ./internal/webrtc -run '^(TestInitialEstimatorObservationTimesDoNotStartExpired|TestNeutralLossFreeEstimateDoesNotDowngradeWithoutUpgradeReserve|TestSustainedInsufficientNeutralEstimateDowngrades|TestEstimatorRecoveryRequiresStableCapacityBeforeUpgrade|TestEstimatorHysteresisPreventsRapidOscillation|TestEstimatorStartupAndBackoffWindowsRemainBounded|TestDeliveryBitrateReferenceUsesNominalMeasuredAudioAndTransport|TestEstimatedBitrateRequiresDowngrade|TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade)$'
+go test ./internal/webrtc -run '^(TestInitialEstimatorObservationTimesDoNotStartExpired|TestNeutralLossFreeEstimateDoesNotDowngradeWithoutUpgradeReserve|TestSevereLossFreeEstimatorCollapseDoesNotDowngrade|TestReceiverCongestionEvidenceRequiresFreshLossOrNack|TestReceiverCongestionEvidenceExpiresBeforeUnstableWindow|TestTransientReceiverCongestionDoesNotDowngrade|TestEstimatorCongestionEvidenceRemainsPeerLocal|TestSustainedInsufficientNeutralEstimateDowngrades|TestEstimatorRecoveryRequiresStableCapacityBeforeUpgrade|TestEstimatorHysteresisPreventsRapidOscillation|TestEstimatorStartupAndBackoffWindowsRemainBounded|TestDeliveryBitrateReferenceUsesNominalMeasuredAudioAndTransport|TestEstimatedBitrateRequiresDowngrade|TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade)$'
 ./build
 cd ..
 ./build my-neko/base:latest -y
@@ -115,7 +120,7 @@ docker run --rm "$VALIDATION_IMAGE" \
   -run '^(TestSaveSampleBitrateUsesBitsPerSecond|TestNominalBitrate)$'
 docker run --rm "$VALIDATION_IMAGE" \
   go test ./internal/webrtc \
-  -run '^(TestInitialEstimatorObservationTimesDoNotStartExpired|TestNeutralLossFreeEstimateDoesNotDowngradeWithoutUpgradeReserve|TestSustainedInsufficientNeutralEstimateDowngrades|TestEstimatorRecoveryRequiresStableCapacityBeforeUpgrade|TestEstimatorHysteresisPreventsRapidOscillation|TestEstimatorStartupAndBackoffWindowsRemainBounded|TestDeliveryBitrateReferenceUsesNominalMeasuredAudioAndTransport|TestEstimatedBitrateRequiresDowngrade|TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade)$'
+  -run '^(TestInitialEstimatorObservationTimesDoNotStartExpired|TestNeutralLossFreeEstimateDoesNotDowngradeWithoutUpgradeReserve|TestSevereLossFreeEstimatorCollapseDoesNotDowngrade|TestReceiverCongestionEvidenceRequiresFreshLossOrNack|TestReceiverCongestionEvidenceExpiresBeforeUnstableWindow|TestTransientReceiverCongestionDoesNotDowngrade|TestEstimatorCongestionEvidenceRemainsPeerLocal|TestSustainedInsufficientNeutralEstimateDowngrades|TestEstimatorRecoveryRequiresStableCapacityBeforeUpgrade|TestEstimatorHysteresisPreventsRapidOscillation|TestEstimatorStartupAndBackoffWindowsRemainBounded|TestDeliveryBitrateReferenceUsesNominalMeasuredAudioAndTransport|TestEstimatedBitrateRequiresDowngrade|TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade)$'
 ./build my-neko/base:latest -y
 ./build my-neko/brave:latest -y
 ```
@@ -144,13 +149,17 @@ With the default loopback HTTP port, inspect the relevant metrics on the target 
 
 ```bash
 curl -fsS http://127.0.0.1:8082/metrics \
-  | grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners))'
+  | grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(receiver_(congestion_evidence|estimated_target_bitrate|report_(fraction_lost|total_lost))|track_dropped_samples_total|transport_layer_nacks|video_listeners))'
 ```
 
 Replace `8082` when `NEKO_HTTP_PORT` has been changed. The important series are:
 
 - `neko_capture_streamsink_bitrate`: measured encoded pipeline rate in bit/s, labeled by `video_id`;
 - `neko_webrtc_receiver_estimated_target_bitrate`: estimator target in bit/s, labeled by `session_id`;
+- `neko_webrtc_receiver_report_fraction_lost`: latest raw RTCP 8-bit interval-loss value, labeled by `session_id`;
+- `neko_webrtc_receiver_report_total_lost`: latest cumulative RTCP receiver-report loss value, labeled by `session_id`;
+- `neko_webrtc_transport_layer_nacks`: cumulative received NACK entries, labeled by `session_id`;
+- `neko_webrtc_receiver_congestion_evidence`: `1` only while recent receiver loss or NACK feedback can authorize an adaptive downgrade;
 - `neko_webrtc_video_listeners`: the selected tier for each session (`1` is active);
 - `neko_webrtc_track_dropped_samples_total`: cumulative peer-local queue drops, labeled by `session_id` and `kind`;
 - `neko_capture_streamsink_listeners` and `neko_capture_pipelines_active`: demand and active encoder pipelines;
@@ -165,7 +174,7 @@ docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs -f ne
   | grep -E "got bitrate from estimator|downgraded video stream|upgraded video stream|set video|dropping sample|don't have enough bitrate"
 ```
 
-`got bitrate from estimator` includes `target_bitrate`, measured and nominal video rates, measured audio, transport reserve, complete-delivery reference, downgrade floor, insufficiency classification and trend. A rejected nominal-rate upgrade includes `upgrade_reference_bitrate` and `nominal_reference`; the collector retains its `don't have enough bitrate` message. The trace-only `dropping sample` line may not be visible at the normal log level; the counter is the authoritative drop diagnostic.
+`got bitrate from estimator` includes `target_bitrate`, measured and nominal video rates, measured audio, transport reserve, complete-delivery reference, downgrade floor, insufficiency classification, trend, receiver-report freshness/fraction/total loss, NACK freshness and the final receiver-congestion confirmation. A rejected nominal-rate upgrade includes `upgrade_reference_bitrate` and `nominal_reference`; the collector retains its `don't have enough bitrate` message. The trace-only `dropping sample` line may not be visible at the normal log level; the counter is the authoritative drop diagnostic.
 
 ## Resource cost
 
@@ -177,13 +186,13 @@ Record host CPU, memory, load, pipeline gauges and packet/drop behavior while al
 
 ## Compact healthy-plus-constrained regression — pending
 
-This is the focused gate for the 2026-09-19 decision correction. It intentionally uses only one healthy viewer `H` and one independently constrained viewer `C`; retain the longer three-viewer matrix below for final grouped acceptance.
+This is the focused gate for the revised correction after the exact `2d037f39` target candidate was rejected. It intentionally uses only one healthy viewer `H` and one independently constrained viewer `C`; retain the longer three-viewer matrix below for final grouped acceptance.
 
 1. On an exact clean `testing` commit, run the focused capture/WebRTC tests above, build the server plus selected local image, validate the merged base/adaptive Compose model and recreate the service. Record commit, immutable image ID, health and restart count.
-2. Join only `H` over its normal path and keep changing content visible for 180 seconds. Record start/end snapshots and estimator logs. `H` must stay on `high`; its receiver loss, NACK and peer-local video-drop deltas must remain zero or be explicitly explained. A neutral estimate may lack 15% spare, but no downgrade is allowed while it remains above `downgrade_floor_bitrate`.
+2. Join only `H` over its normal path and keep changing content visible for at least 20 minutes while one bounded watcher records tier, target, receiver evidence and switch logs. `H` must stay on `high`. In particular, a target below `downgrade_floor_bitrate` must not switch tiers while `receiver_congestion_evidence` is `0`; receiver loss, NACK and peer-local video-drop deltas must remain zero or be explicitly explained.
 3. Join `C`, identify its distinct active `session_id` and UDP endpoint, then apply the already verified endpoint-specific bounded shaper only to `C`. At approximately 1.3 Mbit/s for 90 seconds, `C` must reach and hold `medium`; at approximately 0.7 Mbit/s for 90 seconds, it must reach and hold `low`. Verify non-zero shaped traffic and no shaped traffic for `H`.
 4. Remove the impairment and give `C` at least 5 Mbit/s for up to 90 seconds. It must recover in order through `medium` to `high`, and unused pipelines must return to zero listeners. `H` must remain continuously on `high` with no new local video drops throughout all phases.
-5. Capture final metrics/logs with `deploy/collect-adaptive-quality.sh`. Reject the run for any unexplained `H: high -> medium`, rapid opposite-direction switch inside the policy deadband, cross-peer tier change/drop increase, reconnect storm, GStreamer error, container restart or unremoved host shaper.
+5. Capture final metrics/logs with `deploy/collect-adaptive-quality.sh`. Reject the run for any unexplained `H: high -> medium`, any downgrade without continuously fresh receiver congestion evidence through its decision window, rapid opposite-direction switch inside the policy deadband, cross-peer tier change/drop increase, reconnect storm, GStreamer error, container restart or unremoved host shaper.
 
 This compact gate demonstrates the reported healthy-client regression and continued constrained-client adaptation together. It does not replace the final role/device/recovery/resource matrix.
 

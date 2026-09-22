@@ -174,6 +174,16 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		now := time.Now()
 		targetBitrate := peer.estimator.GetTargetBitrate()
 		peer.metrics.SetReceiverEstimatedTargetBitrate(float64(targetBitrate))
+		// Pion's target can collapse on an otherwise healthy application-limited
+		// path. Keep it as the capacity input, but require recent receiver loss or
+		// NACK feedback before it can authorize a downgrade.
+		feedback := peer.metrics.ReceiverFeedback()
+		congestionEvidence := assessReceiverCongestion(
+			now,
+			feedback,
+			receiverCongestionEvidenceMaxAge(conf.ReadInterval, conf.UnstableDuration),
+		)
+		peer.metrics.SetReceiverCongestionEvidence(congestionEvidence.confirmed)
 
 		// if peer connection is closed, stop reading
 		if peer.connection.ConnectionState() == webrtc.PeerConnectionStateClosed {
@@ -223,6 +233,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			direction,
 			targetBitrate,
 			downgradeReferenceBitrate,
+			congestionEvidence.confirmed,
 			conf,
 		)
 
@@ -238,6 +249,11 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			Float64("transport_reserve", conf.TransportReserve).
 			Float64("downgrade_deficit_threshold", conf.DowngradeDeficitThreshold).
 			Bool("insufficient", decision.insufficient).
+			Bool("receiver_congestion_confirmed", decision.receiverCongestionConfirmed).
+			Bool("receiver_report_fresh", congestionEvidence.reportFresh).
+			Uint64("receiver_report_fraction_lost", uint64(feedback.fractionLost)).
+			Uint64("receiver_report_total_lost", uint64(feedback.totalLost)).
+			Bool("receiver_nack_fresh", congestionEvidence.nackFresh).
 			Str("direction", direction.String()).
 			Msg("got bitrate from estimator")
 
@@ -320,10 +336,11 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 }
 
 type estimatorDecision struct {
-	downgrade    bool
-	upgradeReady bool
-	insufficient bool
-	stalled      bool
+	downgrade                   bool
+	upgradeReady                bool
+	insufficient                bool
+	stalled                     bool
+	receiverCongestionConfirmed bool
 }
 
 type estimatorObservationState struct {
@@ -348,6 +365,7 @@ func (state *estimatorObservationState) observe(
 	direction utils.TrendDirection,
 	targetBitrate int,
 	currentReferenceBitrate uint64,
+	receiverCongestionConfirmed bool,
 	conf config.WebRTCEstimator,
 ) estimatorDecision {
 	insufficient := estimatedBitrateRequiresDowngrade(
@@ -356,37 +374,102 @@ func (state *estimatorObservationState) observe(
 		conf.DowngradeDeficitThreshold,
 	)
 
-	if direction != utils.TrendDirectionNeutral || !insufficient {
+	if direction != utils.TrendDirectionNeutral || !insufficient || !receiverCongestionConfirmed {
 		state.stalledSince = now
 	}
 	stalled := direction == utils.TrendDirectionNeutral &&
 		insufficient &&
+		receiverCongestionConfirmed &&
 		now.Sub(state.stalledSince) > conf.StalledDuration
 
-	// A downward trend is not itself proof that the current tier no longer
-	// fits. Conversely, an insufficient estimate must not count toward the
-	// stable window used for an opposite-direction upgrade.
-	if direction == utils.TrendDirectionDownward || insufficient {
+	// A downward trend or low target is not itself proof that the current tier
+	// no longer fits. Conversely, an insufficient estimate or confirmed
+	// receiver congestion must not count toward an opposite-direction upgrade.
+	if direction == utils.TrendDirectionDownward || insufficient || receiverCongestionConfirmed {
 		state.stableSince = now
 	}
 
-	congested := insufficient && (direction == utils.TrendDirectionDownward || stalled)
+	congested := insufficient &&
+		receiverCongestionConfirmed &&
+		(direction == utils.TrendDirectionDownward || stalled)
 	if congested {
 		if now.Sub(state.lastDowngradeTime) < conf.DowngradeBackoff ||
 			now.Sub(state.unstableSince) < conf.UnstableDuration {
-			return estimatorDecision{insufficient: true, stalled: stalled}
+			return estimatorDecision{
+				insufficient:                true,
+				stalled:                     stalled,
+				receiverCongestionConfirmed: true,
+			}
 		}
-		return estimatorDecision{downgrade: true, insufficient: true, stalled: stalled}
+		return estimatorDecision{
+			downgrade:                   true,
+			insufficient:                true,
+			stalled:                     stalled,
+			receiverCongestionConfirmed: true,
+		}
 	}
 
 	state.unstableSince = now
-	if direction == utils.TrendDirectionDownward ||
+	if receiverCongestionConfirmed ||
+		direction == utils.TrendDirectionDownward ||
 		now.Sub(state.lastUpgradeTime) < conf.UpgradeBackoff ||
 		now.Sub(state.stableSince) < conf.StableDuration {
-		return estimatorDecision{insufficient: insufficient, stalled: stalled}
+		return estimatorDecision{
+			insufficient:                insufficient,
+			stalled:                     stalled,
+			receiverCongestionConfirmed: receiverCongestionConfirmed,
+		}
 	}
 
-	return estimatorDecision{upgradeReady: true, insufficient: insufficient, stalled: stalled}
+	return estimatorDecision{
+		upgradeReady:                true,
+		insufficient:                insufficient,
+		stalled:                     stalled,
+		receiverCongestionConfirmed: receiverCongestionConfirmed,
+	}
+}
+
+type receiverCongestionEvidence struct {
+	confirmed   bool
+	reportFresh bool
+	nackFresh   bool
+}
+
+func receiverCongestionEvidenceMaxAge(readInterval, unstableDuration time.Duration) time.Duration {
+	if readInterval <= 0 {
+		return 0
+	}
+
+	maxAge := 2 * readInterval
+	if unstableDuration > 0 && maxAge >= unstableDuration {
+		return unstableDuration - time.Nanosecond
+	}
+	return maxAge
+}
+
+func assessReceiverCongestion(
+	now time.Time,
+	feedback receiverFeedbackSnapshot,
+	maxAge time.Duration,
+) receiverCongestionEvidence {
+	if maxAge <= 0 {
+		return receiverCongestionEvidence{}
+	}
+
+	// One isolated report must expire before the unchanged unstable window can
+	// complete. Repeated lossy reports or NACKs refresh their peer-local signal.
+	reportFresh := feedback.reportAvailable &&
+		!feedback.reportedAt.After(now) &&
+		now.Sub(feedback.reportedAt) <= maxAge
+	nackFresh := !feedback.lastNackAt.IsZero() &&
+		!feedback.lastNackAt.After(now) &&
+		now.Sub(feedback.lastNackAt) <= maxAge
+
+	return receiverCongestionEvidence{
+		confirmed:   (reportFresh && feedback.fractionLost > 0) || nackFresh,
+		reportFresh: reportFresh,
+		nackFresh:   nackFresh,
+	}
 }
 
 func (state *estimatorObservationState) markDowngrade(now time.Time) {

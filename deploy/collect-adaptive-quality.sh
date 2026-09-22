@@ -131,7 +131,7 @@ write_metrics_snapshot() {
   local metrics_url="${NEKO_METRICS_URL:-$DEFAULT_METRICS_URL}"
 
   curl --fail --silent --show-error --max-time 15 "$metrics_url" \
-    | grep -E '^neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(connection_state|receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners))' \
+    | grep -E '^neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(connection_state|receiver_(congestion_evidence|estimated_target_bitrate|report_(fraction_lost|total_lost))|track_dropped_samples_total|transport_layer_nacks|video_listeners))' \
     >"$output_file"
 }
 

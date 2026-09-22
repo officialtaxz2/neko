@@ -27,7 +27,7 @@ Immediate sequence:
 19. productize the still-explicit client choice without adding automatic fallback — **complete on `testing`; the per-client WebRTC/WebCodecs preference, URL override precedence and compact healthy status are implemented and focused target-server validated at `12cfe43b`**,
 20. validate the per-client media-backend productization on one exact `testing` commit while preserving the bounded Phase 4 limitations — **closed on 2026-09-19 at `12cfe43b`; 26 client tests, type/build, image/deployment/security, preference/override/status and disabled-backend terminal gates passed; live view-only fragment preservation was not repeated, while its focused automated test passed**,
 21. specify the exact default-off HLS/LL-HLS passive/view-only prototype contract without implementing a transport yet — **complete on `testing`; design only, no HLS endpoint, packager or player implemented**,
-22. correct the confirmed steady-state WebRTC estimator downgrade defect so neutral/application-limited estimates do not need upgrade-style spare capacity to hold the current tier — **complete in the repository on `testing`; focused target-server validation is NEXT**,
+22. correct the confirmed steady-state WebRTC estimator downgrade defect so neutral/application-limited estimates do not need upgrade-style spare capacity and a loss-free GCC target collapse cannot change tiers by itself — **revised implementation complete in the repository on `testing`; the first candidate at `2d037f39` was rejected by an extended target-server trace, so exact-commit revalidation is NEXT**,
 23. implement HLS/LL-HLS Phase 1: default-off configuration, authenticated bootstrap/playback-lease foundations, deterministic playlist/object models and golden fixtures without starting a packager or adding a client player — **queued after the focused adaptive gate**,
 24. keep accumulating reviewed implementation blocks on `testing`; promote to `master` only after the operator explicitly authorizes the final grouped promotion — **pending**.
 
@@ -131,7 +131,7 @@ Use only the checks relevant to the changed areas, with broader verification aft
 - Admin lock and grant/revoke behavior must remain intact.
 - Fork mobile/touch/trackpad, autoplay, playback-recovery, fullscreen and reconnect behavior is regression-sensitive.
 - A weak viewer must not degrade healthy viewers in the target architecture.
-- Adaptive downgrade requires sustained material insufficiency against the peer-local complete-delivery requirement; upgrade reserve is a separate next-tier gate, and neither decision may couple viewers.
+- Adaptive downgrade requires sustained material insufficiency against the peer-local complete-delivery requirement plus fresh receiver loss/NACK evidence; GCC target/trend alone is advisory, upgrade reserve is a separate next-tier gate, and neither decision may couple viewers.
 - View-only sharing is enforced server-side; hiding controls in the UI is not authorization.
 - WebRTC is the currently implemented primary media path.
 - Future interactive and passive/view-only clients may use different media backends in the same logical room; media transport must not determine authorization.

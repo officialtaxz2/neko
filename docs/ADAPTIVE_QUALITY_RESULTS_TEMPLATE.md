@@ -35,7 +35,7 @@ Keep raw metrics and logs outside the repository because session IDs and host de
 
 Use snapshot filenames as evidence references. Drop values are phase deltas, not lifetime counter totals.
 
-| Phase | H1 tier / drop delta | H2 tier / drop delta | C tier / drop delta | C target bit/s | Stream bit/s | Host CPU/RAM | Evidence files | Result/notes |
+| Phase | H1 tier / evidence / drop delta | H2 tier / evidence / drop delta | C tier / evidence / drop delta | C target bit/s | Stream bit/s | Host CPU/RAM | Evidence files | Result/notes |
 | --- | --- | --- | --- | ---: | ---: | --- | --- | --- |
 | baseline |  |  |  |  |  |  |  |  |
 | C 1.3 Mbit/s |  |  |  |  |  |  |  |  |
@@ -47,6 +47,8 @@ Use snapshot filenames as evidence references. Drop values are phase deltas, not
 - [ ] C recovered through `medium` to `high` after impairment removal.
 - [ ] H1 and H2 remained on `high` and usable throughout.
 - [ ] H1 and H2 gained no peer-local video-drop delta.
+- [ ] No healthy viewer downgraded while `receiver_congestion_evidence` remained `0`.
+- [ ] Every constrained-viewer downgrade correlated with sustained fresh receiver loss or NACK evidence.
 - [ ] Unused `medium` and `low` pipelines returned to zero listeners/inactive.
 - [ ] Refresh/rejoin and transient interruption of C did not move or stall H1/H2.
 - [ ] Brave profile, downloads and managed policy remained available.

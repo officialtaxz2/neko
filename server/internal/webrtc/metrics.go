@@ -176,6 +176,15 @@ func (m *metricsManager) getBySession(session types.Session) *metrics {
 				"session_id": sessionId,
 			},
 		}),
+		receiverReportFractionLost: promauto.NewGauge(prometheus.GaugeOpts{
+			Name:      "receiver_report_fraction_lost",
+			Namespace: "neko",
+			Subsystem: "webrtc",
+			Help:      "Receiver Report Fraction Lost from RTCP, expressed as the raw 8-bit fixed-point value.",
+			ConstLabels: map[string]string{
+				"session_id": sessionId,
+			},
+		}),
 		receiverReportTotalLost: promauto.NewGauge(prometheus.GaugeOpts{
 			Name:      "receiver_report_total_lost",
 			Namespace: "neko",
@@ -191,6 +200,15 @@ func (m *metricsManager) getBySession(session types.Session) *metrics {
 			Namespace: "neko",
 			Subsystem: "webrtc",
 			Help:      "Transport Layer NACKs from RTCP.",
+			ConstLabels: map[string]string{
+				"session_id": sessionId,
+			},
+		}),
+		receiverCongestionEvidence: promauto.NewGauge(prometheus.GaugeOpts{
+			Name:      "receiver_congestion_evidence",
+			Namespace: "neko",
+			Subsystem: "webrtc",
+			Help:      "Whether recent peer-local receiver loss or NACK feedback confirms congestion for adaptive downgrade decisions.",
 			ConstLabels: map[string]string{
 				"session_id": sessionId,
 			},
@@ -266,11 +284,15 @@ type metrics struct {
 	receiverEstimatedMaximumBitrate prometheus.Gauge
 	receiverEstimatedTargetBitrate  prometheus.Gauge
 
-	receiverReportDelay     prometheus.Gauge
-	receiverReportJitter    prometheus.Gauge
-	receiverReportTotalLost prometheus.Gauge
+	receiverReportDelay        prometheus.Gauge
+	receiverReportJitter       prometheus.Gauge
+	receiverReportFractionLost prometheus.Gauge
+	receiverReportTotalLost    prometheus.Gauge
 
-	transportLayerNacks prometheus.Counter
+	transportLayerNacks         prometheus.Counter
+	receiverCongestionEvidence prometheus.Gauge
+	receiverFeedbackMu         sync.RWMutex
+	receiverFeedback           receiverFeedbackSnapshot
 
 	iceBytesSent      prometheus.Gauge
 	iceBytesReceived  prometheus.Gauge
@@ -293,6 +315,12 @@ func (met *metrics) reset() {
 
 	met.receiverReportDelay.Set(0)
 	met.receiverReportJitter.Set(0)
+	met.receiverReportFractionLost.Set(0)
+	met.receiverReportTotalLost.Set(0)
+	met.receiverCongestionEvidence.Set(0)
+	met.receiverFeedbackMu.Lock()
+	met.receiverFeedback = receiverFeedbackSnapshot{}
+	met.receiverFeedbackMu.Unlock()
 }
 
 func (met *metrics) NewConnection() {
@@ -399,7 +427,40 @@ func (met *metrics) SetReceiverEstimatedTargetBitrate(bitrate float64) {
 func (met *metrics) SetReceiverReport(report rtcp.ReceptionReport) {
 	met.receiverReportDelay.Set(float64(report.Delay))
 	met.receiverReportJitter.Set(float64(report.Jitter))
+	met.receiverReportFractionLost.Set(float64(report.FractionLost))
 	met.receiverReportTotalLost.Set(float64(report.TotalLost))
+
+	met.receiverFeedbackMu.Lock()
+	met.receiverFeedback.reportAvailable = true
+	met.receiverFeedback.reportedAt = time.Now()
+	met.receiverFeedback.fractionLost = report.FractionLost
+	met.receiverFeedback.totalLost = report.TotalLost
+	met.receiverFeedbackMu.Unlock()
+}
+
+func (met *metrics) AddTransportLayerNacks(count uint64) {
+	if count == 0 {
+		return
+	}
+
+	met.transportLayerNacks.Add(float64(count))
+	met.receiverFeedbackMu.Lock()
+	met.receiverFeedback.lastNackAt = time.Now()
+	met.receiverFeedbackMu.Unlock()
+}
+
+func (met *metrics) ReceiverFeedback() receiverFeedbackSnapshot {
+	met.receiverFeedbackMu.RLock()
+	defer met.receiverFeedbackMu.RUnlock()
+	return met.receiverFeedback
+}
+
+func (met *metrics) SetReceiverCongestionEvidence(confirmed bool) {
+	if confirmed {
+		met.receiverCongestionEvidence.Set(1)
+		return
+	}
+	met.receiverCongestionEvidence.Set(0)
 }
 
 func (met *metrics) SetIceTransportStats(data webrtc.TransportStats) {
@@ -437,11 +498,19 @@ func (met *metrics) rtcpReceiver(rtcpCh chan []rtcp.Packet) {
 			case *rtcp.TransportLayerNack:
 				for _, pair := range rtcpPacket.Nacks {
 					packetList := pair.PacketList()
-					met.transportLayerNacks.Add(float64(len(packetList)))
+					met.AddTransportLayerNacks(uint64(len(packetList)))
 				}
 			}
 		}
 	}
+}
+
+type receiverFeedbackSnapshot struct {
+	reportAvailable bool
+	reportedAt      time.Time
+	fractionLost    uint8
+	totalLost       uint32
+	lastNackAt      time.Time
 }
 
 func (met *metrics) connectionStats(connection *webrtc.PeerConnection) {
