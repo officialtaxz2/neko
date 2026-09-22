@@ -735,6 +735,26 @@
     "key": [
       "webrtc",
       "estimator",
+      "recovery_probe_interval"
+    ],
+    "type": "duration",
+    "defaultValue": "30s",
+    "description": "minimum interval between peer-local one-tier recovery probes, zero disables probes"
+  },
+  {
+    "key": [
+      "webrtc",
+      "estimator",
+      "recovery_probe_max_backoff"
+    ],
+    "type": "duration",
+    "defaultValue": "5m0s",
+    "description": "maximum exponential retry delay after a failed recovery probe"
+  },
+  {
+    "key": [
+      "webrtc",
+      "estimator",
       "stable_duration"
     ],
     "type": "duration",

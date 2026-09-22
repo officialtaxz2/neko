@@ -78,6 +78,11 @@ webrtc:
     stalled_duration: 8s
     downgrade_backoff: 30s
     upgrade_backoff: 5s
+    # A lower tier can application-limit GCC below the next-tier requirement.
+    # After a clean/stable interval, probe one higher tier. Failed probes fall
+    # back through the normal evidence-gated path with exponential backoff.
+    recovery_probe_interval: 30s
+    recovery_probe_max_backoff: 2m
     # A neutral estimate may sit close to the application-limited send rate.
     # Downgrade only after a sustained deficit of more than 15% below the
     # current video + audio + transport delivery requirement.

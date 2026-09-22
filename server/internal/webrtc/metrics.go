@@ -213,6 +213,42 @@ func (m *metricsManager) getBySession(session types.Session) *metrics {
 				"session_id": sessionId,
 			},
 		}),
+		recoveryProbeActive: promauto.NewGauge(prometheus.GaugeOpts{
+			Name:      "recovery_probe_active",
+			Namespace: "neko",
+			Subsystem: "webrtc",
+			Help:      "Whether this session is currently validating a peer-local one-tier recovery probe.",
+			ConstLabels: map[string]string{
+				"session_id": sessionId,
+			},
+		}),
+		recoveryProbeAttempts: promauto.NewCounter(prometheus.CounterOpts{
+			Name:      "recovery_probe_attempts_total",
+			Namespace: "neko",
+			Subsystem: "webrtc",
+			Help:      "Peer-local one-tier recovery probes started for this session.",
+			ConstLabels: map[string]string{
+				"session_id": sessionId,
+			},
+		}),
+		recoveryProbeSuccesses: promauto.NewCounter(prometheus.CounterOpts{
+			Name:      "recovery_probe_successes_total",
+			Namespace: "neko",
+			Subsystem: "webrtc",
+			Help:      "Peer-local recovery probes that remained clean for the stable window.",
+			ConstLabels: map[string]string{
+				"session_id": sessionId,
+			},
+		}),
+		recoveryProbeFailures: promauto.NewCounter(prometheus.CounterOpts{
+			Name:      "recovery_probe_failures_total",
+			Namespace: "neko",
+			Subsystem: "webrtc",
+			Help:      "Peer-local recovery probes that returned through an evidence-gated downgrade.",
+			ConstLabels: map[string]string{
+				"session_id": sessionId,
+			},
+		}),
 
 		iceBytesSent: promauto.NewGauge(prometheus.GaugeOpts{
 			Name:      "bytes_sent",
@@ -291,6 +327,10 @@ type metrics struct {
 
 	transportLayerNacks         prometheus.Counter
 	receiverCongestionEvidence prometheus.Gauge
+	recoveryProbeActive        prometheus.Gauge
+	recoveryProbeAttempts      prometheus.Counter
+	recoveryProbeSuccesses     prometheus.Counter
+	recoveryProbeFailures      prometheus.Counter
 	receiverFeedbackMu         sync.RWMutex
 	receiverFeedback           receiverFeedbackSnapshot
 
@@ -318,6 +358,7 @@ func (met *metrics) reset() {
 	met.receiverReportFractionLost.Set(0)
 	met.receiverReportTotalLost.Set(0)
 	met.receiverCongestionEvidence.Set(0)
+	met.recoveryProbeActive.Set(0)
 	met.receiverFeedbackMu.Lock()
 	met.receiverFeedback = receiverFeedbackSnapshot{}
 	met.receiverFeedbackMu.Unlock()
@@ -461,6 +502,26 @@ func (met *metrics) SetReceiverCongestionEvidence(confirmed bool) {
 		return
 	}
 	met.receiverCongestionEvidence.Set(0)
+}
+
+func (met *metrics) SetRecoveryProbeActive(active bool) {
+	if active {
+		met.recoveryProbeActive.Set(1)
+		return
+	}
+	met.recoveryProbeActive.Set(0)
+}
+
+func (met *metrics) IncRecoveryProbeAttempt() {
+	met.recoveryProbeAttempts.Inc()
+}
+
+func (met *metrics) IncRecoveryProbeSuccess() {
+	met.recoveryProbeSuccesses.Inc()
+}
+
+func (met *metrics) IncRecoveryProbeFailure() {
+	met.recoveryProbeFailures.Inc()
 }
 
 func (met *metrics) SetIceTransportStats(data webrtc.TransportStats) {

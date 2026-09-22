@@ -49,6 +49,8 @@ Use snapshot filenames as evidence references. Drop values are phase deltas, not
 - [ ] H1 and H2 gained no peer-local video-drop delta.
 - [ ] No healthy viewer downgraded while `receiver_congestion_evidence` remained `0`.
 - [ ] Every constrained-viewer downgrade correlated with sustained fresh receiver loss or NACK evidence.
+- [ ] H1/H2 started no recovery probe; C had at most one active one-tier probe.
+- [ ] Each successful C probe completed a clean stable window; each failed probe backed off before retry.
 - [ ] Unused `medium` and `low` pipelines returned to zero listeners/inactive.
 - [ ] Refresh/rejoin and transient interruption of C did not move or stall H1/H2.
 - [ ] Brave profile, downloads and managed policy remained available.

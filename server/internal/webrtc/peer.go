@@ -168,7 +168,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 	ticker := time.NewTicker(conf.ReadInterval)
 	defer ticker.Stop()
 
-	state := newEstimatorObservationState(time.Now())
+	state := newEstimatorObservationState(time.Now(), conf)
 
 	for range ticker.C {
 		now := time.Now()
@@ -192,6 +192,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 
 		// if estimation or video is disabled, do nothing
 		if !peer.videoAuto || peer.videoDisabled || peer.paused || conf.Passive {
+			state.deferRecoveryProbeObservation(now)
 			continue
 		}
 
@@ -204,6 +205,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		// includes this peer's audio plus a small transport reserve.
 		stream, ok := peer.videoTrack.Source()
 		if !ok {
+			state.deferRecoveryProbeObservation(now)
 			debugLogger.Warn().Msg("looks like we don't have a stream yet, skipping bitrate estimation")
 			continue
 		}
@@ -211,6 +213,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		// if stream bitrate is 0, we need to wait for some time until we get a valid value
 		streamId, streamBitrate := stream.ID, stream.Bitrate
 		if streamBitrate == 0 {
+			state.deferRecoveryProbeObservation(now)
 			debugLogger.Warn().Msg("looks like stream bitrate is 0, we need to wait for some time")
 			continue
 		}
@@ -254,6 +257,8 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			Uint64("receiver_report_fraction_lost", uint64(feedback.fractionLost)).
 			Uint64("receiver_report_total_lost", uint64(feedback.totalLost)).
 			Bool("receiver_nack_fresh", congestionEvidence.nackFresh).
+			Bool("recovery_probe_active", state.recoveryProbeActive).
+			Uint("remaining_recovery_steps", state.recoverySteps).
 			Str("direction", direction.String()).
 			Msg("got bitrate from estimator")
 
@@ -272,15 +277,35 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			})
 			if err != nil && err != types.ErrWebRTCStreamNotFound {
 				peer.logger.Warn().Err(err).Msg("failed to downgrade video stream")
+				state.markDowngradeAttempt(now)
+				continue
 			}
-			state.markDowngrade(now)
-
 			if err == types.ErrWebRTCStreamNotFound {
+				state.markDowngradeAttempt(now)
 				debugLogger.Info().Msg("looks like we are already on the lowest stream")
-			} else {
-				debugLogger.Info().Msg("downgraded video stream")
+				continue
 			}
+
+			probeFailed, probeBackoff := state.markDowngrade(now, conf)
+			if probeFailed {
+				peer.metrics.SetRecoveryProbeActive(false)
+				peer.metrics.IncRecoveryProbeFailure()
+				debugLogger.Warn().
+					Dur("recovery_probe_backoff", probeBackoff).
+					Uint("recovery_probe_failures", state.recoveryProbeFailures).
+					Msg("recovery probe failed and returned to the previous stream")
+			}
+
+			debugLogger.Info().Msg("downgraded video stream")
 			continue
+		}
+
+		if state.completeRecoveryProbe(now, direction, congestionEvidence.confirmed, conf) {
+			peer.metrics.SetRecoveryProbeActive(false)
+			peer.metrics.IncRecoveryProbeSuccess()
+			debugLogger.Info().
+				Uint("remaining_recovery_steps", state.recoverySteps).
+				Msg("recovery probe completed its clean stable window")
 		}
 
 		if !decision.upgradeReady {
@@ -306,7 +331,21 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			audioBitrate,
 			conf.TransportReserve,
 		)
-		if !estimatedBitrateSupportsUpgrade(targetBitrate, upgradeReferenceBitrate, conf.UpgradeDiffThreshold) {
+		if state.upgradeBlockedByRecoveryBackoff(now) {
+			debugLogger.Info().
+				Time("recovery_probe_not_before", state.recoveryProbeNotBefore).
+				Uint("recovery_probe_failures", state.recoveryProbeFailures).
+				Msg("waiting for failed recovery probe backoff")
+			continue
+		}
+		normalUpgrade := estimatedBitrateSupportsUpgrade(targetBitrate, upgradeReferenceBitrate, conf.UpgradeDiffThreshold)
+		recoveryProbe := !normalUpgrade && state.recoveryProbeReady(
+			now,
+			targetBitrate,
+			downgradeReferenceBitrate,
+			conf,
+		)
+		if !normalUpgrade && !recoveryProbe {
 			debugLogger.Debug().
 				Float64("current_delivery_diff", bitrateRatio(targetBitrate, downgradeReferenceBitrate)).
 				Float64("upgrade_diff", float64(targetBitrate)/float64(upgradeReferenceBitrate)).
@@ -326,12 +365,27 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		})
 		if err != nil && err != types.ErrWebRTCStreamNotFound {
 			peer.logger.Warn().Err(err).Msg("failed to upgrade video stream")
+			continue
 		}
-		state.markUpgrade(now)
+		if err == types.ErrWebRTCStreamNotFound {
+			continue
+		}
 
-		if err != types.ErrWebRTCStreamNotFound {
-			debugLogger.Info().Msg("upgraded video stream")
+		if recoveryProbe {
+			state.markRecoveryProbe(now, conf)
+			peer.metrics.SetRecoveryProbeActive(true)
+			peer.metrics.IncRecoveryProbeAttempt()
+			debugLogger.Info().
+				Str("recovery_probe_stream_id", upgradeStream.ID).
+				Time("recovery_probe_not_before", state.recoveryProbeNotBefore).
+				Uint("recovery_probe_failures", state.recoveryProbeFailures).
+				Uint("remaining_recovery_steps", state.recoverySteps).
+				Msg("started peer-local one-tier recovery probe")
+		} else {
+			state.markUpgrade(now, conf)
 		}
+
+		debugLogger.Info().Bool("recovery_probe", recoveryProbe).Msg("upgraded video stream")
 	}
 }
 
@@ -344,19 +398,25 @@ type estimatorDecision struct {
 }
 
 type estimatorObservationState struct {
-	stableSince       time.Time
-	unstableSince     time.Time
-	stalledSince      time.Time
-	lastUpgradeTime   time.Time
-	lastDowngradeTime time.Time
+	stableSince            time.Time
+	unstableSince          time.Time
+	stalledSince           time.Time
+	lastUpgradeTime        time.Time
+	lastDowngradeTime      time.Time
+	recoveryProbeActive      bool
+	recoveryProbeNotBefore   time.Time
+	recoveryProbeStableSince time.Time
+	recoveryProbeFailures    uint
+	recoverySteps            uint
 }
 
-func newEstimatorObservationState(now time.Time) estimatorObservationState {
+func newEstimatorObservationState(now time.Time, conf config.WebRTCEstimator) estimatorObservationState {
 	stableSince, unstableSince, stalledSince := initialEstimatorObservationTimes(now)
 	return estimatorObservationState{
-		stableSince:   stableSince,
-		unstableSince: unstableSince,
-		stalledSince:  stalledSince,
+		stableSince:            stableSince,
+		unstableSince:          unstableSince,
+		stalledSince:           stalledSince,
+		recoveryProbeNotBefore: now.Add(conf.RecoveryProbeInterval),
 	}
 }
 
@@ -387,6 +447,10 @@ func (state *estimatorObservationState) observe(
 	// receiver congestion must not count toward an opposite-direction upgrade.
 	if direction == utils.TrendDirectionDownward || insufficient || receiverCongestionConfirmed {
 		state.stableSince = now
+	}
+	if state.recoveryProbeActive &&
+		(direction == utils.TrendDirectionDownward || receiverCongestionConfirmed) {
+		state.recoveryProbeStableSince = now
 	}
 
 	congested := insufficient &&
@@ -472,12 +536,139 @@ func assessReceiverCongestion(
 	}
 }
 
-func (state *estimatorObservationState) markDowngrade(now time.Time) {
+func (state *estimatorObservationState) markDowngrade(now time.Time, conf config.WebRTCEstimator) (bool, time.Duration) {
+	state.lastDowngradeTime = now
+	state.recoverySteps++
+
+	probeFailed := state.recoveryProbeActive
+	if probeFailed {
+		state.recoveryProbeActive = false
+		state.recoveryProbeFailures++
+	}
+
+	backoff := recoveryProbeBackoff(state.recoveryProbeFailures, conf)
+	if backoff > 0 {
+		notBefore := now.Add(backoff)
+		if notBefore.After(state.recoveryProbeNotBefore) {
+			state.recoveryProbeNotBefore = notBefore
+		}
+	}
+
+	return probeFailed, backoff
+}
+
+func (state *estimatorObservationState) markDowngradeAttempt(now time.Time) {
 	state.lastDowngradeTime = now
 }
 
-func (state *estimatorObservationState) markUpgrade(now time.Time) {
+func (state *estimatorObservationState) markUpgrade(now time.Time, conf config.WebRTCEstimator) {
 	state.lastUpgradeTime = now
+	state.recoveryProbeActive = false
+	if state.recoverySteps > 0 {
+		state.recoverySteps--
+	}
+	state.recoveryProbeFailures = 0
+	state.recoveryProbeNotBefore = now.Add(conf.RecoveryProbeInterval)
+}
+
+func (state *estimatorObservationState) upgradeBlockedByRecoveryBackoff(now time.Time) bool {
+	return state.recoveryProbeFailures > 0 && now.Before(state.recoveryProbeNotBefore)
+}
+
+func (state *estimatorObservationState) recoveryProbeReady(
+	now time.Time,
+	targetBitrate int,
+	currentReferenceBitrate uint64,
+	conf config.WebRTCEstimator,
+) bool {
+	if conf.RecoveryProbeInterval <= 0 ||
+		state.recoverySteps == 0 ||
+		state.recoveryProbeActive ||
+		now.Before(state.recoveryProbeNotBefore) {
+		return false
+	}
+
+	// The current tier must have its own configured spare capacity. This avoids
+	// probing from a merely marginal tier while still breaking the GCC
+	// application-limited deadlock at the next tier's higher nominal rate.
+	return estimatedBitrateSupportsUpgrade(
+		targetBitrate,
+		currentReferenceBitrate,
+		conf.UpgradeDiffThreshold,
+	)
+}
+
+func (state *estimatorObservationState) markRecoveryProbe(now time.Time, conf config.WebRTCEstimator) {
+	state.lastUpgradeTime = now
+	state.recoveryProbeActive = true
+	if state.recoverySteps > 0 {
+		state.recoverySteps--
+	}
+	state.recoveryProbeNotBefore = now.Add(conf.RecoveryProbeInterval)
+	state.recoveryProbeStableSince = now
+	// Validate the newly selected tier through a complete clean stability
+	// window; observations collected on the lower tier cannot satisfy it.
+	state.stableSince = now
+	state.unstableSince = now
+	state.stalledSince = now
+}
+
+func (state *estimatorObservationState) deferRecoveryProbeObservation(now time.Time) {
+	if !state.recoveryProbeActive {
+		return
+	}
+
+	// Paused/disabled media and missing or not-yet-measured sources provide no
+	// evidence that the probed tier is healthy. Do not count such gaps toward
+	// the probe's clean stable window.
+	state.stableSince = now
+	state.unstableSince = now
+	state.stalledSince = now
+	state.recoveryProbeStableSince = now
+}
+
+func (state *estimatorObservationState) completeRecoveryProbe(
+	now time.Time,
+	direction utils.TrendDirection,
+	receiverCongestionConfirmed bool,
+	conf config.WebRTCEstimator,
+) bool {
+	if !state.recoveryProbeActive ||
+		direction == utils.TrendDirectionDownward ||
+		receiverCongestionConfirmed ||
+		now.Sub(state.recoveryProbeStableSince) < conf.StableDuration {
+		return false
+	}
+
+	state.recoveryProbeActive = false
+	state.recoveryProbeFailures = 0
+	state.recoveryProbeNotBefore = now.Add(conf.RecoveryProbeInterval)
+	return true
+}
+
+func recoveryProbeBackoff(failures uint, conf config.WebRTCEstimator) time.Duration {
+	base := conf.RecoveryProbeInterval
+	if base <= 0 {
+		return 0
+	}
+
+	maximum := conf.RecoveryProbeMaxBackoff
+	if maximum <= 0 || maximum < base {
+		maximum = base
+	}
+
+	delay := base
+	for attempt := uint(1); attempt < failures && delay < maximum; attempt++ {
+		if delay > maximum/2 {
+			delay = maximum
+			break
+		}
+		delay *= 2
+	}
+	if delay > maximum {
+		return maximum
+	}
+	return delay
 }
 
 func initialEstimatorObservationTimes(now time.Time) (stableSince, unstableSince, stalledSince time.Time) {

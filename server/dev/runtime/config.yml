@@ -163,6 +163,8 @@ webrtc:
   #   stalled_duration: 20s
   #   downgrade_backoff: 10s
   #   upgrade_backoff: 30s
+  #   recovery_probe_interval: 30s
+  #   recovery_probe_max_backoff: 5m
   #   diff_threshold: 0.5
   #   transport_reserve: 0.05
   #   upgrade_diff_threshold: 0.5

@@ -76,6 +76,8 @@
       --webrtc.estimator.initial_bitrate int          initial bitrate for the bandwidth estimator (default 1000000)
       --webrtc.estimator.passive                      passive estimator mode, when it does not switch pipelines, only estimates
       --webrtc.estimator.read_interval duration       how often to read and process bandwidth estimation reports (default 2s)
+      --webrtc.estimator.recovery_probe_interval duration minimum interval between peer-local one-tier recovery probes, zero disables probes (default 30s)
+      --webrtc.estimator.recovery_probe_max_backoff duration maximum exponential retry delay after a failed recovery probe (default 5m0s)
       --webrtc.estimator.stable_duration duration     how long to wait for stable connection (upward or neutral trend) before upgrading (default 12s)
       --webrtc.estimator.stalled_duration duration    how long to wait for stalled bandwidth estimation before downgrading (default 24s)
       --webrtc.estimator.transport_reserve float      fractional RTP/RTCP and network-overhead reserve added to media bitrate references (default 0.05)

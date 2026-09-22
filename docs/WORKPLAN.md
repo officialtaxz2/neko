@@ -1,6 +1,6 @@
 # Work Plan / Handoff State
 
-Last consolidated: 2026-09-14.
+Last consolidated: 2026-09-22.
 
 ## Environment boundary
 
@@ -161,7 +161,7 @@ Operator-reported evidence on 2026-09-10 from the `testing` branch:
 
 Status: **accepted on 2026-09-10 as an opt-in profile for the documented target deployment and three-viewer scenario**. The stable base Compose remains single-pipeline, and profiles without `nominal_bitrate` retain the measured-video fallback. The later correction below deliberately changes downgrade/reference semantics and therefore requires a focused rerun. This bounded acceptance must not be generalized to untested devices, architectures or network conditions.
 
-## COMPLETED IN REPOSITORY — revised steady-state adaptive downgrade correction
+## COMPLETED IN REPOSITORY — adaptive downgrade correction and bounded recovery follow-up
 
 Operator-supplied target evidence on 2026-09-19 established a new issue independently of the earlier startup-window bug and encoder tuning:
 
@@ -188,7 +188,22 @@ Revised and statically reviewed on `testing`:
 - Added `neko_webrtc_receiver_report_fraction_lost` and `neko_webrtc_receiver_congestion_evidence`, included receiver loss/NACK series in the evidence collector and enriched estimator logs with feedback freshness and policy classification.
 - WebRTC remains the default. No WebCodecs/HLS path, client selection or encoder quantizer/bitrate was changed.
 
-Static status: **revised implementation and review complete in repository / revised builds, tests, containers and live media NOT EXECUTED IN CODEX**. The first exact-commit candidate is explicitly rejected; the revised compact healthy-plus-constrained target-server gate in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md) is pending.
+Exact `2efcc6b1` target evidence subsequently closed three parts of the revised gate:
+
+- focused capture/WebRTC tests, server/build images and the deployed adaptive stack passed and remained healthy with zero restarts;
+- one unshaped H stayed on `high` for 20 minutes while its estimator target ranged from about 1.71 to 4.57 Mbit/s, with zero loss, zero local video drops, no confirmed-congestion log entry and no switch; ten isolated NACK entries never persisted as downgrade evidence;
+- endpoint-specific shaping moved only C through `medium` to `low`, while H stayed visually good on `high` without a drop or tier change.
+
+The recovery part did not pass its 90-second bound. After restoring `fq_codel`, C remained clean on `low` with an application-limited target around 0.49–0.65 Mbit/s, below the approximately 1.06-Mbit/s nominal medium gate. It eventually returned to `high` later at about 3.76 Mbit/s, proving delayed recovery rather than a permanent lock. The current follow-up therefore:
+
+- retains the ordinary next-tier nominal reserve gate;
+- records one peer-local recovery step per successful automatic downgrade and permits exactly one higher-tier probe only while such a step remains, after a clean stable window, configured reserve over the current complete-delivery reference and a separate 30-second profile interval;
+- validates the probe-selected tier for a complete clean stable window;
+- returns a genuinely insufficient probe through the existing receiver-evidence downgrade and applies exponential failed-probe backoff capped at two minutes in the profile;
+- exports per-session active/attempt/success/failure probe metrics and preserves the evidence in the collector;
+- adds focused tests for application-limited probe entry, clean completion, failed-probe backoff/cap and peer isolation while retaining the exact existing startup/downgrade/upgrade boundary tests.
+
+Static status: **bounded recovery implementation and review complete in repository / follow-up builds, tests, containers and live media NOT EXECUTED IN CODEX**. The original false downgrade is target-validated at `2efcc6b1`; only the compact recovery-probe follow-up in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md) remains pending.
 
 ## COMPLETED IN REPOSITORY — bounded iOS transient recovery
 
@@ -672,7 +687,7 @@ No HLS route, packager, encoder, player, dependency, Compose overlay, automatic 
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Validate the revised receiver-evidence-gated adaptive downgrade correction on one exact clean `testing` commit with the compact two-viewer procedure in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md): one healthy viewer must remain on `high` through an extended unshaped soak and all constrained phases even if its GCC target collapses while receiver evidence stays clean; one independently shaped viewer must obtain real receiver loss/NACK evidence, step `high -> medium -> low`, and recover `low -> medium -> high` without cross-peer drops or rapid reversal. Run the focused server tests/build and image/deployment checks only on the target server, retain filtered metrics/logs, and restore the host shaper.
+Validate the receiver-evidence-gated downgrade plus bounded recovery probe on one exact clean `testing` commit with the shortened two-viewer procedure in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md). The 20-minute healthy hold and full constrained/isolation evidence do not need repetition: run the focused server tests/build and image/deployment checks, drive only C to `low`, remove the shaper, and require ordered recovery to `high` within three minutes while H remains on `high`. Retain probe metrics/logs and confirm the host shaper is restored.
 
 After that focused gate passes or its evidence is explicitly dispositioned, implement **Phase 1 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without starting media packaging or adding a player. Its already specified configuration, access, lease, security, deterministic playlist/object and focused-test scope remains unchanged. `master` must not move without explicit operator authorization.
 
@@ -682,7 +697,7 @@ After that focused gate passes or its evidence is explicitly dispositioned, impl
 2. **bounded checkpoint closed with explicit final-matrix limitations:** WebCodecs plus dedicated media WebSocket receive path;
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
-5. **NEXT:** focused exact-commit healthy-plus-constrained target validation of the revised receiver-evidence-gated adaptive downgrade correction;
+5. **NEXT:** focused exact-commit two-viewer target validation of the bounded application-limited recovery probe; the healthy hold, real downgrade and isolation halves already passed at `2efcc6b1`;
 6. **queued after that gate:** implement HLS/LL-HLS Phase 1 access and deterministic-media foundations without a packager, route or player;
 7. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
@@ -701,7 +716,7 @@ When fallback work begins, separate the two user classes instead of forcing ever
 7. **bounded Phase 4 checkpoint closed:** exact automated/build/security, accumulated functional and corrected foreground-iPhone gates passed; numeric latency/pacing, induced isolation, resource and remaining live hostile-input cases stay deferred;
 8. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted manual per-client `WebRTC`/`WebCodecs` selection and compact healthy status without automatic fallback;
 9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
-10. **queued after the revised adaptive gate — HLS Phase 1:** default-off access, lease, security and deterministic playlist/object foundations without a packager or client;
+10. **queued after the recovery-probe gate — HLS Phase 1:** default-off access, lease, security and deterministic playlist/object foundations without a packager or client;
 11. later Phases 2–4 add the shared packager/HTTP delivery, isolated passive client and grouped target-server validation in that order;
 12. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
 13. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
@@ -720,7 +735,7 @@ The passive path may trade latency for reliability and compatibility. It must st
 ## OPEN
 
 - Final grouped validation must repeat the ordinary/admin/view-only/private-mode/manual-tier/reconnect matrix and the independently constrained three-viewer adaptive down/up isolation run; neither was rerun at `e5f55bf9`.
-- The first steady-state downgrade candidate at `2d037f39` is rejected by the captured loss-free `high -> medium -> low -> medium -> high` trace. The revised receiver-evidence-gated correction still needs its compact exact-commit two-viewer target-server gate; revised repository tests/builds were not executed in Codex.
+- The first steady-state candidate at `2d037f39` is rejected. The receiver-evidence downgrade revision at `2efcc6b1` passed tests/build/deployment, the 20-minute healthy hold, real constrained downgrade and peer isolation, but its application-limited C recovery exceeded 90 seconds. Only the new bounded recovery-probe follow-up still needs its compact exact-commit target-server gate; its repository tests/build were not executed in Codex.
 - Determine whether fast-motion softness is acceptable at the current 1,996,800-bit/s VP8 `high` tier through a controlled same-content bitrate/quantizer A/B with receiver statistics and comparable captures; current evidence does not identify a subscription-refactor regression.
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.

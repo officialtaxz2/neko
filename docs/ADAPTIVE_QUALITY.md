@@ -48,7 +48,7 @@ At exact commit `e5f55bf9`, the complete target-server validation service passed
 
 The operator closed the combined compatibility/estimator checkpoint with an explicit limitation: the ordinary/admin/view-only/private-mode/manual-tier/reconnect matrix and a fresh independently constrained three-viewer down/up isolation run were not repeated at `e5f55bf9`. They remain deferred to final grouped validation. The focused result does not promise that `high` will remain selected when a receiver's sustained estimate is below the capacity required for `high`, and it does not identify the startup defect as the sole cause of every sustained `medium` selection.
 
-## Post-acceptance steady-state downgrade correction — first target candidate rejected, revised validation pending
+## Post-acceptance steady-state correction — downgrade gate validated, bounded recovery follow-up pending
 
 Operator evidence on 2026-09-19 confirmed a different steady-state failure. One active healthy WebRTC peer used direct UDP and reported zero receiver loss, zero NACKs and zero local video drops, yet its automatic selection changed `high -> medium -> high -> medium`. Reload recreated the peer and estimator and temporarily returned it to `high`. This is a tier-selection defect; `max-quantizer` can affect motion detail within a tier but does not cause those tier changes.
 
@@ -66,7 +66,15 @@ For the tracked rates and an illustrative 128 kbit/s audio stream, a measured 1.
 
 The estimator still drives target/trend/shortage classification and recovery; it is neither disabled nor replaced by forced `high`. The receiver-evidence requirement is deliberately conservative because this deployment's Pion GCC target proved capable of a prolonged loss-free false collapse. A future verified queue-limited path that is genuinely unusable but produces neither receiver loss nor NACKs would need a separately validated delay signal rather than restoring target-only downgrades.
 
-The implementation remains entirely peer-local, keeps WebRTC as the default, leaves WebCodecs/HLS selection unchanged, and does not alter the profile's 12-second stable, 6-second unstable, 8-second stalled, 30-second downgrade-backoff or 5-second upgrade-backoff values. New metrics expose raw receiver-report fraction loss and the current policy evidence bit; estimator logs include feedback freshness, loss and NACK classification. Focused repository tests cover the exact severe loss-free collapse, fresh/stale receiver evidence, sustained shortage, transient congestion, peer isolation, stable recovery, hysteresis, bitrate-reference construction and exact timing boundaries. They are **NOT EXECUTED IN CODEX**; target-server execution and the compact live gate below remain pending.
+The implementation remains entirely peer-local, keeps WebRTC as the default, leaves WebCodecs/HLS selection unchanged, and does not alter the profile's 12-second stable, 6-second unstable, 8-second stalled, 30-second downgrade-backoff or 5-second upgrade-backoff values. New metrics expose raw receiver-report fraction loss and the current policy evidence bit; estimator logs include feedback freshness, loss and NACK classification.
+
+Exact `2efcc6b1` target-server tests/build and image deployment passed. One unshaped viewer H then remained on `high` for 20 minutes while its target varied from 1,708,609 to 4,574,045 bit/s; it recorded zero loss, zero local video drops, no confirmed-congestion log entry and no switch. Ten intermittent NACK entries never persisted as the fresh evidence required by a downgrade. During endpoint-specific shaping of C, only C moved through `medium` to `low`; H remained visually good on `high` with no drop delta. This validates the repaired healthy hold, real constrained downgrade and cross-peer isolation for that run.
+
+The same run exposed a separate recovery weakness. After the shaper was restored to `fq_codel`, C was clean but remained on `low` for the full 90-second recovery phase: its target stayed around 0.49–0.65 Mbit/s, close to the low stream it was already receiving and below the approximately 1.06-Mbit/s nominal medium upgrade gate. C eventually recovered by itself to `high` later, when its target had risen to about 3.76 Mbit/s. Recovery was therefore possible but delayed by the lower tier application-limiting the very estimate used to authorize the next tier.
+
+The current follow-up preserves the ordinary nominal next-tier upgrade gate and adds a separate bounded recovery path. Every successful automatic downgrade records one peer-local recovery step; a peer without such a step cannot probe. After the lower tier has been clean and stable, has at least the configured reserve over its own complete-delivery reference, and has waited `recovery_probe_interval` (30 seconds in this profile), it may regain exactly one lost tier. The new tier must then complete its own fully observed stable window without a downward trend or fresh receiver congestion; pauses and missing/unmeasured sources do not count. The advisory target may remain below that probed tier's floor without deadlocking a loss-free probe, but another probe still requires reserve over the now-current tier. If material shortage plus fresh receiver loss/NACK evidence triggers the normal downgrade, the probe is failed and its next attempt waits exponentially longer, capped by `recovery_probe_max_backoff` (two minutes in this profile). A successful probe clears the failure count. This does not reset GCC, permanently force or probe above the pre-downgrade tier, relax downgrade evidence, or share state between peers.
+
+Focused repository tests cover the exact severe loss-free collapse, fresh/stale receiver evidence, sustained shortage, transient congestion, peer isolation, ordinary stable recovery, the application-limited probe boundary, higher-tier validation, failed-probe exponential/capped backoff, probe isolation, hysteresis, bitrate-reference construction and unchanged startup/backoff boundaries. They are **NOT EXECUTED IN CODEX**; the compact exact-commit recovery gate below remains pending.
 
 ## Fast-motion softness observation
 
@@ -149,7 +157,7 @@ With the default loopback HTTP port, inspect the relevant metrics on the target 
 
 ```bash
 curl -fsS http://127.0.0.1:8082/metrics \
-  | grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(receiver_(congestion_evidence|estimated_target_bitrate|report_(fraction_lost|total_lost))|track_dropped_samples_total|transport_layer_nacks|video_listeners))'
+  | grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(receiver_(congestion_evidence|estimated_target_bitrate|report_(fraction_lost|total_lost))|recovery_probe_(active|attempts_total|successes_total|failures_total)|track_dropped_samples_total|transport_layer_nacks|video_listeners))'
 ```
 
 Replace `8082` when `NEKO_HTTP_PORT` has been changed. The important series are:
@@ -160,6 +168,8 @@ Replace `8082` when `NEKO_HTTP_PORT` has been changed. The important series are:
 - `neko_webrtc_receiver_report_total_lost`: latest cumulative RTCP receiver-report loss value, labeled by `session_id`;
 - `neko_webrtc_transport_layer_nacks`: cumulative received NACK entries, labeled by `session_id`;
 - `neko_webrtc_receiver_congestion_evidence`: `1` only while recent receiver loss or NACK feedback can authorize an adaptive downgrade;
+- `neko_webrtc_recovery_probe_active`: `1` only while that peer is validating a probe-selected higher tier;
+- `neko_webrtc_recovery_probe_attempts_total`, `neko_webrtc_recovery_probe_successes_total` and `neko_webrtc_recovery_probe_failures_total`: cumulative peer-local probe outcomes;
 - `neko_webrtc_video_listeners`: the selected tier for each session (`1` is active);
 - `neko_webrtc_track_dropped_samples_total`: cumulative peer-local queue drops, labeled by `session_id` and `kind`;
 - `neko_capture_streamsink_listeners` and `neko_capture_pipelines_active`: demand and active encoder pipelines;
@@ -171,10 +181,10 @@ For switch decisions and their measured inputs, follow the estimator logs:
 
 ```bash
 docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs -f neko \
-  | grep -E "got bitrate from estimator|downgraded video stream|upgraded video stream|set video|dropping sample|don't have enough bitrate"
+  | grep -E "got bitrate from estimator|downgraded video stream|upgraded video stream|recovery probe|set video|dropping sample|don't have enough bitrate"
 ```
 
-`got bitrate from estimator` includes `target_bitrate`, measured and nominal video rates, measured audio, transport reserve, complete-delivery reference, downgrade floor, insufficiency classification, trend, receiver-report freshness/fraction/total loss, NACK freshness and the final receiver-congestion confirmation. A rejected nominal-rate upgrade includes `upgrade_reference_bitrate` and `nominal_reference`; the collector retains its `don't have enough bitrate` message. The trace-only `dropping sample` line may not be visible at the normal log level; the counter is the authoritative drop diagnostic.
+`got bitrate from estimator` includes `target_bitrate`, measured and nominal video rates, measured audio, transport reserve, complete-delivery reference, downgrade floor, insufficiency classification, trend, receiver-report freshness/fraction/total loss, NACK freshness and the final receiver-congestion confirmation. A rejected nominal-rate upgrade includes `upgrade_reference_bitrate` and `nominal_reference`; the collector retains its `don't have enough bitrate` message. Recovery-probe logs record start, clean completion, failure count and the next backoff. The trace-only `dropping sample` line may not be visible at the normal log level; the counter is the authoritative drop diagnostic.
 
 ## Resource cost
 
@@ -184,15 +194,15 @@ During a switch, the destination pipeline is started before the listener is move
 
 Record host CPU, memory, load, pipeline gauges and packet/drop behavior while all three tiers are active. Lower `threads`, frame rates or target bitrates only from target-server evidence. If the host itself becomes saturated, slow-peer isolation cannot protect healthy viewers from shared CPU exhaustion.
 
-## Compact healthy-plus-constrained regression — pending
+## Compact recovery-probe regression — pending
 
-This is the focused gate for the revised correction after the exact `2d037f39` target candidate was rejected. It intentionally uses only one healthy viewer `H` and one independently constrained viewer `C`; retain the longer three-viewer matrix below for final grouped acceptance.
+The exact `2efcc6b1` run already supplied a 20-minute healthy hold, real constrained downgrade and peer-isolation evidence. This follow-up is limited to the changed recovery behavior while retaining a short concurrent H guard. It intentionally uses only one healthy viewer `H` and one independently constrained viewer `C`; retain the longer three-viewer matrix below for final grouped acceptance.
 
 1. On an exact clean `testing` commit, run the focused capture/WebRTC tests above, build the server plus selected local image, validate the merged base/adaptive Compose model and recreate the service. Record commit, immutable image ID, health and restart count.
-2. Join only `H` over its normal path and keep changing content visible for at least 20 minutes while one bounded watcher records tier, target, receiver evidence and switch logs. `H` must stay on `high`. In particular, a target below `downgrade_floor_bitrate` must not switch tiers while `receiver_congestion_evidence` is `0`; receiver loss, NACK and peer-local video-drop deltas must remain zero or be explicitly explained.
-3. Join `C`, identify its distinct active `session_id` and UDP endpoint, then apply the already verified endpoint-specific bounded shaper only to `C`. At approximately 1.3 Mbit/s for 90 seconds, `C` must reach and hold `medium`; at approximately 0.7 Mbit/s for 90 seconds, it must reach and hold `low`. Verify non-zero shaped traffic and no shaped traffic for `H`.
-4. Remove the impairment and give `C` at least 5 Mbit/s for up to 90 seconds. It must recover in order through `medium` to `high`, and unused pipelines must return to zero listeners. `H` must remain continuously on `high` with no new local video drops throughout all phases.
-5. Capture final metrics/logs with `deploy/collect-adaptive-quality.sh`. Reject the run for any unexplained `H: high -> medium`, any downgrade without continuously fresh receiver congestion evidence through its decision window, rapid opposite-direction switch inside the policy deadband, cross-peer tier change/drop increase, reconnect storm, GStreamer error, container restart or unremoved host shaper.
+2. Join H and C over WebRTC, identify their distinct active `session_id` values and C's UDP endpoint, and confirm both begin on `high`. Keep changing content visible on both.
+3. Apply the already verified endpoint-specific shaper only to C. It is sufficient to drive C to `low` once with sustained fresh receiver evidence; confirm H remains on `high`, no H video-drop counter increases, shaped traffic belongs only to C, and at least one real downgrade is recorded. There is no need to repeat the earlier 20-minute unshaped soak or preserve every prior 90-second shaped phase.
+4. Remove the impairment completely and confirm `fq_codel` is restored. C must recover in order `low -> medium -> high` within three minutes. At least one transition should be attributable either to an ordinary capacity-qualified upgrade or to `recovery_probe_attempts_total`; an active probe must end in a success or an evidence-gated failure, never remain stuck. H must stay on `high` with no new local video drops.
+5. Capture final metrics/logs with `deploy/collect-adaptive-quality.sh`. Reject the run for any unexplained H downgrade, C recovery beyond three minutes, probe failure without the normal fresh congestion evidence, immediate repeated failed probes inside their reported backoff, cross-peer tier/drop changes, reconnect storm, GStreamer error, container restart or unremoved host shaper.
 
 This compact gate demonstrates the reported healthy-client regression and continued constrained-client adaptation together. It does not replace the final role/device/recovery/resource matrix.
 
