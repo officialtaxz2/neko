@@ -1,6 +1,6 @@
 # HLS / Low-Latency HLS passive delivery contract
 
-Status: **version-1 design and Phase 1 foundations complete in the repository on `testing`; no HLS HTTP endpoint, packager, encoder, player, deployment overlay or automatic selection is implemented, and target-server tests/build remain pending**.
+Status: **version-1 design plus Phases 1–2 complete in the repository on `testing`; the default-off shared packager and authenticated HTTP delivery are implemented, while no client player, deployment overlay or automatic selection exists and target-server tests/build/runtime validation remain pending**.
 
 This document is the normative contract for the first default-off passive/view-only HTTP-streaming prototype. It specializes the encoded-source/subscription and participant-delivery boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It does not authorize a second desktop capture, a stable-deployment change or a claim that any untested device supports the proposed path.
 
@@ -371,6 +371,8 @@ Repository status on 2026-09-23: Phase 1 is implemented on `testing`. The server
 - register the bootstrap/resource routes only when enabled and connect per-session deliveries to the shared set;
 - add fixed metrics, request cancellation, slow-reader isolation and shutdown cleanup;
 - retain WebRTC and WebCodecs behavior unchanged.
+
+Repository status on 2026-09-23: Phase 2 is implemented and statically reviewed on `testing`. When and only when `media.hls.enabled=true`, startup now registers a central `hls` delivery backend and the authenticated bootstrap/keepalive/resource routes. One process-wide packager consumes four bounded exact-source subscriptions and shares H.264 High 3.1 video plus stereo AAC-LC fMP4 objects across conventional and low-latency leases. Every worker requires a complete first provider `FORMAT`, an exact advertised dimension/rate match and one consistent nonzero provider generation before accepting media. It publishes aligned one-second parts, two-second IDRs and six-second parents into the fixed memory/count store, maintains explicit generations/discontinuities, evicts only objects beyond the advertised retention floors under aggregate pressure, removes stalled renditions, rejoins on a fresh keyframe and stops after the final unpaused lease plus the 15-second grace. Per-session deliveries, sliding scoped cookies, initially paused attachment, Private Mode with readiness-before-unpause resume, replacement/revocation, bounded blocking reloads, gzip/HEAD/range responses, request deadlines, slow-reader isolation, fixed metrics and credential-safe logs follow the contract above. No client player, client selection, deployment overlay or automatic fallback was added. Focused tests are present but were **NOT EXECUTED IN CODEX**; target-server build/tests, independent fMP4/playlist validation and all runtime/device/resource gates remain required.
 
 ### Phase 3 — isolated passive client
 

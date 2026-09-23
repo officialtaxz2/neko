@@ -34,6 +34,7 @@ func init() {
 type Pipeline interface {
 	Src() string
 	Sample() chan types.Sample
+	Dropped() <-chan struct{}
 	// attach sink or src to pipeline
 	AttachAppsink(sinkName string)
 	AttachAppsrc(srcName string)
@@ -42,6 +43,10 @@ type Pipeline interface {
 	Pause()
 	Destroy()
 	Push(buffer []byte)
+	// PushSample preserves the encoded provider timeline and keyframe flag for
+	// transcode/remux pipelines. Push remains the compatibility helper for
+	// callers without timestamp metadata.
+	PushSample(sample types.Sample) bool
 	// modify the property of a bin
 	SetPropInt(binName string, prop string, value int) bool
 	SetCapsFramerate(binName string, numerator, denominator int) bool
@@ -51,14 +56,23 @@ type Pipeline interface {
 }
 
 type pipeline struct {
-	id     int
-	logger zerolog.Logger
-	src    string
-	ctx    *C.GstPipelineCtx
-	sample chan types.Sample
+	id      int
+	logger  zerolog.Logger
+	src     string
+	ctx     *C.GstPipelineCtx
+	sample  chan types.Sample
+	dropped chan struct{}
+	done    chan struct{}
 }
 
 func CreatePipeline(pipelineStr string) (Pipeline, error) {
+	return CreatePipelineWithSampleCapacity(pipelineStr, 4)
+}
+
+func CreatePipelineWithSampleCapacity(pipelineStr string, sampleCapacity int) (Pipeline, error) {
+	if sampleCapacity < 1 {
+		return nil, fmt.Errorf("sample capacity must be positive")
+	}
 	id := atomic.AddInt32(&pSerial, 1)
 
 	pipelineStrUnsafe := C.CString(pipelineStr)
@@ -76,14 +90,16 @@ func CreatePipeline(pipelineStr string) (Pipeline, error) {
 	}
 
 	p := &pipeline{
-		id: int(id),
+		id:     int(id),
 		logger: log.With().
 			Str("module", "capture").
 			Str("submodule", "gstreamer").
 			Int("pipeline_id", int(id)).Logger(),
-		src:    pipelineStr,
-		ctx:    ctx,
-		sample: make(chan types.Sample, 4),
+		src:     pipelineStr,
+		ctx:     ctx,
+		sample:  make(chan types.Sample, sampleCapacity),
+		dropped: make(chan struct{}, 1),
+		done:    make(chan struct{}),
 	}
 
 	pipelines[p.id] = p
@@ -96,6 +112,10 @@ func (p *pipeline) Src() string {
 
 func (p *pipeline) Sample() chan types.Sample {
 	return p.sample
+}
+
+func (p *pipeline) Dropped() <-chan struct{} {
+	return p.dropped
 }
 
 func (p *pipeline) AttachAppsink(sinkName string) {
@@ -121,13 +141,14 @@ func (p *pipeline) Pause() {
 }
 
 func (p *pipeline) Destroy() {
-	C.gstreamer_pipeline_destory(p.ctx)
-
 	pipelinesLock.Lock()
 	delete(pipelines, p.id)
+	close(p.done)
 	pipelinesLock.Unlock()
 
+	C.gstreamer_pipeline_destory(p.ctx)
 	close(p.sample)
+	close(p.dropped)
 	C.free(unsafe.Pointer(p.ctx))
 }
 
@@ -136,6 +157,48 @@ func (p *pipeline) Push(buffer []byte) {
 	defer C.free(bytes)
 
 	C.gstreamer_pipeline_push(p.ctx, bytes, C.int(len(buffer)))
+}
+
+func (p *pipeline) PushSample(sample types.Sample) bool {
+	if len(sample.Data) == 0 {
+		return false
+	}
+	bytes := C.CBytes(sample.Data)
+	defer C.free(bytes)
+
+	pts := C.guint64(0)
+	ptsValid := sample.PTSValid && sample.PTS >= 0
+	if ptsValid {
+		pts = C.guint64(sample.PTS)
+	}
+	dts := C.guint64(0)
+	dtsValid := sample.DTSValid && sample.DTS >= 0
+	if dtsValid {
+		dts = C.guint64(sample.DTS)
+	}
+	duration := C.guint64(0)
+	if sample.Duration > 0 {
+		duration = C.guint64(sample.Duration)
+	}
+
+	return C.gstreamer_pipeline_push_sample(
+		p.ctx,
+		bytes,
+		C.int(len(sample.Data)),
+		pts,
+		C.gboolean(boolToGBoolean(ptsValid)),
+		dts,
+		C.gboolean(boolToGBoolean(dtsValid)),
+		duration,
+		C.gboolean(boolToGBoolean(sample.DeltaUnit)),
+	) == C.TRUE
+}
+
+func boolToGBoolean(value bool) C.int {
+	if value {
+		return C.TRUE
+	}
+	return C.FALSE
 }
 
 func (p *pipeline) SetPropInt(binName string, prop string, value int) bool {
@@ -225,15 +288,20 @@ func goHandlePipelineBuffer(
 	height C.gint,
 	frameRateNumerator C.gint,
 	frameRateDenominator C.gint,
+	codecConfig C.gpointer,
+	codecConfigLen C.int,
 ) {
 	defer C.g_free(buf)
+	if codecConfig != nil {
+		defer C.g_free(codecConfig)
+	}
 
 	pipelinesLock.Lock()
 	pipeline, ok := pipelines[int(pipelineID)]
 	pipelinesLock.Unlock()
 
 	if ok {
-		pipeline.sample <- types.Sample{
+		sample := types.Sample{
 			Data:                 C.GoBytes(unsafe.Pointer(buf), bufLen),
 			Length:               int(bufLen),
 			Timestamp:            time.Now(),
@@ -247,6 +315,20 @@ func goHandlePipelineBuffer(
 			Height:               uint32(height),
 			FrameRateNumerator:   uint32(frameRateNumerator),
 			FrameRateDenominator: uint32(frameRateDenominator),
+			CodecConfig:          C.GoBytes(unsafe.Pointer(codecConfig), codecConfigLen),
+		}
+		select {
+		case <-pipeline.done:
+			return
+		default:
+		}
+		select {
+		case pipeline.sample <- sample:
+		default:
+			select {
+			case pipeline.dropped <- struct{}{}:
+			default:
+			}
 		}
 	} else {
 		log.Warn().

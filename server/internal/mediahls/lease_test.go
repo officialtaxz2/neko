@@ -40,13 +40,19 @@ func TestLeaseSlidingActivityPauseAndRateLimits(t *testing.T) {
 	playlistPermit, playlistSnapshot, err := store.Acquire(offer.PublicID, offer.Secret, RequestPlaylist, true, now.Add(20*time.Second))
 	if err != nil { t.Fatal(err) }
 	playlistPermit.Release()
-	if !playlistSnapshot.ExpiresAt.Equal(now.Add(20*time.Second+LeaseLifetime)) { t.Fatal("playlist request did not extend lease") }
+	if !playlistSnapshot.ExpiresAt.Equal(offer.ExpiresAt) { t.Fatal("playlist admission extended lease before a successful response") }
+	playlistSnapshot, err = store.Authenticate(offer.PublicID, offer.Secret, true, now.Add(20*time.Second))
+	if err != nil { t.Fatal(err) }
+	if !playlistSnapshot.ExpiresAt.Equal(now.Add(20*time.Second+LeaseLifetime)) { t.Fatal("successful playlist did not extend lease") }
 	permits := make([]*RequestPermit,0,KeepAliveBurst)
 	for attempt:=0; attempt<KeepAliveBurst; attempt++ { permit,_,err := store.Acquire(offer.PublicID,offer.Secret,RequestKeepAlive,false,now.Add(21*time.Second)); if err != nil { t.Fatal(err) }; permits=append(permits,permit) }
 	if _,_,err := store.Acquire(offer.PublicID,offer.Secret,RequestKeepAlive,false,now.Add(21*time.Second)); !errors.Is(err,ErrRequestLimit) { t.Fatalf("rate error = %v",err) }
 	for _, permit := range permits { permit.Release() }
 	if !store.SetPaused("viewer",true) { t.Fatal("pause failed") }
 	if _,err := store.Authenticate(offer.PublicID,offer.Secret,false,now.Add(22*time.Second)); !errors.Is(err,ErrLeasePaused) { t.Fatalf("pause error = %v",err) }
+	if expiresAt, err := store.Expiration(offer.PublicID, offer.Secret, now.Add(22*time.Second)); err != nil || !expiresAt.Equal(playlistSnapshot.ExpiresAt) {
+		t.Fatalf("paused expiration = %v, %v", expiresAt, err)
+	}
 }
 
 func TestLeaseRequestConcurrencyIsLocal(t *testing.T) {
@@ -55,4 +61,30 @@ func TestLeaseRequestConcurrencyIsLocal(t *testing.T) {
 	for index:=0; index<MaximumLeaseRequests; index++ { permit,_,err := store.Acquire(offer.PublicID,offer.Secret,RequestObject,index<MaximumLeaseBlocking,now); if err != nil { t.Fatal(err) }; permits=append(permits,permit) }
 	if _,_,err := store.Acquire(offer.PublicID,offer.Secret,RequestObject,false,now); !errors.Is(err,ErrRequestLimit) { t.Fatalf("concurrency error = %v",err) }
 	for _,permit := range permits { permit.Release() }
+}
+
+func TestLeasePauseAndRevocationWakeOutstandingRequests(t *testing.T) {
+	store, offer, now := testLeaseStore(t)
+	paused, err := store.ChangeChannel(offer.PublicID, offer.Secret, now)
+	if err != nil { t.Fatal(err) }
+	if !store.SetPaused("viewer", true) { t.Fatal("pause failed") }
+	if _, err := store.ChangeChannel(offer.PublicID, offer.Secret, now); !errors.Is(err, ErrLeasePaused) {
+		t.Fatalf("late pause watcher error = %v", err)
+	}
+	select {
+	case <-paused:
+	default:
+		t.Fatal("pause did not wake request")
+	}
+
+	replacement, err := store.Issue(LeaseBinding{SessionID:"viewer", Mode:ModeHLS}, now)
+	if err != nil { t.Fatal(err) }
+	revoked, err := store.ChangeChannel(replacement.PublicID, replacement.Secret, now)
+	if err != nil { t.Fatal(err) }
+	store.Invalidate(replacement.PublicID)
+	select {
+	case <-revoked:
+	default:
+		t.Fatal("revocation did not wake request")
+	}
 }

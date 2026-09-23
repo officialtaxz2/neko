@@ -94,6 +94,8 @@ static GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpoin
   gint height = 0;
   gint frame_rate_numerator = 0;
   gint frame_rate_denominator = 0;
+  gpointer codec_config = NULL;
+  gsize codec_config_size = 0;
 
   g_signal_emit_by_name(object, "pull-sample", &sample);
   if (sample) {
@@ -105,10 +107,17 @@ static GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpoin
         gst_structure_get_int(structure, "width", &width);
         gst_structure_get_int(structure, "height", &height);
         gst_structure_get_fraction(structure, "framerate", &frame_rate_numerator, &frame_rate_denominator);
+        const GValue *codec_data = gst_structure_get_value(structure, "codec_data");
+        if (codec_data != NULL && GST_VALUE_HOLDS_BUFFER(codec_data)) {
+          GstBuffer *config_buffer = gst_value_get_buffer(codec_data);
+          if (config_buffer != NULL) {
+            gst_buffer_extract_dup(config_buffer, 0, gst_buffer_get_size(config_buffer), &codec_config, &codec_config_size);
+          }
+        }
       }
 
       gst_buffer_extract_dup(buffer, 0, gst_buffer_get_size(buffer), &copy, &copy_size);
-      goHandlePipelineBuffer(ctx->pipelineId, copy, copy_size,
+      goHandlePipelineBuffer(ctx->pipelineId, copy, (int)copy_size,
         GST_BUFFER_PTS(buffer),
         GST_CLOCK_TIME_IS_VALID(GST_BUFFER_PTS(buffer)),
         GST_BUFFER_DTS(buffer),
@@ -118,7 +127,9 @@ static GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpoin
         width,
         height,
         frame_rate_numerator,
-        frame_rate_denominator
+        frame_rate_denominator,
+        codec_config,
+        (int)codec_config_size
       );
     }
     gst_sample_unref(sample);
@@ -176,6 +187,40 @@ void gstreamer_pipeline_push(GstPipelineCtx *ctx, void *buffer, int bufferLen) {
     GstBuffer *buffer = gst_buffer_new_wrapped(p, bufferLen);
     gst_app_src_push_buffer(GST_APP_SRC(ctx->appsrc), buffer);
   }
+}
+
+gboolean gstreamer_pipeline_push_sample(
+  GstPipelineCtx *ctx,
+  void *data,
+  int dataLen,
+  guint64 pts,
+  gboolean ptsValid,
+  guint64 dts,
+  gboolean dtsValid,
+  guint64 duration,
+  gboolean deltaUnit
+) {
+  if (ctx->appsrc == NULL) return FALSE;
+
+  guint64 current_buffers = 0;
+  guint64 maximum_buffers = 0;
+  g_object_get(ctx->appsrc,
+    "current-level-buffers", &current_buffers,
+    "max-buffers", &maximum_buffers,
+    NULL);
+  if (maximum_buffers > 0 && current_buffers >= maximum_buffers) {
+    return FALSE;
+  }
+
+  gpointer copy = g_memdup2(data, dataLen);
+  GstBuffer *buffer = gst_buffer_new_wrapped(copy, dataLen);
+  GST_BUFFER_PTS(buffer) = ptsValid ? pts : GST_CLOCK_TIME_NONE;
+  GST_BUFFER_DTS(buffer) = dtsValid ? dts : GST_CLOCK_TIME_NONE;
+  GST_BUFFER_DURATION(buffer) = duration > 0 ? duration : GST_CLOCK_TIME_NONE;
+  if (deltaUnit) {
+    GST_BUFFER_FLAG_SET(buffer, GST_BUFFER_FLAG_DELTA_UNIT);
+  }
+  return gst_app_src_push_buffer(GST_APP_SRC(ctx->appsrc), buffer) == GST_FLOW_OK;
 }
 
 gboolean gstreamer_pipeline_set_prop_int(GstPipelineCtx *ctx, char *binName, char *prop, gint value) {

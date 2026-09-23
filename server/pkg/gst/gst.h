@@ -36,7 +36,9 @@ extern void goHandlePipelineBuffer(
   gint width,
   gint height,
   gint frameRateNumerator,
-  gint frameRateDenominator
+  gint frameRateDenominator,
+  void *codecConfig,
+  int codecConfigLen
 );
 extern void goPipelineLog(int pipelineId, char *level, char *msg);
 
@@ -47,6 +49,17 @@ void gstreamer_pipeline_play(GstPipelineCtx *ctx);
 void gstreamer_pipeline_pause(GstPipelineCtx *ctx);
 void gstreamer_pipeline_destory(GstPipelineCtx *ctx);
 void gstreamer_pipeline_push(GstPipelineCtx *ctx, void *buffer, int bufferLen);
+gboolean gstreamer_pipeline_push_sample(
+  GstPipelineCtx *ctx,
+  void *buffer,
+  int bufferLen,
+  guint64 pts,
+  gboolean ptsValid,
+  guint64 dts,
+  gboolean dtsValid,
+  guint64 duration,
+  gboolean deltaUnit
+);
 
 gboolean gstreamer_pipeline_set_prop_int(GstPipelineCtx *ctx, char *binName, char *prop, gint value);
 gboolean gstreamer_pipeline_set_caps_framerate(GstPipelineCtx *ctx, const gchar* binName, gint numerator, gint denominator);

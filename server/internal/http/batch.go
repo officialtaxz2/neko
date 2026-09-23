@@ -32,9 +32,10 @@ func (b *BatchResponse) Error(httpErr *utils.HTTPError) (err error) {
 }
 
 type batchHandler struct {
-	Router     types.Router
-	PathPrefix string
-	Excluded   []string
+	Router           types.Router
+	PathPrefix       string
+	Excluded         []string
+	ExcludedPrefixes []string
 }
 
 func (b *batchHandler) Handle(w http.ResponseWriter, r *http.Request) error {
@@ -56,7 +57,11 @@ func (b *batchHandler) Handle(w http.ResponseWriter, r *http.Request) error {
 			continue
 		}
 
-		if slices.Contains(b.Excluded, request.Path) {
+		excluded := slices.Contains(b.Excluded, request.Path)
+		for _, prefix := range b.ExcludedPrefixes {
+			excluded = excluded || strings.HasPrefix(request.Path, prefix)
+		}
+		if excluded {
 			res.Error(utils.HttpBadRequest("this path is excluded from batch requests"))
 			responses[i] = res
 			continue

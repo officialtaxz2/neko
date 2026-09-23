@@ -23,7 +23,7 @@ type HttpManagerCtx struct {
 	http   *http.Server
 }
 
-func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, config *config.Server, mediaWebSocket types.RouterHandler) *HttpManagerCtx {
+func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, config *config.Server, mediaWebSocket types.RouterHandler, mediaHLS func(types.Router)) *HttpManagerCtx {
 	logger := log.With().Str("module", "http").Logger()
 
 	opts := []RouterOption{
@@ -60,6 +60,9 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 	if mediaWebSocket != nil {
 		router.Get("/api/media/ws", mediaWebSocket)
 	}
+	if mediaHLS != nil {
+		mediaHLS(router)
+	}
 
 	batch := batchHandler{
 		Router:     router,
@@ -69,6 +72,7 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 			"/api/ws",
 			"/api/media/ws",
 		},
+		ExcludedPrefixes: []string{"/api/media/hls/"},
 	}
 	router.Post("/api/batch", batch.Handle)
 

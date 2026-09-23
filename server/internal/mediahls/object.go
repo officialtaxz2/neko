@@ -96,6 +96,7 @@ func (object MediaObject) Generation() uint64 { return object.generation }
 func (object MediaObject) ContentType() string { return object.contentType }
 func (object MediaObject) Size() int { return len(object.data) }
 func (object MediaObject) Bytes() []byte { return slices.Clone(object.data) }
+func (object MediaObject) bytesView() []byte { return object.data }
 
 type objectCountKey struct { variant string; kind ObjectKind }
 type objectKey struct { variant string; uri string }
@@ -125,7 +126,6 @@ func (store *ObjectStore) Get(variant, uri string) (MediaObject, bool) {
 	store.mu.RLock(); defer store.mu.RUnlock()
 	object, ok := store.objects[objectKey{variant: variant, uri: uri}]
 	if !ok { return MediaObject{}, false }
-	object.data = slices.Clone(object.data)
 	return object, true
 }
 

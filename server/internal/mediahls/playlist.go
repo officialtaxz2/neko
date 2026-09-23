@@ -44,7 +44,7 @@ func (playlist MasterPlaylist) Render() ([]byte, error) {
 	return boundedPlaylist(builder.String())
 }
 
-type Segment struct { URI string; Duration float64; ProgramDateTime time.Time; Discontinuity bool }
+type Segment struct { URI string; Sequence uint64; Duration float64; ProgramDateTime time.Time; Discontinuity bool }
 type Part struct { URI string; Duration float64; Independent bool }
 type RenditionReport struct { URI string; LastMSN uint64; LastPart uint64 }
 
@@ -63,7 +63,7 @@ type MediaPlaylist struct {
 func (playlist MediaPlaylist) Render() ([]byte, error) {
 	if !ValidMode(playlist.Mode) || playlist.MediaSequence == 0 || !relativeInitURI(playlist.MapURI) || len(playlist.Segments) > 3 { return nil, ErrInvalidPlaylist }
 	if playlist.Mode == ModeHLS && (len(playlist.Segments) != 3 || len(playlist.Parts) != 0 || playlist.PreloadHint != "" || len(playlist.RenditionReports) != 0) { return nil, ErrInvalidPlaylist }
-	if playlist.Mode == ModeLLHLS && (len(playlist.Parts) < 3 || len(playlist.Parts) > 6 || playlist.PartsProgramDateTime.IsZero() || !relativeMediaURI(playlist.PreloadHint)) { return nil, ErrInvalidPlaylist }
+	if playlist.Mode == ModeLLHLS && ((len(playlist.Segments) == 0 && len(playlist.Parts) < 3) || len(playlist.Parts) > 6 || playlist.PartsProgramDateTime.IsZero() || !relativeMediaURI(playlist.PreloadHint)) { return nil, ErrInvalidPlaylist }
 	version := 7
 	if playlist.Mode == ModeLLHLS { version = 9 }
 	var builder strings.Builder

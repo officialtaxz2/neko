@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -46,7 +47,7 @@ func WithRecoverer() RouterOption {
 
 func WithCORS(allowOrigin func(origin string) bool) RouterOption {
 	return func(r *router) {
-		r.chi.Use(cors.Handler(cors.Options{
+		corsHandler := cors.Handler(cors.Options{
 			AllowOriginFunc: func(r *http.Request, origin string) bool {
 				return allowOrigin(origin)
 			},
@@ -55,7 +56,17 @@ func WithCORS(allowOrigin func(origin string) bool) RouterOption {
 			ExposedHeaders:   []string{"Link"},
 			AllowCredentials: true,
 			MaxAge:           300, // Maximum value not ignored by any of major browsers
-		}))
+		})
+		r.chi.Use(func(next http.Handler) http.Handler {
+			withCORS := corsHandler(next)
+			return http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+				if request.URL != nil && strings.HasPrefix(request.URL.Path, "/api/media/hls/") {
+					next.ServeHTTP(w, request)
+					return
+				}
+				withCORS.ServeHTTP(w, request)
+			})
+		})
 	}
 }
 
@@ -99,6 +110,10 @@ func (r *router) Route(pattern string, fn func(types.Router)) {
 
 func (r *router) Get(pattern string, fn types.RouterHandler) {
 	r.chi.Get(pattern, routeHandler(fn))
+}
+
+func (r *router) Head(pattern string, fn types.RouterHandler) {
+	r.chi.Head(pattern, routeHandler(fn))
 }
 
 func (r *router) Post(pattern string, fn types.RouterHandler) {

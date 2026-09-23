@@ -43,6 +43,10 @@ func (l *logFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
 		// This route rejects queries, but redact the complete URL before that
 		// validation so an attempted ticket/query credential cannot reach logs.
 		req["route"] = "/api/media/ws"
+	} else if strings.HasPrefix(r.URL.Path, "/api/media/hls/") {
+		// Public lease IDs are bearer-adjacent correlators and playlist queries
+		// carry live-edge state. Keep both out of request logs.
+		req["route"] = "/api/media/hls/:lease/:resource"
 	} else {
 		req["uri"] = fmt.Sprintf("%s://%s%s", scheme, r.Host, r.RequestURI)
 	}

@@ -43,7 +43,7 @@ integration/upstream-20260909
 upstream merge commit: 4e99b8d3ca720d1f184544306820e388716ba23a
 relation at merge commit: 37 commits ahead, 0 behind
 master: fast-forwarded to the reviewed integration history
-testing: deployment reconciliation, accepted opt-in adaptive quality plus validated recovery probe, bounded iOS recovery, server-enforced view-only sharing, implemented media-subscription/WebRTC compatibility, WebCodecs/media-WebSocket receive path and separate Phase 4 assets, and HLS/LL-HLS Phase 1 access/deterministic-media foundations
+testing: deployment reconciliation, accepted opt-in adaptive quality plus validated recovery probe, bounded iOS recovery, server-enforced view-only sharing, implemented media-subscription/WebRTC compatibility, WebCodecs/media-WebSocket receive path and separate Phase 4 assets, and HLS/LL-HLS Phases 1–2 server foundations/shared packaging/authenticated HTTP delivery
 master: pinned at d9105ef8 until explicit grouped-promotion authorization
 ```
 
@@ -706,11 +706,37 @@ go test ./...
 ./build
 ```
 
+## COMPLETED IN REPOSITORY — HLS/LL-HLS Phase 2 shared packager and HTTP delivery
+
+Implemented and statically reviewed on `testing` on 2026-09-23:
+
+- added one process-wide packager set shared by `hls` and `ll-hls` leases, with one exact Opus audio subscription and exact `high`/`medium`/`low` VP8 subscriptions, provider queues fixed at 64, observable input/output worker hand-offs fixed at 8 and 15-second idle teardown after the last unpaused lease;
+- required the first complete provider `FORMAT`, its nonzero generation and an exact advertised dimension/rate match before media admission; added normalized-timestamp-preserving GStreamer appsrc input and codec-configuration extraction, then bounded VP8-to-H.264 High 3.1 and Opus-to-48-kHz stereo AAC-LC conversion at the fixed rendition rates, dimensions and frame rates;
+- added deterministic single-track fMP4 init/fragment generation, aligned one-second parts/two-second IDRs/six-second parents, shared conventional/LL playlist publication, immutable object serving, bounded count/size/64-MiB retention and generation/discontinuity restart handling;
+- registered the central `hls` backend and bootstrap/keepalive/resource routes only when `media.hls.enabled=true`; omitted configuration still exposes no HLS route or backend and does not change WebRTC or explicit WebCodecs selection;
+- connected every playback lease to the central per-session delivery owner. A successfully served media playlist activates watching; an initially private session attaches in the paused state without starting workers, Private Mode wakes requests, pauses the digest-only lease and releases packager demand, and resume keeps HTTP paused until the shared set is ready; replacement, expiry, permission loss and shutdown close centrally;
+- implemented exact cookie renewal on master/media-playlist and keepalive responses, uniform invalid-lease handling, per-request read/write deadlines, `HEAD`, one-range MP4 delivery, negotiated playlist gzip, fixed HTTP priorities, batch/CORS exclusion and path/query redaction without applying a global timeout to existing WebSockets;
+- kept slow readers outside provider/packager locks by serving immutable object references, bounded every request/blocker/rate/object path, evicted only retention beyond the currently advertised init/part/parent floors when the 64-MiB aggregate ceiling requires space, and made GStreamer callback shutdown cancellation-aware so worker teardown cannot wait forever on a full Go hand-off;
+- added all fixed `neko_media_hls_*` metrics and credential-safe lifecycle/failure logs plus focused fMP4, shared-worker, pause/revocation, cookie-renewal, compressed-HEAD and range tests.
+
+There is deliberately still no HLS/LL-HLS browser player, per-client HLS selector, deployment Compose overlay or automatic fallback. No HLS route exists in the normal deployment while the default-off server flag is omitted.
+
+Runtime/build/test status: **NOT EXECUTED IN CODEX**. Before Phase 2 is treated as target-server verified, run this exact-commit gate on the target server:
+
+```bash
+export NEKO_VALIDATION_COMMIT="$(git rev-parse HEAD)"
+docker compose -f docker-compose.validation.yaml build server-checks
+docker compose -f docker-compose.validation.yaml run --rm server-checks
+docker build -t my-neko/server:hls-phase2 ./server
+```
+
+The runtime gate must additionally inspect generated H.264/AAC init/fragments and both playlist modes with an independent HLS/fMP4 parser, verify the disabled route is `404`, and exercise the authenticated HTTPS cookie/range/HEAD/gzip/private-mode/revocation/slow-reader/shutdown boundaries before any device-support or latency claim. The Phase 4 overlay and evidence collector are intentionally not part of this block.
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement **Phase 2 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without adding a client player. Add the shared bounded one-audio/three-video packager, H.264 High 3.1/AAC-LC aligned fMP4 generation, conditionally registered authenticated bootstrap/resource delivery, central per-session delivery attachment, fixed credential-safe metrics and slow-reader/cancellation/shutdown isolation. Preserve WebRTC as the default, keep WebCodecs explicit, do not add automatic fallback, and keep all Phase 1 bounds/security invariants. `master` must not move without explicit operator authorization.
+Implement **Phase 3 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)**: the isolated passive client. Add pinned local player support and Apple-native versus MSE capability detection; expose explicit manual `HLS` and `Low-Latency HLS` choices only when advertised; bootstrap without URL credentials while preserving unrelated query/fragment state; implement private-mode/revocation/terminal cleanup and keep receive-only limitations explicit. WebRTC must remain the absent/invalid default, WebCodecs must remain explicit, no fallback may be automatic, and no deployment overlay belongs to this block. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -719,8 +745,8 @@ Implement **Phase 2 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without adding a clien
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
-6. **implemented in repository / target gate pending:** HLS/LL-HLS Phase 1 access and deterministic-media foundations without a packager, route or player;
-7. **NEXT:** implement HLS/LL-HLS Phase 2 shared packaging and authenticated HTTP delivery without a client player;
+6. **implemented in repository / target gate pending:** HLS/LL-HLS Phase 1 access/deterministic-media foundations and Phase 2 shared packaging/authenticated HTTP delivery without a player or deployment overlay;
+7. **NEXT:** implement the isolated HLS/LL-HLS Phase 3 passive client and explicit manual selection;
 8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
@@ -738,13 +764,13 @@ When fallback work begins, separate the two user classes instead of forcing ever
 7. **bounded Phase 4 checkpoint closed:** exact automated/build/security, accumulated functional and corrected foreground-iPhone gates passed; numeric latency/pacing, induced isolation, resource and remaining live hostile-input cases stay deferred;
 8. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted manual per-client `WebRTC`/`WebCodecs` selection and compact healthy status without automatic fallback;
 9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
-10. **implemented in repository / target gate pending — HLS Phase 1:** default-off access, lease, security and deterministic playlist/object foundations without a packager or client;
-11. **NEXT — HLS Phase 2:** shared packager, H.264/AAC fMP4 generation, authenticated HTTP delivery, central delivery attachment and observability without a client player;
-12. later Phases 3–4 add the isolated passive client and grouped target-server validation in that order;
+10. **implemented in repository / target gate pending — HLS Phases 1–2:** default-off access, leases, security, deterministic models, shared H.264/AAC packaging, authenticated HTTP delivery and observability without a client;
+11. **NEXT — HLS Phase 3:** isolated passive client, pinned player support and explicit manual HLS/LL-HLS selection;
+12. later Phase 4 adds the separate deployment/observability assets and grouped target-server validation;
 13. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
 14. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 
-The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract and Phase 1 repository foundations, but no HTTP media delivery, player or device evidence yet.
+The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract and repository server delivery through Phase 2, but no browser player, deployment overlay or device evidence yet.
 
 ## LATER / OPTIONAL
 
@@ -763,8 +789,8 @@ The passive path may trade latency for reliability and compatibility. It must st
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
 - Target-device and target-server evidence for the specified VP8/Opus WebCodecs/media-WebSocket contract; framing, queue sizes, synchronization, security limits and rollout behavior are fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
-- Focused target-server tests/build for the HLS/LL-HLS Phase 1 repository foundations.
-- Actual HLS/LL-HLS device, latency and resource evidence against the fixed targets in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); no HTTP media transport is implemented yet.
+- Focused target-server tests/build and independent playlist/fMP4 inspection for the HLS/LL-HLS Phase 1–2 repository server path.
+- Actual HLS/LL-HLS device, latency and resource evidence against the fixed targets in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); the HTTP server path is implemented but no client or deployment overlay exists yet.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
 - Eventual automatic per-client media-backend selection rules after the explicitly selected prototypes have measured evidence; version-1 manual selection and rollback are already fixed.
 - Live compact view-only fragment preservation for the productized selector was not repeated at `12cfe43b`; focused automated coverage passed, and earlier view-only boundary/browser evidence remains separate.

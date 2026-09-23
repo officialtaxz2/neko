@@ -50,6 +50,7 @@ type leaseEntry struct {
 	keepalive tokenBucket
 	playlists tokenBucket
 	objects tokenBucket
+	changed chan struct{}
 }
 
 type LeaseStore struct {
@@ -87,8 +88,11 @@ func (store *LeaseStore) Issue(binding LeaseBinding, now time.Time) (LeaseOffer,
 	if _, exists := store.entries[publicID]; exists { return LeaseOffer{}, errors.New("HLS public ID collision") }
 	previous, replaces := store.bySession[binding.SessionID]
 	if !replaces && len(store.entries) >= store.maximumLeases { return LeaseOffer{}, ErrLeaseLimit }
-	if replaces { delete(store.entries, previous) }
-	store.entries[publicID] = &leaseEntry{binding: binding, secretDigest: digest, expiresAt: expiresAt}
+	if replaces {
+		if entry := store.entries[previous]; entry != nil { closeLeaseChange(entry) }
+		delete(store.entries, previous)
+	}
+	store.entries[publicID] = &leaseEntry{binding: binding, secretDigest: digest, expiresAt: expiresAt, changed: make(chan struct{})}
 	store.bySession[binding.SessionID] = publicID
 	return LeaseOffer{PublicID: publicID, Secret: secret, ExpiresAt: expiresAt, Cookie: LeaseCookie(publicID, secret)}, nil
 }
@@ -121,27 +125,84 @@ func (store *LeaseStore) Authenticate(publicID, secret string, extend bool, now 
 	return snapshot(publicID, entry), nil
 }
 
+func (store *LeaseStore) Expiration(publicID, secret string, now time.Time) (time.Time, error) {
+	if ValidatePublicID(publicID) != nil || len(secret) != LeaseSecretEncodedLength {
+		return time.Time{}, ErrLeaseNotFound
+	}
+	if now.IsZero() {
+		now = time.Now()
+	}
+	digest := sha256.Sum256([]byte(secret))
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	store.cleanupLocked(now)
+	entry, ok := store.entries[publicID]
+	if !ok || !hmac.Equal(digest[:], entry.secretDigest[:]) {
+		return time.Time{}, ErrLeaseNotFound
+	}
+	return entry.expiresAt, nil
+}
+
 func (store *LeaseStore) SetPaused(sessionID string, paused bool) bool {
 	store.mu.Lock(); defer store.mu.Unlock()
 	publicID, ok := store.bySession[sessionID]
 	if !ok { return false }
 	entry, ok := store.entries[publicID]
 	if !ok { return false }
-	entry.paused = paused
+	if entry.paused != paused {
+		entry.paused = paused
+		closeLeaseChange(entry)
+		entry.changed = make(chan struct{})
+	}
 	return true
 }
 
 func (store *LeaseStore) InvalidateSession(sessionID string) {
 	store.mu.Lock(); defer store.mu.Unlock()
-	if publicID, ok := store.bySession[sessionID]; ok { delete(store.entries, publicID); delete(store.bySession, sessionID) }
+	if publicID, ok := store.bySession[sessionID]; ok { store.invalidateLocked(publicID) }
+}
+
+func (store *LeaseStore) Invalidate(publicID string) {
+	store.mu.Lock(); defer store.mu.Unlock()
+	store.invalidateLocked(publicID)
+}
+
+func (store *LeaseStore) invalidateLocked(publicID string) {
+	entry, ok := store.entries[publicID]
+	if !ok { return }
+	closeLeaseChange(entry)
+	delete(store.entries, publicID)
+	if current, exists := store.bySession[entry.binding.SessionID]; exists && current == publicID { delete(store.bySession, entry.binding.SessionID) }
+}
+
+func (store *LeaseStore) ChangeChannel(publicID, secret string, now time.Time) (<-chan struct{}, error) {
+	if ValidatePublicID(publicID) != nil || len(secret) != LeaseSecretEncodedLength { return nil, ErrLeaseNotFound }
+	if now.IsZero() { now = time.Now() }
+	digest := sha256.Sum256([]byte(secret))
+	store.mu.Lock(); defer store.mu.Unlock()
+	store.cleanupLocked(now)
+	entry, ok := store.entries[publicID]
+	if !ok || !hmac.Equal(digest[:], entry.secretDigest[:]) { return nil, ErrLeaseNotFound }
+	if entry.paused { return nil, ErrLeasePaused }
+	return entry.changed, nil
 }
 
 func (store *LeaseStore) cleanupLocked(now time.Time) {
 	for publicID, entry := range store.entries {
 		if !now.Before(entry.expiresAt) {
+			closeLeaseChange(entry)
 			delete(store.entries, publicID)
 			if current, ok := store.bySession[entry.binding.SessionID]; ok && current == publicID { delete(store.bySession, entry.binding.SessionID) }
 		}
+	}
+}
+
+func closeLeaseChange(entry *leaseEntry) {
+	if entry == nil || entry.changed == nil { return }
+	select {
+	case <-entry.changed:
+	default:
+		close(entry.changed)
 	}
 }
 
@@ -177,7 +238,6 @@ func (store *LeaseStore) Acquire(publicID, secret string, class RequestClass, bl
 	default: return nil, LeaseSnapshot{}, ErrRequestLimit
 	}
 	if !takeToken(bucket, rate, burst, now) { return nil, LeaseSnapshot{}, ErrRequestLimit }
-	if class == RequestKeepAlive || class == RequestPlaylist { entry.expiresAt = now.Add(LeaseLifetime) }
 	store.active++; entry.active++
 	if blocking { store.blocking++; entry.blocking++ }
 	return &RequestPermit{store: store, publicID: publicID, blocking: blocking}, snapshot(publicID, entry), nil

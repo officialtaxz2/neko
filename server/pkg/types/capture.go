@@ -33,6 +33,9 @@ type Sample struct {
 	Height               uint32
 	FrameRateNumerator   uint32
 	FrameRateDenominator uint32
+	// CodecConfig is an immutable copy of the codec initialization payload
+	// exposed by the appsink caps (for example avcC or AudioSpecificConfig).
+	CodecConfig []byte
 	// metadata
 	DeltaUnit bool // this unit cannot be decoded independently.
 	// buffer length

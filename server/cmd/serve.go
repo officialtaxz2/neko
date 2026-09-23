@@ -68,7 +68,9 @@ type serve struct {
 		mediaWS           *mediaws.Negotiator
 		mediaWSBackend    *mediaws.Backend
 		mediaWSController *mediaws.Controller
-		mediaHLS          *mediahls.Negotiator
+		mediaHLS           *mediahls.Negotiator
+		mediaHLSBackend    *mediahls.Backend
+		mediaHLSController *mediahls.Controller
 		plugins           *plugins.ManagerCtx
 		api               *api.ApiManagerCtx
 		http              *http.HttpManagerCtx
@@ -215,17 +217,36 @@ func (c *serve) Start(cmd *cobra.Command) {
 		c.managers.mediaWSController = controller
 	}
 	if c.configs.Media.HLS.Enabled {
-		negotiator, err := mediahls.NewNegotiator(c.managers.session, mediahls.NewTicketStore(), mediahls.Config{
+		hlsConfig := mediahls.Config{
 			AllowedOrigins: c.configs.Media.HLS.AllowedOrigins,
 			TrustedProxies: c.configs.Media.HLS.TrustedProxies,
 			Modes:          c.configs.Media.HLS.Modes,
 			MaxLeases:      c.configs.Media.HLS.MaxLeases,
 			MaxRequests:    c.configs.Media.HLS.MaxRequests,
-		})
+		}
+		tickets := mediahls.NewTicketStore()
+		leases, err := mediahls.NewLeaseStore(hlsConfig.MaxLeases, hlsConfig.MaxRequests)
 		if err != nil {
-			c.logger.Panic().Err(err).Msg("unable to configure HLS negotiation foundations")
+			c.logger.Panic().Err(err).Msg("unable to configure HLS lease store")
+		}
+		backend, err := mediahls.NewBackend(c.managers.capture.Media(), leases)
+		if err != nil {
+			c.logger.Panic().Err(err).Msg("unable to configure HLS packager backend")
+		}
+		if err := c.managers.media.Register(backend); err != nil {
+			c.logger.Panic().Err(err).Msg("unable to register HLS media backend")
+		}
+		negotiator, err := mediahls.NewNegotiator(c.managers.session, tickets, hlsConfig)
+		if err != nil {
+			c.logger.Panic().Err(err).Msg("unable to configure HLS negotiation")
+		}
+		controller, err := mediahls.NewController(c.managers.session, c.managers.media, tickets, leases, backend, hlsConfig)
+		if err != nil {
+			c.logger.Panic().Err(err).Msg("unable to configure HLS HTTP delivery")
 		}
 		c.managers.mediaHLS = negotiator
+		c.managers.mediaHLSBackend = backend
+		c.managers.mediaHLSController = controller
 		c.managers.webSocket.AddHandler(c.managers.mediaHLS.Handler)
 	}
 	c.managers.webSocket.Start()
@@ -256,11 +277,16 @@ func (c *serve) Start(cmd *cobra.Command) {
 	if c.managers.mediaWSController != nil {
 		mediaWebSocketHandler = c.managers.mediaWSController.Handle
 	}
+	var mediaHLSRouter func(types.Router)
+	if c.managers.mediaHLSController != nil {
+		mediaHLSRouter = c.managers.mediaHLSController.Route
+	}
 	c.managers.http = http.New(
 		c.managers.webSocket,
 		c.managers.api,
 		&c.configs.Server,
 		mediaWebSocketHandler,
+		mediaHLSRouter,
 	)
 	c.managers.http.Start()
 }
@@ -279,6 +305,10 @@ func (c *serve) Shutdown() {
 
 	err = c.managers.media.Shutdown()
 	c.logger.Err(err).Msg("media delivery manager shutdown")
+	if c.managers.mediaHLSBackend != nil {
+		c.managers.mediaHLSBackend.Shutdown()
+		c.logger.Info().Msg("HLS packager backend shutdown")
+	}
 
 	err = c.managers.webRTC.Shutdown()
 	c.logger.Err(err).Msg("webrtc manager shutdown")
