@@ -203,7 +203,7 @@ The recovery part did not pass its 90-second bound. After restoring `fq_codel`, 
 - exports per-session active/attempt/success/failure probe metrics and preserves the evidence in the collector;
 - adds focused tests for application-limited probe entry, clean completion, failed-probe backoff/cap and peer isolation while retaining the exact existing startup/downgrade/upgrade boundary tests.
 
-Static status: **bounded recovery implementation and review complete in repository / follow-up builds, tests, containers and live media NOT EXECUTED IN CODEX**. The original false downgrade is target-validated at `2efcc6b1`; only the compact recovery-probe follow-up in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md) remains pending.
+Target status: **receiver-evidence downgrade and bounded recovery complete for the focused target path**. The original false downgrade was validated at `2efcc6b1`. Exact follow-up `ddf15cee` then passed the configured server packages, 30-second media-WebSocket fuzz run with 1,357,656 executions, server/plugin and fresh base/Brave builds, adaptive deployment preflight, healthy zero-restart service and the compact two-viewer gate. A 700-kbit/s endpoint-specific constraint moved only C `high -> medium -> low` with fresh receiver evidence while H remained `high` with zero video-drop delta. Once `fq_codel` was restored, C started one clean probe at 30 seconds, completed it successfully, and reached `high` at 60 seconds; final probe metrics were active/attempt/success/failure `0/1/1/0`. The operator observed C frozen above `low`, fluid on `low`, and both recovery steps. The ad-hoc wrapper's final log-file counters produced a false exit `1`, but its CSV/metrics, direct container log follow-up, final queue/container state and operator observation establish the functional pass. Evidence remains outside the worktree in `../neko-adaptive-recovery-ddf15cee-20260923T063447Z`.
 
 ## COMPLETED IN REPOSITORY — bounded iOS transient recovery
 
@@ -687,9 +687,7 @@ No HLS route, packager, encoder, player, dependency, Compose overlay, automatic 
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Validate the receiver-evidence-gated downgrade plus bounded recovery probe on one exact clean `testing` commit with the shortened two-viewer procedure in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md). The 20-minute healthy hold and full constrained/isolation evidence do not need repetition: run the focused server tests/build and image/deployment checks, drive only C to `low`, remove the shaper, and require ordered recovery to `high` within three minutes while H remains on `high`. Retain probe metrics/logs and confirm the host shaper is restored.
-
-After that focused gate passes or its evidence is explicitly dispositioned, implement **Phase 1 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without starting media packaging or adding a player. Its already specified configuration, access, lease, security, deterministic playlist/object and focused-test scope remains unchanged. `master` must not move without explicit operator authorization.
+Implement **Phase 1 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without starting media packaging or adding a player. Add only the already specified default-off configuration, authenticated bootstrap/playback-lease foundations, access/security boundary, deterministic playlist/object models, golden fixtures and focused tests. Preserve WebRTC as the default, keep WebCodecs explicit, and do not add automatic fallback. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -697,8 +695,8 @@ After that focused gate passes or its evidence is explicitly dispositioned, impl
 2. **bounded checkpoint closed with explicit final-matrix limitations:** WebCodecs plus dedicated media WebSocket receive path;
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
-5. **NEXT:** focused exact-commit two-viewer target validation of the bounded application-limited recovery probe; the healthy hold, real downgrade and isolation halves already passed at `2efcc6b1`;
-6. **queued after that gate:** implement HLS/LL-HLS Phase 1 access and deterministic-media foundations without a packager, route or player;
+5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
+6. **NEXT:** implement HLS/LL-HLS Phase 1 access and deterministic-media foundations without a packager, route or player;
 7. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
@@ -735,7 +733,7 @@ The passive path may trade latency for reliability and compatibility. It must st
 ## OPEN
 
 - Final grouped validation must repeat the ordinary/admin/view-only/private-mode/manual-tier/reconnect matrix and the independently constrained three-viewer adaptive down/up isolation run; neither was rerun at `e5f55bf9`.
-- The first steady-state candidate at `2d037f39` is rejected. The receiver-evidence downgrade revision at `2efcc6b1` passed tests/build/deployment, the 20-minute healthy hold, real constrained downgrade and peer isolation, but its application-limited C recovery exceeded 90 seconds. Only the new bounded recovery-probe follow-up still needs its compact exact-commit target-server gate; its repository tests/build were not executed in Codex.
+- The first steady-state candidate at `2d037f39` is rejected. The receiver-evidence downgrade revision at `2efcc6b1` passed tests/build/deployment, the 20-minute healthy hold, real constrained downgrade and peer isolation, but its application-limited C recovery exceeded 90 seconds. Bounded recovery follow-up `ddf15cee` passed its exact-commit server tests/build/deployment and compact two-viewer gate, returning C `low -> medium -> high` in 60 seconds while H remained `high` with zero video-drop delta.
 - Determine whether fast-motion softness is acceptable at the current 1,996,800-bit/s VP8 `high` tier through a controlled same-content bitrate/quantizer A/B with receiver statistics and comparable captures; current evidence does not identify a subscription-refactor regression.
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
