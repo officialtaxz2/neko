@@ -11,6 +11,7 @@ import (
 	oldMessage "github.com/m1k1o/neko/server/internal/http/legacy/message"
 
 	"github.com/m1k1o/neko/server/internal/api/room"
+	"github.com/m1k1o/neko/server/internal/mediahls"
 	"github.com/m1k1o/neko/server/internal/mediaws"
 	"github.com/m1k1o/neko/server/internal/plugins/chat"
 	"github.com/m1k1o/neko/server/internal/plugins/filetransfer"
@@ -129,6 +130,33 @@ func (s *session) wsToBackend(msg []byte) error {
 			Backend: request.Backend,
 			Audio:   request.Audio,
 			Video:   request.Video,
+		})
+
+	case oldEvent.MEDIA_HLS_CAPABILITIES_REQUEST:
+		request := &oldMessage.MediaHLSCapabilitiesRequest{}
+		if err := mediahls.DecodeStrictJSON(msg, request); err != nil {
+			return err
+		}
+		if err := mediahls.RequireJSONFields(msg, "event", "version", "mode"); err != nil {
+			return err
+		}
+		return s.toBackend(event.MEDIA_HLS_CAPABILITIES_REQUEST, &message.MediaHLSCapabilitiesRequest{
+			Version: request.Version,
+			Mode:    request.Mode,
+		})
+
+	case oldEvent.MEDIA_HLS_CREATE:
+		request := &oldMessage.MediaHLSCreate{}
+		if err := mediahls.DecodeStrictJSON(msg, request); err != nil {
+			return err
+		}
+		if err := mediahls.RequireJSONFields(msg, "event", "version", "backend", "mode"); err != nil {
+			return err
+		}
+		return s.toBackend(event.MEDIA_HLS_CREATE, &message.MediaHLSCreate{
+			Version: request.Version,
+			Backend: request.Backend,
+			Mode:    request.Mode,
 		})
 
 	// Control Events
@@ -425,7 +453,9 @@ func viewOnlyLegacyEventAllowed(eventName string) bool {
 		oldEvent.SIGNAL_ANSWER,
 		oldEvent.SIGNAL_CANDIDATE,
 		oldEvent.MEDIA_CAPABILITIES_REQUEST,
-		oldEvent.MEDIA_CREATE:
+		oldEvent.MEDIA_CREATE,
+		oldEvent.MEDIA_HLS_CAPABILITIES_REQUEST,
+		oldEvent.MEDIA_HLS_CREATE:
 		return true
 	default:
 		return false

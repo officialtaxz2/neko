@@ -15,6 +15,7 @@ import (
 	"github.com/m1k1o/neko/server/internal/desktop"
 	"github.com/m1k1o/neko/server/internal/http"
 	mediadelivery "github.com/m1k1o/neko/server/internal/media"
+	"github.com/m1k1o/neko/server/internal/mediahls"
 	"github.com/m1k1o/neko/server/internal/mediaws"
 	"github.com/m1k1o/neko/server/internal/member"
 	"github.com/m1k1o/neko/server/internal/plugins"
@@ -67,6 +68,7 @@ type serve struct {
 		mediaWS           *mediaws.Negotiator
 		mediaWSBackend    *mediaws.Backend
 		mediaWSController *mediaws.Controller
+		mediaHLS          *mediahls.Negotiator
 		plugins           *plugins.ManagerCtx
 		api               *api.ApiManagerCtx
 		http              *http.HttpManagerCtx
@@ -211,6 +213,20 @@ func (c *serve) Start(cmd *cobra.Command) {
 			c.logger.Panic().Err(err).Msg("unable to configure WebCodecs media WebSocket route")
 		}
 		c.managers.mediaWSController = controller
+	}
+	if c.configs.Media.HLS.Enabled {
+		negotiator, err := mediahls.NewNegotiator(c.managers.session, mediahls.NewTicketStore(), mediahls.Config{
+			AllowedOrigins: c.configs.Media.HLS.AllowedOrigins,
+			TrustedProxies: c.configs.Media.HLS.TrustedProxies,
+			Modes:          c.configs.Media.HLS.Modes,
+			MaxLeases:      c.configs.Media.HLS.MaxLeases,
+			MaxRequests:    c.configs.Media.HLS.MaxRequests,
+		})
+		if err != nil {
+			c.logger.Panic().Err(err).Msg("unable to configure HLS negotiation foundations")
+		}
+		c.managers.mediaHLS = negotiator
+		c.managers.webSocket.AddHandler(c.managers.mediaHLS.Handler)
 	}
 	c.managers.webSocket.Start()
 

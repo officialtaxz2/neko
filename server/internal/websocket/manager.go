@@ -43,6 +43,10 @@ var nologEvents = []string{
 	event.MEDIA_CAPABILITIES,
 	event.MEDIA_CREATE,
 	event.MEDIA_OFFER,
+	event.MEDIA_HLS_CAPABILITIES_REQUEST,
+	event.MEDIA_HLS_CAPABILITIES,
+	event.MEDIA_HLS_CREATE,
+	event.MEDIA_HLS_OFFER,
 	// don't log every cursor update
 	event.SESSION_CURSORS,
 }

@@ -1,6 +1,6 @@
 # Work Plan / Handoff State
 
-Last consolidated: 2026-09-22.
+Last consolidated: 2026-09-23.
 
 ## Environment boundary
 
@@ -43,7 +43,7 @@ integration/upstream-20260909
 upstream merge commit: 4e99b8d3ca720d1f184544306820e388716ba23a
 relation at merge commit: 37 commits ahead, 0 behind
 master: fast-forwarded to the reviewed integration history
-testing: deployment reconciliation, accepted opt-in adaptive quality, bounded iOS recovery, server-enforced view-only sharing, implemented media-subscription/WebRTC compatibility, WebCodecs/media-WebSocket receive path and separate Phase 4 deployment/observability assets
+testing: deployment reconciliation, accepted opt-in adaptive quality plus validated recovery probe, bounded iOS recovery, server-enforced view-only sharing, implemented media-subscription/WebRTC compatibility, WebCodecs/media-WebSocket receive path and separate Phase 4 assets, and HLS/LL-HLS Phase 1 access/deterministic-media foundations
 master: pinned at d9105ef8 until explicit grouped-promotion authorization
 ```
 
@@ -559,7 +559,7 @@ The container executes the following equivalent checks:
 
 ```bash
 cd server
-go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
+go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediahls ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
 go test ./internal/mediaws -run '^$' -fuzz '^FuzzParseRecord$' -fuzztime 30s
 ./build
 ```
@@ -683,11 +683,34 @@ Browser/runtime images, when relevant to the deployment:
 
 No HLS route, packager, encoder, player, dependency, Compose overlay, automatic selection, DASH/WebTransport implementation or new control transport was added in this block. Runtime/build/test status for the design follow-up is **NOT EXECUTED IN CODEX**. The small client follow-up in the same repository block reduces the already-compact healthy WebCodecs indicator to only `WebCodecs`; prominent negotiation/recovery/terminal behavior is unchanged.
 
+## COMPLETED IN REPOSITORY — HLS/LL-HLS Phase 1 foundations
+
+Implemented and statically reviewed on `testing` on 2026-09-23:
+
+- added default-off `media.hls` configuration with explicit exact HTTPS origins, trusted proxy CIDRs, allowed `hls`/`ll-hls` modes and bounded global lease/request ceilings;
+- added strict current and legacy HLS capability/create/offer events, passive-session negotiation, payload-redacted event logging and live connected-`CanWatch` re-resolution;
+- added peer-local create-rate limiting and digest-only ten-second, 24-byte-entropy, single-use bootstrap tickets bound to session/backend/version/mode/request; replacement, replay, expiry, disconnect, deletion and permission-loss invalidation are explicit;
+- added strict 2-KiB bootstrap JSON parsing and a separate playback-lease store with 16-byte public IDs, digest-only 24-byte secrets, per-session replacement, 30-second sliding activity only for playlist/keepalive, pause/revocation, path-scoped `Secure`/`HttpOnly`/`SameSite=Strict` cookies and fixed per-lease/global request, blocking and rate limits;
+- added exact HTTPS/origin/trusted-proxy checks, canonical fixed path parsing, bounded LL-HLS query directives, single byte ranges, no-store/no-referrer headers and credential-free normalized access-log paths;
+- added immutable generation/media-object models with fixed per-object, count and 64-MiB retention ceilings plus deterministic master, conventional HLS and LL-HLS playlist rendering with relative credential-free URIs and golden fixtures;
+- added focused tests for config, strict payloads, ticket replay/expiry/binding/replacement, lease cookie/scope/lifetime/rates/concurrency/revocation, security/path/query/range/redaction, playlist goldens and object/generation invariants.
+
+The bootstrap and resource paths are deliberately **not registered**. Phase 1 adds no packager, H.264/AAC conversion, encoded-provider subscription, HTTP media delivery, player, deployment overlay or client/backend selection. WebRTC remains the default and WebCodecs remains explicit.
+
+Runtime/build/test status: **NOT EXECUTED IN CODEX**. The focused target-server gate for this block is pending:
+
+```bash
+cd server
+go test ./internal/config ./internal/mediahls ./internal/http/legacy ./internal/websocket ./pkg/types/...
+go test ./...
+./build
+```
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement **Phase 1 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without starting media packaging or adding a player. Add only the already specified default-off configuration, authenticated bootstrap/playback-lease foundations, access/security boundary, deterministic playlist/object models, golden fixtures and focused tests. Preserve WebRTC as the default, keep WebCodecs explicit, and do not add automatic fallback. `master` must not move without explicit operator authorization.
+Implement **Phase 2 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without adding a client player. Add the shared bounded one-audio/three-video packager, H.264 High 3.1/AAC-LC aligned fMP4 generation, conditionally registered authenticated bootstrap/resource delivery, central per-session delivery attachment, fixed credential-safe metrics and slow-reader/cancellation/shutdown isolation. Preserve WebRTC as the default, keep WebCodecs explicit, do not add automatic fallback, and keep all Phase 1 bounds/security invariants. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -696,8 +719,9 @@ Implement **Phase 1 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)** without starting media
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
-6. **NEXT:** implement HLS/LL-HLS Phase 1 access and deterministic-media foundations without a packager, route or player;
-7. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
+6. **implemented in repository / target gate pending:** HLS/LL-HLS Phase 1 access and deterministic-media foundations without a packager, route or player;
+7. **NEXT:** implement HLS/LL-HLS Phase 2 shared packaging and authenticated HTTP delivery without a client player;
+8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
 
@@ -714,12 +738,13 @@ When fallback work begins, separate the two user classes instead of forcing ever
 7. **bounded Phase 4 checkpoint closed:** exact automated/build/security, accumulated functional and corrected foreground-iPhone gates passed; numeric latency/pacing, induced isolation, resource and remaining live hostile-input cases stay deferred;
 8. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted manual per-client `WebRTC`/`WebCodecs` selection and compact healthy status without automatic fallback;
 9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
-10. **queued after the recovery-probe gate — HLS Phase 1:** default-off access, lease, security and deterministic playlist/object foundations without a packager or client;
-11. later Phases 2–4 add the shared packager/HTTP delivery, isolated passive client and grouped target-server validation in that order;
-12. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
-13. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
+10. **implemented in repository / target gate pending — HLS Phase 1:** default-off access, lease, security and deterministic playlist/object foundations without a packager or client;
+11. **NEXT — HLS Phase 2:** shared packager, H.264/AAC fMP4 generation, authenticated HTTP delivery, central delivery attachment and observability without a client player;
+12. later Phases 3–4 add the isolated passive client and grouped target-server validation in that order;
+13. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
+14. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 
-The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract, but no implementation or device evidence yet.
+The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract and Phase 1 repository foundations, but no HTTP media delivery, player or device evidence yet.
 
 ## LATER / OPTIONAL
 
@@ -738,7 +763,8 @@ The passive path may trade latency for reliability and compatibility. It must st
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
 - Target-device and target-server evidence for the specified VP8/Opus WebCodecs/media-WebSocket contract; framing, queue sizes, synchronization, security limits and rollout behavior are fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
-- Actual HLS/LL-HLS device, latency and resource evidence against the fixed targets in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); no transport is implemented yet.
+- Focused target-server tests/build for the HLS/LL-HLS Phase 1 repository foundations.
+- Actual HLS/LL-HLS device, latency and resource evidence against the fixed targets in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); no HTTP media transport is implemented yet.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
 - Eventual automatic per-client media-backend selection rules after the explicitly selected prototypes have measured evidence; version-1 manual selection and rollback are already fixed.
 - Live compact view-only fragment preservation for the productized selector was not repeated at `12cfe43b`; focused automated coverage passed, and earlier view-only boundary/browser evidence remains separate.

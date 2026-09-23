@@ -199,6 +199,39 @@ func (s *session) wsToClient(msg []byte) error {
 			ExpiresInMS: request.ExpiresInMS,
 		})
 
+	case event.MEDIA_HLS_CAPABILITIES:
+		request := &message.MediaHLSCapabilities{}
+		if err := json.Unmarshal(data.Payload, request); err != nil {
+			return err
+		}
+		return s.toClient(&oldMessage.MediaHLSCapabilities{
+			Event:      oldEvent.MEDIA_HLS_CAPABILITIES,
+			Version:    request.Version,
+			Backend:    request.Backend,
+			Modes:      request.Modes,
+			Container:  request.Container,
+			VideoCodec: request.VideoCodec,
+			AudioCodec: request.AudioCodec,
+			AudioRate:  request.AudioRate,
+			Variants:   request.Variants,
+			Limits:     request.Limits,
+		})
+
+	case event.MEDIA_HLS_OFFER:
+		request := &message.MediaHLSOffer{}
+		if err := json.Unmarshal(data.Payload, request); err != nil {
+			return err
+		}
+		return s.toClient(&oldMessage.MediaHLSOffer{
+			Event:       oldEvent.MEDIA_HLS_OFFER,
+			Version:     request.Version,
+			Backend:     request.Backend,
+			Mode:        request.Mode,
+			Path:        request.Path,
+			Ticket:      request.Ticket,
+			ExpiresInMS: request.ExpiresInMS,
+		})
+
 	// System Events
 	case event.SYSTEM_DISCONNECT:
 		request := &message.SystemDisconnect{}

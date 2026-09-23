@@ -50,6 +50,8 @@ func TestViewOnlyLegacyEventAllowed(t *testing.T) {
 		oldEvent.SIGNAL_CANDIDATE,
 		oldEvent.MEDIA_CAPABILITIES_REQUEST,
 		oldEvent.MEDIA_CREATE,
+		oldEvent.MEDIA_HLS_CAPABILITIES_REQUEST,
+		oldEvent.MEDIA_HLS_CREATE,
 	} {
 		if !viewOnlyLegacyEventAllowed(eventName) {
 			t.Errorf("signalling event %q was denied", eventName)

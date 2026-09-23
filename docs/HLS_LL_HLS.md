@@ -1,6 +1,6 @@
 # HLS / Low-Latency HLS passive delivery contract
 
-Status: **version-1 design complete on `testing`; no HLS endpoint, packager, player, deployment overlay or automatic selection is implemented**.
+Status: **version-1 design and Phase 1 foundations complete in the repository on `testing`; no HLS HTTP endpoint, packager, encoder, player, deployment overlay or automatic selection is implemented, and target-server tests/build remain pending**.
 
 This document is the normative contract for the first default-off passive/view-only HTTP-streaming prototype. It specializes the encoded-source/subscription and participant-delivery boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It does not authorize a second desktop capture, a stable-deployment change or a claim that any untested device supports the proposed path.
 
@@ -361,6 +361,8 @@ Repository deployment must use a separate sanitized Compose overlay. Omitting it
 - add pure playlist/object/generation models, fixed limits and golden conventional/LL-HLS fixtures;
 - add authorization, replay, expiry, path/query, cookie-scope, range, rate and redaction tests;
 - do not register a usable media route, start a packager or add a client player yet.
+
+Repository status on 2026-09-23: Phase 1 is implemented on `testing`. The server has validated default-off `media.hls` configuration and authenticated current/legacy event negotiation, digest-only ten-second one-use tickets, independent digest-only 30-second path-scoped cookie leases, exact pre-route security/path/query/range/rate/redaction helpers, immutable generation/object models with the fixed memory/count ceilings, and deterministic master/conventional/LL-HLS playlist renderers backed by golden fixtures. Negotiation re-resolves the live connected `CanWatch` session, passive/view-only sessions may negotiate receive media, session loss or permission change invalidates pending tickets, and HLS negotiation payloads are excluded from WebSocket payload logs. The planned bootstrap/resource paths are models only and are deliberately not registered with the HTTP manager. No provider subscription, media conversion, packaging, HTTP delivery, browser player, deployment overlay or backend selection was added. Focused tests are present but were **NOT EXECUTED IN CODEX**; target-server verification remains required.
 
 ### Phase 2 — shared packager and HTTP delivery
 
