@@ -734,7 +734,7 @@ The runtime gate must additionally inspect generated H.264/AAC init/fragments an
 
 ## COMPLETED IN REPOSITORY — HLS/LL-HLS Phase 3 passive client
 
-Status on 2026-10-04: **implemented and statically reviewed on `testing`; the focused automated target-server gate passed at `e85d8568`; deployment images, live playback and device acceptance remain pending**.
+Status on 2026-10-04: **implemented and statically reviewed on `testing`; the focused automated target-server gate passed at `e85d8568`, and the default-off base/Brave image deployment started healthy at `741025c3`; browser/media smoke checks and HLS-enabled runtime/device acceptance remain pending**.
 
 The isolated HLS controller and pinned local hls.js 1.7.3 MSE/worker path now integrate with the native video/playback UI. Advertised-only manual HLS/LL-HLS choices appear for passive viewers and admin diagnostics; exact diagnostic queries and saved choices preserve unrelated navigation state. WebRTC remains the absent/invalid default, WebCodecs remains supported, disabled HLS terminates visibly, and no automatic fallback or deployment overlay was added. The authenticated event session skips unused WebRTC signaling for exact HLS selections. Private-mode state now crosses the legacy bridge, and native/MSE cleanup owns buffers, listeners, requests and stale callbacks. Prefix-scoped cookies/CORS/logging and six-part blocking-reload rollover were corrected during static integration. See [`HLS_LL_HLS.md`](HLS_LL_HLS.md) for the full implementation boundaries.
 
@@ -755,7 +755,7 @@ The client container runs `npm ci`, `npm test`, `npm run lint` and `npm run buil
 
 The operator first saved the mixed uploaded working tree, fast-forwarded `testing` to exact `e85d8568` and supplied a clean Git status. The subsequent containerized validation log reported exit code `0`: `npm ci`, all 42 client tests, TypeScript and Vite build passed; the validation image built; all 13 focused Go packages passed, including HLS, HTTP/legacy, auth/session and WebRTC; the WebSocket parser fuzz test passed with 1,159,263 executions; and the trailing server/plugin build passed. No project code or runtime checks were executed in Codex.
 
-The running older deployment reported the adaptive-quality configuration and WebCodecs/media-WebSocket enabled. Preserve both explicit overlays during the upcoming image deployment. Base/Brave image builds, actual service replacement, health and browser/media/device acceptance at the new commit are still pending; this automated gate is not full HLS acceptance.
+The running older deployment reported the adaptive-quality configuration and WebCodecs/media-WebSocket enabled. Both explicit overlays must be preserved during image deployment. At this automated gate, base/Brave image builds, actual service replacement, health and browser/media/device acceptance were still pending; subsequent image/deployment evidence is recorded below. This automated gate is not full HLS acceptance.
 
 `npm ci` also reported 20 audit findings (11 low, 3 moderate, 5 high and 1 critical). No detailed advisory report was supplied, so affected packages, production relevance and repairs remain unclassified. Track this in the final stability/security review; do not treat passing tests as a dependency-security clearance or apply a blind breaking dependency update.
 
@@ -765,7 +765,18 @@ The subsequent deployment attempt at `e85d8568` passed Compose configuration val
 
 Static inspection found no Docker ignore file: the generated repository-root build context could copy host `client/node_modules` over the Linux dependencies installed in the image. Dependencies left by the earlier Windows file upload are a plausible explanation; the target host's actual dependency files were not inspected. The correction excludes host dependencies at every depth in the root and standalone client contexts, excludes local credentials/profile/download state from the root context, and uses `npm ci` against the same lockfile as the passing validation gate. The root ignore file deliberately retains `dist` directories for the existing `CLIENT_DIST` build option. No dependency versions or application source changed.
 
-Correction status: statically reviewed; **NOT EXECUTED IN CODEX**. Repeat the base and Brave image builds on the target server at the correction commit, then deploy with both existing overlays and verify health plus browser/media behavior. The successful automated gate above remains evidence for `e85d8568`, not a completed deployment of the correction.
+Correction status: statically reviewed and the target-server image-build/deployment follow-up passed at `741025c3`, as recorded below; **NOT EXECUTED IN CODEX**. The successful automated gate above remains evidence for `e85d8568`; the full test suite was not repeated at the Docker-context-only correction.
+
+### Target-server image/deployment checkpoint supplied on 2026-10-04
+
+The operator supplied the follow-up log after fast-forwarding to exact `741025c3`. The base-image client stage ran `npm ci` and Vite 6.4.3 successfully, including the bundled HLS worker; the server build passed, and both `my-neko/base:test` and `my-neko/brave:test` images built successfully. The earlier `vite: Permission denied` failure did not recur. The build log recorded these manifest-list digests:
+
+- base: `sha256:e55f0825a67032c621dc050b715f545c82350b17a2ecf7faf9329dbbf47f4f5f`;
+- Brave: `sha256:756540cce0345b650861a7fbb7b1370f84bb49df89d3d97b2bea5c7931b6e1d6`.
+
+Compose used the base, adaptive-quality and WebCodecs/media-WebSocket files, stopped the previous service, completed the ordered profile-lock cleanup, recreated `neko-neko-1` with `my-neko/brave:test` and reported `Healthy`. Its final status was `Up 14 seconds (healthy)` and the deployment exit code was `0`; the rollback branch was not entered. This confirms initial image deployment and health, not a long soak, zero restarts or successful browser/media playback.
+
+HLS stayed default-off: no HLS enablement overlay was supplied and no packager/player runtime acceptance follows from the HLS assets being built. Next, check available-device WebRTC and explicitly selected WebCodecs playback while another participant joins, chats and takes/releases control. HLS Phase 4 enablement, the final stability review, the grouped security/role/isolation/resource matrix and the unavailable television's device evidence remain open. The npm audit findings above also remain unclassified. No target-server commands or project code were executed in Codex.
 
 ## Operator direction — event-triggered TV failures and final stability review
 
@@ -786,7 +797,7 @@ Implement **Phase 4 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)**: separate sanitized op
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
-6. **implemented in repository / target gate pending:** HLS/LL-HLS Phase 1 access/model foundations, Phase 2 shared packaging/HTTP delivery and Phase 3 isolated passive client; no deployment overlay yet;
+6. **implemented / focused automation and default-off image deployment passed:** HLS/LL-HLS Phases 1–3; HLS-enabled runtime/device acceptance and its separate deployment overlay remain pending;
 7. **NEXT:** Phase 4 deployment/observability assets, then final static stability review and grouped target-server validation;
 8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
@@ -805,13 +816,13 @@ When fallback work begins, separate the two user classes instead of forcing ever
 7. **bounded Phase 4 checkpoint closed:** exact automated/build/security, accumulated functional and corrected foreground-iPhone gates passed; numeric latency/pacing, induced isolation, resource and remaining live hostile-input cases stay deferred;
 8. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted manual per-client `WebRTC`/`WebCodecs` selection and compact healthy status without automatic fallback;
 9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
-10. **implemented in repository / target gate pending — HLS Phases 1–2:** default-off access, leases, security, deterministic models, shared H.264/AAC packaging, authenticated HTTP delivery and observability without a client;
-11. **implemented HLS Phase 3:** isolated passive client, pinned player support and advertised-only manual HLS/LL-HLS selection; target checks pending;
+10. **implemented / focused automated target gate passed — HLS Phases 1–2:** default-off access, leases, security, deterministic models, shared H.264/AAC packaging, authenticated HTTP delivery and observability; enabled runtime acceptance pending;
+11. **implemented HLS Phase 3 / focused automation and default-off image deployment passed:** isolated passive client, pinned player support and advertised-only manual HLS/LL-HLS selection; enabled playback/device acceptance pending;
 12. **NEXT — HLS Phase 4:** separate deployment/observability assets, mandatory final static stability review and grouped target-server validation;
 13. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
 14. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 
-The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract and repository server/passive-client delivery through Phase 3; deployment assets, runtime tests/build and device evidence remain pending.
+The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract and repository server/passive-client delivery through Phase 3. Focused automation and default-off image deployment passed; HLS deployment assets, enabled runtime validation and device evidence remain pending.
 
 ## LATER / OPTIONAL
 
@@ -830,7 +841,7 @@ The passive path may trade latency for reliability and compatibility. It must st
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
 - Target-device and target-server evidence for the specified VP8/Opus WebCodecs/media-WebSocket contract; framing, queue sizes, synchronization, security limits and rollout behavior are fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
-- Focused target-server tests/build and independent playlist/fMP4 inspection for the HLS/LL-HLS Phase 1–3 repository server/passive-client path.
+- Final-commit grouped tests/build plus independent generated playlist/fMP4 inspection for the HLS/LL-HLS Phase 1–3 path; focused automation passed at `e85d8568` and the default-off image deployment started healthy at `741025c3`.
 - Actual HLS/LL-HLS device, latency and resource evidence against the fixed targets in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); the HTTP server and passive client are implemented; deployment assets and runtime/device acceptance remain pending.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
 - Eventual automatic per-client media-backend selection rules after the explicitly selected prototypes have measured evidence; version-1 manual selection and rollback are already fixed.

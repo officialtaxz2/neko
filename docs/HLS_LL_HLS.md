@@ -1,6 +1,6 @@
 # HLS / Low-Latency HLS passive delivery contract
 
-Status: **version-1 design plus Phases 1–3 implemented on `testing`; default-off server delivery and the isolated explicitly selected passive client are present. Phase 4 deployment/observability assets are NEXT. Target-server tests/build/runtime/device validation remain pending; no automatic selection or acceptance claim exists**.
+Status: **version-1 design plus Phases 1–3 implemented on `testing`; default-off server delivery and the isolated explicitly selected passive client are present. Phase 4 deployment/observability assets are NEXT. Focused automated target checks passed at `e85d8568`, and the default-off image deployment started healthy at `741025c3`. HLS-enabled runtime/device validation remains pending; no automatic selection or HLS acceptance claim exists**.
 
 This document is the normative contract for the first default-off passive/view-only HTTP-streaming prototype. It specializes the encoded-source/subscription and participant-delivery boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It does not authorize a second desktop capture, a stable-deployment change or a claim that any untested device supports the proposed path.
 
