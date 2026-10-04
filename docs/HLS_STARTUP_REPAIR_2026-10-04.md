@@ -69,23 +69,31 @@ writes, and legacy loopback HTTP requests have no timeout. A blocked broadcast
 can delay session creation while the member login mutex is held. This is an
 additional investigation candidate, **not an established cause** of this
 incident. These paths are unchanged in this HLS startup repair; obtain evidence
-if login still hangs after service restoration.
+if normal login hangs again during new-image validation.
 
 ## Verification and recovery order
 
-First use the existing private rollback image and
+The operator executed
 [`deploy-hls-media.sh rollback`](../deploy/deploy-hls-media.sh) from the unchanged
-93f1fa63 checkout. It recreates the service without the HLS overlay, retaining
-the existing adaptive/WebCodecs deployment and reviewed Caddy configuration.
-Active sessions reconnect. Preserve all earlier private evidence. Record the
-configured rollback image separately from the source checkout; this restores
-the earlier runtime, not the latest containment repairs. It is an incident
-baseline, not a security or final acceptance checkpoint. Rollback and recovered
-WebRTC login/playback are **PENDING**, not assumed to work.
+93f1fa63 checkout. Restore-Exitcode was 0; configured image
+`my-neko/brave:rollback-hls-93f1fa637ae3` started healthy without the HLS overlay.
+The operator explicitly confirmed normal login, picture and audio work again.
+The helper preserved adaptive/WebCodecs and did not change Caddy. Private
+rollback/init/snapshot evidence remains in the existing 93f1fa63 directory;
+the image digest was not printed in the supplied console block.
 
-Only after reviewing that result, advance the source checkout to the reviewed
-repair commit and use a fresh `../neko-hls-results-<12-commit-characters>`
-directory. The exact-commit preparation helper now includes:
+This proves bounded restoration, not the new startup repair. Image, overlay and
+process state changed together, so the exact original login blocker remains
+unconfirmed. The earlier runtime does not include the latest containment fixes;
+it remains an incident baseline rather than final security/device acceptance.
+
+NEXT advance the application checkout to the exact reviewed repair commit
+`80020d99477a58318f210b7e14d19cdd92991a6d` and use a fresh private
+`../neko-hls-results-80020d99477a` directory. Later documentation-only commits
+may be fetched but do not need to move this tested application checkout.
+Preparation does not replace the working rollback service. Its baseline
+snapshot describes that running prior image, not deployed repair-image behavior.
+The exact-commit preparation helper now includes:
 
 - focused cold-generation/initial-caps regression cases in the normal Go suite;
 - an isolated `hls-packager-checks` image, derived from the newly built

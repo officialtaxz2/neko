@@ -36,7 +36,7 @@ The supplied read-only diagnosis from helper `d191b8ea` passed at application
 `93f1fa63`: the prepared image was healthy, metrics responded, and the bounded
 Supervisor sample showed no Neko exit/OOM. HLS startup/source-restart counters
 were present but no readiness/lease-open success was demonstrated. Normal login
-also times out; the operator tentatively reported `/ws` HTTP 101. That would
+also timed out; the operator tentatively reported `/ws` HTTP 101. That would
 prove upgrade, not login/session initialization. The post-upgrade blocker remains
 unconfirmed; the earlier invalid-input/activation passes do not prove playback.
 
@@ -53,10 +53,12 @@ A target-only real-codec validation image now exercises segment mapping and cold
 VP8/Opus input through the production H.264/AAC packager. Focused regression tests
 also preserve real restart/incompatible-format rejection. These new tests,
 images and runtime checks are **NOT EXECUTED IN CODEX**, **PENDING on target**.
-First restore the saved pre-HLS image and verify normal WebRTC login/media,
-then prepare/verify a fresh exact repair commit before re-enabling HLS. Production
-capture skew, valid auth/proxy/player, device/resource and grouped acceptance
-remain separate open gates. No normal-login or HLS-playback repair pass is claimed.
+The saved pre-HLS image was restored healthy with Restore-Exitcode 0 and
+operator-confirmed normal login/picture/audio. NEXT prepare exact repair commit
+80020d99 and its images without replacing the service, then verify the new image
+with HLS disabled before re-enabling it. Production capture skew, valid auth/proxy/player, device/resource and grouped acceptance
+remain separate open gates. The rollback is a recovery checkpoint, not a pass
+for the new repair or HLS playback.
 
 1. **Room events and stores:** traced member list/join/disconnect, room chat and
    control take/release/grant in `client/src/neko/index.ts` and the user/chat/

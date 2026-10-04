@@ -3,8 +3,8 @@
 Repository assets prepared on 2026-10-04. **The automated/image preparation and
 activation/invalid-input gates passed at exact application `93f1fa63`;
 the first playback attempt FAILED and normal login then timed out.
-Read-only diagnosis completed; startup repairs, rollback execution and grouped
-acceptance remain PENDING target verification.**
+Read-only diagnosis and rollback recovery passed; exact repair-image preparation
+and grouped acceptance remain PENDING target verification.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
 and server/base/Brave builds, with final exit code 0; that preparation left the
@@ -18,7 +18,9 @@ no picture with an HLS failure, then normal-login timeouts (tentative /ws 101).
 Helper d191b8ea supplied a healthy-image diagnostic but no demonstrated HLS
 readiness/lease. [Startup repairs](HLS_STARTUP_REPAIR_2026-10-04.md) are implemented
 and await a new exact target gate; the normal-login blocker remains unconfirmed.
-Actual packager/picture/audio and valid authorization have not passed. The
+The subsequent rollback returned Restore-Exitcode 0 and a healthy prior image;
+the operator confirmed normal login, picture and audio work again. Actual HLS
+packager/picture/audio and valid authorization have not passed. The
 [audit classification](DEPENDENCY_AUDIT_2026-10-04.md) and remaining dependency
 work are not a passing security audit. Nothing here was executed
 in Codex. Use one block at a time, review its output,
@@ -32,8 +34,10 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-Pull the reviewed `origin/testing` commit using `git pull --ff-only`. Verify the
-expected full hash, branch and clean tracked worktree. The result directory
+For this incident, fetch `origin/testing` and fast-forward to the exact reviewed
+repair application commit `80020d99477a58318f210b7e14d19cdd92991a6d` below.
+Later documentation-only commits need not move this application checkpoint.
+Verify the full hash, branch and clean worktree. The result directory
 below is private and outside Git; reuse it for all blocks of that exact commit.
 When changing the implementation commit, preserve the old directory and use
 `../neko-hls-results-<first-12-commit-characters>` for the new checkpoint.
@@ -44,10 +48,11 @@ bash -e -o pipefail <<'NEKO_HLS_CHECK'
 cd /opt/docker/nekoNew/neko
 test "$(git branch --show-current)" = testing
 test -z "$(git status --porcelain=v1)"
-caddy version
-systemctl is-active caddy
-commit="$(git rev-parse HEAD)"
-bash deploy/validate-hls-phase4.sh "../neko-hls-results-${commit:0:12}"
+git fetch origin testing
+repair_commit="80020d99477a58318f210b7e14d19cdd92991a6d"
+git merge --ff-only "$repair_commit"
+test "$(git rev-parse HEAD)" = "$repair_commit"
+bash deploy/validate-hls-phase4.sh "../neko-hls-results-${repair_commit:0:12}"
 NEKO_HLS_CHECK
 printf 'Check-Exitcode: %s\n' "$?"
 ```
@@ -59,6 +64,9 @@ reports its GStreamer version and runs required real-codec segment/packager
 integration tests before building exact uniquely tagged base/Brave images.
 It never stops/recreates the running service. A success marker is written
 only after the final baseline snapshot. A failed rerun invalidates that marker.
+That snapshot describes the running rollback image. Passing preparation does
+not establish runtime behavior of the newly built repair image; verify that
+image with HLS disabled before re-enabling the backend.
 
 `dependency-audit.json` and its exit code are private. Audit findings can return
 nonzero without stopping image preparation; they are **not a passing security
@@ -91,9 +99,9 @@ inspection, activation helper `2484a022` passed (exit 0). All 11 hosts and other
 configuration were preserved; Caddy reloaded, synthetic runtime-error redaction
 passed, `my-neko/brave:hls-93f1fa637ae3` started healthy, and the 17 public plus
 two cleartext-denial probes passed. See [the Caddy record](HLS_LL_HLS_CADDY.md)
-for the logging qualifications. Keep the tested application/images at `93f1fa63`;
-first restore the saved pre-HLS runtime and verify normal WebRTC in section 3.
-Then validate a new exact repair commit/image; do not reuse the old preparation
+for the logging qualifications. The application stayed at `93f1fa63` for the
+successful rollback recovery in section 3. NEXT validate the exact repair
+commit/image from section 1; do not reuse the old preparation
 marker or repeat the completed source-merging Caddy activation.
 
 The statically reviewed [activation helper](../deploy/activate-hls-phase4.sh)
@@ -156,7 +164,7 @@ unexecuted. A Docker bridge peer inside a trusted CIDR is not that test.
 
 ## 3. Valid delivery, authorization and lifecycle
 
-### Failed playback and normal-login incident: recovery (NEXT)
+### Failed playback/login incident: recovery passed, repair preparation NEXT
 
 On 2026-10-04 the operator reported `hls failed`, connection failure/no picture,
 then normal-login timeouts. Device/browser and exact player status remain
@@ -173,8 +181,8 @@ samples, not correlated browser evidence. No credentialed playback request was
 made by the helper. Its safe output was supplied from target; **NOT EXECUTED IN
 CODEX**. See [the detailed repair/evidence record](HLS_STARTUP_REPAIR_2026-10-04.md).
 
-Stop further HLS retries until normal login works. From the unchanged tested
-checkout, restore the recorded prior image without the HLS overlay:
+The following recovery block was executed successfully from the unchanged
+tested checkout, restoring the recorded prior image without the HLS overlay:
 
 ```bash
 set +e
@@ -191,15 +199,18 @@ printf 'Restore-Exitcode: %s\n' "$?"
 This recreates Neko, disconnecting active sessions, while retaining the reviewed
 Caddy configuration and adaptive/WebCodecs overlays. It restores the recorded
 prior runtime, not the latest containment repairs; this is an incident baseline.
-Preserve all old evidence/images. The returned output and normal WebRTC login,
-changing picture/audio in a new private browser window at the site root must
-be reviewed before advancing. **Rollback and recovery are not yet executed.**
+The supplied output returned **Restore-Exitcode 0** and healthy configured image
+`my-neko/brave:rollback-hls-93f1fa637ae3`. The operator confirmed normal login,
+picture and audio work again. Preserve all old evidence/images. The rollback
+changed image, overlay and process state together; it does not establish the
+original blocker or validate the new HLS repair. No wider matrix was reported.
 
 The repository now includes cold-generation/initial-caps, HLS-only encoder-
 segment timestamp, initial videorate gap and bounded C logging repairs plus a
 mandatory real-codec validation job. Those tests/builds/images are **PENDING on
-target**. After restoration is reviewed, advance to the reviewed repair commit
-and prepare a fresh exact image/result directory using section 1. Verify normal
+target**. Restoration is reviewed; NEXT advance to exact repair commit 80020d99
+and prepare its fresh images/result directory using section 1 without replacing
+the currently working service. Verify normal
 WebRTC with HLS disabled first. The target Caddy source already contains the
 reviewed changes; use the plain enable/probe block in section 2 after these gates,
 not the completed bare-source merger. Then repeat the bounded picture/audio
