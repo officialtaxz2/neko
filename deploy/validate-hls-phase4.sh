@@ -22,6 +22,9 @@ docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks --h
 docker compose -f docker-compose.validation.yaml run --rm -T client-checks </dev/null
 docker compose -f docker-compose.validation.yaml build server-checks </dev/null
 docker compose -f docker-compose.validation.yaml run --rm -T server-checks </dev/null
+docker compose -f docker-compose.validation.yaml build hls-packager-checks </dev/null
+docker compose -f docker-compose.validation.yaml run --rm -T --entrypoint gst-inspect-1.0 hls-packager-checks --version </dev/null
+docker compose -f docker-compose.validation.yaml run --rm -T hls-packager-checks </dev/null
 
 # Findings normally return 1. Keep the private report for classification; do not
 # confuse that code with a passing audit or apply npm audit fix automatically.

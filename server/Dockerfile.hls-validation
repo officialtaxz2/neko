@@ -1,0 +1,12 @@
+# Target-only codec verification; build server-checks at the same commit first.
+FROM my-neko/server-validation:testing
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      gstreamer1.0-tools gstreamer1.0-plugins-base \
+      gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
+CMD ["go", "test", "-tags", "hlsintegration", "./pkg/gst", "./internal/mediahls", "-run", "TestEncoderSegmentMapsToRunningTimeWithoutChangingCapture|TestRealCodecsReachConventionalPackagerReadiness", "-count=1", "-v", "-timeout=90s"]

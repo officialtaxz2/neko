@@ -3,8 +3,8 @@
 static void gstreamer_pipeline_log(GstPipelineCtx *ctx, char* level, const char* format, ...) {
   va_list argptr;
   va_start(argptr, format);
-  char buffer[100];
-  vsprintf(buffer, format, argptr);
+  char buffer[1024];
+  vsnprintf(buffer, sizeof(buffer), format, argptr);
   va_end(argptr);
   goPipelineLog(ctx->pipelineId, level, buffer);
 }
@@ -67,7 +67,7 @@ static gboolean gstreamer_bus_call(GstBus *bus, GstMessage *msg, gpointer user_d
   return TRUE;
 }
 
-GstPipelineCtx *gstreamer_pipeline_create(char *pipelineStr, int pipelineId, GError **error) {
+GstPipelineCtx *gstreamer_pipeline_create(char *pipelineStr, int pipelineId, gboolean runningTimeSamples, GError **error) {
   GstElement *pipeline = gst_parse_launch(pipelineStr, error);
   if (pipeline == NULL) return NULL;
 
@@ -75,6 +75,7 @@ GstPipelineCtx *gstreamer_pipeline_create(char *pipelineStr, int pipelineId, GEr
   GstPipelineCtx *ctx = calloc(1, sizeof(GstPipelineCtx));
   ctx->pipelineId = pipelineId;
   ctx->pipeline = pipeline;
+  ctx->runningTimeSamples = runningTimeSamples;
 
   GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
   gst_bus_add_watch(bus, gstreamer_bus_call, ctx);
@@ -101,6 +102,20 @@ static GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpoin
   if (sample) {
     buffer = gst_sample_get_buffer(sample);
     if (buffer) {
+      GstClockTime pts = GST_BUFFER_PTS(buffer);
+      GstClockTime dts = GST_BUFFER_DTS(buffer);
+      if (ctx->runningTimeSamples) {
+        // Encoders may shift timestamps together with their output segment.
+        // HLS needs the common input running-time domain for audio and video.
+        const GstSegment *segment = gst_sample_get_segment(sample);
+        if (segment && segment->format == GST_FORMAT_TIME) {
+          pts = GST_CLOCK_TIME_IS_VALID(pts) ? gst_segment_to_running_time(segment, GST_FORMAT_TIME, pts) : GST_CLOCK_TIME_NONE;
+          dts = GST_CLOCK_TIME_IS_VALID(dts) ? gst_segment_to_running_time(segment, GST_FORMAT_TIME, dts) : GST_CLOCK_TIME_NONE;
+        } else {
+          pts = GST_CLOCK_TIME_NONE;
+          dts = GST_CLOCK_TIME_NONE;
+        }
+      }
       caps = gst_sample_get_caps(sample);
       if (caps && gst_caps_get_size(caps) > 0) {
         GstStructure *structure = gst_caps_get_structure(caps, 0);
@@ -118,10 +133,10 @@ static GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpoin
 
       gst_buffer_extract_dup(buffer, 0, gst_buffer_get_size(buffer), &copy, &copy_size);
       goHandlePipelineBuffer(ctx->pipelineId, copy, (int)copy_size,
-        GST_BUFFER_PTS(buffer),
-        GST_CLOCK_TIME_IS_VALID(GST_BUFFER_PTS(buffer)),
-        GST_BUFFER_DTS(buffer),
-        GST_CLOCK_TIME_IS_VALID(GST_BUFFER_DTS(buffer)),
+        pts,
+        GST_CLOCK_TIME_IS_VALID(pts),
+        dts,
+        GST_CLOCK_TIME_IS_VALID(dts),
         GST_BUFFER_DURATION(buffer),
         GST_BUFFER_FLAG_IS_SET(buffer, GST_BUFFER_FLAG_DELTA_UNIT),
         width,

@@ -983,19 +983,36 @@ dependency maintenance is still pending and full prototype acceptance is not
 claimed. LL-HLS remains unadvertised pending its public protocol/RTT gate.
 
 The operator subsequently reported HLS connection failure/no picture on the
-first playback attempt. Exact UI status, device/browser, login role and server
+first playback attempt. At this initial report, exact UI status, device/browser, login role and server
 diagnostics remain unknown; no playback pass or confirmed cause is claimed.
-NEXT is read-only diagnosis from HLS_LL_HLS_VALIDATION.md, then repair and a
+The initial next step was read-only diagnosis from HLS_LL_HLS_VALIDATION.md, then repair and a
 repeat of the bounded first five-minute admin-HLS picture/audio and room-event
 checkpoint in `HLS_LL_HLS_VALIDATION.md`, followed by its separate full passive
 authorization/lifecycle and device/resource matrix. Keep the app checkout and
 images at 93f1fa63; documentation-only updates do not require reactivation/build.
 
+### Failed playback/login diagnosis and startup repair — 2026-10-04
+
+The helper from `d191b8ea` completed with Diagnose-Exitcode 0 at application
+`93f1fa63` and prepared image `sha256:d217eccd9418`. The supplied summary found
+healthy/running, zero Docker restarts, no OOM or sampled Neko process exit,
+working loopback metrics, HLS bootstrap `not_ready`/`backend_error` and two
+worker-set starts with a `source_restart` transition. No successful readiness,
+lease-open or publication was demonstrated. The operator reports normal login
+timeouts too, with tentative `/ws` status 101; the post-upgrade blocker is unknown.
+
+[The repair record](HLS_STARTUP_REPAIR_2026-10-04.md) documents cold-generation/
+initial-caps handling, HLS-only encoder timestamp mapping, initial-gap prevention,
+bounded C logging and the new target-only real-codec integration job. These are
+repository changes, not a target pass. Restore the saved pre-HLS runtime and
+verify normal WebRTC, then use a new exact commit/image/private directory for
+repair validation. Rollback execution and restored playback remain pending.
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Continue **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md), section 3. Exact repair-image preparation and subsequent helper `2484a022` activation passed at application `93f1fa63`: all 11 Caddy hosts preserved, merged validation/reload and synthetic runtime-error redaction passed, HLS image healthy, 17 public plus two cleartext-denial probes passed. The first actual playback attempt subsequently failed per operator report (connection failure/no picture). Keep that application checkout/images and obtain the read-only target diagnostic summary and precise client error/device/role first. Repair the confirmed cause, validate any new implementation/image commit, repeat picture/audio/room-event checks, then perform valid passive authorization/lifecycle and the grouped device/resource matrix. No repeat activation/build is needed for documentation updates. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
+Continue **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md), section 3. Exact repair-image preparation and subsequent helper `2484a022` activation passed at application `93f1fa63`: all 11 Caddy hosts preserved, merged validation/reload and synthetic runtime-error redaction passed, HLS image healthy, 17 public plus two cleartext-denial probes passed. The first actual playback attempt failed, followed by normal-login timeouts (tentative /ws 101). Read-only diagnosis from helper d191b8ea passed: prepared image healthy, no sampled process exit/OOM, HLS startup/source-restart but no demonstrated readiness. [Startup/generation/timestamp/log-bound repairs](HLS_STARTUP_REPAIR_2026-10-04.md) and a mandatory real-codec integration gate are implemented; their target tests/build/images are pending, and the normal-login blocker is unconfirmed. NEXT restore the saved pre-HLS image from the unchanged 93f1fa63 checkout and verify normal WebRTC login/media. Preserve evidence. Then prepare a new exact repair commit/image in a fresh private directory, verify normal WebRTC with HLS disabled, and only afterward repeat HLS picture/audio/room-event, passive authorization/lifecycle and grouped device/resource checks. No new playback or rollback pass is claimed. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -1005,7 +1022,7 @@ Continue **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`]
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
 6. **implemented / automated/image and activation/invalid-input gates passed:** HLS/LL-HLS Phases 1–3 plus Phase 4 assets; exact application `93f1fa63` with helper `2484a022` deployed healthy after preserving Caddy/logging gates and passed 19 HTTP probes; valid playback/device acceptance remains pending;
-7. **NEXT:** diagnose the reported failed HLS playback attempt, repair/revalidate as required, then repeat picture/audio/room-event and valid-delivery/lifecycle/grouped target validation; advisory classification recorded, package remediation open;
+7. **NEXT:** restore the saved pre-HLS runtime and verify normal WebRTC login/media; validate a new exact startup-repair commit/image including real codecs, then repeat picture/audio/room-event and valid-delivery/lifecycle/grouped target validation; advisory classification recorded, package remediation open;
 8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence

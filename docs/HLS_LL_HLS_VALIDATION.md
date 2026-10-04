@@ -2,8 +2,9 @@
 
 Repository assets prepared on 2026-10-04. **The automated/image preparation and
 activation/invalid-input gates passed at exact application `93f1fa63`;
-the first playback attempt FAILED per operator report; diagnosis and grouped
-acceptance are PENDING.**
+the first playback attempt FAILED and normal login then timed out.
+Read-only diagnosis completed; startup repairs, rollback execution and grouped
+acceptance remain PENDING target verification.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
 and server/base/Brave builds, with final exit code 0; that preparation left the
@@ -13,8 +14,10 @@ validated the complete merged file, retained all 11 hosts and reloaded through
 helper `2484a022`. The synthetic runtime-error redaction, healthy opt-in HLS
 deployment, 17 public probes and two cleartext-denial probes all passed with
 Activate-Exitcode 0. The operator subsequently reported inability to connect or
-no picture with an HLS failure. Exact player status, device/browser, login role
-and server evidence have not yet been supplied; no cause or repair is confirmed.
+no picture with an HLS failure, then normal-login timeouts (tentative /ws 101).
+Helper d191b8ea supplied a healthy-image diagnostic but no demonstrated HLS
+readiness/lease. [Startup repairs](HLS_STARTUP_REPAIR_2026-10-04.md) are implemented
+and await a new exact target gate; the normal-login blocker remains unconfirmed.
 Actual packager/picture/audio and valid authorization have not passed. The
 [audit classification](DEPENDENCY_AUDIT_2026-10-04.md) and remaining dependency
 work are not a passing security audit. Nothing here was executed
@@ -43,15 +46,18 @@ test "$(git branch --show-current)" = testing
 test -z "$(git status --porcelain=v1)"
 caddy version
 systemctl is-active caddy
-bash deploy/validate-hls-phase4.sh ../neko-hls-results
+commit="$(git rev-parse HEAD)"
+bash deploy/validate-hls-phase4.sh "../neko-hls-results-${commit:0:12}"
 NEKO_HLS_CHECK
 printf 'Check-Exitcode: %s\n' "$?"
 ```
 
 The helper checks Compose quietly, shell syntax and the HTTP checker, runs
 client tests/type/build and the relevant Go suite with 30-second WebSocket and
-HLS request-boundary fuzz jobs, then builds exact uniquely tagged base/Brave
-images. It never stops/recreates the running service. A success marker is written
+HLS request-boundary fuzz jobs. It builds the same-commit codec-validation image,
+reports its GStreamer version and runs required real-codec segment/packager
+integration tests before building exact uniquely tagged base/Brave images.
+It never stops/recreates the running service. A success marker is written
 only after the final baseline snapshot. A failed rerun invalidates that marker.
 
 `dependency-audit.json` and its exit code are private. Audit findings can return
@@ -86,8 +92,9 @@ configuration were preserved; Caddy reloaded, synthetic runtime-error redaction
 passed, `my-neko/brave:hls-93f1fa637ae3` started healthy, and the 17 public plus
 two cleartext-denial probes passed. See [the Caddy record](HLS_LL_HLS_CADDY.md)
 for the logging qualifications. Keep the tested application/images at `93f1fa63`;
-proceed to the read-only failure diagnosis in section 3, without repeating
-activation or pulling documentation/tooling HEAD into the application checkout.
+first restore the saved pre-HLS runtime and verify normal WebRTC in section 3.
+Then validate a new exact repair commit/image; do not reuse the old preparation
+marker or repeat the completed source-merging Caddy activation.
 
 The statically reviewed [activation helper](../deploy/activate-hls-phase4.sh)
 now uses [merge-hls-caddy.py](../deploy/merge-hls-caddy.py) and additionally:
@@ -111,24 +118,22 @@ The raw journal remains private. No access logger is added to the supplied
 site, and this one error case does not cover arbitrary custom/debug logging.
 Valid playback and the grouped matrix still follow separately.
 
-**Keep the application's tested checkout at `93f1fa63`.** Fetch the reviewed
-helper commit and extract `deploy/activate-hls-phase4.sh` with `git show` into
-`../neko-hls-results-93f1fa637ae3`, then run `bash -n` and invoke that file with
-the repository and result-directory arguments. This loads operator tooling
-without changing the application commit or invalidating its image marker.
-Extract **both** `deploy/activate-hls-phase4.sh` and `deploy/merge-hls-caddy.py`
-from the same reviewed helper commit into that directory. Record that commit;
-the helper records both tooling blobs and the app commit. Run `bash -n` first.
-The merge/activation/synthetic-error/invalid-input gates ran successfully on the
-target. Valid-playback and remaining grouped checkpoints stay pending; all work
-is **NOT EXECUTED IN CODEX**. The plain
-enable block below is for environments where Caddy/logging is already verified:
+**Historical successful activation block:** application/image remained at
+`93f1fa63`. Both `deploy/activate-hls-phase4.sh` and `deploy/merge-hls-caddy.py`
+were extracted from helper commit `2484a022` into the private evidence directory.
+The helper recorded both tooling blobs and the application commit, passed the
+merge/activation/synthetic-error/invalid-input gates, and left valid playback
+pending. This was target execution, **NOT EXECUTED IN CODEX**. Do not repeat its
+bare-source merge on the already-modified Caddyfile. After incident recovery and
+a new exact repair-image gate, use the plain enable/probe block below if Caddy
+and its logging configuration remain as reviewed:
 
 ```bash
 set +e
 bash -e -o pipefail <<'NEKO_HLS_ENABLE'
 cd /opt/docker/nekoNew/neko
-bash deploy/deploy-hls-media.sh enable ../neko-hls-results
+commit="$(git rev-parse HEAD)"
+bash deploy/deploy-hls-media.sh enable "../neko-hls-results-${commit:0:12}"
 docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks enabled
 docker compose -f docker-compose.validation.yaml run --rm -T \
   -e NEKO_PUBLIC_BASE_URL=http://127.0.0.1:8082 hls-http-checks insecure-denied
@@ -151,42 +156,56 @@ unexecuted. A Docker bridge peer inside a trusted CIDR is not that test.
 
 ## 3. Valid delivery, authorization and lifecycle
 
-### Failed first playback attempt: read-only diagnosis (NEXT)
+### Failed playback and normal-login incident: recovery (NEXT)
 
-On 2026-10-04, after the successful activation/invalid-input gate, the operator
-reported failed HLS connection or no picture in an active session (`hls failed`).
-That is a failed playback attempt, not a passed smoke test. The precise fixed
-UI status, device/browser and admin/view-only role are still unconfirmed.
+On 2026-10-04 the operator reported `hls failed`, connection failure/no picture,
+then normal-login timeouts. Device/browser and exact player status remain
+unconfirmed; `/ws` HTTP 101 was tentatively reported. If confirmed, upgrade
+worked but does not prove authentication or session initialization.
 
-Retry once in the intended admin diagnostic window while a normal WebRTC viewer
-has changing video/audio; keep the failed window open and collect immediately.
-Extract [diagnose-hls-playback.sh](../deploy/diagnose-hls-playback.sh) into the
-existing private evidence directory from a recorded reviewed tooling commit.
-Run its shell syntax check and then:
+The read-only helper from d191b8ea passed with exit 0 at application 93f1fa63:
+prepared image healthy/running, zero Docker restarts/OOM, no Neko process exit
+in the bounded Supervisor sample, and responding metrics. HLS startup/source-
+restart and bootstrap `not_ready`/`backend_error` were recorded, without any
+successful readiness/lease-open demonstration. Raw files remain private in
+`/opt/docker/nekoNew/neko-hls-results-93f1fa637ae3`. Counts are cumulative/bounded
+samples, not correlated browser evidence. No credentialed playback request was
+made by the helper. Its safe output was supplied from target; **NOT EXECUTED IN
+CODEX**. See [the detailed repair/evidence record](HLS_STARTUP_REPAIR_2026-10-04.md).
+
+Stop further HLS retries until normal login works. From the unchanged tested
+checkout, restore the recorded prior image without the HLS overlay:
 
 ```bash
+set +e
+bash -e -o pipefail <<'NEKO_RESTORE'
 cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "93f1fa637ae3f14ba41d1bfef39e860d43993ff1"
 output=/opt/docker/nekoNew/neko-hls-results-93f1fa637ae3
-bash "$output/diagnose-hls-playback.sh" "$PWD" "$output"
+test "$(stat -c %a "$output")" = 700
+bash deploy/deploy-hls-media.sh rollback "$output"
+NEKO_RESTORE
+printf 'Restore-Exitcode: %s\n' "$?"
 ```
 
-Here `output` is `/opt/docker/nekoNew/neko-hls-results-93f1fa637ae3` and the working
-directory is `/opt/docker/nekoNew/neko`. Keep application `93f1fa63` and its
-prepared image unchanged. This helper only reads container state, the last
-3,000 application log lines, a bounded supervisor log sample, GStreamer version
-and loopback metrics. Raw files remain under a new private 0700 subdirectory.
-Only fixed message/error markers, validated enums, counters and hashes are
-printed; share only that summary. It issues no credentialed HLS request and
-does not restart, deploy, change Caddy or create a playback lease. Docker restart
-count alone does not detect an application restart inside Supervisor.
+This recreates Neko, disconnecting active sessions, while retaining the reviewed
+Caddy configuration and adaptive/WebCodecs overlays. It restores the recorded
+prior runtime, not the latest containment repairs; this is an incident baseline.
+Preserve all old evidence/images. The returned output and normal WebRTC login,
+changing picture/audio in a new private browser window at the site root must
+be reviewed before advancing. **Rollback and recovery are not yet executed.**
 
-Counts are cumulative/bounded samples, not a correlated browser trace. Missing
-markers do not prove success. Read the exact bootstrap result and per-rendition
-publication counters before deciding whether to investigate auth, packager or
-player. An encoder/segment time-domain mismatch is a static candidate recorded
-in [the review](STABILITY_REVIEW_2026-10-04.md); target evidence is pending.
-The new diagnostic helper is statically reviewed, **NOT EXECUTED IN CODEX** and
-not yet executed on the target.
+The repository now includes cold-generation/initial-caps, HLS-only encoder-
+segment timestamp, initial videorate gap and bounded C logging repairs plus a
+mandatory real-codec validation job. Those tests/builds/images are **PENDING on
+target**. After restoration is reviewed, advance to the reviewed repair commit
+and prepare a fresh exact image/result directory using section 1. Verify normal
+WebRTC with HLS disabled first. The target Caddy source already contains the
+reviewed changes; use the plain enable/probe block in section 2 after these gates,
+not the completed bare-source merger. Then repeat the bounded picture/audio
+checkpoint below and the full valid-delivery matrix. If login still hangs,
+collect targeted private event/login diagnostics before further HLS work; its
+cause is not established by the static startup findings.
 
 ### First bounded picture/audio checkpoint (repeat after diagnosis/repair)
 
@@ -280,7 +299,8 @@ Return clients explicitly to WebRTC, then:
 set +e
 bash -e -o pipefail <<'NEKO_HLS_ROLLBACK'
 cd /opt/docker/nekoNew/neko
-bash deploy/deploy-hls-media.sh rollback ../neko-hls-results
+commit="$(git rev-parse HEAD)"
+bash deploy/deploy-hls-media.sh rollback "../neko-hls-results-${commit:0:12}"
 docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks disabled
 NEKO_HLS_ROLLBACK
 printf 'Rollback-Exitcode: %s\n' "$?"

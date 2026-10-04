@@ -48,7 +48,7 @@ func (gstTranscoderFactory) NewAudio(source types.MediaSource) (transcoder, erro
 		return nil, ErrCodecUnsupported
 	}
 	pipeline := fmt.Sprintf(
-		"appsrc name=appsrc is-live=true format=time block=false max-buffers=%d max-bytes=0 max-time=0 caps=audio/x-opus,rate=48000,channels=2 ! queue max-size-buffers=%d max-size-bytes=0 max-size-time=0 leaky=downstream ! opusparse ! opusdec ! audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2 ! voaacenc bitrate=%d ! aacparse ! audio/mpeg,mpegversion=4,stream-format=raw ! appsink name=appsink max-buffers=%d drop=true sync=false",
+		"appsrc name=appsrc is-live=true format=time block=false max-buffers=%d max-bytes=0 max-time=0 caps=audio/x-opus,rate=48000,channels=2,channel-mapping-family=0 ! queue max-size-buffers=%d max-size-bytes=0 max-size-time=0 leaky=downstream ! opusparse ! opusdec ! audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2 ! voaacenc bitrate=%d ! aacparse ! audio/mpeg,mpegversion=4,stream-format=raw ! appsink name=appsink max-buffers=%d drop=true sync=false",
 		WorkerHandoffCapacity,
 		WorkerHandoffCapacity,
 		AudioBitrate,
@@ -65,7 +65,7 @@ func (gstTranscoderFactory) NewVideo(variant Variant, source types.MediaSource) 
 	peakBitrate := (variant.Bandwidth - AudioBitrate) / 1_000
 	keyframeInterval := variant.FrameRate * 2
 	pipeline := fmt.Sprintf(
-		"appsrc name=appsrc is-live=true format=time block=false max-buffers=%d max-bytes=0 max-time=0 caps=video/x-vp8 ! queue max-size-buffers=%d max-size-bytes=0 max-size-time=0 leaky=downstream ! vp8dec ! videoconvert ! videoscale ! videorate ! video/x-raw,format=I420,width=%d,height=%d,framerate=%d/1 ! x264enc bitrate=%d key-int-max=%d bframes=0 byte-stream=false aud=true speed-preset=veryfast tune=zerolatency option-string=vbv-maxrate=%d:vbv-bufsize=%d ! h264parse config-interval=-1 ! video/x-h264,stream-format=avc,alignment=au,profile=high,level=(string)3.1 ! appsink name=appsink max-buffers=%d drop=true sync=false",
+		"appsrc name=appsrc is-live=true format=time block=false max-buffers=%d max-bytes=0 max-time=0 caps=video/x-vp8 ! queue max-size-buffers=%d max-size-bytes=0 max-size-time=0 leaky=downstream ! vp8dec ! videoconvert ! videoscale ! videorate skip-to-first=true ! video/x-raw,format=I420,width=%d,height=%d,framerate=%d/1 ! x264enc bitrate=%d key-int-max=%d bframes=0 byte-stream=false aud=true speed-preset=veryfast tune=zerolatency option-string=vbv-maxrate=%d:vbv-bufsize=%d ! h264parse config-interval=-1 ! video/x-h264,stream-format=avc,alignment=au,profile=high,level=(string)3.1 ! appsink name=appsink max-buffers=%d drop=true sync=false",
 		WorkerHandoffCapacity,
 		WorkerHandoffCapacity,
 		variant.Width,
@@ -88,7 +88,7 @@ type gstTranscoder struct {
 }
 
 func newGSTTranscoder(pipelineSource string) (*gstTranscoder, error) {
-	pipeline, err := gst.CreatePipelineWithSampleCapacity(pipelineSource, WorkerHandoffCapacity)
+	pipeline, err := gst.CreatePipelineWithRunningTimeSamples(pipelineSource, WorkerHandoffCapacity)
 	if err != nil {
 		return nil, err
 	}

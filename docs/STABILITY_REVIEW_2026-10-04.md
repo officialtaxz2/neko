@@ -32,30 +32,31 @@ is included.
 
 ### Follow-up after the failed enabled HLS playback attempt
 
-The operator reported failed connection/no picture after the 93f1fa63 activation
-gate. Exact player status and target diagnostic evidence are pending; the
-activation and invalid-input passes remain valid, but playback has not passed.
-Two source findings need separate treatment in this investigation:
+The supplied read-only diagnosis from helper `d191b8ea` passed at application
+`93f1fa63`: the prepared image was healthy, metrics responded, and the bounded
+Supervisor sample showed no Neko exit/OOM. HLS startup/source-restart counters
+were present but no readiness/lease-open success was demonstrated. Normal login
+also times out; the operator tentatively reported `/ws` HTTP 101. That would
+prove upgrade, not login/session initialization. The post-upgrade blocker remains
+unconfirmed; the earlier invalid-input/activation passes do not prove playback.
 
-- **Time-domain candidate:** `gst.c` forwards raw buffer PTS/DTS without the
-  sample's `GstSegment`. HLS `acceptSample` compares all renditions against the
-  first high-video DTS, rejecting audio before that anchor. GStreamer's
-  [x264 encoder at 1.22.0](https://github.com/GStreamer/gstreamer/blob/1.22.0/subprojects/gst-plugins-ugly/ext/x264/gstx264enc.c)
-  sets a 1,000-hour minimum PTS; an encoder segment offset therefore cannot be
-  treated as the audio running-time domain. This establishes a source-level
-  mismatch candidate, not the actual target plugin version, observed timestamps
-  or cause of this operator failure. Obtain bootstrap/publication evidence and
-  the target GStreamer version before preparing the bounded repair.
-- **Confirmed unsafe log formatting:** `gstreamer_pipeline_log` uses `vsprintf`
-  into a 100-byte stack buffer. Long GStreamer error/debug messages can overrun
-  it. This is a source defect needing repair; a process crash or its connection
-  to this playback failure has not been observed. Target Supervisor evidence
-  must be checked separately from Docker restart count.
+The [repair record](HLS_STARTUP_REPAIR_2026-10-04.md) separates source defects
+from target conclusions. Bounded repository repairs bind workers to the opened
+capture generation, tolerate only the initial exact same-generation caps
+completion, map HLS encoder PTS/DTS through their output segment, prevent initial
+videorate gap filling and replace the unsafe 100-byte `vsprintf` logger with
+bounded `vsnprintf`. No crash attributable to that logger was observed. Ordinary
+event-socket writes and legacy loopback requests still have unbounded waiting
+paths; they are investigation candidates rather than established causes.
 
-The read-only target helper `deploy/diagnose-hls-playback.sh` preserves raw logs
-privately and outputs only fixed markers and HLS metric enums/numbers. It has
-not been executed in Codex or on the target. No media implementation, runtime
-configuration or image has been changed in this diagnostic block.
+A target-only real-codec validation image now exercises segment mapping and cold
+VP8/Opus input through the production H.264/AAC packager. Focused regression tests
+also preserve real restart/incompatible-format rejection. These new tests,
+images and runtime checks are **NOT EXECUTED IN CODEX**, **PENDING on target**.
+First restore the saved pre-HLS image and verify normal WebRTC login/media,
+then prepare/verify a fresh exact repair commit before re-enabling HLS. Production
+capture skew, valid auth/proxy/player, device/resource and grouped acceptance
+remain separate open gates. No normal-login or HLS-playback repair pass is claimed.
 
 1. **Room events and stores:** traced member list/join/disconnect, room chat and
    control take/release/grant in `client/src/neko/index.ts` and the user/chat/

@@ -70,6 +70,16 @@ func CreatePipeline(pipelineStr string) (Pipeline, error) {
 }
 
 func CreatePipelineWithSampleCapacity(pipelineStr string, sampleCapacity int) (Pipeline, error) {
+	return createPipeline(pipelineStr, sampleCapacity, false)
+}
+
+// CreatePipelineWithRunningTimeSamples maps encoder output timestamps through
+// each sample's segment. Capture/WebRTC/WebCodecs retain raw sample timestamps.
+func CreatePipelineWithRunningTimeSamples(pipelineStr string, sampleCapacity int) (Pipeline, error) {
+	return createPipeline(pipelineStr, sampleCapacity, true)
+}
+
+func createPipeline(pipelineStr string, sampleCapacity int, runningTimeSamples bool) (Pipeline, error) {
 	if sampleCapacity < 1 {
 		return nil, fmt.Errorf("sample capacity must be positive")
 	}
@@ -82,7 +92,7 @@ func CreatePipelineWithSampleCapacity(pipelineStr string, sampleCapacity int) (P
 	defer pipelinesLock.Unlock()
 
 	var gstError *C.GError
-	ctx := C.gstreamer_pipeline_create(pipelineStrUnsafe, C.int(id), &gstError)
+	ctx := C.gstreamer_pipeline_create(pipelineStrUnsafe, C.int(id), C.gboolean(boolToGBoolean(runningTimeSamples)), &gstError)
 
 	if gstError != nil {
 		defer C.g_error_free(gstError)

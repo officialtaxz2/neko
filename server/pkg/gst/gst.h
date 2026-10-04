@@ -21,6 +21,7 @@ typedef struct GstPipelineCtx {
   GstElement *pipeline;
   GstElement *appsink;
   GstElement *appsrc;
+  gboolean runningTimeSamples;
 } GstPipelineCtx;
 
 extern void goHandlePipelineBuffer(
@@ -42,7 +43,7 @@ extern void goHandlePipelineBuffer(
 );
 extern void goPipelineLog(int pipelineId, char *level, char *msg);
 
-GstPipelineCtx *gstreamer_pipeline_create(char *pipelineStr, int pipelineId, GError **error);
+GstPipelineCtx *gstreamer_pipeline_create(char *pipelineStr, int pipelineId, gboolean runningTimeSamples, GError **error);
 void gstreamer_pipeline_attach_appsink(GstPipelineCtx *ctx, char *sinkName);
 void gstreamer_pipeline_attach_appsrc(GstPipelineCtx *ctx, char *srcName);
 void gstreamer_pipeline_play(GstPipelineCtx *ctx);

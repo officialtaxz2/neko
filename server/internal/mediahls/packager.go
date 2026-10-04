@@ -375,6 +375,16 @@ func (packager *Packager) newWorker(ctx context.Context, id string, variant Vari
 		hlsPackagerStarts.WithLabelValues(id, "error").Inc()
 		return nil, err
 	}
+	// Starting capture demand can advance the source generation. Bind to the
+	// opened subscription, not the pre-subscribe planning snapshot.
+	openedSource := subscription.Source()
+	if openedSource.ID != source.ID || openedSource.Kind != source.Kind ||
+		openedSource.Codec.Name != source.Codec.Name || openedSource.Generation == 0 {
+		_ = subscription.Close()
+		hlsPackagerStarts.WithLabelValues(id, "error").Inc()
+		return nil, ErrCodecUnsupported
+	}
+	source = openedSource
 	var encoder transcoder
 	if audio {
 		encoder, err = packager.factory.NewAudio(source)
@@ -485,6 +495,17 @@ func (packager *Packager) pumpInput(ctx context.Context, worker *packagerWorker)
 					return
 				}
 			case types.MediaEventTypeDiscontinuity:
+				// A cold video subscription first publishes identity, then its
+				// initial complete caps in the same generation. No encoded unit
+				// has been admitted yet; wait for that FORMAT instead of tearing
+				// down capture and repeating the cold-start cycle.
+				if !worker.track.audio && !worker.formatReady &&
+					(event.Discontinuity.Reason == "format_change" || event.Discontinuity.Reason == "source_restart") &&
+					event.Discontinuity.Generation == worker.source.Generation &&
+					event.Source.Generation == worker.source.Generation &&
+					workerFormatMatches(worker, event.Source) {
+					continue
+				}
 				packager.requestRestart(normalizeGenerationReason(event.Discontinuity.Reason))
 				return
 			}

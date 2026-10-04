@@ -49,6 +49,13 @@ services:
         go test ./internal/mediahls -run '^$$' -fuzz '^FuzzHLSRequestBoundary$$' -fuzztime 30s
         ./build
 
+  hls-packager-checks:
+    image: my-neko/hls-validation:testing
+    build:
+      context: ./server
+      dockerfile: Dockerfile.hls-validation
+    network_mode: none
+
   metrics-snapshot:
     image: alpine:latest
     network_mode: host
