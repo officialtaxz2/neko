@@ -95,13 +95,16 @@ change no media transport, codec, estimator or bitrate.
 
 ## Required follow-up and release boundary
 
-1. Pull the repair commit and rerun the exact Phase 4 automated/image helper in
-   a new private result directory. The earlier e55 images do not contain these
-   repairs; retain their evidence rather than reusing their pass marker.
+1. Repair-image preparation is complete at exact `93f1fa63` in its separate
+   private directory. The earlier e55 images do not contain these repairs;
+   retain their evidence rather than reusing their pass marker. Keep the tested
+   application checkout for activation; a later application repair requires
+   its own exact preparation gate.
 2. Target `npm test` includes the new actual-parser/Vue-component regressions
    for literal interpolation, raw tags, hostile emoji/URL attributes and normal
-   formatting. Type/build and the image gate remain required. No target result
-   is claimed for this repair yet.
+   formatting. At exact `93f1fa63`, all 47 client tests, type/build, the selected
+   Go/fuzz/build gates and both image builds passed on the target. Both Caddy
+   files validated. No deployment or browser result is claimed for that repair.
 3. On available browsers, verify chat/code/emoji/spoilers and open-in-app links,
    literal member-name tooltips, file operations and About; inspect cross-origin
    requests locally for absence of automatic `X-XSRF-TOKEN`. Record conclusions

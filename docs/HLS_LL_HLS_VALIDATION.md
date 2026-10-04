@@ -1,15 +1,15 @@
 # HLS / LL-HLS Phase 4 target-server validation
 
 Repository assets prepared on 2026-10-04. **The automated/image preparation
-gate passed at exact `e55bcd7e`; enabled target validation is PENDING.**
-The supplied output records 44 client tests, type/build, 13 Go packages, both
-fuzz jobs and server/base/Brave builds, with final exit code 0 and the running
-service unchanged. A follow-up supplied both image IDs and passed the two
-default-off public HTTP 404 checks. Caddy is active at 2.6.2; the supplied site
-is reviewed, with proposed configuration and actual logs still pending. The
-[audit classification](DEPENDENCY_AUDIT_2026-10-04.md) led to additional client
-containment repairs. **Prepare new exact images and checks for that repair
-commit before deployment; the e55 pass does not cover them.** Nothing here was executed
+gate passed at exact `93f1fa63`; enabled target validation is PENDING.**
+The supplied output records 47 client tests (including the three new chat
+security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
+and server/base/Brave builds, with final exit code 0 and the service unchanged.
+The two default-off public HTTP 404 checks passed earlier at e55. Caddy 2.6.2
+validated both `/etc/caddy/Caddyfile` and the proposed file; application and
+actual runtime-error redaction remain pending. The
+[audit classification](DEPENDENCY_AUDIT_2026-10-04.md) and remaining dependency
+work are not a passing security audit. Nothing here was executed
 in Codex. Use one block at a time, review its output,
 then advance. Keep one exact `testing` implementation commit/image throughout
 the matrix. No `master` promotion or full acceptance follows from a smoke check.
@@ -71,6 +71,31 @@ trust, streaming and log review before creating valid HLS credentials.
 The separate `docker-compose.hls.yaml` requires adaptive source geometry and
 exact HTTPS/proxy values; empty HLS values reuse the reviewed WebCodecs values.
 Its initial mode is only `hls`. Base Compose remains default-off.
+
+For the operator's confirmed sole-site `/etc/caddy/Caddyfile`, the statically
+reviewed [activation helper](../deploy/activate-hls-phase4.sh) additionally:
+
+- refuses unfamiliar sites/global options and preserves a private Caddy backup;
+- formats/validates the candidate before reload and captures the old Neko image;
+- uses the deployment stop for one synthetic public 502 and checks the actual
+  Caddy journal for normalized URI, absent headers and absent synthetic marker;
+- starts the already-tested image, performs the enabled/cleartext denial checks,
+  and attempts image/config restoration if any activation gate fails.
+
+It starts only conventional HLS. This intentionally interrupts existing
+sessions during deployment; the log check uses no valid lease or credential.
+The raw journal remains private. No access logger is added to the supplied
+site, and this one error case does not cover arbitrary custom/debug logging.
+Valid playback and the grouped matrix still follow separately.
+
+**Keep the application's tested checkout at `93f1fa63`.** Fetch the reviewed
+helper commit and extract `deploy/activate-hls-phase4.sh` with `git show` into
+`../neko-hls-results-93f1fa637ae3`, then run `bash -n` and invoke that file with
+the repository and result-directory arguments. This loads operator tooling
+without changing the application commit or invalidating its image marker.
+Record the exact helper commit; the helper records its blob and app commit.
+Its execution/checkpoint remains **PENDING / NOT EXECUTED IN CODEX**. The plain
+enable block below is for environments where Caddy/logging is already verified:
 
 ```bash
 set +e

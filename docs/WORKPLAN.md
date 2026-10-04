@@ -861,11 +861,53 @@ proxy proposal is not applied. Validate that proposal and the active file on
 the target, then complete actual runtime/access-log checks before valid leases.
 No HLS-enabled service, playback or device evidence follows from these results.
 
+## HLS repair-image and Caddy validation checkpoint — exact `93f1fa63`
+
+The operator supplied the complete recheck output on 2026-10-04 at exact
+`93f1fa637ae3f14ba41d1bfef39e860d43993ff1`, clean `testing`. It records:
+
+- all **47 client tests passed**, including the three real-parser/Vue-component
+  chat security/formatting regressions; TypeScript and Vite 6.4.3 build passed;
+- all **13 selected Go packages passed**; both requested 30-second fuzz jobs
+  passed (WebSocket 1,117,452 executions; HLS request boundary 318,735);
+- trailing server/plugin build and uniquely tagged base/Brave images passed;
+- final `AUTOMATED/IMAGE GATE PASSED; running service unchanged`;
+- active `/etc/caddy/Caddyfile` and private `Caddyfile.proposed` both printed
+  `Valid configuration`, with final **Recheck-Exitcode 0**. The proposal only
+  produced a formatting warning; it was not applied or reloaded.
+
+Saved target image IDs are:
+
+- `my-neko/base:hls-93f1fa637ae3`: `sha256:18414b80e56fc7f474f34e09d983497bb9881d35d9bde56d18d75f07d3216a53`;
+- `my-neko/brave:hls-93f1fa637ae3`: `sha256:d217eccd941810f2436c4e3372ecd796b9e77b7758ecbaf5ed9e0c2a2a7fc4a7`.
+
+Evidence is private at `/opt/docker/nekoNew/neko-hls-results-93f1fa637ae3`.
+The audit still reports 20 entries with exit 1; no dependency versions changed
+and no dependency-security clearance is implied. Browser/role/device checks,
+HLS-enabled runtime, actual proxy-error logging, resources and rollback remain
+pending. These are supplied target results; **NOT EXECUTED IN CODEX**.
+
+A separate statically reviewed operator helper, `deploy/activate-hls-phase4.sh`,
+is prepared for the confirmed sole-site Caddyfile. It refuses unrelated options,
+backs up/validates before reload, captures the prior Neko image, uses the
+deployment stop to provoke one synthetic public 502, checks the private real
+error journal for path/header redaction, then invokes the existing enable and
+invalid-input checks. Failure attempts restoration of the old image/config.
+It has not run on the target. No valid media credential is used by that gate.
+
+Keep the application checkout at **93f1fa63** and its preparation marker.
+Fetch the exact reviewed helper commit and use `git show` to extract only the
+operator script into that private result directory. Record its commit; the
+script records its blob hash and application hash. This docs/tooling follow-up
+does not change application sources, dependencies or existing tested overlays,
+and does not require rebuilding that already tested application image. A later
+application change still requires its own exact gate.
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Exact automated/image preparation and two default-off HTTP checks passed at `e55bcd7e` without replacing the service. The [audit is classified](DEPENDENCY_AUDIT_2026-10-04.md), and its follow-up client containment repairs require a new exact test/image checkpoint in a separate private directory. Validate the active `/etc/caddy/Caddyfile` and prepared logging/proxy proposal, then establish safe actual logs before explicit conventional HLS enablement and the grouped matrix. The [static review](STABILITY_REVIEW_2026-10-04.md) records each repair and evidence limit. Remaining package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
+Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Exact repair-image preparation passed at `93f1fa63`, including 47 client tests, type/build, all selected Go/fuzz/build/image gates; both Caddyfiles validated. Keep that tested application checkout and load only the separate reviewed operator helper for Caddy/error-log verification and explicit conventional HLS enablement. After those gates, continue valid-delivery and the grouped matrix. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -875,7 +917,7 @@ Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
 6. **implemented / focused earlier automation and default-off image deployment passed:** HLS/LL-HLS Phases 1–3 plus Phase 4 repository assets; exact Phase 4 automated/image preparation passed at `e55bcd7e`; enabled runtime/device acceptance remains pending;
-7. **NEXT:** new client-repair exact tests/images, Caddy runtime-log validation and grouped enabled target-server validation; advisory classification recorded, package remediation open;
+7. **NEXT:** Caddy adjustment/actual runtime-error check and grouped enabled target-server validation; repair-image gate passed at `93f1fa63`, advisory classification recorded, package remediation open;
 8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
@@ -895,7 +937,7 @@ When fallback work begins, separate the two user classes instead of forcing ever
 9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 10. **implemented / focused automated target gate passed — HLS Phases 1–2:** default-off access, leases, security, deterministic models, shared H.264/AAC packaging, authenticated HTTP delivery and observability; enabled runtime acceptance pending;
 11. **implemented HLS Phase 3 / focused automation and default-off image deployment passed:** isolated passive client, pinned player support and advertised-only manual HLS/LL-HLS selection; enabled playback/device acceptance pending;
-12. **repository assets implemented / NEXT target validation — HLS Phase 4:** separate deployment/observability helpers, recorded source/configuration/audit review; new containment-repair checkpoint, dependency maintenance and grouped target-server validation pending;
+12. **repository assets implemented / NEXT enabled validation — HLS Phase 4:** separate deployment/observability helpers, recorded source/configuration/audit review; containment-repair automated/image gate passed at `93f1fa63`, dependency maintenance and grouped live validation pending;
 13. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
 14. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 

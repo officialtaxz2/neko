@@ -7,7 +7,9 @@ host**, outside the Neko Compose project. The supplied Phase 4 output confirms
 port examples. No access logger, imports, buffering, rewriting, cache or global
 options were present in the supplied text. The operator subsequently confirmed
 the active configuration path as `/etc/caddy/Caddyfile`; actual runtime/error
-output still needs confirmation. This is a review guide; no Caddy
+output still needs confirmation. At exact application commit `93f1fa63`, the
+target validated both the active file and prepared proposal successfully;
+the only proposal warning concerns formatting. This is a review guide; no Caddy
 configuration has been changed or reloaded by Codex.
 
 The concrete reviewed proposal is [deploy/caddy-hls.example](../deploy/caddy-hls.example).
@@ -16,6 +18,13 @@ discard, any other active sites/global options. It retains the existing port,
 keeps site access logging absent, adds the runtime encoder and removes ambiguous
 forwarding metadata/automatic upstream compression. Validate the actual final
 file before an operator-applied reload; reload can reconnect existing streams.
+
+The [activation helper](../deploy/activate-hls-phase4.sh) is prepared for this
+confirmed sole-site configuration. It refuses any additional active options,
+backs up the original, formats/validates before reload, and uses the deployment
+stop for a synthetic 502 to check the real error journal before valid leases.
+Image/Caddy restoration is attempted if a gate fails. It has only been reviewed
+statically; no application, reload or live-log pass is claimed yet.
 
 ## Existing routing and trust
 

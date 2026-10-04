@@ -6,9 +6,9 @@ and image IDs must be recorded by the target-server helpers. Source/configuratio
 inspection only: **NOT EXECUTED IN CODEX** for tests, type/build, containers and
 devices. This records items 1–7 of [STABILITY_REVIEW.md](STABILITY_REVIEW.md);
 item 8 is now recorded in [the dependency review](DEPENDENCY_AUDIT_2026-10-04.md)
-against the supplied exact-e55 report. Its follow-up source repairs are
-statically reviewed but await a new exact target image/checkpoint; remaining
-package remediation and final security acceptance stay open.
+against the supplied exact-e55 report. Its follow-up source repairs passed the
+exact target automated/image gate at `93f1fa63`; browser/deployment validation,
+remaining package remediation and final security acceptance stay open.
 
 ## Confirmed defects and bounded repairs
 
@@ -99,7 +99,12 @@ proof of complete mux/player fuzz coverage.
   Node request path found; browser/compiler findings required the follow-up
   source containment above. No dependency versions changed, and no
   dependency-security clearance follows from the image gate. The follow-up
-  code has not been target-tested or deployed.
+  code passed the follow-up 47-test/type/build/image gate at exact `93f1fa63`;
+  browser acceptance and deployment remain pending.
+- Exact `93f1fa63` also passed all 13 Go packages, WebSocket fuzz (1,117,452
+  executions), HLS request fuzz (318,735 executions), server/plugin build and
+  both image builds. The running service was unchanged. Both active/proposed
+  Caddyfiles validated successfully, without reload or actual log evidence.
 - The default-off public HTTP follow-up passed bootstrap/media 404 checks
   (2/2, exit 0) at exact e55, and supplies both saved image IDs. This does not
   verify the repaired client or any enabled HLS media path.
