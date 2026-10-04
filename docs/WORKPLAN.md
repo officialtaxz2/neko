@@ -817,25 +817,55 @@ Both exact images `my-neko/base:hls-e55bcd7e256c` and
 `my-neko/brave:hls-e55bcd7e256c` built successfully. The log records their build
 manifest-list digests as `sha256:33ff896c2738768c0c4ad9ebb4f530575e37e826a4331ccc82186205bd0b165e`
 and `sha256:1ae894e8ef11963a28d68e58cf2a43a62cfa7e8e1587464b591cd54bf62d8efb`;
-the selected Docker image IDs are in the private server `images.txt` and have
-not yet been supplied. Evidence was saved to `/opt/docker/nekoNew/neko-hls-results`.
+the follow-up supplied the same IDs from private server `images.txt`.
+Evidence was saved to `/opt/docker/nekoNew/neko-hls-results`.
 The helper printed `AUTOMATED/IMAGE GATE PASSED; running service unchanged` and
 `Check-Exitcode: 0`. It did not deploy either new image or enable HLS.
 
 The dependency audit returned **1**, again with 20 findings (11 low, 3 moderate,
-5 high and 1 critical). Its detailed private report remains unsupplied and
-unclassified; the image gate is not dependency-security acceptance. Chunk-size
-and upstream deprecation notices did not fail the client build. Next obtain the
-default-off public HTTP result, saved image IDs, detailed audit and sanitized
-active Neko Caddy routing/logging configuration before valid HLS media tests.
+5 high and 1 critical). Its detailed private report was subsequently supplied
+and classified as recorded below; the image gate is not dependency-security
+acceptance. Chunk-size and upstream deprecation notices did not fail the build.
 All enabled security, role, playback/device, latency/isolation/resource and
 rollback gates remain open. Codex executed no project checks or runtime code.
+
+## HLS audit/default-off follow-up and client containment — 2026-10-04
+
+The operator supplied the complete audit v2 report and saved image IDs at exact
+`e55bcd7e256c05ca0053d705879ca3adfd8c4e65`. The credential-free public HTTP
+follow-up passed bootstrap/media 404 checks (2/2, exit 0). Saved image IDs:
+
+- `my-neko/base:hls-e55bcd7e256c`: `sha256:33ff896c2738768c0c4ad9ebb4f530575e37e826a4331ccc82186205bd0b165e`;
+- `my-neko/brave:hls-e55bcd7e256c`: `sha256:1ae894e8ef11963a28d68e58cf2a43a62cfa7e8e1587464b591cd54bf62d8efb`.
+
+The [dependency review](DEPENDENCY_AUDIT_2026-10-04.md) classifies all 20 package
+entries against the lock and source paths. The critical `form-data` finding is
+an Axios Node dependency; the inspected browser upload uses native FormData
+and no deployed Node request process is configured. This is a reachability
+assessment, not security acceptance. Browser/compiler review established three
+bounded client repairs: remove participant-controlled Vue-template compilation
+and escape generated attributes, render member-name tooltips as literal text,
+and disable unused automatic Axios XSRF-cookie reading. Emoji names now use
+native title tooltips. Media transport/quality and dependency versions are
+unchanged. Real-parser/Vue-component security/formatting regressions are added.
+
+These follow-up changes are statically reviewed only: **NOT EXECUTED IN CODEX**.
+The e55 images and automated pass do not contain them. Prepare a new exact
+test/image checkpoint in its own private output directory before deployment.
+Retain the e55 evidence. Remaining dependency updates/Vue 2 maintenance and
+final security acceptance stay open; no blind major update/downgrade is applied.
+
+The supplied Caddy 2.6.2 site is the minimal `127.0.0.1:8082` proxy, and the
+operator confirmed `/etc/caddy/Caddyfile` as the active file. The tracked logging/
+proxy proposal is not applied. Validate that proposal and the active file on
+the target, then complete actual runtime/access-log checks before valid leases.
+No HLS-enabled service, playback or device evidence follows from these results.
 
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Its separate overlay, private metrics/result collector, credential-free probes and exact-image preparation/enable/rollback helpers are implemented. The accumulated automated/image preparation passed at exact `e55bcd7e` without replacing the service. Continue that exact server checkpoint: check default-off public HTTP, classify the saved dependency-audit report and validate the prepared Caddy runtime-log/proxy adjustment before enabled media tests. Then proceed through explicit conventional HLS enablement and the grouped matrix. The source/configuration review is recorded in [`STABILITY_REVIEW_2026-10-04.md`](STABILITY_REVIEW_2026-10-04.md); legacy notification errors and long private-pause keepalive are repaired, with target checks pending. Advisory classification keeps the mandatory final review open. Keep HLS default-off without its overlay, WebRTC the safe default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
+Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Exact automated/image preparation and two default-off HTTP checks passed at `e55bcd7e` without replacing the service. The [audit is classified](DEPENDENCY_AUDIT_2026-10-04.md), and its follow-up client containment repairs require a new exact test/image checkpoint in a separate private directory. Validate the active `/etc/caddy/Caddyfile` and prepared logging/proxy proposal, then establish safe actual logs before explicit conventional HLS enablement and the grouped matrix. The [static review](STABILITY_REVIEW_2026-10-04.md) records each repair and evidence limit. Remaining package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -845,7 +875,7 @@ Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
 6. **implemented / focused earlier automation and default-off image deployment passed:** HLS/LL-HLS Phases 1–3 plus Phase 4 repository assets; exact Phase 4 automated/image preparation passed at `e55bcd7e`; enabled runtime/device acceptance remains pending;
-7. **NEXT:** default-off public HTTP, detailed advisory/Caddy runtime-log review and grouped enabled target-server validation;
+7. **NEXT:** new client-repair exact tests/images, Caddy runtime-log validation and grouped enabled target-server validation; advisory classification recorded, package remediation open;
 8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
@@ -865,7 +895,7 @@ When fallback work begins, separate the two user classes instead of forcing ever
 9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 10. **implemented / focused automated target gate passed — HLS Phases 1–2:** default-off access, leases, security, deterministic models, shared H.264/AAC packaging, authenticated HTTP delivery and observability; enabled runtime acceptance pending;
 11. **implemented HLS Phase 3 / focused automation and default-off image deployment passed:** isolated passive client, pinned player support and advertised-only manual HLS/LL-HLS selection; enabled playback/device acceptance pending;
-12. **repository assets implemented / NEXT target validation — HLS Phase 4:** separate deployment/observability helpers, recorded source/configuration review; advisory classification and grouped target-server validation pending;
+12. **repository assets implemented / NEXT target validation — HLS Phase 4:** separate deployment/observability helpers, recorded source/configuration/audit review; new containment-repair checkpoint, dependency maintenance and grouped target-server validation pending;
 13. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
 14. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 

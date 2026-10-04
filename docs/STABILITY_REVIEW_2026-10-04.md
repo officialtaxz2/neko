@@ -5,8 +5,10 @@ Phase 4 assets and repairs in this implementation block. The final exact commit
 and image IDs must be recorded by the target-server helpers. Source/configuration
 inspection only: **NOT EXECUTED IN CODEX** for tests, type/build, containers and
 devices. This records items 1–7 of [STABILITY_REVIEW.md](STABILITY_REVIEW.md);
-item 8, detailed dependency-advisory classification, is **PENDING** until the
-target report exists. The mandatory review is not fully closed.
+item 8 is now recorded in [the dependency review](DEPENDENCY_AUDIT_2026-10-04.md)
+against the supplied exact-e55 report. Its follow-up source repairs are
+statically reviewed but await a new exact target image/checkpoint; remaining
+package remediation and final security acceptance stay open.
 
 ## Confirmed defects and bounded repairs
 
@@ -15,6 +17,9 @@ target report exists. The mandatory review is not fully closed.
 | Optional chat audio could throw during room events | `chat.newMessage` called `.catch` directly on `Audio.play()` and did not contain synchronous constructor/play failures. `notification-sound.js` guards missing/legacy APIs and catches optional audio failures. Sound remains one element per notification; no encoder or transport change. | New notification test plus real join/chat/control sequence, sound on/off on an affected TV when available |
 | Long HLS private pause could terminate a valid player | Both lease authentication and request admission rejected keepalive while paused. The client renews at 15 seconds and treats repeated keepalive errors as terminal; the lease expires after 30 seconds. Only nonblocking keepalive can now renew a valid paused lease and its cookie. Media admission remains denied; expired/revoked leases cannot revive and rate limits remain. | New Go paused-renewal/controller/rate tests and 46-second client pause test; real >=45-second private pause, packager idle, resume and revocation |
 | Server option text incorrectly said no client player existed | Phase 3 already supplies the isolated player. The HLS enable flag description now describes experimental shared passive delivery. | Build/config inspection; no behavior change |
+| Participant-controlled chat reached Vue's template compiler | Markdown output was concatenated into `template`; HTML escaping does not neutralize Vue expressions. Render fixed-element escaped HTML instead, escape custom attribute values and replace generated emoji directives with native title labels. | New real-parser/Vue-component tests, type/build and browser formatting/emoji/spoiler/open-in-app checks |
+| Member names reached an HTML tooltip | v-tooltip 2.1.3 defaults to HTML; `members.vue` supplied participant names without an override. Set `html: false` for that binding. | Verify a harmless markup-shaped name renders literally in another viewer's tooltip |
+| Shared Axios retained unneeded XSRF cookie reading | Browser Axios 1.2.6 can automatically read a named cookie for same-origin/credentialed requests. Neko has no use of that mechanism; disable its cookie name when installing the shared instance. | File upload/download and About checks; no automatic XSRF header on external requests; remaining dependency advisories stay open |
 
 MDN documents that older `play()` implementations may return no value:
 [HTMLMediaElement.play](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play).
@@ -51,7 +56,9 @@ is included.
 5. **HTTP and proxy:** inspected original peer preservation, prefix stripping
    before CORS/log classification, strict Origin/forwarded-TLS policy, scoped
    cookies, fixed path redaction and bounded HEAD/gzip/range/object writes.
-   Caddy is host-managed; its actual config/version is not yet reviewed. The
+   Caddy is host-managed; the supplied minimal site and version 2.6.2 are reviewed,
+   with active path `/etc/caddy/Caddyfile` confirmed; the proposed configuration
+   and actual log output still require target validation. The
    new guide deliberately treats access and runtime/error logs separately and
    avoids unconditional negative flush intervals that prevent cancellation.
 6. **Bounds/isolation:** inspected the shared four-worker packager, exact-source
@@ -86,9 +93,16 @@ proof of complete mux/player fuzz coverage.
   subsequently reported that things seem to work, without an exact
   backend/device/role matrix. This is bounded smoke evidence only.
 - The target run again reports 20 npm findings, including one critical, and
-  saves an audit report with exit code 1. That detailed report has not yet been
-  supplied for applicability/repair review; the findings remain unclassified.
-  No dependency-security clearance follows from the image gate.
+  saves an audit report with exit code 1. The complete report is now supplied
+  and classified in [the dependency review](DEPENDENCY_AUDIT_2026-10-04.md).
+  The critical entry is the Axios Node multipart dependency, with no deployed
+  Node request path found; browser/compiler findings required the follow-up
+  source containment above. No dependency versions changed, and no
+  dependency-security clearance follows from the image gate. The follow-up
+  code has not been target-tested or deployed.
+- The default-off public HTTP follow-up passed bootstrap/media 404 checks
+  (2/2, exit 0) at exact e55, and supplies both saved image IDs. This does not
+  verify the repaired client or any enabled HLS media path.
 - The colleague's TV remains unavailable. Exact VIDAA/device compatibility,
   event-triggered failure classification and any benefit of HLS are unknown.
 - Numeric latency/pacing, independent fMP4 validation, mixed-backend slow-client

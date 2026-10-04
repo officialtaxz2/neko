@@ -4,9 +4,12 @@ Repository assets prepared on 2026-10-04. **The automated/image preparation
 gate passed at exact `e55bcd7e`; enabled target validation is PENDING.**
 The supplied output records 44 client tests, type/build, 13 Go packages, both
 fuzz jobs and server/base/Brave builds, with final exit code 0 and the running
-service unchanged. Caddy is active at 2.6.2. The detailed audit report and actual
-Caddy configuration/logs remain to be reviewed. No HLS HTTP or playback test
-follows from the HTTP checker's `--help` succeeding. Nothing here was executed
+service unchanged. A follow-up supplied both image IDs and passed the two
+default-off public HTTP 404 checks. Caddy is active at 2.6.2; the supplied site
+is reviewed, with proposed configuration and actual logs still pending. The
+[audit classification](DEPENDENCY_AUDIT_2026-10-04.md) led to additional client
+containment repairs. **Prepare new exact images and checks for that repair
+commit before deployment; the e55 pass does not cover them.** Nothing here was executed
 in Codex. Use one block at a time, review its output,
 then advance. Keep one exact `testing` implementation commit/image throughout
 the matrix. No `master` promotion or full acceptance follows from a smoke check.
@@ -20,7 +23,9 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 Pull the reviewed `origin/testing` commit using `git pull --ff-only`. Verify the
 expected full hash, branch and clean tracked worktree. The result directory
-below is private and outside Git; reuse it for all remaining blocks.
+below is private and outside Git; reuse it for all blocks of that exact commit.
+When changing the implementation commit, preserve the old directory and use
+`../neko-hls-results-<first-12-commit-characters>` for the new checkpoint.
 
 ```bash
 set +e

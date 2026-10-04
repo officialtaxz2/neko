@@ -58,7 +58,7 @@ function htmlTag(
   let attributeString = ''
   for (const attr in attributes) {
     if (Object.prototype.hasOwnProperty.call(attributes, attr) && attributes[attr]) {
-      attributeString += ` ${attr}="${attributes[attr]}"` // md.sanitizeText(attr)
+      attributeString += ` ${attr}="${md.sanitizeText(attributes[attr])}"`
     }
   }
 
@@ -232,7 +232,7 @@ const rules: MarkdownRules = {
         {
           class: `emoji`,
           'data-emoji': node.id,
-          'v-tooltip.top-center': `{ content:':${node.id}:', offset: 2, delay: { show: 1000, hide: 100 } }`,
+          title: `:${node.id}:`,
         },
         state,
       )
@@ -286,6 +286,9 @@ export default class NekoMarkdown extends Vue {
       cssModuleNames: null,
       openInApp: this.openInApp,
     }
-    return h({ template: `<div>${htmlOutput(parser(this.source, state), state)}</div>` })
+    // Room messages are data, never Vue templates: HTML escaping does not
+    // neutralize Vue interpolation or expressions embedded in directives.
+    // Only this renderer's escaped text and fixed Markdown tags reach the DOM.
+    return h('div', { domProps: { innerHTML: htmlOutput(parser(this.source, state), state) } })
   }
 }

@@ -5,8 +5,9 @@ host**, outside the Neko Compose project. The supplied Phase 4 output confirms
 **Caddy 2.6.2** and an active service. The operator then supplied the Neko site:
 `neko.taxzvps.de { reverse_proxy 127.0.0.1:8082 }`, with only commented upload/old
 port examples. No access logger, imports, buffering, rewriting, cache or global
-options were present in the supplied text. The active configuration path and
-actual runtime/error output still need confirmation. This is a review guide; no Caddy
+options were present in the supplied text. The operator subsequently confirmed
+the active configuration path as `/etc/caddy/Caddyfile`; actual runtime/error
+output still needs confirmation. This is a review guide; no Caddy
 configuration has been changed or reloaded by Codex.
 
 The concrete reviewed proposal is [deploy/caddy-hls.example](../deploy/caddy-hls.example).
@@ -31,7 +32,8 @@ do not assume this is `127.0.0.1`. Preserve the already reviewed peer value and
 verify it on the target. Keep the published backend port bound to loopback.
 Do not expand trust to all private networks to resolve a failed probe.
 
-Inspect the actual service unit/configuration locally on the server. Record
+Inspect the actual service unit/configuration locally on the server. The
+operator-confirmed Caddyfile is `/etc/caddy/Caddyfile`. Record
 `caddy version` and `systemctl is-active caddy`. Validate the actual active
 Caddyfile with `caddy validate --config <actual-path> --adapter caddyfile`
 before any operator-applied change. Share only the relevant sanitized Neko
