@@ -3,8 +3,9 @@
 Repository assets prepared on 2026-10-04. **The automated/image preparation and
 activation/invalid-input gates passed at exact application `93f1fa63`;
 the first playback attempt FAILED and normal login then timed out.
-Read-only diagnosis and rollback recovery passed; exact repair-image preparation
-and grouped acceptance remain PENDING target verification.**
+Read-only diagnosis, rollback recovery and exact 80020d99 repair-image
+preparation passed. Default-off repair-image deployment/live checks and grouped
+acceptance remain PENDING.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
 and server/base/Brave builds, with final exit code 0; that preparation left the
@@ -16,11 +17,11 @@ deployment, 17 public probes and two cleartext-denial probes all passed with
 Activate-Exitcode 0. The operator subsequently reported inability to connect or
 no picture with an HLS failure, then normal-login timeouts (tentative /ws 101).
 Helper d191b8ea supplied a healthy-image diagnostic but no demonstrated HLS
-readiness/lease. [Startup repairs](HLS_STARTUP_REPAIR_2026-10-04.md) are implemented
-and await a new exact target gate; the normal-login blocker remains unconfirmed.
+readiness/lease. [Startup repairs](HLS_STARTUP_REPAIR_2026-10-04.md) passed the new exact 80020d99 automated/image gate, including both real-codec
+tests. The original normal-login blocker remains unconfirmed.
 The subsequent rollback returned Restore-Exitcode 0 and a healthy prior image;
-the operator confirmed normal login, picture and audio work again. Actual HLS
-packager/picture/audio and valid authorization have not passed. The
+the operator confirmed normal login, picture and audio work again. Production HLS capture, picture/audio and valid authorization
+remain pending. The
 [audit classification](DEPENDENCY_AUDIT_2026-10-04.md) and remaining dependency
 work are not a passing security audit. Nothing here was executed
 in Codex. Use one block at a time, review its output,
@@ -88,6 +89,49 @@ no credentials. Confirm existing WebRTC/WebCodecs playback, control/recovery,
 fullscreen and absent HLS choices before enabling. Complete the Caddy routing,
 trust, streaming and log review before creating valid HLS credentials.
 
+### Prepared repair image: deploy with HLS disabled (NEXT)
+
+The supplied preparation tail ended with Check-Exitcode 0 at exact 80020d99.
+All 13 Go packages, both fuzz jobs, the trailing server/plugin build, the visible
+client build and both uniquely tagged image builds passed. Both real-codec tests
+passed with GStreamer 1.26.2; conventional readiness was logged in generation 1
+and the all-four-rendition test passed in 18.11 seconds. The client test count was
+not included in the supplied tail. Audit exit 1 remains open findings. This is
+supplied target evidence, **NOT EXECUTED IN CODEX**; valid browser HLS playback
+has not passed.
+
+Keep application HEAD at 80020d99477a58318f210b7e14d19cdd92991a6d. Fetch the
+reviewed operator-tooling commit, record its full hash, and extract
+[deploy-hls-media.sh](../deploy/deploy-hls-media.sh) into the existing private
+../neko-hls-results-80020d99477a directory. Check that script with bash -n.
+Invoke it from /opt/docker/nekoNew/neko with the explicit repository argument:
+
+```bash
+output=/opt/docker/nekoNew/neko-hls-results-80020d99477a
+bash "$output/deploy-hls-media.sh" baseline "$output" "$PWD"
+docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks disabled
+```
+
+The operator block pins the reviewed helper commit; its blob and the application
+commit are recorded by the script. Baseline mode verifies the preparation marker
+and image ID from private images.txt before changing the service. It captures the
+currently working image under a rollback tag and recreates Neko using the
+prepared repair image, with adaptive/WebCodecs and without the HLS overlay.
+Active sessions disconnect. Failed health startup restores the saved prior image;
+a public-probe or manual-browser failure requires explicit rollback/review.
+The existing application-checkout rollback helper can use this new directory.
+The baseline helper is statically reviewed, **NOT EXECUTED IN CODEX**, pending
+first target execution. No additional application change/build is required.
+
+In a new private browser window at https://neko.taxzvps.de/, confirm normal
+login, changing picture, audio and control/room events. Record the exact image
+and output; health and disabled-route checks are not browser-media acceptance.
+Only after this baseline passes, enable HLS through section 2's plain
+image/probe helper, keeping this same application commit and evidence directory.
+Do not repeat the completed Caddy source merge. Public valid-lease playback,
+production capture skew and the full lifecycle/device/resource matrix remain
+pending. No claim of the original timeout's exact cause follows from this gate.
+
 ## 2. Explicit conventional HLS deployment and invalid-input checks
 
 The separate `docker-compose.hls.yaml` requires adaptive source geometry and
@@ -100,8 +144,9 @@ configuration were preserved; Caddy reloaded, synthetic runtime-error redaction
 passed, `my-neko/brave:hls-93f1fa637ae3` started healthy, and the 17 public plus
 two cleartext-denial probes passed. See [the Caddy record](HLS_LL_HLS_CADDY.md)
 for the logging qualifications. The application stayed at `93f1fa63` for the
-successful rollback recovery in section 3. NEXT validate the exact repair
-commit/image from section 1; do not reuse the old preparation
+successful rollback recovery in section 3. Exact 80020d99 repair-image
+preparation passed; NEXT deploy/verify its default-off baseline in section 1.
+Do not reuse the old preparation
 marker or repeat the completed source-merging Caddy activation.
 
 The statically reviewed [activation helper](../deploy/activate-hls-phase4.sh)
@@ -141,7 +186,8 @@ set +e
 bash -e -o pipefail <<'NEKO_HLS_ENABLE'
 cd /opt/docker/nekoNew/neko
 commit="$(git rev-parse HEAD)"
-bash deploy/deploy-hls-media.sh enable "../neko-hls-results-${commit:0:12}"
+output="../neko-hls-results-${commit:0:12}"
+bash "$output/deploy-hls-media.sh" enable "$output" "$PWD"
 docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks enabled
 docker compose -f docker-compose.validation.yaml run --rm -T \
   -e NEKO_PUBLIC_BASE_URL=http://127.0.0.1:8082 hls-http-checks insecure-denied
@@ -207,11 +253,11 @@ original blocker or validate the new HLS repair. No wider matrix was reported.
 
 The repository now includes cold-generation/initial-caps, HLS-only encoder-
 segment timestamp, initial videorate gap and bounded C logging repairs plus a
-mandatory real-codec validation job. Those tests/builds/images are **PENDING on
-target**. Restoration is reviewed; NEXT advance to exact repair commit 80020d99
-and prepare its fresh images/result directory using section 1 without replacing
-the currently working service. Verify normal
-WebRTC with HLS disabled first. The target Caddy source already contains the
+mandatory real-codec validation job. Those tests/builds/images passed at exact
+80020d99 with Check-Exitcode 0; live acceptance is still pending. Restoration is
+reviewed; NEXT deploy the prepared repair-image baseline from section 1 with
+HLS disabled and verify normal login/picture/audio/control first. The target
+Caddy source already contains the
 reviewed changes; use the plain enable/probe block in section 2 after these gates,
 not the completed bare-source merger. Then repeat the bounded picture/audio
 checkpoint below and the full valid-delivery matrix. If login still hangs,

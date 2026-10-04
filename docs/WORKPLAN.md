@@ -1008,15 +1008,51 @@ repository changes, not a target pass. The subsequent rollback completed with
 Restore-Exitcode 0: configured image my-neko/brave:rollback-hls-93f1fa637ae3
 started healthy, and the operator confirmed normal login/picture/audio work again.
 The rollback changed image, overlay and process state together; it does not
-identify the original blocker or validate the new HLS fixes. NEXT prepare exact
-repair commit 80020d99 in a new private evidence directory without replacing the
-service, then verify the new image with HLS disabled before re-enabling HLS.
+identify the original blocker or validate the new HLS fixes. The subsequent
+exact 80020d99 automated/image gate passed as recorded below; live default-off
+repair-image validation is NEXT.
+
+### Exact startup-repair automated/image gate passed — 2026-10-04
+
+The supplied tail of the target run at application
+`80020d99477a58318f210b7e14d19cdd92991a6d` ended with
+AUTOMATED/IMAGE GATE PASSED and Check-Exitcode 0. The client build completed;
+the excerpt begins after the client test details, so their count is not
+repeated. All 13 selected Go packages, both 30-second fuzz jobs (983,744
+WebSocket executions and 380,301 HLS request executions), and the trailing
+server/plugin build passed. With validation-image GStreamer 1.26.2:
+
+- TestEncoderSegmentMapsToRunningTimeWithoutChangingCapture passed (0.02 s);
+- TestRealCodecsReachConventionalPackagerReadiness passed (18.11 s), with
+  packager startup and conventional readiness both in generation 1;
+- every rendition's init and three conventional parents were asserted by
+  the real-codec integration test. This is synthetic-clock/fixture evidence,
+  not actual production capture, public valid auth or browser playback.
+
+Both uniquely tagged base/Brave image builds completed. The exported config
+digests were base sha256:0f94dbd98253ddac78888661f3cfcfdd9727fabba6228765bcee24017995f2f3
+and Brave sha256:e633206d1bdae3ff95709fc5a5cc6c0854f13792a9b838789e9d916ca0889c44;
+these are build metadata, not newly deployed container observations. The private
+images.txt and preparation marker are in ../neko-hls-results-80020d99477a.
+The baseline snapshot still describes the running prior rollback image.
+Audit exit code 1 remains open dependency findings, not a security pass.
+All these results are supplied target evidence, **NOT EXECUTED IN CODEX**.
+
+NEXT deploy this prepared repair image with HLS disabled, preserving the current
+working image under a rollback tag before stopping the service, then confirm
+normal login/picture/audio/control. The new operator helper's baseline action
+and optional explicit repository argument allow extraction from a reviewed
+separate tooling commit without moving the 80020d99 application checkout. It
+checks the exact preparation marker and saved image ID; health failure restores
+the prior image. This helper path is statically reviewed and pending target
+execution. No application/image change or repeat build is required for it.
+Only after this live baseline passes, enable HLS and continue valid delivery.
 
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Continue **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md), section 1 for repair preparation; section 3 records the incident recovery. Exact repair-image preparation and subsequent helper `2484a022` activation passed at application `93f1fa63`: all 11 Caddy hosts preserved, merged validation/reload and synthetic runtime-error redaction passed, HLS image healthy, 17 public plus two cleartext-denial probes passed. The first actual playback attempt failed, followed by normal-login timeouts (tentative /ws 101). Read-only diagnosis from helper d191b8ea passed: prepared image healthy, no sampled process exit/OOM, HLS startup/source-restart but no demonstrated readiness. [Startup/generation/timestamp/log-bound repairs](HLS_STARTUP_REPAIR_2026-10-04.md) and a mandatory real-codec integration gate are implemented; their target tests/build/images are pending, and the normal-login blocker is unconfirmed. The saved pre-HLS image was restored healthy with Restore-Exitcode 0 and operator-confirmed normal login/picture/audio. Preserve evidence. NEXT prepare exact repair commit 80020d99 and images in a fresh private directory without replacing the running service, verify the new image with HLS disabled, and only afterward repeat HLS picture/audio/room-event, passive authorization/lifecycle and grouped device/resource checks. The original blocker remains unconfirmed; rollback recovery does not validate the new repair or HLS playback. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
+Continue **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md), section 1 for the prepared repair-image baseline; section 3 records the incident recovery. Exact repair-image preparation and subsequent helper `2484a022` activation passed at application `93f1fa63`: all 11 Caddy hosts preserved, merged validation/reload and synthetic runtime-error redaction passed, HLS image healthy, 17 public plus two cleartext-denial probes passed. The first actual playback attempt failed, followed by normal-login timeouts (tentative /ws 101). Read-only diagnosis from helper d191b8ea passed: prepared image healthy, no sampled process exit/OOM, HLS startup/source-restart but no demonstrated readiness. [Startup/generation/timestamp/log-bound repairs](HLS_STARTUP_REPAIR_2026-10-04.md) and a mandatory real-codec integration gate are implemented; their target automated/image gate passed at 80020d99, including both real-codec tests and all-four-rendition conventional readiness in one generation (test duration 18.11 seconds); the original login blocker remains unconfirmed. The saved pre-HLS image was restored healthy with Restore-Exitcode 0 and operator-confirmed normal login/picture/audio. Preserve evidence. NEXT deploy the prepared 80020d99 image with HLS disabled, verify normal login/picture/audio, and only afterward repeat HLS picture/audio/room-event, passive authorization/lifecycle and grouped device/resource checks. The original blocker remains unconfirmed; rollback recovery does not validate the new repair or HLS playback. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -1026,7 +1062,7 @@ Continue **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`]
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
 6. **implemented / automated/image and activation/invalid-input gates passed:** HLS/LL-HLS Phases 1–3 plus Phase 4 assets; exact application `93f1fa63` with helper `2484a022` deployed healthy after preserving Caddy/logging gates and passed 19 HTTP probes; valid playback/device acceptance remains pending;
-7. **rollback recovery passed / NEXT:** prepare exact startup-repair commit 80020d99 and images including real-codec validation without replacing the service; verify the new image with HLS disabled, then repeat picture/audio/room-event and valid-delivery/lifecycle/grouped target validation; advisory classification recorded, package remediation open;
+7. **rollback and repair automated/image gates passed / NEXT:** deploy the prepared 80020d99 image with HLS disabled and verify normal login/media, then repeat picture/audio/room-event and valid-delivery/lifecycle/grouped target validation; advisory classification recorded, package remediation open;
 8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
@@ -1046,11 +1082,11 @@ When fallback work begins, separate the two user classes instead of forcing ever
 9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 10. **implemented / focused automated target gate passed — HLS Phases 1–2:** default-off access, leases, security, deterministic models, shared H.264/AAC packaging, authenticated HTTP delivery and observability; enabled runtime acceptance pending;
 11. **implemented HLS Phase 3 / focused automation and default-off image deployment passed:** isolated passive client, pinned player support and advertised-only manual HLS/LL-HLS selection; enabled playback/device acceptance pending;
-12. **repository assets implemented / NEXT enabled validation — HLS Phase 4:** separate deployment/observability helpers, recorded source/configuration/audit review; containment-repair automated/image gate passed at `93f1fa63`, dependency maintenance and grouped live validation pending;
+12. **repository assets implemented / NEXT enabled validation — HLS Phase 4:** separate deployment/observability helpers, recorded source/configuration/audit review; containment-repair gate passed at `93f1fa63` and startup-repair automated/image plus real-codec gates passed at `80020d99`; default-off repair-image and grouped live validation pending;
 13. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
 14. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 
-The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has the specified contract, server/passive-client delivery through Phase 3 and separate Phase 4 repository assets. Earlier focused automation and default-off image deployment passed; exact new-block checks, enabled runtime validation and device evidence remain pending.
+The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has the specified contract, server/passive-client delivery through Phase 3 and separate Phase 4 repository assets. Earlier focused automation and default-off image deployment passed; the exact startup-repair automated/image and real-codec gates passed at 80020d99. Default-off repair-image deployment, enabled runtime validation and device evidence remain pending.
 
 ## LATER / OPTIONAL
 

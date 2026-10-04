@@ -1,8 +1,10 @@
 # HLS startup repair and unresolved login incident — 2026-10-04
 
-Status: source changes statically reviewed on `testing`. Tests, builds, codec
-execution and deployment of these changes are **NOT EXECUTED IN CODEX** and
-**PENDING on the target server**. No working-playback or login-repair claim.
+Status: source changes statically reviewed on `testing`; the exact 80020d99
+target automated/image gate and both real-codec integration tests passed.
+Deployment/live acceptance of that image remain pending. Tests/builds/codec
+execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
+HLS-playback or unique original-login-cause claim.
 
 ## Supplied target evidence
 
@@ -87,9 +89,10 @@ process state changed together, so the exact original login blocker remains
 unconfirmed. The earlier runtime does not include the latest containment fixes;
 it remains an incident baseline rather than final security/device acceptance.
 
-NEXT advance the application checkout to the exact reviewed repair commit
-`80020d99477a58318f210b7e14d19cdd92991a6d` and use a fresh private
-`../neko-hls-results-80020d99477a` directory. Later documentation-only commits
+The exact reviewed repair commit
+`80020d99477a58318f210b7e14d19cdd92991a6d` passed preparation with exit 0 in
+the private `../neko-hls-results-80020d99477a` directory. Later documentation-
+only commits
 may be fetched but do not need to move this tested application checkout.
 Preparation does not replace the working rollback service. Its baseline
 snapshot describes that running prior image, not deployed repair-image behavior.
@@ -111,8 +114,19 @@ replacing the service and writes its success marker only after all gates.
 These tests are synthetic codec integration, not production capture-skew,
 proxy/authentication, client playback, resource or device acceptance.
 
-After preparation passes, verify the new image with HLS disabled and working
-normal WebRTC login/media first. Then enable conventional HLS and repeat the
+Preparation passed: all 13 Go packages, both fuzz jobs, trailing build, the
+visible client build and both base/Brave builds completed. Both real-codec tests
+passed with GStreamer 1.26.2; four renditions became conventionally ready in
+generation 1 (test duration 18.11 s). Audit exit 1 remains open findings. The
+client test count is absent from the supplied tail; no new count is claimed.
+The working rollback service was not replaced by preparation.
+
+NEXT use the extracted, reviewed operator helper's baseline action to deploy
+the prepared image with HLS disabled, retaining the working prior image for
+rollback, and verify normal login/picture/audio/control first. The baseline
+helper accepts an explicit repository argument and checks the prepared image
+ID. It is statically reviewed, NOT EXECUTED IN CODEX and pending target execution.
+After that live baseline passes, enable conventional HLS and repeat the
 picture/audio/room-event smoke test, valid passive authorization/lifecycle,
 mixed-backend isolation, resources and grouped device checks in
 [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). No automatic fallback,

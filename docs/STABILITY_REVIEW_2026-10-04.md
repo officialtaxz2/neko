@@ -49,16 +49,24 @@ bounded `vsnprintf`. No crash attributable to that logger was observed. Ordinary
 event-socket writes and legacy loopback requests still have unbounded waiting
 paths; they are investigation candidates rather than established causes.
 
-A target-only real-codec validation image now exercises segment mapping and cold
-VP8/Opus input through the production H.264/AAC packager. Focused regression tests
-also preserve real restart/incompatible-format rejection. These new tests,
-images and runtime checks are **NOT EXECUTED IN CODEX**, **PENDING on target**.
+The target automated/image gate passed at exact 80020d99 (Check-Exitcode 0):
+all 13 selected Go packages, both fuzz jobs, server/plugin build, real-codec
+segment mapping and cold VP8/Opus input through the production H.264/AAC
+packager succeeded. With GStreamer 1.26.2, all four renditions reached
+conventional readiness in one generation after 18.11 seconds. The client build
+and both image builds completed; the supplied excerpt begins after the client
+test details, so their test count is not repeated here. Audit exit 1 remains
+open findings, not a security pass. These are supplied target results,
+**NOT EXECUTED IN CODEX**. Synthetic cleanup discarded two final samples after
+their pipelines had been removed; the test passed and this is not evidence of
+a deployed capture loss. Production capture skew, valid auth/proxy/player,
+device/resource and grouped acceptance remain separate gates.
+
 The saved pre-HLS image was restored healthy with Restore-Exitcode 0 and
-operator-confirmed normal login/picture/audio. NEXT prepare exact repair commit
-80020d99 and its images without replacing the service, then verify the new image
-with HLS disabled before re-enabling it. Production capture skew, valid auth/proxy/player, device/resource and grouped acceptance
-remain separate open gates. The rollback is a recovery checkpoint, not a pass
-for the new repair or HLS playback.
+operator-confirmed normal login/picture/audio. NEXT deploy the prepared 80020d99
+image with HLS disabled and verify normal login/media before re-enabling HLS.
+The new operator-only baseline helper is statically reviewed, **NOT EXECUTED IN
+CODEX** and pending target execution; no application source/image changed here.
 
 1. **Room events and stores:** traced member list/join/disconnect, room chat and
    control take/release/grant in `client/src/neko/index.ts` and the user/chat/
