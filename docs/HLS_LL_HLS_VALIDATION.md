@@ -2,7 +2,8 @@
 
 Repository assets prepared on 2026-10-04. **The automated/image preparation and
 activation/invalid-input gates passed at exact application `93f1fa63`;
-valid playback and grouped acceptance are PENDING.**
+the first playback attempt FAILED per operator report; diagnosis and grouped
+acceptance are PENDING.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
 and server/base/Brave builds, with final exit code 0; that preparation left the
@@ -11,8 +12,10 @@ The two default-off public HTTP 404 checks passed earlier at e55. Caddy 2.6.2
 validated the complete merged file, retained all 11 hosts and reloaded through
 helper `2484a022`. The synthetic runtime-error redaction, healthy opt-in HLS
 deployment, 17 public probes and two cleartext-denial probes all passed with
-Activate-Exitcode 0. Actual packager/picture/audio and valid authorization remain
-pending. The
+Activate-Exitcode 0. The operator subsequently reported inability to connect or
+no picture with an HLS failure. Exact player status, device/browser, login role
+and server evidence have not yet been supplied; no cause or repair is confirmed.
+Actual packager/picture/audio and valid authorization have not passed. The
 [audit classification](DEPENDENCY_AUDIT_2026-10-04.md) and remaining dependency
 work are not a passing security audit. Nothing here was executed
 in Codex. Use one block at a time, review its output,
@@ -83,7 +86,8 @@ configuration were preserved; Caddy reloaded, synthetic runtime-error redaction
 passed, `my-neko/brave:hls-93f1fa637ae3` started healthy, and the 17 public plus
 two cleartext-denial probes passed. See [the Caddy record](HLS_LL_HLS_CADDY.md)
 for the logging qualifications. Keep the tested application/images at `93f1fa63`;
-proceed to section 3, without repeating activation or pulling documentation HEAD.
+proceed to the read-only failure diagnosis in section 3, without repeating
+activation or pulling documentation/tooling HEAD into the application checkout.
 
 The statically reviewed [activation helper](../deploy/activate-hls-phase4.sh)
 now uses [merge-hls-caddy.py](../deploy/merge-hls-caddy.py) and additionally:
@@ -147,7 +151,44 @@ unexecuted. A Docker bridge peer inside a trusted CIDR is not that test.
 
 ## 3. Valid delivery, authorization and lifecycle
 
-### First bounded picture/audio checkpoint (NEXT)
+### Failed first playback attempt: read-only diagnosis (NEXT)
+
+On 2026-10-04, after the successful activation/invalid-input gate, the operator
+reported failed HLS connection or no picture in an active session (`hls failed`).
+That is a failed playback attempt, not a passed smoke test. The precise fixed
+UI status, device/browser and admin/view-only role are still unconfirmed.
+
+Retry once in the intended admin diagnostic window while a normal WebRTC viewer
+has changing video/audio; keep the failed window open and collect immediately.
+Extract [diagnose-hls-playback.sh](../deploy/diagnose-hls-playback.sh) into the
+existing private evidence directory from a recorded reviewed tooling commit.
+Run its shell syntax check and then:
+
+```bash
+cd /opt/docker/nekoNew/neko
+output=/opt/docker/nekoNew/neko-hls-results-93f1fa637ae3
+bash "$output/diagnose-hls-playback.sh" "$PWD" "$output"
+```
+
+Here `output` is `/opt/docker/nekoNew/neko-hls-results-93f1fa637ae3` and the working
+directory is `/opt/docker/nekoNew/neko`. Keep application `93f1fa63` and its
+prepared image unchanged. This helper only reads container state, the last
+3,000 application log lines, a bounded supervisor log sample, GStreamer version
+and loopback metrics. Raw files remain under a new private 0700 subdirectory.
+Only fixed message/error markers, validated enums, counters and hashes are
+printed; share only that summary. It issues no credentialed HLS request and
+does not restart, deploy, change Caddy or create a playback lease. Docker restart
+count alone does not detect an application restart inside Supervisor.
+
+Counts are cumulative/bounded samples, not a correlated browser trace. Missing
+markers do not prove success. Read the exact bootstrap result and per-rendition
+publication counters before deciding whether to investigate auth, packager or
+player. An encoder/segment time-domain mismatch is a static candidate recorded
+in [the review](STABILITY_REVIEW_2026-10-04.md); target evidence is pending.
+The new diagnostic helper is statically reviewed, **NOT EXECUTED IN CODEX** and
+not yet executed on the target.
+
+### First bounded picture/audio checkpoint (repeat after diagnosis/repair)
 
 Keep one ordinary WebRTC viewer connected, with changing video/audio in the
 shared browser. In a separate private browser window, open the deployment root
@@ -164,8 +205,8 @@ five foreground minutes while another WebRTC participant sends a message,
 releases/takes control and a fresh participant joins. Record HLS interruption
 or terminal state separately from normal buffered display delay, and confirm
 the WebRTC viewer remains working. Do not infer the fixed ten-start/ten-minute
-numeric acceptance gates from this initial bounded checkpoint. It has not yet
-been executed or passed.
+numeric acceptance gates from this initial bounded checkpoint. The reported
+first playback attempt failed; the full five-minute checkpoint has not passed.
 
 While HLS is active, the existing collector can preserve private metrics:
 

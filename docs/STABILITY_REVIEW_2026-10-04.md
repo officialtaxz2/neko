@@ -30,6 +30,33 @@ is included.
 
 ## Inspected paths and implications
 
+### Follow-up after the failed enabled HLS playback attempt
+
+The operator reported failed connection/no picture after the 93f1fa63 activation
+gate. Exact player status and target diagnostic evidence are pending; the
+activation and invalid-input passes remain valid, but playback has not passed.
+Two source findings need separate treatment in this investigation:
+
+- **Time-domain candidate:** `gst.c` forwards raw buffer PTS/DTS without the
+  sample's `GstSegment`. HLS `acceptSample` compares all renditions against the
+  first high-video DTS, rejecting audio before that anchor. GStreamer's
+  [x264 encoder at 1.22.0](https://github.com/GStreamer/gstreamer/blob/1.22.0/subprojects/gst-plugins-ugly/ext/x264/gstx264enc.c)
+  sets a 1,000-hour minimum PTS; an encoder segment offset therefore cannot be
+  treated as the audio running-time domain. This establishes a source-level
+  mismatch candidate, not the actual target plugin version, observed timestamps
+  or cause of this operator failure. Obtain bootstrap/publication evidence and
+  the target GStreamer version before preparing the bounded repair.
+- **Confirmed unsafe log formatting:** `gstreamer_pipeline_log` uses `vsprintf`
+  into a 100-byte stack buffer. Long GStreamer error/debug messages can overrun
+  it. This is a source defect needing repair; a process crash or its connection
+  to this playback failure has not been observed. Target Supervisor evidence
+  must be checked separately from Docker restart count.
+
+The read-only target helper `deploy/diagnose-hls-playback.sh` preserves raw logs
+privately and outputs only fixed markers and HLS metric enums/numbers. It has
+not been executed in Codex or on the target. No media implementation, runtime
+configuration or image has been changed in this diagnostic block.
+
 1. **Room events and stores:** traced member list/join/disconnect, room chat and
    control take/release/grant in `client/src/neko/index.ts` and the user/chat/
    remote stores. The inspected ordinary handlers update room/UI state and
