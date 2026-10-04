@@ -76,13 +76,18 @@ proof of complete mux/player fuzz coverage.
 
 ## Open evidence and next checkpoint
 
-- Exact tests/images for this block and real enabled HLS playback are pending.
+- The supplied target-server output at exact `e55bcd7e` passes all 44 client
+  tests, TypeScript/build, all 13 selected Go packages, both 30-second fuzz jobs,
+  server/plugin build and uniquely tagged base/Brave image builds. It includes
+  the notification and long-private-pause regression tests. Real enabled HLS
+  playback and live private-mode/revocation/device checks remain pending.
 - The earlier server gate passed 42 client tests and relevant Go/build checks
   at `e85d8568`; images/deployment health passed at `741025c3`. The operator
   subsequently reported that things seem to work, without an exact
   backend/device/role matrix. This is bounded smoke evidence only.
-- The earlier 20 npm findings, including one critical, remain unclassified.
-  Phase 4 collects an actual advisory report for applicability/repair review.
+- The target run again reports 20 npm findings, including one critical, and
+  saves an audit report with exit code 1. That detailed report has not yet been
+  supplied for applicability/repair review; the findings remain unclassified.
   No dependency-security clearance follows from the image gate.
 - The colleague's TV remains unavailable. Exact VIDAA/device compatibility,
   event-triggered failure classification and any benefit of HLS are unknown.

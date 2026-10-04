@@ -1,9 +1,20 @@
 # HLS behind the host Caddy service
 
 The operator confirmed on 2026-10-04 that Caddy runs as a **system service on the
-host**, outside the Neko Compose project. Its exact version, active configuration
-path and log setup have not yet been supplied. This is a review guide; no Caddy
+host**, outside the Neko Compose project. The supplied Phase 4 output confirms
+**Caddy 2.6.2** and an active service. The operator then supplied the Neko site:
+`neko.taxzvps.de { reverse_proxy 127.0.0.1:8082 }`, with only commented upload/old
+port examples. No access logger, imports, buffering, rewriting, cache or global
+options were present in the supplied text. The active configuration path and
+actual runtime/error output still need confirmation. This is a review guide; no Caddy
 configuration has been changed or reloaded by Codex.
+
+The concrete reviewed proposal is [deploy/caddy-hls.example](../deploy/caddy-hls.example).
+Set its example hostname to the supplied public hostname and merge, rather than
+discard, any other active sites/global options. It retains the existing port,
+keeps site access logging absent, adds the runtime encoder and removes ambiguous
+forwarding metadata/automatic upstream compression. Validate the actual final
+file before an operator-applied reload; reload can reconnect existing streams.
 
 ## Existing routing and trust
 
@@ -59,6 +70,12 @@ can still reach Neko. MP4 responses must stay uncompressed. See the official
 
 ## Safe logging before valid credentials
 
+The supplied minimal site needs no extra HLS route. It preserves path and
+cookies through the existing upstream. No site `log` directive means no access
+logger is enabled by that snippet; runtime HTTP errors still capture request
+data in [Caddy 2.6.2 server code](https://github.com/caddyserver/caddy/blob/v2.6.2/modules/caddyhttp/server.go).
+Therefore review/apply the runtime encoder separately before valid leases.
+
 Neko normalizes its own HLS access paths. Caddy access **and runtime/error** logs
 need their own review. A query-only filter does not remove the public lease ID
 embedded in the path. Redacting only the cookie value also leaves its scoped
@@ -79,6 +96,11 @@ format filter {
     wrap json
 }
 ```
+
+The installed version already contains the regexp/delete encoder modules in
+[Caddy v2.6.2 source](https://github.com/caddyserver/caddy/blob/v2.6.2/modules/logging/filters.go).
+This is source-level capability evidence; the actual Caddyfile must still pass
+validation and the target access/error-log checks.
 
 This removes header fields from that logger and normalizes the HLS path and
 query, including deployments under a prefix. Keep `log_credentials` disabled;

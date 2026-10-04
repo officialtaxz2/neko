@@ -1,7 +1,13 @@
 # HLS / LL-HLS Phase 4 target-server validation
 
-Repository assets prepared on 2026-10-04. **Target validation is PENDING.**
-Nothing here was executed in Codex. Use one block at a time, review its output,
+Repository assets prepared on 2026-10-04. **The automated/image preparation
+gate passed at exact `e55bcd7e`; enabled target validation is PENDING.**
+The supplied output records 44 client tests, type/build, 13 Go packages, both
+fuzz jobs and server/base/Brave builds, with final exit code 0 and the running
+service unchanged. Caddy is active at 2.6.2. The detailed audit report and actual
+Caddy configuration/logs remain to be reviewed. No HLS HTTP or playback test
+follows from the HTTP checker's `--help` succeeding. Nothing here was executed
+in Codex. Use one block at a time, review its output,
 then advance. Keep one exact `testing` implementation commit/image throughout
 the matrix. No `master` promotion or full acceptance follows from a smoke check.
 
