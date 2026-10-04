@@ -1,6 +1,6 @@
 # HLS / Low-Latency HLS passive delivery contract
 
-Status: **version-1 design plus Phases 1–3 implemented on `testing`; default-off server delivery and the isolated explicitly selected passive client are present. Phase 4 deployment/observability assets are NEXT. Focused automated target checks passed at `e85d8568`, and the default-off image deployment started healthy at `741025c3`. HLS-enabled runtime/device validation remains pending; no automatic selection or HLS acceptance claim exists**.
+Status: **version-1 design plus Phases 1–3 and Phase 4 deployment/observability assets implemented on `testing`; exact target-server Phase 4 validation is NEXT. Focused earlier automated checks passed at `e85d8568`, and the default-off image deployment started healthy at `741025c3`. The new assets/repairs and HLS-enabled runtime/device validation remain pending; no automatic selection or HLS acceptance claim exists**.
 
 This document is the normative contract for the first default-off passive/view-only HTTP-streaming prototype. It specializes the encoded-source/subscription and participant-delivery boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It does not authorize a second desktop capture, a stable-deployment change or a claim that any untested device supports the proposed path.
 
@@ -13,7 +13,7 @@ Version 1 provides receive-only live audio/video for an already authenticated pa
 - `hls`: conventional live HLS for the broadest passive-device compatibility;
 - `ll-hls`: the same media objects plus Low-Latency HLS playlists, partial segments and blocking reloads.
 
-Both modes remain unavailable unless the dedicated default-off server flag enables them; Phase 4 will provide a separate deployment overlay. WebRTC remains the default interactive backend. `webcodecs-ws` remains an explicit independent receive prototype. There is no automatic fallback between any backend.
+Both modes remain unavailable unless the dedicated default-off server flag enables them through the separate `docker-compose.hls.yaml` overlay. It initially advertises only conventional `hls`; `ll-hls` requires its recorded public-protocol/RTT prerequisite and explicit enablement. WebRTC remains the default interactive backend. `webcodecs-ws` remains an explicit independent receive prototype. There is no automatic fallback between any backend.
 
 This contract does not add:
 
@@ -400,6 +400,10 @@ The mandatory final review and the operator's untested TV/event-disconnect repor
 - build and validate exact images on the target server;
 - execute the security, role, device, latency, resource and induced-isolation matrix below;
 - keep the feature default-off unless a later explicit operator decision promotes it.
+
+Repository status on 2026-10-04: the separate `docker-compose.hls.yaml`, private collector, credential-free HTTP probes, exact-test/image preparation and captured-image enable/rollback helpers are implemented. [Validation](HLS_LL_HLS_VALIDATION.md), [host Caddy review](HLS_LL_HLS_CADDY.md), [observability](HLS_LL_HLS_OBSERVABILITY.md) and the pending [result template](HLS_LL_HLS_RESULTS_TEMPLATE.md) define the next target checkpoint. The overlay retains the fixed adaptive source profile, accepts only reviewed HTTPS/proxy values and leaves base Compose unchanged. Both modes use the whitespace-separated environment value `hls ll-hls`, not CSV.
+
+The [integrated static review](STABILITY_REVIEW_2026-10-04.md) records source/configuration items 1–7 and fixes optional notification error handling plus long private-pause keepalive: a valid paused lease can renew while every media request stays denied. Rate limits, expiry and revocation still apply; renewal does not hold packager demand. Detailed target dependency-advisory classification remains open. New client/Go regression tests and request-parser fuzzing are present, but were **NOT EXECUTED IN CODEX**. Exact target tests/images, Caddy log/cancellation checks and every enabled runtime/device/resource gate remain pending. Phase 4 full acceptance is not claimed.
 
 ## Target-server acceptance matrix
 

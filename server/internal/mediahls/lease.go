@@ -112,6 +112,16 @@ func LeaseCookie(publicID, secret string) *http.Cookie {
 }
 
 func (store *LeaseStore) Authenticate(publicID, secret string, extend bool, now time.Time) (LeaseSnapshot, error) {
+	return store.authenticate(publicID, secret, extend, false, now)
+}
+
+// RenewKeepAlive preserves a valid passive lease during private-mode pauses.
+// Media authentication remains denied, and expired/revoked leases cannot revive.
+func (store *LeaseStore) RenewKeepAlive(publicID, secret string, now time.Time) (LeaseSnapshot, error) {
+	return store.authenticate(publicID, secret, true, true, now)
+}
+
+func (store *LeaseStore) authenticate(publicID, secret string, extend, allowPaused bool, now time.Time) (LeaseSnapshot, error) {
 	if ValidatePublicID(publicID) != nil || len(secret) != LeaseSecretEncodedLength { return LeaseSnapshot{}, ErrLeaseNotFound }
 	if now.IsZero() { now = time.Now() }
 	digest := sha256.Sum256([]byte(secret))
@@ -120,7 +130,7 @@ func (store *LeaseStore) Authenticate(publicID, secret string, extend bool, now 
 	store.cleanupLocked(now)
 	entry, ok := store.entries[publicID]
 	if !ok || !hmac.Equal(digest[:], entry.secretDigest[:]) { return LeaseSnapshot{}, ErrLeaseNotFound }
-	if entry.paused { return LeaseSnapshot{}, ErrLeasePaused }
+	if entry.paused && !allowPaused { return LeaseSnapshot{}, ErrLeasePaused }
 	if extend { entry.expiresAt = now.Add(LeaseLifetime) }
 	return snapshot(publicID, entry), nil
 }
@@ -225,7 +235,7 @@ func (store *LeaseStore) Acquire(publicID, secret string, class RequestClass, bl
 	store.cleanupLocked(now)
 	entry, ok := store.entries[publicID]
 	if !ok || !hmac.Equal(digest[:], entry.secretDigest[:]) { return nil, LeaseSnapshot{}, ErrLeaseNotFound }
-	if entry.paused { return nil, LeaseSnapshot{}, ErrLeasePaused }
+	if entry.paused && (class != RequestKeepAlive || blocking) { return nil, LeaseSnapshot{}, ErrLeasePaused }
 	if store.active >= store.maximumRequests || entry.active >= MaximumLeaseRequests || (blocking && (store.blocking >= MaximumBlockingRequests || entry.blocking >= MaximumLeaseBlocking)) {
 		return nil, LeaseSnapshot{}, ErrRequestLimit
 	}

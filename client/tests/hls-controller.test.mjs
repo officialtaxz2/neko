@@ -121,6 +121,31 @@ test('native lease revocation is detected and terminates playback without a fall
   assert.equal(h.events.filter(({event}) => event.endsWith('/create')).length, 1)
 })
 
+test('a private pause longer than the lease lifetime keeps renewing and resumes the same lease', async () => {
+  let paused = false
+  const h = harness({ fetcher: async (url) => {
+    if (url.endsWith('/session')) return new Response(JSON.stringify({ mode:'hls', master:masterPath, idle_expires_in_ms:30000 }), { status:201 })
+    if (url.endsWith('/keepalive')) return new Response(null, { status:204 })
+    if (paused) return new Response(null, { status:503 })
+    return new Response(url.endsWith('/index.m3u8') ? child : manifest)
+  } })
+  await h.negotiate()
+  paused = true
+  h.controller.setPrivatePaused(true)
+  await h.advance(46000)
+  assert.equal(h.status.at(-1).state, 'paused')
+  assert.equal(h.video.src, '')
+  assert.equal(h.requests.filter(({url}) => url.endsWith('/keepalive')).length, 3)
+  assert.equal(h.status.some(({state}) => state === 'terminal'), false)
+  paused = false
+  h.controller.setPrivatePaused(false)
+  await h.advance(1000)
+  assert.ok(h.video.src)
+  assert.equal(h.requests.filter(({url}) => url.endsWith('/session')).length, 1)
+  h.controller.stop()
+  assert.equal(h.timers.size, 0)
+})
+
 test('late bootstrap completion after stop cannot reattach a source or start HTTP polling', async () => {
   let complete
   const h = harness({ fetcher: () => new Promise((resolve) => { complete = resolve }) })

@@ -2,6 +2,7 @@ import { getterTree, mutationTree, actionTree } from 'typed-vuex'
 import { makeid } from '~/utils'
 import { EVENT } from '~/neko/events'
 import { accessor } from '~/store'
+import { playNotificationSound } from '~/utils/notification-sound.js'
 
 export const namespaced = true
 
@@ -75,9 +76,7 @@ export const actions = actionTree(
 
     newMessage(store, message: Message) {
       if (accessor.settings.chat_sound) {
-        new Audio('chat.mp3').play().catch(() => {
-          // Ignore autoplay failures for sounds, standard browser behavior
-        })
+        playNotificationSound()
       }
       accessor.chat.addMessage(message)
     },

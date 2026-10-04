@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestPlaylistHeadMatchesCompressedGetWithoutBody(t *testing.T) {
@@ -97,6 +98,33 @@ func TestLeaseRefreshCookieRemainsNarrowAndCredentialSafe(t *testing.T) {
 	cookie := cookies[0]
 	if cookie.Name != LeaseCookieName || cookie.Value != offer.Secret || cookie.Path != "/api/media/hls/"+offer.PublicID+"/" || cookie.MaxAge != int(LeaseLifetime.Seconds()) || !cookie.Secure || !cookie.HttpOnly || cookie.SameSite != http.SameSiteStrictMode {
 		t.Fatalf("refresh cookie = %#v", cookie)
+	}
+}
+
+func TestPrivatePauseKeepAliveRefreshesCookieWhileMediaStaysDenied(t *testing.T) {
+	store, offer, now := testLeaseStore(t)
+	policy, err := NewSecurityPolicy([]string{"https://neko.example"}, nil)
+	if err != nil { t.Fatal(err) }
+	controller := &Controller{leases: store, security: policy, now: func() time.Time { return now }}
+	store.SetPaused("viewer", true)
+	for _, seconds := range []int{15, 30, 45} {
+		now = time.Unix(1_700_000_000, 0).Add(time.Duration(seconds) * time.Second)
+		request := httptest.NewRequest(http.MethodPost, "https://neko.example/api/media/hls/"+offer.PublicID+"/keepalive", nil)
+		request.Header.Set("Origin", "https://neko.example")
+		request.AddCookie(offer.Cookie)
+		response := httptest.NewRecorder()
+		if err := controller.KeepAlive(response, request); err != nil { t.Fatal(err) }
+		cookies := response.Result().Cookies()
+		if response.Code != http.StatusNoContent || len(cookies) != 1 || cookies[0].MaxAge != 30 || !cookies[0].Secure || !cookies[0].HttpOnly {
+			t.Fatal("private keepalive did not renew its secure cookie")
+		}
+		media := httptest.NewRequest(http.MethodGet, "https://neko.example/api/media/hls/"+offer.PublicID+"/master.m3u8", nil)
+		media.AddCookie(offer.Cookie)
+		denied := httptest.NewRecorder()
+		if err := controller.Media(denied, media); err != nil { t.Fatal(err) }
+		if denied.Code != http.StatusServiceUnavailable || denied.Body.Len() != 0 || len(denied.Result().Cookies()) != 0 {
+			t.Fatal("private pause admitted media or renewed through media delivery")
+		}
 	}
 }
 

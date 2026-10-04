@@ -180,10 +180,11 @@ func (controller *Controller) KeepAlive(w http.ResponseWriter, request *http.Req
 	}
 	defer permit.Release()
 	mode = snapshot.Mode
-	if _, err := controller.extendLease(w, resource.PublicID, secret); err != nil {
+	if _, err := controller.leases.RenewKeepAlive(resource.PublicID, secret, controller.now()); err != nil {
 		result = controller.writeLeaseError(w, err)
 		return nil
 	}
+	controller.setLeaseCookie(w, LeaseCookie(resource.PublicID, secret))
 	w.WriteHeader(http.StatusNoContent)
 	result = "success"
 	return nil

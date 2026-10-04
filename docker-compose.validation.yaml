@@ -46,6 +46,7 @@ services:
         set -eux
         go test ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediahls ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/webrtc
         go test ./internal/mediaws -run '^$$' -fuzz '^FuzzParseRecord$$' -fuzztime 30s
+        go test ./internal/mediahls -run '^$$' -fuzz '^FuzzHLSRequestBoundary$$' -fuzztime 30s
         ./build
 
   metrics-snapshot:
@@ -70,6 +71,38 @@ services:
         token="$$(dd if=/dev/urandom bs=12 count=1 2>/dev/null | base64 | tr '+/' '-_' | tr -d '=\n')"
         printf '%s\n' "$$token" | grep -Eq '^[A-Za-z0-9_-]{16}$$'
         printf '%s\n' "$$token"
+
+  hls-http-checks:
+    image: python:3.12-alpine
+    network_mode: host
+    read_only: true
+    environment:
+      NEKO_PUBLIC_BASE_URL: "${NEKO_PUBLIC_BASE_URL:-${NEKO_MEDIA_HLS_ALLOWED_ORIGINS:-${NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS:-http://127.0.0.1:8082}}}"
+      NEKO_PUBLIC_ORIGIN: "${NEKO_PUBLIC_ORIGIN:-${NEKO_MEDIA_HLS_ALLOWED_ORIGINS:-${NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS:-}}}"
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      - type: bind
+        source: ./deploy/check-hls-http.py
+        target: /check-hls-http.py
+        read_only: true
+    entrypoint: ["python", "/check-hls-http.py"]
+    command: ["disabled"]
+
+  dependency-audit:
+    image: node:18-bullseye-slim
+    working_dir: /work
+    volumes:
+      - type: bind
+        source: ./client
+        target: /source
+        read_only: true
+    command:
+      - sh
+      - -c
+      - |
+        set -eu
+        cp /source/package.json /source/package-lock.json /work/
+        npm audit --json
 
   view-only-http-checks:
     image: python:3.12-alpine

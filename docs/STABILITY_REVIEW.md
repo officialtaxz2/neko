@@ -13,9 +13,11 @@ Operator direction recorded on 2026-10-04. This is a required review and validat
 
 ## Implementation and validation order
 
-Continue HLS/LL-HLS Phase 3 on `testing` as explicitly authorized. The unavailable television does not block repository implementation or checks on available devices; its device acceptance remains pending. Keep WebRTC as the default, preserve explicit WebCodecs selection and leave HLS default-off. No automatic fallback or `master` promotion is authorized.
+HLS/LL-HLS Phases 1–3 and the separate Phase 4 repository assets are implemented on `testing`. The unavailable television does not block repository implementation or checks on available devices; its device acceptance remains pending. Keep WebRTC as the default, preserve explicit WebCodecs selection and leave HLS default-off. No automatic fallback or `master` promotion is authorized.
 
 After the implementation blocks, prepare the separate HLS Phase 4 deployment/observability assets. Before final grouped target-server validation and before any promotion decision, perform the mandatory static review below. Fix clearly established defects in their own implementation block as they are found; the final review is not a reason to postpone them.
+
+The [2026-10-04 review record](STABILITY_REVIEW_2026-10-04.md) covers source/configuration items 1–7 and repairs legacy notification error handling plus paused HLS keepalive. Detailed target-server dependency-advisory classification (item 8) and real validation of those repairs remain pending; the mandatory review is not fully closed. Follow [the Phase 4 runbook](HLS_LL_HLS_VALIDATION.md).
 
 ## Mandatory final static review
 

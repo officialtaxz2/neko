@@ -49,7 +49,7 @@ func (Media) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().Bool("media.hls.enabled", false, "enable experimental shared HLS/LL-HLS server delivery (no client player)")
+	cmd.PersistentFlags().Bool("media.hls.enabled", false, "enable experimental shared passive HLS/LL-HLS delivery")
 	if err := viper.BindPFlag("media.hls.enabled", cmd.PersistentFlags().Lookup("media.hls.enabled")); err != nil {
 		return err
 	}

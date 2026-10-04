@@ -784,11 +784,21 @@ On 2026-10-04 the operator reported occasional older-TV WebRTC failures specific
 
 Phase 3 was authorized and implemented without waiting for that television; its device gate remains open through Phase 4. Preserve WebCodecs and treat HLS as a compatibility prototype with pending device evidence. The detailed evidence limits, one-variable comparison and **mandatory final static stability review before grouped target-server validation and promotion** are in [`STABILITY_REVIEW.md`](STABILITY_REVIEW.md). Do not claim that HLS fixes room-event failures or starts faster than WebRTC.
 
+## HLS Phase 4 repository assets and review — 2026-10-04
+
+After the healthy `741025c3` deployment, the operator reported that things seem to work and authorized Phase 4. This is bounded browser smoke evidence without an exact device/backend/role matrix. The operator confirmed Caddy runs as a host system service; its version/configuration and safe access/runtime logs still need target review.
+
+Phase 4 now supplies the separate conventional-first HLS overlay, exact HTTPS/proxy fallback to the reviewed WebCodecs settings, private evidence/result collection, synthetic credential-free public/direct HTTP probes, target-only automated/image preparation and captured-image enable/rollback helpers. Base Compose and `master` remain unchanged. Adaptive and WebCodecs overlays are preserved during both enablement and rollback. LL-HLS remains an explicit later enablement after its actual public-protocol/RTT gate.
+
+The integrated [review record](STABILITY_REVIEW_2026-10-04.md) identifies and repairs legacy optional-chat-audio failures and long private-pause lease loss. Only authenticated bounded keepalive can renew during pause; media bytes remain denied, and expiry/revocation/rate bounds remain intact. Focused notification, long-pause client/Go and HTTP-controller tests plus a bounded HLS request-parser fuzz target are added. No speculative encoding, transport removal or dependency upgrade is included.
+
+All new runtime/build/test status is **NOT EXECUTED IN CODEX**. Source/configuration review items 1–7 are recorded; detailed dependency-advisory classification (item 8), exact new-block checks and the complete enabled acceptance matrix are pending. The earlier 20 findings are not cleared. [HLS_LL_HLS_VALIDATION.md](HLS_LL_HLS_VALIDATION.md), [HLS_LL_HLS_CADDY.md](HLS_LL_HLS_CADDY.md) and [HLS_LL_HLS_OBSERVABILITY.md](HLS_LL_HLS_OBSERVABILITY.md) define the target checkpoint and explicit evidence limits.
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement **Phase 4 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)**: separate sanitized opt-in deployment/observability assets and the grouped target-server acceptance workflow. Before its final runtime matrix, complete and record the mandatory integrated static stability review in [`STABILITY_REVIEW.md`](STABILITY_REVIEW.md). Keep HLS default-off, WebRTC the safe default, WebCodecs explicit and transport fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
+Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Its separate overlay, private metrics/result collector, credential-free probes and exact-image preparation/enable/rollback helpers are implemented. First run the accumulated automated/image gate without replacing the service, classify the detailed dependency-audit report and review the operator's host-managed Caddy configuration/logs. Then proceed through explicit conventional HLS enablement and the grouped matrix. The source/configuration review is recorded in [`STABILITY_REVIEW_2026-10-04.md`](STABILITY_REVIEW_2026-10-04.md); legacy notification errors and long private-pause keepalive are repaired, with target checks pending. Advisory classification keeps the mandatory final review open. Keep HLS default-off without its overlay, WebRTC the safe default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -797,8 +807,8 @@ Implement **Phase 4 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)**: separate sanitized op
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
-6. **implemented / focused automation and default-off image deployment passed:** HLS/LL-HLS Phases 1–3; HLS-enabled runtime/device acceptance and its separate deployment overlay remain pending;
-7. **NEXT:** Phase 4 deployment/observability assets, then final static stability review and grouped target-server validation;
+6. **implemented / focused earlier automation and default-off image deployment passed:** HLS/LL-HLS Phases 1–3 plus Phase 4 repository assets; new assets/repairs and enabled runtime/device acceptance remain pending;
+7. **NEXT:** exact Phase 4 automated/image gate, detailed advisory/Caddy review and grouped target-server validation;
 8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
@@ -818,11 +828,11 @@ When fallback work begins, separate the two user classes instead of forcing ever
 9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 10. **implemented / focused automated target gate passed — HLS Phases 1–2:** default-off access, leases, security, deterministic models, shared H.264/AAC packaging, authenticated HTTP delivery and observability; enabled runtime acceptance pending;
 11. **implemented HLS Phase 3 / focused automation and default-off image deployment passed:** isolated passive client, pinned player support and advertised-only manual HLS/LL-HLS selection; enabled playback/device acceptance pending;
-12. **NEXT — HLS Phase 4:** separate deployment/observability assets, mandatory final static stability review and grouped target-server validation;
+12. **repository assets implemented / NEXT target validation — HLS Phase 4:** separate deployment/observability helpers, recorded source/configuration review; advisory classification and grouped target-server validation pending;
 13. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
 14. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 
-The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract and repository server/passive-client delivery through Phase 3. Focused automation and default-off image deployment passed; HLS deployment assets, enabled runtime validation and device evidence remain pending.
+The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has the specified contract, server/passive-client delivery through Phase 3 and separate Phase 4 repository assets. Earlier focused automation and default-off image deployment passed; exact new-block checks, enabled runtime validation and device evidence remain pending.
 
 ## LATER / OPTIONAL
 

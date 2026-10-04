@@ -1,0 +1,102 @@
+# HLS behind the host Caddy service
+
+The operator confirmed on 2026-10-04 that Caddy runs as a **system service on the
+host**, outside the Neko Compose project. Its exact version, active configuration
+path and log setup have not yet been supplied. This is a review guide; no Caddy
+configuration has been changed or reloaded by Codex.
+
+## Existing routing and trust
+
+Use the existing public HTTPS Neko origin and preserve its current routing,
+event-WebSocket support and site certificate. The HLS overlay reuses the
+reviewed WebCodecs origin/proxy settings when the HLS-specific values are empty.
+The public origin must be exactly `https://host[:port]`, without path or slash.
+If Neko uses `server.path_prefix`, include that path in the HTTP check's
+`NEKO_PUBLIC_BASE_URL`, not in the allowed origin.
+
+Trust only the immediate peer Neko actually receives. A host connection to the
+published Docker port may arrive inside Neko as the Docker bridge gateway;
+do not assume this is `127.0.0.1`. Preserve the already reviewed peer value and
+verify it on the target. Keep the published backend port bound to loopback.
+Do not expand trust to all private networks to resolve a failed probe.
+
+Inspect the actual service unit/configuration locally on the server. Record
+`caddy version` and `systemctl is-active caddy`. Validate the actual active
+Caddyfile with `caddy validate --config <actual-path> --adapter caddyfile`
+before any operator-applied change. Share only the relevant sanitized Neko
+routing/logging fragment, not the whole multi-site configuration or environment.
+
+## Streaming and headers
+
+The existing Neko proxy should preserve the original path, cookies, Origin,
+Range, status and response security headers. Do not add caching or wildcard
+CORS to `/api/media/hls/*`. A second `handle_path` that strips a configured Neko
+prefix can break its cookie scope and media URLs.
+
+Within the existing `reverse_proxy` block, these are the relevant settings to
+review and, where required, incorporate:
+
+```caddyfile
+header_up -Forwarded
+transport http {
+    compression off
+}
+```
+
+Removing a client-supplied `Forwarded` avoids ambiguity with Caddy's generated
+`X-Forwarded-Proto`; the HLS policy rejects both forms being present together.
+Keep the backend's normal HTTPS detection through the reviewed proxy peer.
+Disable whole-response buffering on this route if explicitly configured and
+verify that an aborted downstream request cancels its upstream handler.
+
+Caddy documents that `flush_interval -1` also leaves the backend request running
+after a client disconnect. Therefore do not add it as an unconditional streaming
+fix. Start with the existing streaming behavior and measure LL blocking reload,
+publication and cancellation before changing it. `compression off` disables
+Caddy's automatic upstream gzip request, while client-requested playlist gzip
+can still reach Neko. MP4 responses must stay uncompressed. See the official
+[reverse_proxy reference](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy).
+
+## Safe logging before valid credentials
+
+Neko normalizes its own HLS access paths. Caddy access **and runtime/error** logs
+need their own review. A query-only filter does not remove the public lease ID
+embedded in the path. Redacting only the cookie value also leaves its scoped
+`Path` in `Set-Cookie`.
+
+This encoder fragment can be integrated into the existing Neko access logger
+and separately into the existing global runtime logger; it is not a replacement
+for the site's routing or the complete global options block:
+
+```caddyfile
+format filter {
+    fields {
+        request>uri regexp "^(/[^?]*)?/api/media/hls.*$" "/api/media/hls/:redacted"
+        uri regexp "^(/[^?]*)?/api/media/hls.*$" "/api/media/hls/:redacted"
+        request>headers delete
+        resp_headers delete
+    }
+    wrap json
+}
+```
+
+This removes header fields from that logger and normalizes the HLS path and
+query, including deployments under a prefix. Keep `log_credentials` disabled;
+review imported log encoders, additional URI fields, log appenders and debug
+messages as well. The encoder cannot sanitize an arbitrary URI inserted into a
+log message. Access `log_skip` alone does not cover runtime errors. The official
+[log reference](https://caddyserver.com/docs/caddyfile/directives/log) describes
+encoder filters; the [global log option](https://caddyserver.com/docs/caddyfile/options#log)
+applies to runtime logging.
+
+Before any real HLS lease, use only synthetic unknown paths/tickets to check
+normal responses, malformed requests and forced downstream aborts. Inspect the
+actual access output and Caddy journal locally: no raw `/api/media/hls/<id>/`,
+query, credential/header or credential-bearing Referer may remain. Record only
+the sanitized conclusion. Test errors as well as successful responses after
+enablement. Until both log paths pass, keep valid-credential media acceptance
+pending. Do not enable global debug/body/header logging for diagnosis.
+
+For LL-HLS additionally establish real client-facing HTTP/2 or HTTP/3 and path
+p95 RTT at or below 333 ms. Backend HTTP/1.1 is a separate hop and does not prove
+or disprove the public protocol gate. Conventional HLS can be tested first.

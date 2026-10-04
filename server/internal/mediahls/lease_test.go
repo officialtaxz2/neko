@@ -63,6 +63,58 @@ func TestLeaseRequestConcurrencyIsLocal(t *testing.T) {
 	for _,permit := range permits { permit.Release() }
 }
 
+func TestPausedKeepAliveRenewsWithoutAdmittingMediaOrRevivingExpiredLeases(t *testing.T) {
+	store, offer, now := testLeaseStore(t)
+	store.SetPaused("viewer", true)
+	for _, seconds := range []int{15, 30, 45} {
+		at := now.Add(time.Duration(seconds) * time.Second)
+		permit, _, err := store.Acquire(offer.PublicID, offer.Secret, RequestKeepAlive, false, at)
+		if err != nil { t.Fatal(err) }
+		renewed, err := store.RenewKeepAlive(offer.PublicID, offer.Secret, at)
+		permit.Release()
+		if err != nil || !renewed.Paused || !renewed.ExpiresAt.Equal(at.Add(LeaseLifetime)) {
+			t.Fatalf("paused renewal failed: %v", err)
+		}
+		if _, err := store.Authenticate(offer.PublicID, offer.Secret, true, at); !errors.Is(err, ErrLeasePaused) {
+			t.Fatalf("media authentication while paused = %v", err)
+		}
+		for _, class := range []RequestClass{RequestPlaylist, RequestObject} {
+			if _, _, err := store.Acquire(offer.PublicID, offer.Secret, class, false, at); !errors.Is(err, ErrLeasePaused) {
+				t.Fatalf("media admission while paused = %v", err)
+			}
+		}
+	}
+	wrong := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+	if wrong == offer.Secret { wrong = "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" }
+	if _, err := store.RenewKeepAlive(offer.PublicID, wrong, now.Add(46*time.Second)); !errors.Is(err, ErrLeaseNotFound) {
+		t.Fatalf("wrong renewal credential = %v", err)
+	}
+	store.SetPaused("viewer", false)
+	if _, err := store.Authenticate(offer.PublicID, offer.Secret, false, now.Add(46*time.Second)); err != nil { t.Fatal(err) }
+	if _, err := store.RenewKeepAlive(offer.PublicID, offer.Secret, now.Add(75*time.Second)); !errors.Is(err, ErrLeaseNotFound) {
+		t.Fatalf("expired lease revived = %v", err)
+	}
+	replacement, err := store.Issue(LeaseBinding{SessionID: "viewer", Mode: ModeHLS}, now.Add(80*time.Second))
+	if err != nil { t.Fatal(err) }
+	store.InvalidateSession("viewer")
+	if _, err := store.RenewKeepAlive(replacement.PublicID, replacement.Secret, now.Add(81*time.Second)); !errors.Is(err, ErrLeaseNotFound) {
+		t.Fatalf("revoked lease revived = %v", err)
+	}
+}
+
+func TestPausedKeepAliveStillEnforcesRateLimit(t *testing.T) {
+	store, offer, now := testLeaseStore(t)
+	store.SetPaused("viewer", true)
+	for index := 0; index < KeepAliveBurst; index++ {
+		permit, _, err := store.Acquire(offer.PublicID, offer.Secret, RequestKeepAlive, false, now)
+		if err != nil { t.Fatal(err) }
+		permit.Release()
+	}
+	if _, _, err := store.Acquire(offer.PublicID, offer.Secret, RequestKeepAlive, false, now); !errors.Is(err, ErrRequestLimit) {
+		t.Fatalf("paused keepalive rate limit = %v", err)
+	}
+}
+
 func TestLeasePauseAndRevocationWakeOutstandingRequests(t *testing.T) {
 	store, offer, now := testLeaseStore(t)
 	paused, err := store.ChangeChannel(offer.PublicID, offer.Secret, now)
