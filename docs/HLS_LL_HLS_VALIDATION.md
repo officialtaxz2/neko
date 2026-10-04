@@ -72,7 +72,15 @@ The separate `docker-compose.hls.yaml` requires adaptive source geometry and
 exact HTTPS/proxy values; empty HLS values reuse the reviewed WebCodecs values.
 Its initial mode is only `hls`. Base Compose remains default-off.
 
-For the operator's confirmed sole-site `/etc/caddy/Caddyfile`, the statically
+**Current checkpoint:** the target attempt with helper commit `58ca75e9`
+stopped at `active Caddyfile differs from the supplied minimal site` (exit 1).
+No Caddy backup/reload or Neko stop/deployment was reached. Keep the tested
+application/images at `93f1fa63`. Run the read-only
+[structural inspection](../deploy/inspect-hls-caddy.sh), then review a merged
+candidate that preserves the actual file's other sites/options. Do not remove
+the guard or apply the single-site example to an unreviewed complete file.
+
+For a complete file containing only the supplied Neko site, the statically
 reviewed [activation helper](../deploy/activate-hls-phase4.sh) additionally:
 
 - refuses unfamiliar sites/global options and preserves a private Caddy backup;
@@ -94,7 +102,8 @@ helper commit and extract `deploy/activate-hls-phase4.sh` with `git show` into
 the repository and result-directory arguments. This loads operator tooling
 without changing the application commit or invalidating its image marker.
 Record the exact helper commit; the helper records its blob and app commit.
-Its execution/checkpoint remains **PENDING / NOT EXECUTED IN CODEX**. The plain
+Its configuration guard ran on the target and safely stopped; activation/log/
+playback checkpoints remain **PENDING / NOT EXECUTED IN CODEX**. The plain
 enable block below is for environments where Caddy/logging is already verified:
 
 ```bash

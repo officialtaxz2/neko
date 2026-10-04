@@ -888,12 +888,14 @@ HLS-enabled runtime, actual proxy-error logging, resources and rollback remain
 pending. These are supplied target results; **NOT EXECUTED IN CODEX**.
 
 A separate statically reviewed operator helper, `deploy/activate-hls-phase4.sh`,
-is prepared for the confirmed sole-site Caddyfile. It refuses unrelated options,
+was prepared with the supplied Neko snippet assumed to be the complete file.
+It refuses unrelated options,
 backs up/validates before reload, captures the prior Neko image, uses the
 deployment stop to provoke one synthetic public 502, checks the private real
 error journal for path/header redaction, then invokes the existing enable and
 invalid-input checks. Failure attempts restoration of the old image/config.
-It has not run on the target. No valid media credential is used by that gate.
+It had not run at that preparation checkpoint; the subsequent guard result is
+recorded below. No valid media credential is used by that gate.
 
 Keep the application checkout at **93f1fa63** and its preparation marker.
 Fetch the exact reviewed helper commit and use `git show` to extract only the
@@ -903,11 +905,32 @@ does not change application sources, dependencies or existing tested overlays,
 and does not require rebuilding that already tested application image. A later
 application change still requires its own exact gate.
 
+## HLS activation guard checkpoint — application `93f1fa63`, helper `58ca75e9`
+
+The operator executed the extracted helper on 2026-10-04. Output confirms
+application `93f1fa637ae3f14ba41d1bfef39e860d43993ff1`, helper blob
+`e4758df19978d1d8e8bca0398233be7aef14b8a3`, then:
+`active Caddyfile differs from the supplied minimal site; no change applied`,
+with **Activate-Exitcode 1**. Initialization and private activation metadata
+were written; the helper stopped before backup, Caddy reload, image capture,
+Neko stop or deployment. The previously running default-off deployment remains
+unchanged by that attempt.
+
+The supplied Neko snippet did not establish the contents of the complete active
+Caddyfile. The exact difference is unknown; do not infer particular additional
+sites/imports/global options without inspection. A read-only operator helper,
+`deploy/inspect-hls-caddy.sh`, now adapts the actual configuration in memory and
+reports only fixed Neko-proxy and logging counts/booleans. It is statically
+reviewed, **NOT EXECUTED IN CODEX**, and awaits target output. Review that
+structure before preparing a complete candidate preserving unrelated settings.
+The sole-site activation guard is retained. No tests/images need repetition
+for this docs/inspection-only follow-up; keep the tested application at 93f1fa63.
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Exact repair-image preparation passed at `93f1fa63`, including 47 client tests, type/build, all selected Go/fuzz/build/image gates; both Caddyfiles validated. Keep that tested application checkout and load only the separate reviewed operator helper for Caddy/error-log verification and explicit conventional HLS enablement. After those gates, continue valid-delivery and the grouped matrix. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
+Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Exact repair-image preparation passed at `93f1fa63`; both Caddyfiles validated, but activation helper `58ca75e9` stopped at the complete-file guard before service changes. Keep the tested application checkout/images and load only the read-only Caddy inspector. Review the actual proxy/logging structure and prepare a merged complete candidate preserving other settings before activation/error-log checks and conventional HLS enablement. Valid delivery and the grouped matrix then follow. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 

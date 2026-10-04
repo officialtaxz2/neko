@@ -19,12 +19,23 @@ keeps site access logging absent, adds the runtime encoder and removes ambiguous
 forwarding metadata/automatic upstream compression. Validate the actual final
 file before an operator-applied reload; reload can reconnect existing streams.
 
-The [activation helper](../deploy/activate-hls-phase4.sh) is prepared for this
-confirmed sole-site configuration. It refuses any additional active options,
+The [activation helper](../deploy/activate-hls-phase4.sh) was prepared under
+the assumption that the supplied site was the complete file. The actual target
+attempt at helper commit `58ca75e9` rejected that sole-site condition with exit
+1, **before backup/reload or any Neko stop/deployment**. The precise difference
+is not known from that output; additional sites/options are a possibility.
+The [read-only structural inspection](../deploy/inspect-hls-caddy.sh) is NEXT.
+It adapts the active file in memory and outputs fixed counts/booleans for Neko
+proxy and logger settings, without printing other sites, credentials, headers
+or raw adapted JSON. Review the actual structure and prepare a merged complete
+candidate preserving unrelated configuration before resuming activation.
+
+The sole-site helper refuses any additional active options,
 backs up the original, formats/validates before reload, and uses the deployment
 stop for a synthetic 502 to check the real error journal before valid leases.
 Image/Caddy restoration is attempted if a gate fails. It has only been reviewed
-statically; no application, reload or live-log pass is claimed yet.
+statically; the only target execution stopped at its configuration guard.
+No application, reload or live-log pass is claimed yet.
 
 ## Existing routing and trust
 
