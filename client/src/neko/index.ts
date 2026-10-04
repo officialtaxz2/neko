@@ -8,12 +8,15 @@ import { viewOnlyTokenFromHash } from './share'
 import { accessor } from '~/store'
 import { ScheduledVideoFrame, WebCodecsMediaController } from './media/controller'
 import { deliverOrReleaseVideoFrame } from './media/recovery.js'
+import { HLSMediaController } from './hls/controller'
+import { hlsModes } from './hls/protocol.js'
 import {
   MEDIA_BACKEND_WEBRTC,
   MEDIA_BACKEND_WEBCODECS,
   mediaBackendNavigationURL,
   normalizeMediaBackendPreference,
   resolveMediaBackendSelection,
+  isHLSBackend,
 } from './media-selection.js'
 
 import {
@@ -36,6 +39,10 @@ import {
   FileTransferListPayload,
   MediaCapabilitiesPayload,
   MediaOfferPayload,
+  HLSCapabilitiesPayload,
+  HLSOfferPayload,
+  HLSStateMessage,
+  HLSMode,
 } from './messages'
 
 interface NekoEvents extends BaseEvents {}
@@ -58,6 +65,9 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   private reconnectEligible = false
   private reconnectSuppressed = false
   private mediaController?: WebCodecsMediaController
+  private hlsController?: HLSMediaController
+  private hlsVideo?: HTMLVideoElement
+  private hlsPrivatePaused = false
   private mediaBackendURLOverride = false
   private mediaBackendInvalidURLOverride = false
 
@@ -90,8 +100,11 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   public get effectiveMediaBackend() {
-    return this.webCodecsSelected ? MEDIA_BACKEND_WEBCODECS : MEDIA_BACKEND_WEBRTC
+    return this.mediaBackend || MEDIA_BACKEND_WEBRTC
   }
+
+  public get hlsSelected() { return isHLSBackend(this.mediaBackend) }
+  public get receiveOnlySelected() { return this.mediaBackend !== undefined }
 
   public get mediaBackendOverridden() {
     return this.mediaBackendURLOverride
@@ -106,8 +119,9 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     const webCodecsSelected = mediaSelection.backend === MEDIA_BACKEND_WEBCODECS
     this.mediaBackendURLOverride = mediaSelection.overridden
     this.mediaBackendInvalidURLOverride = mediaSelection.invalidOverride
-    this.selectMediaBackend(webCodecsSelected ? MEDIA_BACKEND_WEBCODECS : undefined)
+    this.selectMediaBackend(mediaSelection.backend === MEDIA_BACKEND_WEBRTC ? undefined : mediaSelection.backend)
     vue.$accessor.media.select(webCodecsSelected)
+    vue.$accessor.hls.select(isHLSBackend(mediaSelection.backend) ? mediaSelection.backend as HLSMode : undefined)
     this.viewOnlyToken = viewOnlyTokenFromHash(location.hash)
 
     let port: string | undefined = undefined
@@ -178,11 +192,15 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.$accessor.video.reset()
     this.$accessor.chat.reset()
     this.$accessor.media.reset()
+    this.$accessor.hls.reset()
   }
 
   protected disconnect() {
     this.mediaController?.stop()
     this.mediaController = undefined
+    this.hlsController?.stop()
+    this.hlsController = undefined
+    this.hlsPrivatePaused = false
     super.disconnect()
   }
 
@@ -279,8 +297,8 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       }
       return
     }
-    if (this.webCodecsSelected) {
-      this.emit('warn', 'webcodecs-ws is receive-only; no replacement input transport is implemented')
+    if (this.receiveOnlySelected) {
+      this.emit('warn', 'selected media path is receive-only; no replacement input transport is implemented')
       return
     }
     super.sendData(event as any, data)
@@ -292,16 +310,22 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   public useWebRTC() {
-    if (!this.webCodecsSelected) return
+    if (!this.receiveOnlySelected) return
     this.$accessor.settings.setMediaBackend(MEDIA_BACKEND_WEBRTC)
     this.changeMediaBackend(MEDIA_BACKEND_WEBRTC)
   }
 
   public changeMediaBackend(backend: string) {
     const normalized = normalizeMediaBackendPreference(backend)
+    if (!this.canSelectMediaBackend(normalized)) return
     if (normalized === this.effectiveMediaBackend && !this.mediaBackendURLOverride) return
 
     this.reloadForMediaBackendSelection()
+  }
+
+  public canSelectMediaBackend(backend: string) {
+    return !isHLSBackend(backend) || ((this.$accessor.user.viewOnly || this.$accessor.user.admin) &&
+      this.$accessor.hls.availableModes.includes(backend as HLSMode))
   }
 
   public clearMediaBackendOverride() {
@@ -313,12 +337,33 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.reconnectSuppressed = true
     this.stopReconnect(true)
     this.mediaController?.stop()
+    this.hlsController?.stop()
     window.location.assign(mediaBackendNavigationURL(window.location.href))
   }
 
   public playWebCodecs() {
     return this.mediaController?.play() || Promise.resolve(false)
   }
+
+  public attachHLSVideo(video: HTMLVideoElement) {
+    if (!this.hlsSelected || !video) return
+    this.hlsVideo = video
+    this.hlsController?.attach(video)
+    if (this.connected && this.$accessor.hls.status === 'idle') this.hlsController?.start()
+  }
+
+  public detachHLSVideo(video: HTMLVideoElement) {
+    if (!video || this.hlsVideo !== video) return
+    this.hlsController?.detach(video)
+    this.hlsVideo = undefined
+    if (this.$accessor.hls.status !== 'terminal') this.$accessor.hls.setStatus({ status: 'idle' })
+  }
+
+  public playHLS() { return this.hlsController?.play() || Promise.resolve(false) }
+  public pauseHLS() { this.hlsController?.pause() }
+  public retryHLS() { this.hlsController?.retry() }
+  public setHLSMuted(muted: boolean) { this.hlsController?.setMuted(muted) }
+  public setHLSVolume(volume: number) { this.hlsController?.setVolume(volume) }
 
   public setWebCodecsMuted(muted: boolean) {
     this.mediaController?.setMuted(muted)
@@ -889,6 +934,37 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.$accessor.user.setMember(this.id)
     this.$accessor.setConnected(true)
 
+    if (this.hlsSelected) {
+      this.hlsController?.stop()
+      const controller = new HLSMediaController(this.url, this.mediaBackend as HLSMode, {
+        sendEvent: (event, payload) => this.sendMessage(event, payload),
+        eligible: () => this.$accessor.user.viewOnly || this.$accessor.user.admin,
+        eventSocketOpen: () => this.socketOpen && this.connected,
+        autoplay: () => this.$accessor.settings.autoplay,
+        setStatus: (status, detail = '') => this.$accessor.hls.setStatus({ status, detail }),
+        setPlayer: (player) => this.$accessor.hls.setPlayer(player),
+        setPlayable: (playable) => this.$accessor.video.setPlayable(playable),
+        setPlaying: (playing) => playing ? this.$accessor.video.play() : this.$accessor.video.pause(),
+        setMuted: (muted) => this.$accessor.video.setMuted(muted),
+        resolution: (width, height) => {
+          if (width && height) this.$accessor.video.setResolution({ width, height, rate: height <= 360 ? 15 : height <= 480 ? 20 : 25 })
+        },
+      })
+      this.hlsController = controller
+      controller.setPrivatePaused(this.hlsPrivatePaused)
+      controller.setMuted(this.$accessor.video.muted)
+      controller.setVolume(this.$accessor.video.volume / 100)
+      if (this.hlsVideo) controller.attach(this.hlsVideo)
+      controller.start()
+      if (location.protocol === 'https:' && (this.$accessor.user.viewOnly || this.$accessor.user.admin)) {
+        this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: this.mediaBackend === 'hls' ? 'll-hls' : 'hls' })
+      }
+    } else if (location.protocol === 'https:' && (this.$accessor.user.viewOnly || this.$accessor.user.admin)) {
+      // Discovery allocates no lease/packager. An installation may advertise just one mode.
+      this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: 'hls' })
+      this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: 'll-hls' })
+    }
+
     if (this.webCodecsSelected) {
       this.mediaController?.stop()
       const controller = new WebCodecsMediaController(this.url, {
@@ -1056,6 +1132,20 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
 
   protected [EVENT.MEDIA.OFFER](payload: MediaOfferPayload) {
     this.mediaController?.handleOffer(payload)
+  }
+
+  protected [EVENT.HLS.CAPABILITIES](payload: HLSCapabilitiesPayload) {
+    if (!(this.$accessor.user.viewOnly || this.$accessor.user.admin)) return
+    this.$accessor.hls.advertise(hlsModes(payload) as HLSMode[])
+    this.hlsController?.handleCapabilities(payload)
+  }
+
+  protected [EVENT.HLS.OFFER](payload: HLSOfferPayload) { this.hlsController?.handleOffer(payload) }
+
+  protected [EVENT.HLS.STATE](payload: HLSStateMessage) {
+    if (!this.hlsSelected || payload.version !== 1 || payload.backend !== 'hls' || typeof payload.paused !== 'boolean') return
+    this.hlsPrivatePaused = payload.paused
+    this.hlsController?.setPrivatePaused(payload.paused)
   }
 
   protected [EVENT.SYSTEM.DISCONNECT]({ message }: SystemMessagePayload) {

@@ -1,6 +1,6 @@
 # HLS / Low-Latency HLS passive delivery contract
 
-Status: **version-1 design plus Phases 1–2 complete in the repository on `testing`; the default-off shared packager and authenticated HTTP delivery are implemented, while no client player, deployment overlay or automatic selection exists and target-server tests/build/runtime validation remain pending**.
+Status: **version-1 design plus Phases 1–3 implemented on `testing`; default-off server delivery and the isolated explicitly selected passive client are present. Phase 4 deployment/observability assets are NEXT. Target-server tests/build/runtime/device validation remain pending; no automatic selection or acceptance claim exists**.
 
 This document is the normative contract for the first default-off passive/view-only HTTP-streaming prototype. It specializes the encoded-source/subscription and participant-delivery boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It does not authorize a second desktop capture, a stable-deployment change or a claim that any untested device supports the proposed path.
 
@@ -13,7 +13,7 @@ Version 1 provides receive-only live audio/video for an already authenticated pa
 - `hls`: conventional live HLS for the broadest passive-device compatibility;
 - `ll-hls`: the same media objects plus Low-Latency HLS playlists, partial segments and blocking reloads.
 
-Both modes are absent unless a future dedicated server flag and deployment overlay enable them. WebRTC remains the default interactive backend. `webcodecs-ws` remains an explicit independent receive prototype. There is no automatic fallback between any backend.
+Both modes remain unavailable unless the dedicated default-off server flag enables them; Phase 4 will provide a separate deployment overlay. WebRTC remains the default interactive backend. `webcodecs-ws` remains an explicit independent receive prototype. There is no automatic fallback between any backend.
 
 This contract does not add:
 
@@ -137,7 +137,7 @@ Both modes use individual fMP4 resources, relative URIs and live playlists witho
 
 One-second parts are deliberate: Apple recommends that value and requires the target to cover expected RTT; the prototype does not assume a 200 ms part is reliable. `PART-HOLD-BACK=3` is three part targets. The conventional 18-second hold-back is three target durations. The short three-segment visible window is still spec-valid while bounding retained/replayable live history.
 
-An LL-HLS playlist accepts only decimal `_HLS_msn` and `_HLS_part` directives; `_HLS_part` without `_HLS_msn` is `400`. The server blocks for at most seven seconds for a valid near-future request, wakes on publication/revocation/pause/shutdown, and returns `503` with `Retry-After: 1` when the requested update is still unavailable. Requests more than two parent sequences or three parts ahead are `400`. `_HLS_skip` and all unknown query fields are rejected in version 1.
+An LL-HLS playlist accepts only decimal `_HLS_msn` and `_HLS_part` directives; `_HLS_part` without `_HLS_msn` is `400`. The server blocks for at most seven seconds for a valid near-future request, wakes on publication/revocation/pause/shutdown, and returns `503` with `Retry-After: 1` when the requested update is still unavailable. Requests more than two parent sequences or three parts ahead in the current/future parent are `400`. Part indices are 0–5; an exact requested index 6 is normalized to part 0 of the next parent before checking the parent bound. A stale previous-parent part request is served from the current playlist and is not compared with the new parent's reset part index. Larger indices, `_HLS_skip` and all unknown query fields are rejected in version 1.
 
 ### Required playlist and object shape
 
@@ -382,6 +382,18 @@ Repository status on 2026-09-23: Phase 2 is implemented and statically reviewed 
 - expose receive-only limitations and never start another backend automatically;
 - preserve native iOS fullscreen/PiP where the selected player supports it.
 
+Repository status on 2026-10-04: Phase 3 is implemented on `testing` and statically reviewed; all executable checks remain **NOT EXECUTED IN CODEX**. `client/src/neko/hls/` owns the controller, strict capability/offer/lease/playlist/URL validation and lazy MSE adapter. The full local `hls.js` build is pinned to **1.7.3** in both manifests, with its locally bundled worker; no CDN script is used. Apple HLS stays on the existing native video element. Other browsers require exact H.264/AAC MSE support, or positive native container/codec probes plus successful real playback; these probes are not device acceptance evidence.
+
+The manual settings and passive playback selector expose only authenticated advertised HLS modes to view-only viewers or admin diagnostics. Exact `?media=hls` and `?media=ll-hls` diagnostic overrides take precedence without writing storage. Absent/invalid selection remains WebRTC; a stored but unavailable HLS mode terminates visibly, with manual Retry HLS and Use WebRTC actions. Selector reload removes only `media` and preserves unrelated queries and the view-only fragment. Selected HLS event sockets receive their session ID without creating an unused WebRTC peer. No replacement input or automatic transport fallback is added.
+
+Bootstrap sends the one-time ticket only in the same-origin HTTPS POST body. The controller retains the opaque public lease URL only in memory and uses the path-scoped HttpOnly cookie. A serialized one-second nonblocking master watchdog surfaces native-loader authorization failures; HTTP deadlines, readiness/stall limits and same-request retries are bounded. Keepalive renews every 15 seconds. The MSE loader permits three active media requests and twelve waiting descriptors, leaving one lease slot for the watchdog/keepalive; playlist/object bodies and front/back buffers are bounded. Errors reaching UI/logs use fixed text and omit tickets, cookie values and lease URLs. Native initial master/child playlists are checked before assigning `src`; subsequent native requests remain owned by the browser and the strict server route.
+
+The selected legacy event bridge now emits `media/hls/state` with `{version:1, backend:"hls", paused:boolean}` before `system/init` and on authoritative room settings updates. It derives private pause from `PrivateMode && !IsAdmin`, independently of control locks. Private pause, stop, detach, logout, replacement and terminal failure invalidate callbacks, destroy MSE, remove listeners, pause the element, remove `src`/`srcObject` and call `load()` to discard URL/MSE buffers. WebRTC recovery never uses this cleanup helper. Private resume reuses the still-valid lease and waits for fresh packaging; Safari autoplay still has one muted retry and the explicit Play gesture. Native fullscreen and supported standard/WebKit PiP remain available.
+
+Static integration also corrected cookie scope for `server.path_prefix`, ordered prefix stripping before log/CORS classification, and made fixed six-part LL-HLS parent rollover compatible with the pinned player's reload directives. Focused client tests cover shared server golden playlists, hostile URL/query/credential input, selection/fragment preservation, disabled/ineligible negotiation, private pause/resume, native revocation, stale bootstrap completion and autoplay fallback. Go checks cover exact selection, prefix/CORS/cookies and rollover bounds. The validation container now supplies HLS fixtures to client tests. No target build, playback, latency, TV-compatibility or resource claim follows from these source checks.
+
+The mandatory final review and the operator's untested TV/event-disconnect report are tracked in [`STABILITY_REVIEW.md`](STABILITY_REVIEW.md). Phase 4 must run the accumulated automated/security/role/device/resource gates before any acceptance or promotion decision.
+
 ### Phase 4 — deployment, observability and grouped acceptance
 
 - add a separate opt-in Compose overlay and credential-safe evidence collector;
@@ -462,3 +474,4 @@ Still evidence-led after implementation:
 - [Apple: Enabling Low-Latency HLS](https://developer.apple.com/documentation/http-live-streaming/enabling-low-latency-http-live-streaming-hls)
 - [W3C Media Source Extensions](https://www.w3.org/TR/media-source-2/)
 - [hls.js compatibility and feature-detection contract](https://github.com/video-dev/hls.js/blob/master/README.md)
+- [Pinned hls.js 1.7.3 player/loader/worker API](https://github.com/video-dev/hls.js/blob/v1.7.3/docs/API.md)

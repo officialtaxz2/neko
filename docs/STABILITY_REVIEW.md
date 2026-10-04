@@ -1,0 +1,44 @@
+# Stability review and outstanding device evidence
+
+Operator direction recorded on 2026-10-04. This is a required review and validation plan, not a claim that the reported device failures have been reproduced or fixed.
+
+## Reported behavior and evidence limits
+
+- Some older Smart-TV viewers reportedly lose their WebRTC connection when another participant joins, posts a chat message, takes control or releases control. Quiet continuous viewing reportedly works. The affected television belongs to a colleague and is currently unavailable for direct testing.
+- Hisense VIDAA is a suspected affected platform. Exact model, firmware, operating-system and browser versions are unknown; do not generalize this report to every VIDAA device.
+- The existing WebCodecs/media-WebSocket path has **not been tested on those televisions**. It remains implemented and must not be removed or declared unsuitable on that evidence.
+- Some modern mobile clients reportedly take longer to show the first WebRTC picture. Treat startup delay as a separate observation from event-triggered TV disconnects until evidence connects them.
+- Source inspection found that join, chat and several control transitions call `chat.newMessage`; with `chat_sound` enabled it creates a new `Audio('chat.mp3')` element. The default is enabled. This is a concrete investigation candidate, **not a confirmed cause**. Do not change unrelated media settings simultaneously when testing it.
+- HLS is a compatibility candidate for passive viewers, not a proven fix or a demonstrated stability improvement over either existing backend. The event/session connection remains authoritative for every backend.
+
+## Implementation and validation order
+
+Continue HLS/LL-HLS Phase 3 on `testing` as explicitly authorized. The unavailable television does not block repository implementation or checks on available devices; its device acceptance remains pending. Keep WebRTC as the default, preserve explicit WebCodecs selection and leave HLS default-off. No automatic fallback or `master` promotion is authorized.
+
+After the implementation blocks, prepare the separate HLS Phase 4 deployment/observability assets. Before final grouped target-server validation and before any promotion decision, perform the mandatory static review below. Fix clearly established defects in their own implementation block as they are found; the final review is not a reason to postpone them.
+
+## Mandatory final static review
+
+Review the integrated code and relevant configuration at an identified `testing` commit:
+
+1. Trace join, chat, control take/release/grant and member-state updates through event handlers, stores and UI. Check that ordinary room events cannot accidentally replace, clear or reconnect a viewer's media delivery.
+2. Inspect chat sounds, notifications, emotes, DOM/media-element changes and old-browser API/error handling. Identify repeated audio creation, unhandled failures and work that could interfere with playback. Separate confirmed code defects from device hypotheses.
+3. Trace startup from login/event initialization through ICE readiness or alternative-backend negotiation, first decodable video and playback. Inspect deadlines, cold-source/keyframe admission and autoplay/user-gesture handling; a connected session is not evidence of a displayed picture.
+4. Review recovery state transitions, stale callbacks, concurrent requests, bounded retries, generation changes and ownership of timers/listeners/sockets/decoders. Check logout, kick, permission loss, private-mode pause/resume and backend replacement cleanup.
+5. Recheck server-enforced view-only boundaries and the common event/session authorization above WebRTC, WebCodecs and HLS. Receive transport never grants control rights.
+6. Inspect queue/buffer limits, source demand, shared HLS workers, slow-viewer isolation and resource release. A bounded queue alone does not prove device performance or acceptable total CPU load.
+7. Review configuration consistency and quality-related choices without speculative tuning. Change bitrate, quantizer, latency or buffer settings only with an explicit goal and a comparable baseline.
+
+Record findings, affected files, the reason for each repair and required target checks. Review the resulting final diff again. No broad rewrite, additional transport or dependency migration is implied by this review.
+
+## Target-server and device follow-up
+
+All project tests, type checks, builds, containers and device/media checks are **NOT EXECUTED IN CODEX**. Run the relevant accumulated suites and grouped acceptance at the final exact commit and image digest on the real target server.
+
+- On an available affected TV, repeat a fixed sequence of joins, messages and control take/release/grant while another viewer watches. First compare WebRTC with chat sound enabled versus disabled, changing only that setting; then compare explicit WebCodecs and HLS on the same device and content when each is supported.
+- Record whether the failure is event-WebSocket closure/session loss, ICE/data-channel failure, media decoder/player failure, a stall or only a UI/playback change. Keep credential-bearing URLs, tickets and cookies out of collected evidence.
+- Record the TV model/firmware/browser and actual codec/player capability when the device becomes available. Until then, keep the TV result untested rather than passed or failed.
+- Measure mobile startup stages separately: event login, ICE connection (for WebRTC), first frame and actual playback. Compare Wi-Fi/mobile-network conditions on the same client before changing defaults.
+- Run the existing role/private-mode/reconnect matrix plus cross-backend resource/isolation gates from `WORKPLAN.md` and `HLS_LL_HLS.md`. Measure visual quality, pacing, startup and latency; static inspection cannot establish those outcomes.
+
+Completion means the static findings are reviewed and repairs are verified on the target server. Missing device phases remain explicitly open and do not become passes through a bounded checkpoint. Any WebCodecs removal or promotion to `master` needs a later explicit operator decision supported by the comparison results.

@@ -92,3 +92,7 @@ A server build was not required specifically for this earlier local reconciliati
 ## Outcome
 
 The source delta audit is closed: no missing application source change was found. The original all-or-nothing exclusion of the local compose was corrected after the operator identified it as the desired deployment baseline. Its reusable structure is now tracked without copying credentials, browser-profile contents, downloads or instance-policy data. The semantic upstream synchronization is recorded separately in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md); current work status and `NEXT` remain in [`WORKPLAN.md`](WORKPLAN.md#next).
+
+## Snapshot removal
+
+On 2026-10-04, the operator explicitly requested deletion of `MyNekoProjekt/` after being informed that it contained its own persistent Brave profile. The exact workspace subdirectory, including its excluded instance/runtime contents, was deleted and its absence verified. This audit remains the historical record; the sanitized root deployment and current application source were retained. No target-server data was accessed or deleted.

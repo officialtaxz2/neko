@@ -218,6 +218,7 @@ func (c *serve) Start(cmd *cobra.Command) {
 	}
 	if c.configs.Media.HLS.Enabled {
 		hlsConfig := mediahls.Config{
+			PathPrefix:     c.configs.Server.PathPrefix,
 			AllowedOrigins: c.configs.Media.HLS.AllowedOrigins,
 			TrustedProxies: c.configs.Media.HLS.TrustedProxies,
 			Modes:          c.configs.Media.HLS.Modes,

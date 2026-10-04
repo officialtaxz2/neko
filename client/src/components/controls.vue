@@ -47,7 +47,7 @@
         <span />
       </label>
     </li>
-    <li v-if="!webCodecsReceiveOnly || !playing">
+    <li v-if="!$accessor.media.selected || !playing">
       <i
         :class="[{ disabled: !playable }, playing ? 'fa-pause-circle' : 'fa-play-circle', 'fas', 'play']"
         @click.stop.prevent="toggleMedia"
@@ -80,6 +80,7 @@
         <input type="range" min="0" max="100" v-model="volume" />
       </div>
     </li>
+    <li v-if="viewOnly"><neko-media-selector /></li>
   </ul>
 </template>
 
@@ -379,8 +380,9 @@
 
 <script lang="ts">
   import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+  import NekoMediaSelector from './media-selector.vue'
 
-  @Component({ name: 'neko-controls' })
+  @Component({ name: 'neko-controls', components: { NekoMediaSelector } })
   export default class NekoControls extends Vue {
     @Prop(Boolean) readonly shakeKbd!: boolean
 
@@ -393,11 +395,11 @@
     }
 
     get hosting() {
-      return !this.$accessor.media.selected && this.$accessor.remote.hosting
+      return !this.webCodecsReceiveOnly && this.$accessor.remote.hosting
     }
 
     get controlling() {
-      return !this.$accessor.media.selected && this.$accessor.remote.controlling
+      return !this.webCodecsReceiveOnly && this.$accessor.remote.controlling
     }
 
     get implicitHosting() {
@@ -409,7 +411,7 @@
     }
 
     get webCodecsReceiveOnly() {
-      return this.$accessor.media.selected
+      return this.$client.receiveOnlySelected
     }
 
     // Microphone is allowed when the user is actively controlling (has host).
@@ -418,7 +420,7 @@
     // everyone by default. This prevents multiple users from sharing their
     // microphone simultaneously — only the person in control can.
     get micAllowed() {
-      return !this.viewOnly && !this.$accessor.media.selected && this.controlling
+      return !this.viewOnly && !this.webCodecsReceiveOnly && this.controlling
     }
 
     get volume() {
@@ -471,6 +473,11 @@
 
     toggleMedia() {
       if (!this.playable) {
+        return
+      }
+      if (this.$client.hlsSelected) {
+        if (this.playing) this.$client.pauseHLS()
+        else void this.$client.playHLS()
         return
       }
       this.$accessor.video.togglePlay()

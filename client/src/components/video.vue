@@ -67,6 +67,19 @@
             </div>
           </template>
         </div>
+        <div v-if="hlsSelected" :class="['webcodecs-status', { compact: hlsStatus === 'streaming' }]" role="status">
+          <span v-if="hlsStatus === 'streaming'">{{ hlsLabel }}</span>
+          <template v-else>
+            <strong>{{ hlsLabel }}</strong>
+            <span>{{ $t(`media.status.${hlsStatus}`) }}</span>
+            <small v-if="hlsStatus === 'terminal'">{{ $accessor.hls.detail }}</small>
+            <small>{{ $t('media.hls_limitations') }}</small>
+            <div v-if="hlsStatus === 'terminal'" class="webcodecs-actions">
+              <button type="button" @click.stop.prevent="retryHLS">{{ $t('media.retry_hls') }}</button>
+              <button type="button" @click.stop.prevent="useWebRTC">{{ $t('media.use_webrtc') }}</button>
+            </div>
+          </template>
+        </div>
         <div
           v-if="trackpadActive && hosting && !locked && !trackpadCursorHidden"
           :class="['trackpad-cursor', { active: trackpadTouching }]"
@@ -81,11 +94,11 @@
             :class="['fas', fallbackFullscreen ? 'fa-compress' : 'fa-expand']"
           ></i>
         </li>
-        <li v-if="!fallbackFullscreen && admin && !webCodecsSelected">
+        <li v-if="!fallbackFullscreen && admin && !receiveOnlySelected">
           <i @click.stop.prevent="openResolution" class="fas fa-desktop"></i>
         </li>
         <li
-          v-if="!fallbackFullscreen && !webCodecsSelected && !controlLocked && !implicitHosting"
+          v-if="!fallbackFullscreen && !receiveOnlySelected && !controlLocked && !implicitHosting"
           :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]"
         >
           <i
@@ -133,7 +146,7 @@
           <i class="fas fa-keyboard" />
         </li>
       </ul>
-      <neko-resolution ref="resolution" v-if="admin && !webCodecsSelected" />
+      <neko-resolution ref="resolution" v-if="admin && !receiveOnlySelected" />
       <neko-clipboard ref="clipboard" v-if="hosting" />
       <neko-keyboard-helper ref="keyboardHelper" :keyboard="keyboard" />
     </div>
@@ -626,6 +639,7 @@
     }
 
     private onVideoCanPlayThrough = () => {
+      if (this.hlsSelected) return
       if (!this._video) return
       this.updateVideoDimensions()
       this.$accessor.video.setPlayable(true)
@@ -648,10 +662,12 @@
     }
 
     private onVideoEnded = () => {
+      if (this.hlsSelected) return
       this.$accessor.video.setPlayable(false)
     }
 
     private onVideoError = (event: ErrorEvent) => {
+      if (this.hlsSelected) return
       this.$log.error(event.error)
       this.$accessor.video.setPlayable(false)
     }
@@ -663,6 +679,7 @@
     }
 
     private onVideoPlaying = () => {
+      if (this.hlsSelected) return
       this._hasEverPlayed = true
       this.cancelStalledTimer()
       this._recoveryAttempts = 0
@@ -670,11 +687,13 @@
     }
 
     private onVideoPause = () => {
+      if (this.hlsSelected) return
       this.$accessor.video.pause()
     }
 
     // --- Stream health: stalled / waiting handlers ---
     private onVideoStalled = () => {
+      if (this.hlsSelected) return
       // Only start recovery if we previously had a working stream.
       // On mobile, 'stalled' fires during normal WebRTC startup buffering
       // and triggering recovery there would kill the stream.
@@ -685,6 +704,7 @@
     }
 
     private onVideoWaiting = () => {
+      if (this.hlsSelected) return
       // 'waiting' fires when playback stops due to lack of data.
       // On mobile this is normal during initial buffering — only act if
       // we had a working stream before.
@@ -695,6 +715,7 @@
     }
 
     private onVideoTimeUpdate = () => {
+      if (this.hlsSelected) return
       // If we receive a timeupdate the stream is alive – cancel any recovery timer.
       // Optimize to avoid calling timer manipulation on every single timeupdate frame.
       if (this._stalledTimer !== null || this._recoveryAttempts > 0 || !this._hasEverPlayed) {
@@ -735,6 +756,7 @@
      * stream. A successful srcObject assignment alone is not recovery.
      */
     private async attemptStreamRecovery(reason: string) {
+      if (this.receiveOnlySelected) return
       if (!this._video || !this.stream) return
 
       const max = NekoVideo.MAX_RECOVERY_ATTEMPTS
@@ -800,19 +822,19 @@
     }
 
     get controlling() {
-      return !this.viewOnly && !this.webCodecsSelected && this.$accessor.remote.controlling
+      return !this.viewOnly && !this.receiveOnlySelected && this.$accessor.remote.controlling
     }
 
     get hosting() {
-      return !this.viewOnly && !this.webCodecsSelected && this.$accessor.remote.hosting
+      return !this.viewOnly && !this.receiveOnlySelected && this.$accessor.remote.hosting
     }
 
     get implicitHosting() {
-      return !this.viewOnly && !this.webCodecsSelected && this.$accessor.remote.implicitHosting
+      return !this.viewOnly && !this.receiveOnlySelected && this.$accessor.remote.implicitHosting
     }
 
     get hosted() {
-      return !this.viewOnly && !this.webCodecsSelected && this.$accessor.remote.hosted
+      return !this.viewOnly && !this.receiveOnlySelected && this.$accessor.remote.hosted
     }
 
     get viewOnly() {
@@ -822,6 +844,11 @@
     get webCodecsSelected() {
       return this.$accessor.media.selected
     }
+
+    get hlsSelected() { return this.$accessor.hls.selected !== undefined }
+    get receiveOnlySelected() { return this.webCodecsSelected || this.hlsSelected }
+    get hlsStatus() { return this.$accessor.hls.status }
+    get hlsLabel() { return this.$accessor.hls.selected === 'll-hls' ? 'LL-HLS' : 'HLS' }
 
     get webCodecsTerminal() {
       return this.$accessor.media.status === 'terminal'
@@ -888,6 +915,8 @@
 
     get pip_available() {
       if (this.webCodecsSelected) return false
+      const video = this._video as HTMLVideoElement & { webkitSupportsPresentationMode?: (mode: string) => boolean }
+      if (this.hlsSelected && video?.webkitSupportsPresentationMode?.('picture-in-picture')) return true
       //@ts-ignore
       return typeof document.createElement('video').requestPictureInPicture === 'function'
     }
@@ -1044,6 +1073,7 @@
     @Watch('volume')
     onVolumeChanged(volume: number) {
       volume /= 100
+      if (this.hlsSelected) { this.$client.setHLSVolume(volume); return }
 
       if (this.webCodecsSelected) {
         this.$client.setWebCodecsVolume(volume)
@@ -1057,6 +1087,7 @@
 
     @Watch('muted')
     onMutedChanged(muted: boolean) {
+      if (this.hlsSelected) this.$client.setHLSMuted(muted)
       if (this.webCodecsSelected) {
         this.$client.setWebCodecsMuted(muted)
         if (!muted) this.mutedOverlay = false
@@ -1078,7 +1109,7 @@
       // Otherwise an old removetrack callback can race a replacement peer.
       this.detachStreamListeners()
 
-      if (this.webCodecsSelected || !this._video) {
+      if (this.receiveOnlySelected || !this._video) {
         return
       }
 
@@ -1130,6 +1161,7 @@
     onTrackChanged(track?: MediaStreamTrack) {
       // Detach old track listeners and attach to the new track
       this.detachTrackListeners()
+      if (this.receiveOnlySelected) return
       if (track && track.kind === 'video') {
         this.attachTrackListeners(track)
       }
@@ -1212,6 +1244,9 @@
 
     @Watch('playing')
     async onPlayingChanged(playing: boolean) {
+      // HLS owns element playback and reports observed playing/paused state.
+      // Gesture handlers call the controller directly, preserving Safari activation.
+      if (this.hlsSelected) return
       if (this.webCodecsSelected) {
         if (playing) {
           const audioRunning = await this.$client.playWebCodecs()
@@ -1392,6 +1427,7 @@
     }
 
     mounted() {
+      if (this.hlsSelected) this.$client.attachHLSVideo(this._video)
       this._container.addEventListener('resize', this.onResize)
       window.addEventListener('resize', this.onResize)
       this.onVolumeChanged(this.volume)
@@ -1455,6 +1491,7 @@
     }
 
     beforeDestroy() {
+      if (this.hlsSelected) this.$client.detachHLSVideo(this._video)
       window.removeEventListener('focus', this._onWindowFocus)
       this.observer.disconnect()
       this.$accessor.video.setPlayable(false)
@@ -1550,6 +1587,7 @@
     }
 
     async play() {
+      if (this.hlsSelected) { if (this.playable) await this.$client.playHLS(); return }
       if (this.webCodecsSelected) {
         if (this.playable) await this.$client.playWebCodecs()
         return
@@ -1571,6 +1609,7 @@
     }
 
     pause() {
+      if (this.hlsSelected) { this.$client.pauseHLS(); return }
       if (this.webCodecsSelected) {
         this.$accessor.video.pause()
         return
@@ -1587,6 +1626,12 @@
         return
       }
 
+      if (this.hlsSelected) {
+        if (this.playing) this.$client.pauseHLS()
+        else void this.$client.playHLS()
+        return
+      }
+
       if (!this.playing) {
         this.$accessor.video.play()
       } else {
@@ -1595,12 +1640,19 @@
     }
 
     playAndUnmute() {
+      if (this.hlsSelected) {
+        this.$accessor.video.setMuted(false)
+        this.$client.setHLSMuted(false)
+        void this.$client.playHLS()
+        return
+      }
       this.$accessor.video.play()
       this.$accessor.video.setMuted(false)
     }
 
     unmute() {
       this.$accessor.video.setMuted(false)
+      if (this.hlsSelected) { this.$client.setHLSMuted(false); void this.$client.playHLS() }
       if (this.webCodecsSelected) {
         this.$client.playWebCodecs().then((running) => {
           if (!running && this.$accessor.media.audioEnabled) this.$accessor.video.setMuted(true)
@@ -1611,6 +1663,8 @@
     retryWebCodecs() {
       this.$client.retryWebCodecs()
     }
+
+    retryHLS() { this.$client.retryHLS() }
 
     useWebRTC() {
       this.$client.useWebRTC()
@@ -1666,7 +1720,15 @@
       this.enterFallbackFullscreen()
     }
 
-    requestPictureInPicture() {
+    async requestPictureInPicture() {
+      if (this.hlsSelected) {
+        const video = this._video as HTMLVideoElement & { webkitSetPresentationMode?: (mode: string) => void }
+        try {
+          if (typeof video.requestPictureInPicture === 'function') await video.requestPictureInPicture()
+          else video.webkitSetPresentationMode?.('picture-in-picture')
+        } catch (_) { this.$log.debug('HLS Picture-in-Picture request was declined') }
+        return
+      }
       if (this.webCodecsSelected) return
       //@ts-ignore
       this._video.requestPictureInPicture()

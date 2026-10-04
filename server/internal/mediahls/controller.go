@@ -27,6 +27,7 @@ type Controller struct {
 	leases     *LeaseStore
 	backend    *Backend
 	security   *SecurityPolicy
+	pathPrefix string
 	now        func() time.Time
 }
 
@@ -45,7 +46,7 @@ func NewController(sessions types.SessionManager, deliveries types.MediaDelivery
 	return &Controller{
 		logger: log.With().Str("module", "mediahls").Str("submodule", "http").Logger(),
 		sessions: sessions, deliveries: deliveries, tickets: tickets,
-		leases: leases, backend: backend, security: security, now: time.Now,
+		leases: leases, backend: backend, security: security, pathPrefix: normalized.PathPrefix, now: time.Now,
 	}, nil
 }
 
@@ -136,7 +137,7 @@ func (controller *Controller) Bootstrap(w http.ResponseWriter, request *http.Req
 		return nil
 	}
 	offer := delivery.Offer()
-	http.SetCookie(w, offer.Cookie)
+	controller.setLeaseCookie(w, offer.Cookie)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(bootstrapResponse{Mode: binding.Mode, Master: "/api/media/hls/" + offer.PublicID + "/master.m3u8", IdleExpiresInMS: LeaseLifetime.Milliseconds()}); err != nil {
@@ -510,8 +511,10 @@ func acceptsGzip(value string) bool {
 	return false
 }
 
-func refreshLeaseCookie(w http.ResponseWriter, publicID, secret string) {
-	http.SetCookie(w, LeaseCookie(publicID, secret))
+func (controller *Controller) setLeaseCookie(w http.ResponseWriter, cookie *http.Cookie) {
+	copy := *cookie
+	copy.Path = controller.pathPrefix + cookie.Path
+	http.SetCookie(w, &copy)
 }
 
 func (controller *Controller) extendLease(w http.ResponseWriter, publicID, secret string) (LeaseSnapshot, error) {
@@ -519,7 +522,7 @@ func (controller *Controller) extendLease(w http.ResponseWriter, publicID, secre
 	if err != nil {
 		return LeaseSnapshot{}, err
 	}
-	refreshLeaseCookie(w, publicID, secret)
+	controller.setLeaseCookie(w, LeaseCookie(publicID, secret))
 	return snapshot, nil
 }
 

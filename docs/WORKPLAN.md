@@ -719,7 +719,7 @@ Implemented and statically reviewed on `testing` on 2026-09-23:
 - kept slow readers outside provider/packager locks by serving immutable object references, bounded every request/blocker/rate/object path, evicted only retention beyond the currently advertised init/part/parent floors when the 64-MiB aggregate ceiling requires space, and made GStreamer callback shutdown cancellation-aware so worker teardown cannot wait forever on a full Go hand-off;
 - added all fixed `neko_media_hls_*` metrics and credential-safe lifecycle/failure logs plus focused fMP4, shared-worker, pause/revocation, cookie-renewal, compressed-HEAD and range tests.
 
-There is deliberately still no HLS/LL-HLS browser player, per-client HLS selector, deployment Compose overlay or automatic fallback. No HLS route exists in the normal deployment while the default-off server flag is omitted.
+At this Phase 2 closure there was no HLS/LL-HLS browser player, per-client HLS selector, deployment Compose overlay or automatic fallback. Phase 3 below has since added the isolated player and manual selector. No HLS route exists in the normal deployment while the default-off server flag is omitted.
 
 Runtime/build/test status: **NOT EXECUTED IN CODEX**. Before Phase 2 is treated as target-server verified, run this exact-commit gate on the target server:
 
@@ -732,11 +732,36 @@ docker build -t my-neko/server:hls-phase2 ./server
 
 The runtime gate must additionally inspect generated H.264/AAC init/fragments and both playlist modes with an independent HLS/fMP4 parser, verify the disabled route is `404`, and exercise the authenticated HTTPS cookie/range/HEAD/gzip/private-mode/revocation/slow-reader/shutdown boundaries before any device-support or latency claim. The Phase 4 overlay and evidence collector are intentionally not part of this block.
 
+## COMPLETED IN REPOSITORY — HLS/LL-HLS Phase 3 passive client
+
+Status on 2026-10-04: **implemented and statically reviewed on `testing`; accumulated target-server tests/build/runtime/device checks pending**.
+
+The isolated HLS controller and pinned local hls.js 1.7.3 MSE/worker path now integrate with the native video/playback UI. Advertised-only manual HLS/LL-HLS choices appear for passive viewers and admin diagnostics; exact diagnostic queries and saved choices preserve unrelated navigation state. WebRTC remains the absent/invalid default, WebCodecs remains supported, disabled HLS terminates visibly, and no automatic fallback or deployment overlay was added. The authenticated event session skips unused WebRTC signaling for exact HLS selections. Private-mode state now crosses the legacy bridge, and native/MSE cleanup owns buffers, listeners, requests and stale callbacks. Prefix-scoped cookies/CORS/logging and six-part blocking-reload rollover were corrected during static integration. See [`HLS_LL_HLS.md`](HLS_LL_HLS.md) for the full implementation boundaries.
+
+The pre-push static review supplied the missing standard `URL` constructor to the isolated MSE-loader test VM, so valid scoped requests can reach the intended loader assertions. The corrected tests remain pending execution on the target server.
+
+Runtime/build/test status: **NOT EXECUTED IN CODEX**. On the real target server at the eventual exact reviewed commit, run the accumulated client and server gate:
+
+```bash
+export NEKO_VALIDATION_COMMIT="$(git rev-parse HEAD)"
+docker compose -f docker-compose.validation.yaml run --rm client-checks
+docker compose -f docker-compose.validation.yaml build server-checks
+docker compose -f docker-compose.validation.yaml run --rm server-checks
+```
+
+The client container runs `npm ci`, `npm test`, `npm run lint` and `npm run build`, including HLS controller/protocol tests and server playlist fixtures. The server container includes HLS, common media, legacy/current events, HTTP, auth/session and existing WebRTC/WebCodecs checks plus the build. In Phase 4, validate exact images, disabled/enabled HTTPS delivery, root/prefixed cookie renewal/redaction/CORS, both playlist modes over repeated parent rollovers, ordinary/admin/view-only/private/revoked roles, autoplay/gesture/fullscreen/PiP and induced mixed-backend isolation/resources. Measure startup and latency separately. None of those runtime or device results is claimed here.
+
+## Operator direction — event-triggered TV failures and final stability review
+
+On 2026-10-04 the operator reported occasional older-TV WebRTC failures specifically around room join, chat and control take/release, with quiet viewing working; VIDAA is suspected but exact devices are unknown and the colleague's TV is currently unavailable. WebCodecs/media-WebSocket has not been tested on those devices. Mobile time-to-first-picture is a separate observation. The shared chat-sound path is a source-inspection candidate, not a diagnosis.
+
+Phase 3 was authorized and implemented without waiting for that television; its device gate remains open through Phase 4. Preserve WebCodecs and treat HLS as a compatibility prototype with pending device evidence. The detailed evidence limits, one-variable comparison and **mandatory final static stability review before grouped target-server validation and promotion** are in [`STABILITY_REVIEW.md`](STABILITY_REVIEW.md). Do not claim that HLS fixes room-event failures or starts faster than WebRTC.
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Implement **Phase 3 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)**: the isolated passive client. Add pinned local player support and Apple-native versus MSE capability detection; expose explicit manual `HLS` and `Low-Latency HLS` choices only when advertised; bootstrap without URL credentials while preserving unrelated query/fragment state; implement private-mode/revocation/terminal cleanup and keep receive-only limitations explicit. WebRTC must remain the absent/invalid default, WebCodecs must remain explicit, no fallback may be automatic, and no deployment overlay belongs to this block. `master` must not move without explicit operator authorization.
+Implement **Phase 4 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)**: separate sanitized opt-in deployment/observability assets and the grouped target-server acceptance workflow. Before its final runtime matrix, complete and record the mandatory integrated static stability review in [`STABILITY_REVIEW.md`](STABILITY_REVIEW.md). Keep HLS default-off, WebRTC the safe default, WebCodecs explicit and transport fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -745,8 +770,8 @@ Implement **Phase 3 of [`HLS_LL_HLS.md`](HLS_LL_HLS.md)**: the isolated passive 
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
-6. **implemented in repository / target gate pending:** HLS/LL-HLS Phase 1 access/deterministic-media foundations and Phase 2 shared packaging/authenticated HTTP delivery without a player or deployment overlay;
-7. **NEXT:** implement the isolated HLS/LL-HLS Phase 3 passive client and explicit manual selection;
+6. **implemented in repository / target gate pending:** HLS/LL-HLS Phase 1 access/model foundations, Phase 2 shared packaging/HTTP delivery and Phase 3 isolated passive client; no deployment overlay yet;
+7. **NEXT:** Phase 4 deployment/observability assets, then final static stability review and grouped target-server validation;
 8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence
@@ -765,12 +790,12 @@ When fallback work begins, separate the two user classes instead of forcing ever
 8. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted manual per-client `WebRTC`/`WebCodecs` selection and compact healthy status without automatic fallback;
 9. **completed design:** exact **HLS / Low-Latency HLS** passive/view-only contract for Smart-TVs and constrained browsers in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 10. **implemented in repository / target gate pending — HLS Phases 1–2:** default-off access, leases, security, deterministic models, shared H.264/AAC packaging, authenticated HTTP delivery and observability without a client;
-11. **NEXT — HLS Phase 3:** isolated passive client, pinned player support and explicit manual HLS/LL-HLS selection;
-12. later Phase 4 adds the separate deployment/observability assets and grouped target-server validation;
+11. **implemented HLS Phase 3:** isolated passive client, pinned player support and advertised-only manual HLS/LL-HLS selection; target checks pending;
+12. **NEXT — HLS Phase 4:** separate deployment/observability assets, mandatory final static stability review and grouped target-server validation;
 13. compare device support, failure behavior, server resource cost, latency and recovery before defining any automatic capability-based selection;
 14. evaluate WebTransport only afterward if WebSocket's delivery/backpressure characteristics are a demonstrated limitation.
 
-The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract and repository server delivery through Phase 2, but no browser player, deployment overlay or device evidence yet.
+The passive path may trade latency for reliability and compatibility. It must stay in the same logical room and must not gain control authorization. HLS/LL-HLS now has a specified target contract and repository server/passive-client delivery through Phase 3; deployment assets, runtime tests/build and device evidence remain pending.
 
 ## LATER / OPTIONAL
 
@@ -789,8 +814,8 @@ The passive path may trade latency for reliability and compatibility. It must st
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
 - Target-device and target-server evidence for the specified VP8/Opus WebCodecs/media-WebSocket contract; framing, queue sizes, synchronization, security limits and rollout behavior are fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
-- Focused target-server tests/build and independent playlist/fMP4 inspection for the HLS/LL-HLS Phase 1–2 repository server path.
-- Actual HLS/LL-HLS device, latency and resource evidence against the fixed targets in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); the HTTP server path is implemented but no client or deployment overlay exists yet.
+- Focused target-server tests/build and independent playlist/fMP4 inspection for the HLS/LL-HLS Phase 1–3 repository server/passive-client path.
+- Actual HLS/LL-HLS device, latency and resource evidence against the fixed targets in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); the HTTP server and passive client are implemented; deployment assets and runtime/device acceptance remain pending.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
 - Eventual automatic per-client media-backend selection rules after the explicitly selected prototypes have measured evidence; version-1 manual selection and rollback are already fixed.
 - Live compact view-only fragment preservation for the productized selector was not repeated at `12cfe43b`; focused automated coverage passed, and earlier view-only boundary/browser evidence remains separate.

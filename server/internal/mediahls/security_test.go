@@ -59,3 +59,24 @@ func TestResourcePathQueryRangeAndRedaction(t *testing.T) {
 }
 
 func containsCredential(value, credential string) bool { return len(credential)>0 && len(value)>=len(credential) && func()bool{ for i:=0;i+len(credential)<=len(value);i++ { if value[i:i+len(credential)]==credential{return true} }; return false }() }
+
+func TestBlockingReloadSurvivesFixedParentRollover(t *testing.T) {
+	stale := url.Values{"_HLS_msn": {"42"}, "_HLS_part": {"5"}}
+	if parsed, err := ParsePlaylistQuery(ModeLLHLS, stale, 43, 0); err != nil || parsed.MSN != 42 || parsed.Part != 5 {
+		t.Fatalf("stale final-part request was rejected: %#v, %v", parsed, err)
+	}
+	rollover := url.Values{"_HLS_msn": {"42"}, "_HLS_part": {"6"}}
+	if parsed, err := ParsePlaylistQuery(ModeLLHLS, rollover, 43, 0); err != nil || parsed.MSN != 43 || parsed.Part != 0 {
+		t.Fatalf("next-parent request was not normalized: %#v, %v", parsed, err)
+	}
+	for _, values := range []url.Values{
+		{"_HLS_msn": {"42"}, "_HLS_part": {"7"}},
+		{"_HLS_msn": {"43"}, "_HLS_part": {"5"}},
+		{"_HLS_msn": {"45"}, "_HLS_part": {"6"}},
+		{"_HLS_msn": {"18446744073709551615"}, "_HLS_part": {"6"}},
+	} {
+		if _, err := ParsePlaylistQuery(ModeLLHLS, values, 43, 0); !errors.Is(err, ErrInvalidQuery) {
+			t.Fatalf("unbounded part prediction accepted: %#v", values)
+		}
+	}
+}

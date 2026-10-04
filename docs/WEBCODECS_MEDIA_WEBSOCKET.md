@@ -17,7 +17,7 @@ Version 1 is an explicit, opt-in, low-latency **receive-media** experiment:
 - the existing authenticated event WebSocket remains the session, authorization, chat and control plane;
 - the existing WebRTC path, signaling and data channels remain the default and remain unchanged;
 - no backend is chosen automatically and no failure automatically changes transports;
-- HLS/LL-HLS remains a separate passive/view-only prototype whose design is fixed in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); no HLS transport is implemented.
+- HLS/LL-HLS remains a separate passive/view-only prototype defined in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); its server and passive-client Phases 1–3 are implemented, with target-server/runtime/device acceptance pending.
 
 The current client sends high-rate keyboard, pointer and touch input through the WebRTC data channel. Version 1 deliberately does not add a replacement control transport and therefore must not be described as complete non-WebRTC interactive parity. It proves an interactive-class receive path. A later, independently reviewed block must decide how a controlling participant sends high-rate input when no WebRTC peer connection exists.
 

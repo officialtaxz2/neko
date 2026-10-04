@@ -1,9 +1,11 @@
 export const MEDIA_BACKEND_WEBRTC = 'webrtc'
 export const MEDIA_BACKEND_WEBCODECS = 'webcodecs-ws'
+export const MEDIA_BACKEND_HLS = 'hls'
+export const MEDIA_BACKEND_LL_HLS = 'll-hls'
 export const MEDIA_BACKEND_STORAGE_KEY = 'media_backend'
 
 /**
- * @typedef {'webrtc' | 'webcodecs-ws'} MediaBackendPreference
+ * @typedef {'webrtc' | 'webcodecs-ws' | 'hls' | 'll-hls'} MediaBackendPreference
  */
 
 /**
@@ -13,7 +15,13 @@ export const MEDIA_BACKEND_STORAGE_KEY = 'media_backend'
  * @returns {MediaBackendPreference}
  */
 export function normalizeMediaBackendPreference(value) {
-  return value === MEDIA_BACKEND_WEBCODECS ? MEDIA_BACKEND_WEBCODECS : MEDIA_BACKEND_WEBRTC
+  return value === MEDIA_BACKEND_WEBCODECS || value === MEDIA_BACKEND_HLS || value === MEDIA_BACKEND_LL_HLS
+    ? value
+    : MEDIA_BACKEND_WEBRTC
+}
+
+export function isHLSBackend(value) {
+  return value === MEDIA_BACKEND_HLS || value === MEDIA_BACKEND_LL_HLS
 }
 
 /**
@@ -66,8 +74,8 @@ export function resolveMediaBackendSelection(search, storedPreference) {
     return { backend: preference, overridden: false, invalidOverride: false }
   }
 
-  if (media.length === 1 && media[0] === MEDIA_BACKEND_WEBCODECS) {
-    return { backend: MEDIA_BACKEND_WEBCODECS, overridden: true, invalidOverride: false }
+  if (media.length === 1 && (media[0] === MEDIA_BACKEND_WEBCODECS || isHLSBackend(media[0]))) {
+    return { backend: normalizeMediaBackendPreference(media[0]), overridden: true, invalidOverride: false }
   }
 
   return { backend: MEDIA_BACKEND_WEBRTC, overridden: true, invalidOverride: true }

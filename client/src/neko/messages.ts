@@ -27,6 +27,9 @@ export type WebSocketMessages =
   | ChatMessage
   | MediaCapabilitiesMessage
   | MediaOfferMessage
+  | HLSCapabilitiesMessage
+  | HLSOfferMessage
+  | HLSStateMessage
 
 export type WebSocketPayloads =
   | SignalProvidePayload
@@ -49,6 +52,8 @@ export type WebSocketPayloads =
   | BroadcastCreatePayload
   | MediaCapabilitiesRequestPayload
   | MediaCreatePayload
+  | HLSCapabilitiesRequestPayload
+  | HLSCreatePayload
 
 export interface WebSocketMessage {
   event: WebSocketEvents | string
@@ -130,6 +135,43 @@ export interface MediaOfferPayload {
 
 export interface MediaOfferMessage extends WebSocketMessage, MediaOfferPayload {
   event: typeof EVENT.MEDIA.OFFER
+}
+
+export type HLSMode = 'hls' | 'll-hls'
+export interface HLSCapabilitiesRequestPayload { version: 1; mode: HLSMode }
+export interface HLSCreatePayload { version: 1; backend: 'hls'; mode: HLSMode }
+export interface HLSCapabilitiesPayload {
+  version: number
+  backend: string
+  modes: string[]
+  container: string
+  video_codec: string
+  audio_codec: string
+  audio_rate: number
+  variants: Array<{
+    id: string; source_id: string; video_codec: string; container: string
+    width: number; height: number; frame_rate: number; average_bandwidth: number; bandwidth: number
+  }>
+  limits: {
+    max_leases: number; max_requests: number; max_requests_per_lease: number
+    max_blocking_per_lease: number; max_blocking_requests: number; idle_expires_in_ms: number
+    blocking_reload_wait_ms: number; maximum_playlist_bytes: number
+  }
+}
+export interface HLSCapabilitiesMessage extends WebSocketMessage, HLSCapabilitiesPayload {
+  event: typeof EVENT.HLS.CAPABILITIES
+}
+export interface HLSOfferPayload {
+  version: number; backend: string; mode: string; path: string; ticket: string; expires_in_ms: number
+}
+export interface HLSOfferMessage extends WebSocketMessage, HLSOfferPayload {
+  event: typeof EVENT.HLS.OFFER
+}
+export interface HLSStateMessage extends WebSocketMessage {
+  event: typeof EVENT.HLS.STATE
+  version: number
+  backend: string
+  paused: boolean
 }
 
 // system/disconnect

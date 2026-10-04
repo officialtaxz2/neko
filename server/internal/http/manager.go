@@ -30,6 +30,11 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 		WithRequestID(), // create a request id for each request
 		WithOriginalRemoteAddr(),
 	}
+	// Canonicalize before logging/CORS so prefixed media requests retain the
+	// same redaction and strict no-CORS boundary as root deployments.
+	if config.PathPrefix != "/" {
+		opts = append(opts, WithPathPrefix(config.PathPrefix))
+	}
 
 	// use real ip if behind proxy
 	// before logger so it can log the real ip
@@ -44,10 +49,6 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 
 	if config.HasCors() {
 		opts = append(opts, WithCORS(config.AllowOrigin))
-	}
-
-	if config.PathPrefix != "/" {
-		opts = append(opts, WithPathPrefix(config.PathPrefix))
 	}
 
 	router := newRouter(opts...)

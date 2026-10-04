@@ -88,7 +88,8 @@ func TestObjectRangeAndHeadAreBounded(t *testing.T) {
 func TestLeaseRefreshCookieRemainsNarrowAndCredentialSafe(t *testing.T) {
 	_, offer, _ := testLeaseStore(t)
 	response := httptest.NewRecorder()
-	refreshLeaseCookie(response, offer.PublicID, offer.Secret)
+	controller := &Controller{}
+	controller.setLeaseCookie(response, LeaseCookie(offer.PublicID, offer.Secret))
 	cookies := response.Result().Cookies()
 	if len(cookies) != 1 {
 		t.Fatalf("cookies = %d", len(cookies))
@@ -106,6 +107,36 @@ func TestGzipNegotiationRejectsZeroOrInvalidQuality(t *testing.T) {
 	for _, value := range []string{"gzip;q=0", "gzip;q=bogus", "br"} {
 		if acceptsGzip(value) {
 			t.Fatalf("gzip accepted for %q", value)
+		}
+	}
+}
+
+func TestLeaseCookiesPreserveTheConfiguredDeploymentPrefix(t *testing.T) {
+	_, offer, _ := testLeaseStore(t)
+	controller := &Controller{pathPrefix: "/room"}
+	for _, cookie := range []*http.Cookie{offer.Cookie, LeaseCookie(offer.PublicID, offer.Secret)} {
+		response := httptest.NewRecorder()
+		controller.setLeaseCookie(response, cookie)
+		cookies := response.Result().Cookies()
+		if len(cookies) != 1 || cookies[0].Path != "/room/api/media/hls/"+offer.PublicID+"/" || !cookies[0].Secure || !cookies[0].HttpOnly || cookies[0].SameSite != http.SameSiteStrictMode {
+			t.Fatal("prefixed cookie lost its narrow secure scope")
+		}
+		if cookie.Path != "/api/media/hls/"+offer.PublicID+"/" {
+			t.Fatal("shared lease cookie was mutated")
+		}
+	}
+}
+
+func TestHLSPathPrefixIsCanonicalAndCookieSafe(t *testing.T) {
+	for _, prefix := range []string{"", "/", "/room"} {
+		config, err := NormalizeConfig(Config{PathPrefix: prefix, AllowedOrigins: []string{"https://neko.example"}, Modes: []string{ModeHLS}})
+		if err != nil || (prefix == "/" && config.PathPrefix != "") {
+			t.Fatalf("valid path prefix rejected: %q, %v", prefix, err)
+		}
+	}
+	for _, prefix := range []string{"room", "/room/", "/room/../room", "/room?x=1", "/room%2fprivate", "/room;cookie", "/room space"} {
+		if _, err := NormalizeConfig(Config{PathPrefix: prefix, AllowedOrigins: []string{"https://neko.example"}, Modes: []string{ModeHLS}}); err == nil {
+			t.Fatalf("unsafe path prefix accepted: %q", prefix)
 		}
 	}
 }

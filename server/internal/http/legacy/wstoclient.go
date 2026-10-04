@@ -319,8 +319,11 @@ func (s *session) wsToClient(msg []byte) error {
 		}
 
 		sessionID := ""
-		if webCodecsMediaSelected(s.r) {
+		if receiveOnlyMediaSelected(s.r) {
 			sessionID = request.SessionId
+		}
+		if err := s.sendHLSState(request.Settings); err != nil {
+			return err
 		}
 
 		return s.toClient(&oldMessage.SystemInit{
@@ -735,6 +738,9 @@ func (s *session) wsToClient(msg []byte) error {
 		request := &message.SystemSettingsUpdate{}
 		err := json.Unmarshal(data.Payload, request)
 		if err != nil {
+			return err
+		}
+		if err := s.sendHLSState(request.Settings); err != nil {
 			return err
 		}
 

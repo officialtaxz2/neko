@@ -40,7 +40,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   protected _micActive = false
   protected _disconnecting = false
   protected _iceRecoveryTimeout?: number
-  protected _mediaBackend?: 'webcodecs-ws'
+  protected _mediaBackend?: 'webcodecs-ws' | 'hls' | 'll-hls'
   protected _eventConnected = false
 
   get id() {
@@ -48,9 +48,9 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   get supported() {
-    if (this._mediaBackend === 'webcodecs-ws') {
+    if (this._mediaBackend !== undefined) {
       // Keep the authenticated event plane available so the isolated media
-      // controller can report missing Worker/WebCodecs support and expose the
+      // controller can report missing decoder/player support and expose the
       // explicit WebRTC action instead of failing before the prototype UI.
       return typeof WebSocket !== 'undefined'
     }
@@ -61,7 +61,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     return this._mediaBackend
   }
 
-  public selectMediaBackend(backend?: 'webcodecs-ws') {
+  public selectMediaBackend(backend?: 'webcodecs-ws' | 'hls' | 'll-hls') {
     this._mediaBackend = backend
   }
 
@@ -74,7 +74,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   get connected() {
-    if (this._mediaBackend === 'webcodecs-ws') {
+    if (this._mediaBackend !== undefined) {
       return this._eventConnected && this.socketOpen
     }
     return this.peerConnected && this.socketOpen
@@ -107,7 +107,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     }
 
     if (!this.supported) {
-      const requirement = this._mediaBackend === 'webcodecs-ws' ? 'WebSocket' : 'WebRTC'
+      const requirement = this._mediaBackend ? 'WebSocket' : 'WebRTC'
       this.onDisconnected(new Error(`browser does not support the selected media path (${requirement} missing)`))
       return
     }
@@ -662,8 +662,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       this.emit('debug', `received websocket event ${event} ${payload ? `with payload: ` : ''}`, payload)
     }
 
-    if (this._mediaBackend === 'webcodecs-ws' && event.startsWith('signal/')) {
-      this.emit('warn', 'ignoring WebRTC signal for explicitly selected WebCodecs media')
+    if (this._mediaBackend !== undefined && event.startsWith('signal/')) {
+      this.emit('warn', 'ignoring WebRTC signal for explicitly selected receive-only media')
       return
     }
 
@@ -714,10 +714,10 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       this[EVENT.MESSAGE](event, payload)
     }
 
-    if (event === EVENT.SYSTEM.INIT && this._mediaBackend === 'webcodecs-ws' && !this._eventConnected) {
+    if (event === EVENT.SYSTEM.INIT && this._mediaBackend !== undefined && !this._eventConnected) {
       const { session_id } = payload as SystemInitPayload
       if (!session_id) {
-        throw new Error('WebCodecs event session did not provide a session id')
+        throw new Error('Receive-only event session did not provide a session id')
       }
       this._id = session_id
       this._eventConnected = true

@@ -108,6 +108,9 @@ export const media = {
   webcodecs_title: 'WebCodecs-Medienpfad',
   webcodecs_limitations: 'Nur Empfang: keine Eingabesteuerung und kein Bild-in-Bild. Ein Wechsel zu WebRTC erfolgt nie automatisch.',
   retry_webcodecs: 'WebCodecs erneut versuchen',
+  hls_limitations: 'Passives Zuschauen mit Pufferverzögerung. Der Wechsel zu WebRTC erfolgt manuell.',
+  retry_hls: 'HLS erneut versuchen',
+  unavailable: 'nicht verfügbar',
   use_webrtc: 'WebRTC verwenden',
   status: {
     off: 'aus',
@@ -117,6 +120,7 @@ export const media = {
     streaming: 'Streaming aktiv',
     reconnecting: 'wird erneut verbunden',
     terminal: 'fehlgeschlagen',
+    paused: 'Privatmodus',
   },
 }
 

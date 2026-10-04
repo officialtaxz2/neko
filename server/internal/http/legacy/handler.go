@@ -138,10 +138,10 @@ func (h *LegacyHandler) Route(r types.Router) {
 		defer connBackend.Close()
 		s.connBackend = connBackend
 
-		// The explicit Phase 3 receive prototype keeps this authenticated event
+		// Explicit receive-only media keeps this authenticated event
 		// socket but must not start the normal WebRTC signaling path. With no
 		// exact opt-in the existing WebRTC signaling behavior remains unchanged.
-		if !webCodecsMediaSelected(r) {
+		if !receiveOnlyMediaSelected(r) {
 			videoAuto := true
 			if err = s.toBackend(event.SIGNAL_REQUEST, message.SignalRequest{
 				Video: types.PeerVideoRequest{

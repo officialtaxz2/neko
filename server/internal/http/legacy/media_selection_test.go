@@ -24,3 +24,16 @@ func TestWebCodecsMediaSelectionIsExact(t *testing.T) {
 		}
 	}
 }
+
+func TestReceiveOnlySelectionIsExactAndDoesNotChangeTheDefault(t *testing.T) {
+	for _, query := range []string{"?media=hls", "?media=ll-hls", "?media=webcodecs-ws"} {
+		if !receiveOnlyMediaSelected(httptest.NewRequest("GET", "https://neko.invalid/ws"+query, nil)) {
+			t.Fatalf("receive-only opt-in rejected: %s", query)
+		}
+	}
+	for _, query := range []string{"", "?media=webrtc", "?media=HLS", "?media=hls-extra", "?media=hls&media=ll-hls", "?media=hls&media=hls"} {
+		if receiveOnlyMediaSelected(httptest.NewRequest("GET", "https://neko.invalid/ws"+query, nil)) {
+			t.Fatalf("non-exact opt-in skipped WebRTC: %s", query)
+		}
+	}
+}

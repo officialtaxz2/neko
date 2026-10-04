@@ -3,6 +3,7 @@ package mediahls
 import (
 	"errors"
 	"fmt"
+	"path"
 	"slices"
 	"strings"
 	"time"
@@ -56,6 +57,7 @@ var (
 )
 
 type Config struct {
+	PathPrefix     string // Existing server.path_prefix; not a separate HLS flag.
 	AllowedOrigins []string
 	TrustedProxies []string
 	Modes          []string
@@ -84,6 +86,19 @@ func FixedVariants() []Variant {
 }
 
 func NormalizeConfig(config Config) (Config, error) {
+	if config.PathPrefix == "/" {
+		config.PathPrefix = ""
+	}
+	if config.PathPrefix != "" {
+		if !strings.HasPrefix(config.PathPrefix, "/") || path.Clean(config.PathPrefix) != config.PathPrefix || strings.ContainsAny(config.PathPrefix, "?#%\\;") {
+			return Config{}, fmt.Errorf("%w: invalid HTTP path prefix", ErrInvalidConfig)
+		}
+		for _, value := range config.PathPrefix {
+			if value < 33 || value > 126 {
+				return Config{}, fmt.Errorf("%w: invalid HTTP path prefix", ErrInvalidConfig)
+			}
+		}
+	}
 	if config.MaxLeases == 0 {
 		config.MaxLeases = MaximumLeases
 	}

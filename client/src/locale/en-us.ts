@@ -111,6 +111,9 @@ export const media = {
   webcodecs_title: 'WebCodecs media',
   webcodecs_limitations: 'Receive-only: no input transport or Picture-in-Picture. WebRTC fallback is never automatic.',
   retry_webcodecs: 'Retry WebCodecs',
+  hls_limitations: 'Passive viewing with buffering delay. Switching to WebRTC is a manual choice.',
+  retry_hls: 'Retry HLS',
+  unavailable: 'unavailable',
   use_webrtc: 'Use WebRTC',
   status: {
     off: 'off',
@@ -120,6 +123,7 @@ export const media = {
     streaming: 'streaming',
     reconnecting: 'reconnecting',
     terminal: 'failed',
+    paused: 'private mode',
   },
 }
 

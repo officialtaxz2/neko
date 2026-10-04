@@ -261,8 +261,17 @@ func ParsePlaylistQuery(mode string, values url.Values, currentMSN, currentPart 
 	if _, present := values["_HLS_msn"]; present && !hasMSN { return PlaylistDirectives{}, ErrInvalidQuery }
 	if _, present := values["_HLS_part"]; present && !hasPart { return PlaylistDirectives{}, ErrInvalidQuery }
 	if hasPart && !hasMSN { return PlaylistDirectives{}, ErrInvalidQuery }
+	// Six fixed one-second parts make index 6 the first part of the next
+	// parent. A stale previous-parent request must not be compared with the
+	// current parent's reset part index (otherwise normal rollover is 400).
+	if hasPart && part > 6 { return PlaylistDirectives{}, ErrInvalidQuery }
+	if hasPart && part == 6 {
+		if msn == ^uint64(0) { return PlaylistDirectives{}, ErrInvalidQuery }
+		msn++
+		part = 0
+	}
 	if hasMSN && msn > currentMSN+2 { return PlaylistDirectives{}, ErrInvalidQuery }
-	if hasPart && part > currentPart+3 { return PlaylistDirectives{}, ErrInvalidQuery }
+	if hasPart && msn >= currentMSN && part > currentPart+3 { return PlaylistDirectives{}, ErrInvalidQuery }
 	return PlaylistDirectives{MSN: msn, Part: part, HasMSN: hasMSN, HasPart: hasPart}, nil
 }
 

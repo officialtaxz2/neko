@@ -27,7 +27,7 @@ function memoryStorage(initial) {
 
 test('media backend persistence defaults absent and invalid values to WebRTC', () => {
   assert.equal(normalizeMediaBackendPreference(undefined), MEDIA_BACKEND_WEBRTC)
-  assert.equal(normalizeMediaBackendPreference('hls'), MEDIA_BACKEND_WEBRTC)
+  assert.equal(normalizeMediaBackendPreference('hls-invalid'), MEDIA_BACKEND_WEBRTC)
   assert.equal(readMediaBackendPreference(memoryStorage()), MEDIA_BACKEND_WEBRTC)
   assert.equal(readMediaBackendPreference(memoryStorage('invalid')), MEDIA_BACKEND_WEBRTC)
   assert.equal(readMediaBackendPreference(memoryStorage(MEDIA_BACKEND_WEBCODECS)), MEDIA_BACKEND_WEBCODECS)
@@ -97,6 +97,23 @@ test('selection navigation removes only the stateless diagnostic override', () =
   assert.equal(next.hash, '#/Ab3dEf7h_Jk9-mN2')
 })
 
+test('HLS modes remain exact opt-ins and preserve passive link state during selection', () => {
+  for (const mode of ['hls', 'll-hls']) {
+    const storage = memoryStorage()
+    assert.equal(writeMediaBackendPreference(mode, storage), true)
+    assert.equal(readMediaBackendPreference(storage), mode)
+    assert.deepEqual(resolveMediaBackendSelection(`?media=${mode}`, 'webrtc'), {
+      backend: mode, overridden: true, invalidOverride: false,
+    })
+    const next = new URL(mediaBackendNavigationURL(`https://neko.example/prefix/?media=${mode}&embed=1#/Ab3dEf7h_Jk9-mN2`))
+    assert.equal(next.search, '?embed=1')
+    assert.equal(next.hash, '#/Ab3dEf7h_Jk9-mN2')
+  }
+  for (const search of ['?media=HLS', '?media=hls&media=ll-hls', '?media=ll-hls-extra']) {
+    assert.equal(resolveMediaBackendSelection(search, 'hls').backend, 'webrtc')
+  }
+})
+
 test('healthy streaming is compact while negotiation, recovery and failure remain prominent', () => {
   assert.equal(useCompactMediaStatus('streaming'), true)
   for (const status of ['off', 'idle', 'negotiating', 'connecting', 'reconnecting', 'terminal']) {
@@ -112,7 +129,7 @@ test('sidebar changes persist and re-enter startup while the WebRTC action persi
   assert.match(settings, /<select v-model="media_backend">/)
   assert.match(
     settings,
-    /set media_backend\(value: string\) \{\s*this\.\$accessor\.settings\.setMediaBackend\(value\)\s*this\.\$client\.changeMediaBackend\(value\)/,
+    /set media_backend\(value: string\) \{\s*if \(!this\.\$client\.canSelectMediaBackend\(value\)\) return\s*this\.\$accessor\.settings\.setMediaBackend\(value\)\s*this\.\$client\.changeMediaBackend\(value\)/,
   )
   assert.match(client, /this\.\$accessor\.settings\.setMediaBackend\(MEDIA_BACKEND_WEBRTC\)/)
   assert.match(client, /public clearMediaBackendOverride\(\) \{\s*if \(!this\.mediaBackendURLOverride\) return/)
