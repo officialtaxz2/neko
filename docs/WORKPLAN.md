@@ -926,11 +926,38 @@ structure before preparing a complete candidate preserving unrelated settings.
 The sole-site activation guard is retained. No tests/images need repetition
 for this docs/inspection-only follow-up; keep the tested application at 93f1fa63.
 
+## Read-only Caddy inspection and preserving merge — application `93f1fa63`
+
+The operator ran inspector helper `68a7f9047f81ecce5eb89204b15fc0b5acf174e8`
+on 2026-10-04 with **Inspect-Exitcode 0**. The adapted configuration reported
+one HTTP server, 11 distinct explicit hosts, one exact Neko route and one proxy,
+whose sole upstream is `127.0.0.1:8082`. Forwarded-header removal, explicit
+upstream compression disablement and explicit request/response buffering were
+absent. Runtime logging contains the default plus one other logger; the default
+encoder was `unset-or-other`, with zero filter fields. No exact Neko site logger
+association or credential logging was reported. Other hosts, raw configuration
+and credential values were not printed. This was read-only; HLS remains off.
+
+The activation helper now has a matching offline `deploy/merge-hls-caddy.py`.
+It supports the inspected bare Neko proxy/explicit site and an encoder-free
+default logger, retains unrelated source text, and uses Caddy's actual adapted
+JSON to require exact preservation of all other settings. Unknown proxy,
+source/import/alias, debug, encoder, Neko access/fallback or extra runtime-error
+logging structures are rejected before reload. Other site access loggers and
+default writer/level/include/exclude options are preserved; the new default
+filter also removes headers from other runtime error records. The temporary
+candidate stays in `/etc/caddy` for relative imports and is cleaned up; raw
+JSON/validation output stays private. Source/adaptation rechecks precede backup,
+the existing synthetic-error log gate, tested-image activation and restoration
+logic. The complete new helper is statically reviewed, **NOT EXECUTED IN CODEX**;
+its merge/reload/log/enable gates await target output. It changes no application,
+dependency or tested Compose source, so keep application/images at `93f1fa63`.
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Exact repair-image preparation passed at `93f1fa63`; both Caddyfiles validated, but activation helper `58ca75e9` stopped at the complete-file guard before service changes. Keep the tested application checkout/images and load only the read-only Caddy inspector. Review the actual proxy/logging structure and prepare a merged complete candidate preserving other settings before activation/error-log checks and conventional HLS enablement. Valid delivery and the grouped matrix then follow. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
+Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Exact repair-image preparation passed at `93f1fa63`; the initial activation guard stopped safely, and inspector `68a7f904` confirmed the actual 11-host Caddy structure. Keep the tested application checkout/images. Extract the matching activation shell helper and offline Python merger from one reviewed tooling commit, then run the bounded merge/complete adapted-configuration equality, validation/recheck, backup/reload, synthetic error-log and conventional HLS enablement gates. Their new target execution is pending; valid delivery and the grouped matrix follow after success. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 

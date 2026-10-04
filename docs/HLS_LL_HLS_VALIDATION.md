@@ -72,19 +72,23 @@ The separate `docker-compose.hls.yaml` requires adaptive source geometry and
 exact HTTPS/proxy values; empty HLS values reuse the reviewed WebCodecs values.
 Its initial mode is only `hls`. Base Compose remains default-off.
 
-**Current checkpoint:** the target attempt with helper commit `58ca75e9`
-stopped at `active Caddyfile differs from the supplied minimal site` (exit 1).
-No Caddy backup/reload or Neko stop/deployment was reached. Keep the tested
-application/images at `93f1fa63`. Run the read-only
-[structural inspection](../deploy/inspect-hls-caddy.sh), then review a merged
-candidate that preserves the actual file's other sites/options. Do not remove
-the guard or apply the single-site example to an unreviewed complete file.
+**Current checkpoint:** activation helper `58ca75e9` stopped at its single-site
+guard before any service change. The read-only inspection at helper `68a7f904`
+then passed (exit 0), confirming 11 explicit hosts, one exact Neko route/proxy
+and the expected loopback upstream. See [the Caddy record](HLS_LL_HLS_CADDY.md)
+for the logging qualifications. Keep the tested application/images at `93f1fa63`.
 
-For a complete file containing only the supplied Neko site, the statically
-reviewed [activation helper](../deploy/activate-hls-phase4.sh) additionally:
+The statically reviewed [activation helper](../deploy/activate-hls-phase4.sh)
+now uses [merge-hls-caddy.py](../deploy/merge-hls-caddy.py) and additionally:
 
-- refuses unfamiliar sites/global options and preserves a private Caddy backup;
-- formats/validates the candidate before reload and captures the old Neko image;
+- edits only the explicit bare Neko proxy and a runtime default logger with no
+  existing encoder, rejecting unfamiliar source/proxy/logging structures;
+- requires complete adapted JSON equality outside the approved proxy/default
+  encoder changes, preserves the other hosts/options/loggers, validates with
+  Caddy and rechecks the original before a private backup/reload;
+- retains relative import resolution by using a private temporary candidate
+  beside the active file, with cleanup on preparation success/failure;
+- captures the old Neko image before stopping it;
 - uses the deployment stop for one synthetic public 502 and checks the actual
   Caddy journal for normalized URI, absent headers and absent synthetic marker;
 - starts the already-tested image, performs the enabled/cleartext denial checks,
@@ -101,9 +105,12 @@ helper commit and extract `deploy/activate-hls-phase4.sh` with `git show` into
 `../neko-hls-results-93f1fa637ae3`, then run `bash -n` and invoke that file with
 the repository and result-directory arguments. This loads operator tooling
 without changing the application commit or invalidating its image marker.
-Record the exact helper commit; the helper records its blob and app commit.
-Its configuration guard ran on the target and safely stopped; activation/log/
-playback checkpoints remain **PENDING / NOT EXECUTED IN CODEX**. The plain
+Extract **both** `deploy/activate-hls-phase4.sh` and `deploy/merge-hls-caddy.py`
+from the same reviewed helper commit into that directory. Record that commit;
+the helper records both tooling blobs and the app commit. Run `bash -n` first.
+The old single-site guard and new read-only inspection ran on the target; the
+new merge/activation/log/playback checkpoints remain
+**PENDING / NOT EXECUTED IN CODEX**. The plain
 enable block below is for environments where Caddy/logging is already verified:
 
 ```bash

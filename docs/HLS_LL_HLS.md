@@ -1,6 +1,6 @@
 # HLS / Low-Latency HLS passive delivery contract
 
-Status: **version-1 design plus Phases 1–3 and Phase 4 deployment/observability assets implemented on `testing`. The exact automated/image preparation gate passed at `e55bcd7e`: 44 client tests, type/build, 13 Go packages, both fuzz jobs and server/base/Brave builds. The running service was unchanged. Advisory classification, Caddy runtime-log review and HLS-enabled target/runtime/device validation are NEXT/pending; no automatic selection or HLS acceptance claim exists**.
+Status: **version-1 design plus Phases 1–3 and Phase 4 deployment/observability assets implemented on `testing`. The latest exact automated/image preparation gate passed at `93f1fa63`: 47 client tests, type/build, 13 Go packages, both fuzz jobs and server/base/Brave builds. The running service was unchanged. Read-only Caddy inspection confirmed 11 hosts after the activation guard stopped; a preserving merge is prepared, while reload/runtime-log and HLS-enabled target/runtime/device validation remain NEXT/pending. The audit is classified, with dependency work open; no automatic selection or HLS acceptance claim exists**.
 
 This document is the normative contract for the first default-off passive/view-only HTTP-streaming prototype. It specializes the encoded-source/subscription and participant-delivery boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It does not authorize a second desktop capture, a stable-deployment change or a claim that any untested device supports the proposed path.
 

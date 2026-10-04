@@ -22,20 +22,40 @@ file before an operator-applied reload; reload can reconnect existing streams.
 The [activation helper](../deploy/activate-hls-phase4.sh) was prepared under
 the assumption that the supplied site was the complete file. The actual target
 attempt at helper commit `58ca75e9` rejected that sole-site condition with exit
-1, **before backup/reload or any Neko stop/deployment**. The precise difference
-is not known from that output; additional sites/options are a possibility.
-The [read-only structural inspection](../deploy/inspect-hls-caddy.sh) is NEXT.
-It adapts the active file in memory and outputs fixed counts/booleans for Neko
-proxy and logger settings, without printing other sites, credentials, headers
-or raw adapted JSON. Review the actual structure and prepare a merged complete
-candidate preserving unrelated configuration before resuming activation.
+1, **before backup/reload or any Neko stop/deployment**.
+The [read-only structural inspection](../deploy/inspect-hls-caddy.sh) then
+passed on the target at helper `68a7f904` (exit 0). It reported one HTTP server,
+11 distinct explicit hosts, one exact Neko route and one proxy with only
+`127.0.0.1:8082`. Forwarded deletion, disabled upstream compression and explicit
+request/response buffering were absent. The default runtime logger has no
+reported standard encoder/filter, one additional logger exists, Neko has no
+exact host-to-logger association and credential logging is disabled. The actual
+default encoder and additional logger routing still need the merge guards;
+`unset-or-other` alone does not prove absence of a custom module.
 
-The sole-site helper refuses any additional active options,
-backs up the original, formats/validates before reload, and uses the deployment
-stop for a synthetic 502 to check the real error journal before valid leases.
-Image/Caddy restoration is attempted if a gate fails. It has only been reviewed
-statically; the only target execution stopped at its configuration guard.
-No application, reload or live-log pass is claimed yet.
+The updated [activation helper](../deploy/activate-hls-phase4.sh) uses a matching
+[offline source merger](../deploy/merge-hls-caddy.py), extracted beside it. The
+merger supports the supplied explicit Neko site/bare loopback proxy and a default
+logger with no existing encoder. It adds only the reviewed proxy settings and
+runtime filter, preserving source text elsewhere. Existing global/default writer,
+level, include/exclude settings and other loggers remain intact. It rejects an
+unreviewed encoder, Neko access/fallback logger, additional runtime/error logger,
+debug logging, existing proxy options, or imported/aliased Neko source block.
+
+Caddy adapts the candidate from a private temporary file in `/etc/caddy` so
+relative imports retain their directory. The entire adapted JSON must equal the
+original with **only** the two Neko proxy settings and default encoder added.
+Every other host, route, TLS/global option and logger must remain identical.
+Caddy validation and a fresh source/adaptation check precede backup/reload.
+Raw configurations/validation output remain private; only fixed verdicts/counts
+are printed. The temporary file is removed on success or failure.
+
+The later synthetic 502, private journal check, tested-image enablement and
+failure restoration remain unchanged. The new merge/activation variant is
+statically reviewed, **NOT EXECUTED IN CODEX**, and awaits target execution.
+No reload, live-log pass or enabled playback is claimed yet. The default filter
+also deletes headers from other runtime error records; existing separate site
+access loggers are preserved, and no Neko access logger is added.
 
 ## Existing routing and trust
 

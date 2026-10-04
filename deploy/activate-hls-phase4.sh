@@ -9,7 +9,7 @@ cd -- "$1"
 umask 077
 fail() { printf 'error: %s\n' "$*" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || fail 'run as root for the host Caddy service'
-for command in docker git caddy systemctl journalctl curl sed tr realpath stat cp cmp date sleep tee; do
+for command in docker git caddy systemctl journalctl curl dirname mktemp rm realpath stat cp cmp date sleep tee; do
   command -v "$command" >/dev/null || fail "required command not found: $command"
 done
 test "$(git branch --show-current)" = testing
@@ -29,21 +29,51 @@ docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml \
 readonly active=/etc/caddy/Caddyfile
 readonly backup="$output/Caddyfile.before-hls"
 readonly candidate="$output/Caddyfile.hls"
+readonly merger="$(dirname -- "$helper")/merge-hls-caddy.py"
 [[ -f "$active" && ! -L "$active" ]] || fail 'active Caddyfile must be a regular file'
-# Replace only the exact supplied sole site. Additional sites/global options
-# require a reviewed merge; never overwrite an unfamiliar configuration.
-normalized="$(sed 's/#.*$//' "$active" | tr -d '[:space:]')"
-[[ "$normalized" == 'neko.taxzvps.de{reverse_proxy127.0.0.1:8082}' ]] || \
-  fail 'active Caddyfile differs from the supplied minimal site; no change applied'
-unset normalized
+[[ -f "$merger" && ! -L "$merger" ]] || fail 'extract the matching merge-hls-caddy.py beside this helper'
+printf 'operator_merger_blob=%s\n' "$(git hash-object -- "$merger")"
+printf '{"merge":"pending"}\n' >"$output/caddy-merge-check.json"
+cp -- "$active" "$output/Caddyfile.merge-source"
+caddy adapt --config "$active" --adapter caddyfile \
+  >"$output/Caddyfile.before-merge.json" 2>"$output/caddy-merge-adapt.log" || \
+  fail 'active Caddy adaptation failed; details remain private'
+merge_check() {
+  docker run --rm --network none --read-only \
+    --mount "type=bind,src=$output,dst=/evidence" \
+    --mount "type=bind,src=$merger,dst=/merge.py,readonly" \
+    python:3.12-alpine python /merge.py "$1" /evidence
+}
+merge_check write
+# Preserve relative import resolution by adapting a temporary candidate in
+# the active file's directory. Neither this file nor raw JSON is printed.
+candidate_temp="$(mktemp "$(dirname -- "$active")/.neko-hls-XXXXXXXX")"
+trap 'rm -f -- "$candidate_temp"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+cp -- "$candidate" "$candidate_temp"
+caddy adapt --config "$candidate_temp" --adapter caddyfile \
+  >"$output/Caddyfile.hls.json" 2>>"$output/caddy-merge-adapt.log" || \
+  fail 'candidate adaptation failed; no service change, details remain private'
+merge_check verify
+caddy validate --config "$candidate_temp" --adapter caddyfile \
+  >"$output/caddy-merge-validate.log" 2>&1 || \
+  fail 'merged Caddy validation failed; no service change, details remain private'
+rm -f -- "$candidate_temp"
+trap - EXIT INT TERM
+cmp --silent -- "$output/Caddyfile.merge-source" "$active" || \
+  fail 'active Caddyfile changed during preparation; no service change'
+caddy adapt --config "$active" --adapter caddyfile \
+  >"$output/Caddyfile.before-merge.recheck.json" 2>>"$output/caddy-merge-adapt.log" || \
+  fail 'active Caddy recheck failed; no service change, details remain private'
+cmp --silent -- "$output/Caddyfile.before-merge.json" "$output/Caddyfile.before-merge.recheck.json" || \
+  fail 'active adapted configuration changed during preparation; no service change'
+printf 'PASS complete merged Caddyfile validation; backup/reload follows.\n'
 if [[ -e "$backup" ]]; then
   cmp --silent -- "$backup" "$active" || fail 'existing Caddy backup differs; preserve it and review'
 else
   cp -a -- "$active" "$backup"
 fi
-sed 's/^neko\.example {/neko.taxzvps.de {/' deploy/caddy-hls.example >"$candidate"
-caddy fmt --overwrite "$candidate"
-caddy validate --config "$candidate" --adapter caddyfile
 systemctl is-active --quiet caddy
 readonly container="$(docker compose -f docker-compose.yaml ps -q neko)"
 test -n "$container"
@@ -80,6 +110,8 @@ recover() {
 trap 'recover $?' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
+cmp --silent -- "$output/Caddyfile.merge-source" "$active" || \
+  fail 'active Caddyfile changed before reload; no service change'
 caddy_changed=1
 cp -- "$candidate" "$active"
 systemctl reload caddy
