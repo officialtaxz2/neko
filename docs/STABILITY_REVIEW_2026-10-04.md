@@ -67,9 +67,13 @@ operator-confirmed normal login/picture/audio. The prepared 80020d99 image then
 passed default-off deployment with helper a7669dd1 (Baseline-Exitcode 0,
 healthy service, 2/2 disabled-route probes). The operator confirmed normal
 login, picture, audio and control work in the requested private browser check.
-This is supplied target evidence, **NOT EXECUTED IN CODEX**. NEXT enable
-conventional HLS on the same image and validate playback; the original incident
-cause and enabled HLS/device/resource acceptance remain open.
+This is supplied target evidence, **NOT EXECUTED IN CODEX**. Same-image HLS
+activation then passed with Enable-Exitcode 0, healthy service and 19/19 HTTP
+denial probes. The operator again reported HLS bootstrap failure and all
+streams stopping afterward, tentatively recalling a brief initial picture.
+No actual process crash trace or cause is supplied. NEXT preserve read-only
+diagnostics before restoring this same known-working image without HLS;
+restoration and enabled HLS/device/resource acceptance remain open.
 
 1. **Room events and stores:** traced member list/join/disconnect, room chat and
    control take/release/grant in `client/src/neko/index.ts` and the user/chat/

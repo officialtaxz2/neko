@@ -5,7 +5,9 @@ activation/invalid-input gates passed at exact application `93f1fa63`;
 the first playback attempt FAILED and normal login then timed out.
 Read-only diagnosis, rollback recovery and exact 80020d99 repair-image
 preparation passed. Default-off repair-image deployment and operator-confirmed
-normal login/picture/audio/control passed. Enabled HLS playback and grouped
+normal login/picture/audio/control passed. Same-image HLS activation/19 denial
+probes passed, but HLS failed again with an operator-reported all-stream outage.
+Read-only diagnosis/default-off restoration, working HLS playback and grouped
 acceptance remain PENDING.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
@@ -131,7 +133,10 @@ application change/build is required.
 The operator confirmed normal login, picture, audio and control all work in the
 requested private browser window at https://neko.taxzvps.de/. No wider
 room-event/device matrix or enabled HLS playback was reported.
-NEXT enable HLS through section 2's plain
+The subsequent section 2 activation passed, but the operator again reported HLS
+bootstrap failure followed by all streams stopping. NEXT preserve the failed
+attempt's read-only diagnostic and restore the known-working default-off image
+as described below. The original activation sequence used section 2's plain
 image/probe helper, keeping this same application commit and evidence directory.
 Do not repeat the completed Caddy source merge. Public valid-lease playback,
 production capture skew and the full lifecycle/device/resource matrix remain
@@ -150,8 +155,10 @@ passed, `my-neko/brave:hls-93f1fa637ae3` started healthy, and the 17 public plus
 two cleartext-denial probes passed. See [the Caddy record](HLS_LL_HLS_CADDY.md)
 for the logging qualifications. The application stayed at `93f1fa63` for the
 successful rollback recovery in section 3. Exact 80020d99 repair-image
-preparation and default-off deployment/browser smoke passed. NEXT enable
-conventional HLS on this same prepared image.
+preparation and default-off deployment/browser smoke passed. Its subsequent
+same-image activation also passed with Enable-Exitcode 0, healthy service and
+19/19 HTTP denial probes; the operator again reported failed HLS bootstrap and
+all streams stopping afterward. Do not repeat activation before diagnosis.
 Do not reuse the old preparation
 marker or repeat the completed source-merging Caddy activation.
 
@@ -267,13 +274,34 @@ mandatory real-codec validation job. Those tests/builds/images passed at exact
 80020d99 with Check-Exitcode 0. Its default-off deployment then passed with
 Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes; the operator
 confirmed normal login/picture/audio/control work. Enabled HLS acceptance is
-still pending. NEXT enable HLS on this same image. The target Caddy source
-already contains the
-reviewed changes; use the plain enable/probe block in section 2 after these gates,
-not the completed bare-source merger. Then repeat the bounded picture/audio
-checkpoint below and the full valid-delivery matrix. If login still hangs,
-collect targeted private event/login diagnostics before further HLS work; its
-cause is not established by the static startup findings.
+still pending. Same-image activation passed with Enable-Exitcode 0, healthy
+service and 19/19 HTTP denial probes, but HLS failed again. The target Caddy
+source already contains the reviewed changes. Preserve the failed-attempt
+diagnostic before restoring default-off; do not repeat the source merger or
+activation before review. Later repeat the bounded picture/audio checkpoint
+and full valid-delivery matrix. The failure cause is not established by the
+static startup findings.
+
+### Repeated failed playback: preserve evidence, then restore default-off
+
+The exact 80020d99 image passed activation and 19 HTTP denial probes, but the
+operator reported `HLS bootstrap failed; retry manually`, tentatively recalled
+a brief initial picture, then reported all streams stopped. This does not
+establish an actual process crash or its cause. Normal playback passed with
+HLS disabled immediately before activation.
+
+Keep application HEAD at 80020d99477a58318f210b7e14d19cdd92991a6d and use the
+existing private ../neko-hls-results-80020d99477a directory. Before stopping the
+container, run [diagnose-hls-playback.sh](../deploy/diagnose-hls-playback.sh)
+(blob 5b4b064926f83eccc28fe8bd596db93ba9c19ff1). Raw logs remain private in a
+new timestamped report directory; share only the fixed-marker safe summary.
+Capture/record its exit code even if it fails, then use the extracted reviewed
+helper (blob c6f52dc80fdf605ec908f3fe3856ce23e015e494) in baseline mode with
+the explicit repository argument. This restores the same prepared image with
+HLS disabled; startup failure attempts the saved prior image. Do not delete
+evidence, rebuild, change Caddy or retry enabled playback before review.
+Both this incident's diagnostic and restoration are pending target execution,
+**NOT EXECUTED IN CODEX**. Confirm normal login/picture/audio again afterward.
 
 ### First bounded picture/audio checkpoint (repeat after diagnosis/repair)
 

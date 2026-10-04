@@ -131,8 +131,22 @@ work in the requested private browser check. The saved rollback image remains
 available. This is supplied target evidence, NOT EXECUTED IN CODEX; neither
 enabled HLS playback nor the original timeout's exact cause is established.
 
-NEXT enable conventional HLS on this same image and repeat the
-picture/audio/room-event smoke test, valid passive authorization/lifecycle,
+Same-image HLS activation then completed with Enable-Exitcode 0: the image
+started healthy, all 17 public denial probes and both cleartext-denial probes
+passed. The operator again reported HLS fails, with the fixed message
+`HLS bootstrap failed; retry manually`. They tentatively recalled a brief
+picture before the failure, then reported all streams stopped. Device/browser,
+actual process crash versus stalled media, timestamps and cause remain
+unconfirmed; this is not a verified successful HLS playback or crash trace.
+
+NEXT preserve a read-only failed-attempt diagnostic before restarting, using
+the existing helper whose blob is 5b4b064926f83eccc28fe8bd596db93ba9c19ff1.
+Its raw application/Supervisor logs stay in a new private report directory;
+only its safe summary may be shared. Then invoke the reviewed a7669dd1 helper's
+baseline action to restore this same previously working image without HLS.
+Diagnostic capture and this restoration are pending target execution.
+Review the supplied evidence before making further application changes. Later
+repeat the picture/audio/room-event smoke test, valid passive authorization/lifecycle,
 mixed-backend isolation, resources and grouped device checks in
 [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). No automatic fallback,
 encoder bitrate/profile change, new production dependency or `master` promotion
