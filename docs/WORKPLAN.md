@@ -734,11 +734,11 @@ The runtime gate must additionally inspect generated H.264/AAC init/fragments an
 
 ## COMPLETED IN REPOSITORY — HLS/LL-HLS Phase 3 passive client
 
-Status on 2026-10-04: **implemented and statically reviewed on `testing`; accumulated target-server tests/build/runtime/device checks pending**.
+Status on 2026-10-04: **implemented and statically reviewed on `testing`; the focused automated target-server gate passed at `e85d8568`; deployment images, live playback and device acceptance remain pending**.
 
 The isolated HLS controller and pinned local hls.js 1.7.3 MSE/worker path now integrate with the native video/playback UI. Advertised-only manual HLS/LL-HLS choices appear for passive viewers and admin diagnostics; exact diagnostic queries and saved choices preserve unrelated navigation state. WebRTC remains the absent/invalid default, WebCodecs remains supported, disabled HLS terminates visibly, and no automatic fallback or deployment overlay was added. The authenticated event session skips unused WebRTC signaling for exact HLS selections. Private-mode state now crosses the legacy bridge, and native/MSE cleanup owns buffers, listeners, requests and stale callbacks. Prefix-scoped cookies/CORS/logging and six-part blocking-reload rollover were corrected during static integration. See [`HLS_LL_HLS.md`](HLS_LL_HLS.md) for the full implementation boundaries.
 
-The pre-push static review supplied the missing standard `URL` constructor to the isolated MSE-loader test VM, so valid scoped requests can reach the intended loader assertions. The corrected tests remain pending execution on the target server.
+The pre-push static review supplied the missing standard `URL` constructor to the isolated MSE-loader test VM, so valid scoped requests can reach the intended loader assertions. These tests passed in the target-server gate recorded below.
 
 Runtime/build/test status: **NOT EXECUTED IN CODEX**. On the real target server at the eventual exact reviewed commit, run the accumulated client and server gate:
 
@@ -750,6 +750,22 @@ docker compose -f docker-compose.validation.yaml run --rm server-checks
 ```
 
 The client container runs `npm ci`, `npm test`, `npm run lint` and `npm run build`, including HLS controller/protocol tests and server playlist fixtures. The server container includes HLS, common media, legacy/current events, HTTP, auth/session and existing WebRTC/WebCodecs checks plus the build. In Phase 4, validate exact images, disabled/enabled HTTPS delivery, root/prefixed cookie renewal/redaction/CORS, both playlist modes over repeated parent rollovers, ordinary/admin/view-only/private/revoked roles, autoplay/gesture/fullscreen/PiP and induced mixed-backend isolation/resources. Measure startup and latency separately. None of those runtime or device results is claimed here.
+
+### Target-server automated gate supplied on 2026-10-04
+
+The operator first saved the mixed uploaded working tree, fast-forwarded `testing` to exact `e85d8568` and supplied a clean Git status. The subsequent containerized validation log reported exit code `0`: `npm ci`, all 42 client tests, TypeScript and Vite build passed; the validation image built; all 13 focused Go packages passed, including HLS, HTTP/legacy, auth/session and WebRTC; the WebSocket parser fuzz test passed with 1,159,263 executions; and the trailing server/plugin build passed. No project code or runtime checks were executed in Codex.
+
+The running older deployment reported the adaptive-quality configuration and WebCodecs/media-WebSocket enabled. Preserve both explicit overlays during the upcoming image deployment. Base/Brave image builds, actual service replacement, health and browser/media/device acceptance at the new commit are still pending; this automated gate is not full HLS acceptance.
+
+`npm ci` also reported 20 audit findings (11 low, 3 moderate, 5 high and 1 critical). No detailed advisory report was supplied, so affected packages, production relevance and repairs remain unclassified. Track this in the final stability/security review; do not treat passing tests as a dependency-security clearance or apply a blind breaking dependency update.
+
+### Target-server deployment build interruption on 2026-10-04
+
+The subsequent deployment attempt at `e85d8568` passed Compose configuration validation but failed while building the base image: after `npm install` and `COPY client .`, `npm run build` reported `vite: Permission denied` (exit `126`); the outer deployment reported exit `1`. The script stopped before the Brave image build and before stopping or replacing the running service. This log supplies no new deployment-health or playback acceptance.
+
+Static inspection found no Docker ignore file: the generated repository-root build context could copy host `client/node_modules` over the Linux dependencies installed in the image. Dependencies left by the earlier Windows file upload are a plausible explanation; the target host's actual dependency files were not inspected. The correction excludes host dependencies at every depth in the root and standalone client contexts, excludes local credentials/profile/download state from the root context, and uses `npm ci` against the same lockfile as the passing validation gate. The root ignore file deliberately retains `dist` directories for the existing `CLIENT_DIST` build option. No dependency versions or application source changed.
+
+Correction status: statically reviewed; **NOT EXECUTED IN CODEX**. Repeat the base and Brave image builds on the target server at the correction commit, then deploy with both existing overlays and verify health plus browser/media behavior. The successful automated gate above remains evidence for `e85d8568`, not a completed deployment of the correction.
 
 ## Operator direction — event-triggered TV failures and final stability review
 

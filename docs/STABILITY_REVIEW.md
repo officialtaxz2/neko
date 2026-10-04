@@ -28,6 +28,7 @@ Review the integrated code and relevant configuration at an identified `testing`
 5. Recheck server-enforced view-only boundaries and the common event/session authorization above WebRTC, WebCodecs and HLS. Receive transport never grants control rights.
 6. Inspect queue/buffer limits, source demand, shared HLS workers, slow-viewer isolation and resource release. A bounded queue alone does not prove device performance or acceptable total CPU load.
 7. Review configuration consistency and quality-related choices without speculative tuning. Change bitrate, quantizer, latency or buffer settings only with an explicit goal and a comparable baseline.
+8. Review the target-server dependency audit report and distinguish runtime dependencies from build-only dependencies, affected versions and reachable behavior. At `e85d8568`, `npm ci` reported 20 findings including one critical, but no detailed advisory report was supplied. Classify and address confirmed applicable findings without a blind breaking dependency update.
 
 Record findings, affected files, the reason for each repair and required target checks. Review the resulting final diff again. No broad rewrite, additional transport or dependency migration is implied by this review.
 
