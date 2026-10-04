@@ -4,7 +4,8 @@ Repository assets prepared on 2026-10-04. **The automated/image preparation and
 activation/invalid-input gates passed at exact application `93f1fa63`;
 the first playback attempt FAILED and normal login then timed out.
 Read-only diagnosis, rollback recovery and exact 80020d99 repair-image
-preparation passed. Default-off repair-image deployment/live checks and grouped
+preparation passed. Default-off repair-image deployment and operator-confirmed
+normal login/picture/audio/control passed. Enabled HLS playback and grouped
 acceptance remain PENDING.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
@@ -89,7 +90,7 @@ no credentials. Confirm existing WebRTC/WebCodecs playback, control/recovery,
 fullscreen and absent HLS choices before enabling. Complete the Caddy routing,
 trust, streaming and log review before creating valid HLS credentials.
 
-### Prepared repair image: deploy with HLS disabled (NEXT)
+### Prepared repair image: default-off deployment/browser smoke passed
 
 The supplied preparation tail ended with Check-Exitcode 0 at exact 80020d99.
 All 13 Go packages, both fuzz jobs, the trailing server/plugin build, the visible
@@ -120,13 +121,17 @@ prepared repair image, with adaptive/WebCodecs and without the HLS overlay.
 Active sessions disconnect. Failed health startup restores the saved prior image;
 a public-probe or manual-browser failure requires explicit rollback/review.
 The existing application-checkout rollback helper can use this new directory.
-The baseline helper is statically reviewed, **NOT EXECUTED IN CODEX**, pending
-first target execution. No additional application change/build is required.
+The supplied baseline run passed with Baseline-Exitcode 0 using helper commit
+a7669dd184138ba53ea9398d31d0ca706ee0b400, blob
+c6f52dc80fdf605ec908f3fe3856ce23e015e494. Image
+my-neko/brave:hls-80020d99477a started healthy and both disabled-route probes
+passed. This is target evidence, **NOT EXECUTED IN CODEX**. No additional
+application change/build is required.
 
-In a new private browser window at https://neko.taxzvps.de/, confirm normal
-login, changing picture, audio and control/room events. Record the exact image
-and output; health and disabled-route checks are not browser-media acceptance.
-Only after this baseline passes, enable HLS through section 2's plain
+The operator confirmed normal login, picture, audio and control all work in the
+requested private browser window at https://neko.taxzvps.de/. No wider
+room-event/device matrix or enabled HLS playback was reported.
+NEXT enable HLS through section 2's plain
 image/probe helper, keeping this same application commit and evidence directory.
 Do not repeat the completed Caddy source merge. Public valid-lease playback,
 production capture skew and the full lifecycle/device/resource matrix remain
@@ -145,7 +150,8 @@ passed, `my-neko/brave:hls-93f1fa637ae3` started healthy, and the 17 public plus
 two cleartext-denial probes passed. See [the Caddy record](HLS_LL_HLS_CADDY.md)
 for the logging qualifications. The application stayed at `93f1fa63` for the
 successful rollback recovery in section 3. Exact 80020d99 repair-image
-preparation passed; NEXT deploy/verify its default-off baseline in section 1.
+preparation and default-off deployment/browser smoke passed. NEXT enable
+conventional HLS on this same prepared image.
 Do not reuse the old preparation
 marker or repeat the completed source-merging Caddy activation.
 
@@ -185,12 +191,16 @@ and its logging configuration remain as reviewed:
 set +e
 bash -e -o pipefail <<'NEKO_HLS_ENABLE'
 cd /opt/docker/nekoNew/neko
-commit="$(git rev-parse HEAD)"
-output="../neko-hls-results-${commit:0:12}"
+test "$(git rev-parse HEAD)" = "80020d99477a58318f210b7e14d19cdd92991a6d"
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-80020d99477a
+test "$(stat -c %a "$output")" = 700
+test "$(git hash-object -- "$output/deploy-hls-media.sh")" = "c6f52dc80fdf605ec908f3fe3856ce23e015e494"
+bash -n "$output/deploy-hls-media.sh"
 bash "$output/deploy-hls-media.sh" enable "$output" "$PWD"
-docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks enabled
+docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks enabled </dev/null
 docker compose -f docker-compose.validation.yaml run --rm -T \
-  -e NEKO_PUBLIC_BASE_URL=http://127.0.0.1:8082 hls-http-checks insecure-denied
+  -e NEKO_PUBLIC_BASE_URL=http://127.0.0.1:8082 hls-http-checks insecure-denied </dev/null
 NEKO_HLS_ENABLE
 printf 'Enable-Exitcode: %s\n' "$?"
 ```
@@ -210,7 +220,7 @@ unexecuted. A Docker bridge peer inside a trusted CIDR is not that test.
 
 ## 3. Valid delivery, authorization and lifecycle
 
-### Failed playback/login incident: recovery passed, repair preparation NEXT
+### Failed playback/login incident: recovery and default-off repair baseline passed
 
 On 2026-10-04 the operator reported `hls failed`, connection failure/no picture,
 then normal-login timeouts. Device/browser and exact player status remain
@@ -254,10 +264,11 @@ original blocker or validate the new HLS repair. No wider matrix was reported.
 The repository now includes cold-generation/initial-caps, HLS-only encoder-
 segment timestamp, initial videorate gap and bounded C logging repairs plus a
 mandatory real-codec validation job. Those tests/builds/images passed at exact
-80020d99 with Check-Exitcode 0; live acceptance is still pending. Restoration is
-reviewed; NEXT deploy the prepared repair-image baseline from section 1 with
-HLS disabled and verify normal login/picture/audio/control first. The target
-Caddy source already contains the
+80020d99 with Check-Exitcode 0. Its default-off deployment then passed with
+Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes; the operator
+confirmed normal login/picture/audio/control work. Enabled HLS acceptance is
+still pending. NEXT enable HLS on this same image. The target Caddy source
+already contains the
 reviewed changes; use the plain enable/probe block in section 2 after these gates,
 not the completed bare-source merger. Then repeat the bounded picture/audio
 checkpoint below and the full valid-delivery matrix. If login still hangs,
@@ -288,7 +299,7 @@ While HLS is active, the existing collector can preserve private metrics:
 
 ```bash
 cd /opt/docker/nekoNew/neko
-bash deploy/collect-hls-media.sh snapshot ../neko-hls-results-93f1fa637ae3 hls-first-playback
+bash deploy/collect-hls-media.sh snapshot ../neko-hls-results-80020d99477a hls-first-playback
 ```
 
 ### Remaining valid-delivery matrix

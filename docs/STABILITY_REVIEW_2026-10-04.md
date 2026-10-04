@@ -63,10 +63,13 @@ a deployed capture loss. Production capture skew, valid auth/proxy/player,
 device/resource and grouped acceptance remain separate gates.
 
 The saved pre-HLS image was restored healthy with Restore-Exitcode 0 and
-operator-confirmed normal login/picture/audio. NEXT deploy the prepared 80020d99
-image with HLS disabled and verify normal login/media before re-enabling HLS.
-The new operator-only baseline helper is statically reviewed, **NOT EXECUTED IN
-CODEX** and pending target execution; no application source/image changed here.
+operator-confirmed normal login/picture/audio. The prepared 80020d99 image then
+passed default-off deployment with helper a7669dd1 (Baseline-Exitcode 0,
+healthy service, 2/2 disabled-route probes). The operator confirmed normal
+login, picture, audio and control work in the requested private browser check.
+This is supplied target evidence, **NOT EXECUTED IN CODEX**. NEXT enable
+conventional HLS on the same image and validate playback; the original incident
+cause and enabled HLS/device/resource acceptance remain open.
 
 1. **Room events and stores:** traced member list/join/disconnect, room chat and
    control take/release/grant in `client/src/neko/index.ts` and the user/chat/

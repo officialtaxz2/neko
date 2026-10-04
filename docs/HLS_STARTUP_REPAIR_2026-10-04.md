@@ -2,7 +2,8 @@
 
 Status: source changes statically reviewed on `testing`; the exact 80020d99
 target automated/image gate and both real-codec integration tests passed.
-Deployment/live acceptance of that image remain pending. Tests/builds/codec
+Default-off deployment and normal browser smoke checks passed; enabled HLS
+live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
 HLS-playback or unique original-login-cause claim.
 
@@ -121,12 +122,16 @@ generation 1 (test duration 18.11 s). Audit exit 1 remains open findings. The
 client test count is absent from the supplied tail; no new count is claimed.
 The working rollback service was not replaced by preparation.
 
-NEXT use the extracted, reviewed operator helper's baseline action to deploy
-the prepared image with HLS disabled, retaining the working prior image for
-rollback, and verify normal login/picture/audio/control first. The baseline
-helper accepts an explicit repository argument and checks the prepared image
-ID. It is statically reviewed, NOT EXECUTED IN CODEX and pending target execution.
-After that live baseline passes, enable conventional HLS and repeat the
+The extracted helper from a7669dd184138ba53ea9398d31d0ca706ee0b400 completed
+baseline deployment at application 80020d99 with Baseline-Exitcode 0. Its blob
+was c6f52dc80fdf605ec908f3fe3856ce23e015e494. The prepared image
+my-neko/brave:hls-80020d99477a started healthy without HLS; both disabled-route
+probes passed. The operator confirmed normal login, picture, audio and control
+work in the requested private browser check. The saved rollback image remains
+available. This is supplied target evidence, NOT EXECUTED IN CODEX; neither
+enabled HLS playback nor the original timeout's exact cause is established.
+
+NEXT enable conventional HLS on this same image and repeat the
 picture/audio/room-event smoke test, valid passive authorization/lifecycle,
 mixed-backend isolation, resources and grouped device checks in
 [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). No automatic fallback,
