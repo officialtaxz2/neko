@@ -6,9 +6,8 @@ host**, outside the Neko Compose project. The supplied Phase 4 output confirms
 `neko.taxzvps.de { reverse_proxy 127.0.0.1:8082 }`, with only commented upload/old
 port examples. No access logger, imports, buffering, rewriting, cache or global
 options were present in the supplied text. The operator subsequently confirmed
-the active configuration path as `/etc/caddy/Caddyfile`; actual runtime/error
-output still needs confirmation. At exact application commit `93f1fa63`, the
-target validated both the active file and prepared proposal successfully;
+the active configuration path as `/etc/caddy/Caddyfile`. At exact application
+commit `93f1fa63`, the target validated both the active file and prepared proposal successfully;
 the only proposal warning concerns formatting. This is a review guide; no Caddy
 configuration has been changed or reloaded by Codex.
 
@@ -29,9 +28,10 @@ passed on the target at helper `68a7f904` (exit 0). It reported one HTTP server,
 `127.0.0.1:8082`. Forwarded deletion, disabled upstream compression and explicit
 request/response buffering were absent. The default runtime logger has no
 reported standard encoder/filter, one additional logger exists, Neko has no
-exact host-to-logger association and credential logging is disabled. The actual
-default encoder and additional logger routing still need the merge guards;
-`unset-or-other` alone does not prove absence of a custom module.
+exact host-to-logger association and credential logging is disabled. At that
+inspection, the actual default encoder and additional logger routing still
+needed the merge guards; `unset-or-other` alone did not prove absence of a
+custom module.
 
 The updated [activation helper](../deploy/activate-hls-phase4.sh) uses a matching
 [offline source merger](../deploy/merge-hls-caddy.py), extracted beside it. The
@@ -50,11 +50,16 @@ Caddy validation and a fresh source/adaptation check precede backup/reload.
 Raw configurations/validation output remain private; only fixed verdicts/counts
 are printed. The temporary file is removed on success or failure.
 
-The later synthetic 502, private journal check, tested-image enablement and
-failure restoration remain unchanged. The new merge/activation variant is
-statically reviewed, **NOT EXECUTED IN CODEX**, and awaits target execution.
-No reload, live-log pass or enabled playback is claimed yet. The default filter
-also deletes headers from other runtime error records; existing separate site
+The operator subsequently ran helper
+`2484a022f1b6a140712c221d9d471832fef6f3b5` successfully (Activate-Exitcode 0):
+source merge, complete adapted-configuration equality for all 11 hosts, merged
+validation, reload and the real synthetic 502 journal check all passed. The
+reported request URI was normalized, request/response headers and the synthetic
+marker were absent. The already-tested application image deployed healthy and
+the 17 public invalid-input plus two direct cleartext-denial probes passed.
+This is supplied target evidence, **NOT EXECUTED IN CODEX**. Real playback,
+the remaining log/error/abort cases and grouped acceptance are still pending.
+The default filter also deletes headers from other runtime error records; existing separate site
 access loggers are preserved, and no Neko access logger is added.
 
 ## Existing routing and trust

@@ -953,11 +953,45 @@ logic. The complete new helper is statically reviewed, **NOT EXECUTED IN CODEX**
 its merge/reload/log/enable gates await target output. It changes no application,
 dependency or tested Compose source, so keep application/images at `93f1fa63`.
 
+## HLS activation and invalid-input checkpoint — application `93f1fa63`
+
+The operator supplied successful activation output on 2026-10-04 at application
+`93f1fa637ae3f14ba41d1bfef39e860d43993ff1`, helper commit
+`2484a022f1b6a140712c221d9d471832fef6f3b5`, shell blob
+`d8fbb7ef9e2b9da13f85d0f3ac6aa24e3fa75cf3` and merger blob
+`d653619a7ede7b2ecf37966f24bd07ef2d5b01b0`.
+
+- Source preparation and complete adapted-configuration equality passed:
+  **11 hosts retained; all other configuration equal**.
+- Merged Caddy validation and reload passed. A real stopped-upstream synthetic
+  502 error was observed with normalized HLS URI, absent request/response header
+  fields and absent synthetic marker. Raw journal/configuration stays private.
+- Conventional HLS enabled using the already-tested image tag
+  `my-neko/brave:hls-93f1fa637ae3`; the container was **healthy**, HTTP bound to
+  `127.0.0.1:8082`. The adaptive/WebCodecs overlays were retained.
+- **17/17** public HTTPS invalid-input/header checks and **2/2** direct cleartext
+  bootstrap/media-denial probes passed. **Activate-Exitcode 0** and the helper's
+  activation/invalid-input gate passed.
+
+Evidence is in the private `../neko-hls-results-93f1fa637ae3` directory; no
+secrets/raw configuration/logs were imported. These supplied target results are
+**NOT EXECUTED IN CODEX**. The output proves activation and these denial cases,
+not valid credentials, packager output, actual browser playback, spoofing from
+an untrusted peer, view-only boundaries, lifecycle, device/numeric/resource/
+isolation, remaining logging or rollback execution. Those gates remain open;
+dependency maintenance is still pending and full prototype acceptance is not
+claimed. LL-HLS remains unadvertised pending its public protocol/RTT gate.
+
+NEXT is the bounded first five-minute admin-HLS picture/audio and room-event
+checkpoint in `HLS_LL_HLS_VALIDATION.md`, followed by its separate full passive
+authorization/lifecycle and device/resource matrix. Keep the app checkout and
+images at 93f1fa63; documentation-only updates do not require reactivation/build.
+
 ## NEXT
 
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
-Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). Exact repair-image preparation passed at `93f1fa63`; the initial activation guard stopped safely, and inspector `68a7f904` confirmed the actual 11-host Caddy structure. Keep the tested application checkout/images. Extract the matching activation shell helper and offline Python merger from one reviewed tooling commit, then run the bounded merge/complete adapted-configuration equality, validation/recheck, backup/reload, synthetic error-log and conventional HLS enablement gates. Their new target execution is pending; valid delivery and the grouped matrix follow after success. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
+Continue **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md), section 3. Exact repair-image preparation and subsequent helper `2484a022` activation passed at application `93f1fa63`: all 11 Caddy hosts preserved, merged validation/reload and synthetic runtime-error redaction passed, HLS image healthy, 17 public plus two cleartext-denial probes passed. Keep that application checkout/images and perform first actual picture/audio/room-event checks, then valid passive authorization/lifecycle and the grouped device/resource matrix. No repeat activation/build is needed for documentation updates. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
 ## Product priority after stable synced baseline
 
@@ -966,8 +1000,8 @@ Run **Phase 4 target-server validation** using [`HLS_LL_HLS_VALIDATION.md`](HLS_
 3. **implemented / focused target checkpoint closed with the live-fragment limitation:** persisted explicit per-client selection in sidebar settings with a compact backend/status indicator, WebRTC default and diagnostic URL override;
 4. **completed design:** exact default-off HLS/LL-HLS passive/view-only contract in [`HLS_LL_HLS.md`](HLS_LL_HLS.md);
 5. **focused target checkpoint closed:** exact `ddf15cee` tests/build/deployment plus two-viewer bounded application-limited recovery, building on the healthy hold, real downgrade and isolation evidence from `2efcc6b1`;
-6. **implemented / focused earlier automation and default-off image deployment passed:** HLS/LL-HLS Phases 1–3 plus Phase 4 repository assets; exact Phase 4 automated/image preparation passed at `e55bcd7e`; enabled runtime/device acceptance remains pending;
-7. **NEXT:** Caddy adjustment/actual runtime-error check and grouped enabled target-server validation; repair-image gate passed at `93f1fa63`, advisory classification recorded, package remediation open;
+6. **implemented / automated/image and activation/invalid-input gates passed:** HLS/LL-HLS Phases 1–3 plus Phase 4 assets; exact application `93f1fa63` with helper `2484a022` deployed healthy after preserving Caddy/logging gates and passed 19 HTTP probes; valid playback/device acceptance remains pending;
+7. **NEXT:** first real HLS picture/audio/room-event check, then valid-delivery/lifecycle and grouped enabled target validation; advisory classification recorded, package remediation open;
 8. promote accumulated `testing` history only after an explicit operator decision at a coherent validation milestone.
 
 ## Fallback prototype sequence

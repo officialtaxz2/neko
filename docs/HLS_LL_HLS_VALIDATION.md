@@ -1,13 +1,18 @@
 # HLS / LL-HLS Phase 4 target-server validation
 
-Repository assets prepared on 2026-10-04. **The automated/image preparation
-gate passed at exact `93f1fa63`; enabled target validation is PENDING.**
+Repository assets prepared on 2026-10-04. **The automated/image preparation and
+activation/invalid-input gates passed at exact application `93f1fa63`;
+valid playback and grouped acceptance are PENDING.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
-and server/base/Brave builds, with final exit code 0 and the service unchanged.
+and server/base/Brave builds, with final exit code 0; that preparation left the
+running service unchanged.
 The two default-off public HTTP 404 checks passed earlier at e55. Caddy 2.6.2
-validated both `/etc/caddy/Caddyfile` and the proposed file; application and
-actual runtime-error redaction remain pending. The
+validated the complete merged file, retained all 11 hosts and reloaded through
+helper `2484a022`. The synthetic runtime-error redaction, healthy opt-in HLS
+deployment, 17 public probes and two cleartext-denial probes all passed with
+Activate-Exitcode 0. Actual packager/picture/audio and valid authorization remain
+pending. The
 [audit classification](DEPENDENCY_AUDIT_2026-10-04.md) and remaining dependency
 work are not a passing security audit. Nothing here was executed
 in Codex. Use one block at a time, review its output,
@@ -72,11 +77,13 @@ The separate `docker-compose.hls.yaml` requires adaptive source geometry and
 exact HTTPS/proxy values; empty HLS values reuse the reviewed WebCodecs values.
 Its initial mode is only `hls`. Base Compose remains default-off.
 
-**Current checkpoint:** activation helper `58ca75e9` stopped at its single-site
-guard before any service change. The read-only inspection at helper `68a7f904`
-then passed (exit 0), confirming 11 explicit hosts, one exact Neko route/proxy
-and the expected loopback upstream. See [the Caddy record](HLS_LL_HLS_CADDY.md)
-for the logging qualifications. Keep the tested application/images at `93f1fa63`.
+**Current checkpoint:** after the initial single-site guard stop and read-only
+inspection, activation helper `2484a022` passed (exit 0). All 11 hosts and other
+configuration were preserved; Caddy reloaded, synthetic runtime-error redaction
+passed, `my-neko/brave:hls-93f1fa637ae3` started healthy, and the 17 public plus
+two cleartext-denial probes passed. See [the Caddy record](HLS_LL_HLS_CADDY.md)
+for the logging qualifications. Keep the tested application/images at `93f1fa63`;
+proceed to section 3, without repeating activation or pulling documentation HEAD.
 
 The statically reviewed [activation helper](../deploy/activate-hls-phase4.sh)
 now uses [merge-hls-caddy.py](../deploy/merge-hls-caddy.py) and additionally:
@@ -108,9 +115,9 @@ without changing the application commit or invalidating its image marker.
 Extract **both** `deploy/activate-hls-phase4.sh` and `deploy/merge-hls-caddy.py`
 from the same reviewed helper commit into that directory. Record that commit;
 the helper records both tooling blobs and the app commit. Run `bash -n` first.
-The old single-site guard and new read-only inspection ran on the target; the
-new merge/activation/log/playback checkpoints remain
-**PENDING / NOT EXECUTED IN CODEX**. The plain
+The merge/activation/synthetic-error/invalid-input gates ran successfully on the
+target. Valid-playback and remaining grouped checkpoints stay pending; all work
+is **NOT EXECUTED IN CODEX**. The plain
 enable block below is for environments where Caddy/logging is already verified:
 
 ```bash
@@ -139,6 +146,35 @@ be tested from a peer **outside** the configured trusted proxy set, or marked
 unexecuted. A Docker bridge peer inside a trusted CIDR is not that test.
 
 ## 3. Valid delivery, authorization and lifecycle
+
+### First bounded picture/audio checkpoint (NEXT)
+
+Keep one ordinary WebRTC viewer connected, with changing video/audio in the
+shared browser. In a separate private browser window, open the deployment root
+with exactly `?media=hls` and log in as an admin using a distinct test name. For
+the confirmed root deployment this is `https://neko.taxzvps.de/?media=hls`.
+The query is a stateless diagnostic override and does not change the saved
+browser preference. Ordinary non-admin members are not eligible for HLS; this
+first admin diagnostic is not the view-only authorization acceptance test.
+
+Press Play and enable audio if the browser requires a gesture. Record device,
+OS/browser version, approximate login-to-first-moving-picture duration, audible
+audio/A-V impression, and the exact fixed status/error if playback fails. Run
+five foreground minutes while another WebRTC participant sends a message,
+releases/takes control and a fresh participant joins. Record HLS interruption
+or terminal state separately from normal buffered display delay, and confirm
+the WebRTC viewer remains working. Do not infer the fixed ten-start/ten-minute
+numeric acceptance gates from this initial bounded checkpoint. It has not yet
+been executed or passed.
+
+While HLS is active, the existing collector can preserve private metrics:
+
+```bash
+cd /opt/docker/nekoNew/neko
+bash deploy/collect-hls-media.sh snapshot ../neko-hls-results-93f1fa637ae3 hls-first-playback
+```
+
+### Remaining valid-delivery matrix
 
 With an ordinary WebRTC member, an admin and an explicit view-only HLS viewer
 in the same room, check changing picture/audio and shared presence. HLS is
