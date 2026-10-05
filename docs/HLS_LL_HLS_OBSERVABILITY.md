@@ -85,11 +85,16 @@ Same-image default-off restoration passed, with a healthy service and 2/2
 disabled-route probes; the operator confirmed normal login/picture/audio.
 The isolated clock-phase diagnosis then reproduced the defect in all three
 cold runs at 24.02 seconds, while its aligned control passed at 18.11 seconds.
-NEXT the common high-source fan-out repair A/B with HLS disabled. The actual
+The common high-source fan-out repair A/B then passed at a7ffb8b1 with
+Shared-Clock-Exitcode 0: old defect reproduced once, all fifteen positive
+checks passed three cold runs plus one scene-cut check (46 positive top-level
+passes). All ten codec fixtures stayed in generation 1; normal/delayed/skewed
+fixture durations were 18.08/18.07/18.83 seconds each run, scene cuts 30.07 seconds.
+NEXT full exact-a7ffb8b1 tests/image preparation with HLS disabled. The actual
 live IDR phases remain unmeasured. The repair owns one audio/high subscription
 and four workers; its three high-resolution decoders require a fresh CPU/RSS
-comparison. **NOT EXECUTED IN CODEX; supplied reproduction passed, repair
-checks/full preparation and enabled acceptance pending.**
+comparison. **NOT EXECUTED IN CODEX; supplied reproduction and isolated repair
+A/B passed, full exact-repair preparation/deployment and enabled acceptance pending.**
 
 | Metric family | Evidence |
 | --- | --- |

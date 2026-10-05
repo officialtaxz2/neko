@@ -57,9 +57,12 @@ The diagnosis found 759/564 medium/low keyframe-admission drops and cumulative
 part/segment publication only for audio/high. The isolated source-phase
 diagnostic then passed: its aligned control became ready in 18.11 seconds,
 and three cold skew runs reproduced not-ready in generation 1 at 24.02 seconds.
-The common high-source fan-out repair is implemented and statically reviewed.
-NEXT section 3's isolated shared-video-clock repair A/B while the target remains
-on the confirmed default-off 71 image.
+The common high-source fan-out repair A/B subsequently passed at a7ffb8b1 with
+Shared-Clock-Exitcode 0: the old defect reproduced once; all fifteen corrected
+checks passed in three fresh processes, plus one sustained scene-cut check
+(46 positive top-level passes). All ten real-codec fixtures stayed in generation 1.
+NEXT section 1's full exact-a7ffb8b1 tests/image preparation while the target
+service remains on the confirmed default-off 71 image.
 Working HLS playback
 and grouped acceptance remain
 PENDING.**
@@ -91,6 +94,62 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 `/opt/docker/nekoNew/neko`; keep the existing adaptive and WebCodecs overlays.
 
 ## 1. Prepare exact tests and images without replacing the service
+
+### Exact-a7ffb8b1 preparation after the shared-video-clock A/B passed
+
+The complete supplied A/B output identifies repair
+`a7ffb8b13448a8329c6df24fdcb182ac32ca398c` and the unchanged exact-71 codec image.
+The old independent-source defect reproduced once at 24.02 seconds. Each of
+the three positive processes passed all fifteen selected checks; sustained
+scene cuts passed once. Normal readiness fixtures passed at 18.08 seconds,
+delayed-high at 18.07 seconds and skewed-source at 18.83 seconds in each run.
+Scene cuts passed at 30.07 seconds with continued parent advancement. All ten
+real-codec fixtures stayed in generation 1 with all four tracks ready and no
+rejected native pushes. The skewed video outputs shared IDRs at
+30.8/32.8/34.8/36.8 seconds. The negative signature is an expected-defect
+reproduction, not playback acceptance. Checkout, markers and live service
+were unchanged. **NOT EXECUTED IN CODEX; supplied isolated repair A/B passed.**
+
+Prepare the complete exact repair using a new private evidence directory.
+This moves the clean `testing` checkout to the repair and runs the established
+automated/image gate; it does not replace the running default-off 71 service,
+edit Caddy or enable HLS. The permitted starting commits include the repair
+itself so a stopped preparation can be resumed without an obsolete-head check.
+
+```bash
+set +e
+bash -e -o pipefail <<'NEKO_HLS_REPAIR_PREPARE'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git branch --show-current)" = testing
+test -z "$(git status --porcelain=v1)"
+
+repair_commit="a7ffb8b13448a8329c6df24fdcb182ac32ca398c"
+case "$(git rev-parse HEAD)" in
+  71a14d2174dafbc12b1880adde6dc68176bfe9af|"$repair_commit") ;;
+  *) printf 'Unerwarteter Checkout; keine Änderung ausgeführt.\n' >&2; exit 1 ;;
+esac
+git fetch origin testing
+git merge --ff-only "$repair_commit"
+test "$(git rev-parse HEAD)" = "$repair_commit"
+
+umask 077
+bash deploy/validate-hls-phase4.sh \
+  "../neko-hls-results-${repair_commit:0:12}"
+NEKO_HLS_REPAIR_PREPARE
+printf 'Repair-Prepare-Exitcode: %s\n' "$?"
+```
+
+The new output is `/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448`.
+Only final success validates its exact-commit marker. A failure leaves it
+`PENDING`; preserve the output and the existing exact-71 evidence/images.
+The old successful marker does not validate the new repair. Dependency-audit
+exit 1 remains a report to classify, not a passing security audit.
+
+After full preparation passes, deploy that exact repair image default-off and
+confirm ordinary browser login/picture/audio/control before a separate
+same-image enablement and bounded HLS playback attempt. Those stages and the
+grouped authorization/lifecycle/device/resource matrix remain pending.
 
 ### Exact-71a14d21 preparation/default-off deployment/browser checkpoint passed
 
@@ -859,9 +918,10 @@ passed, but the subsequent HLS attempt failed during bootstrap. The operator
 reported HLS connecting, then failed with "HLS bootstrap failed; retry manually",
 and only WebRTC streaming works. No successful HLS picture/audio or five-minute
 room-event interval is supplied. The read-only diagnosis/default-off restoration
-below passed, and the operator confirmed normal login/picture/audio. NEXT the
-isolated shared-video-clock repair A/B below, after the clock-phase diagnostic
-reproduced the defect in all three runs. This precedes another playback attempt.
+below passed, and the operator confirmed normal login/picture/audio. The
+shared-video-clock repair A/B below subsequently passed at a7ffb8b1. NEXT full
+exact-repair tests/images in section 1, then default-off deployment/browser
+confirmation before another playback attempt.
 Retain the 71 private
 evidence directory and existing rollback tag; do not reuse earlier 800/97 output paths.
 
@@ -985,9 +1045,10 @@ partial construction and cancellation close the two owned subscriptions and
 all created encoders. Three high-resolution decoders change CPU/RSS costs;
 the later resource comparison must be repeated.
 
-NEXT [validate-hls-shared-clock.sh](../deploy/validate-hls-shared-clock.sh).
-Keep the live checkout/service at default-off exact application
-71a14d2174dafbc12b1880adde6dc68176bfe9af and the existing 0700 evidence directory.
+The following [validate-hls-shared-clock.sh](../deploy/validate-hls-shared-clock.sh)
+gate subsequently passed at exact repair a7ffb8b1 with Shared-Clock-Exitcode 0.
+For that comparison, the checkout/service stayed at default-off exact application
+71a14d2174dafbc12b1880adde6dc68176bfe9af with the existing 0700 evidence directory.
 The helper pins the codec image ID recorded by the supplied diagnosis,
 sha256:2c885aa463ee9514b120d541e9852f4e9cd5cc334a72e9373cacf6896c963c48,
 verifies eleven old source blobs and unchanged native/capture/encoder sources,
@@ -1013,10 +1074,14 @@ it with `bash -n`, then invoke:
 bash "$output/validate-hls-shared-clock.sh" "$PWD" "$output" "$repair_commit"
 ```
 
-The exact operator block supplies `repair_commit`. Share its synthetic output.
-After this gate passes, full exact-repair tests/image preparation is the next
-stage; HLS-enabled live/device/lifecycle acceptance follows separately.
-**NOT EXECUTED IN CODEX; repair A/B and full/live acceptance pending.**
+The supplied operator block pinned repair
+`a7ffb8b13448a8329c6df24fdcb182ac32ca398c`. Its old-code signature reproduced
+once at 24.02 seconds; all fifteen positive checks passed in three processes,
+plus one scene-cut check (46 positive top-level passes). All ten codec fixtures
+remained in generation 1. Full exact-repair tests/image preparation in section 1
+is NEXT; default-off deployment and HLS-enabled live/device/lifecycle acceptance
+follow separately. **NOT EXECUTED IN CODEX; supplied repair A/B passed,
+full exact-repair preparation and live acceptance pending.**
 
 ### Remaining valid-delivery matrix
 

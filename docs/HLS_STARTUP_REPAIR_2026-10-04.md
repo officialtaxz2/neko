@@ -20,8 +20,11 @@ the operator confirmed normal login/picture/audio. The saved diagnosis found
 medium/low admission drops and cumulative part/segment publication only for
 audio/high. The isolated clock-phase diagnostic subsequently reproduced the
 defect in all three cold runs with its aligned control passing. The common
-high-source fan-out correction is implemented and statically reviewed; NEXT
-its isolated repair A/B while exact-71 remains running with HLS disabled.
+high-source fan-out correction A/B then passed at a7ffb8b1 with
+Shared-Clock-Exitcode 0: the old defect reproduced once and 46 positive top-level
+checks passed, including three cold runs and one scene-cut check; all ten codec
+fixtures stayed in generation 1. NEXT full exact-a7ffb8b1 tests/image preparation
+while exact-71 remains running with HLS disabled.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -1070,7 +1073,7 @@ were accepted. This confirms the controlled phase-admission defect and shows
 why the prior aligned fixture missed it. It is not a measurement of the live
 capture phases or proof that every earlier outage had this same cause.
 
-## Common encoded-video input correction — implemented, target A/B pending
+## Common encoded-video input correction — implementation before target A/B
 
 `model.go` now identifies high as the encoded input for all three HLS output
 variants. `packager.go` opens one high-video provider subscription and one
@@ -1100,11 +1103,66 @@ only from the pinned 409482b4 fixture against the old image. Full preparation's
 codec selection includes the new checks; only its whole-suite timeout moves
 from 90 to 120 seconds, while per-attempt readiness remains 24 seconds.
 
-NEXT the [shared-video-clock A/B](HLS_LL_HLS_VALIDATION.md#shared-video-clock-repair-ab-while-the-confirmed-baseline-stays-running):
+The next step at implementation was the [shared-video-clock A/B](HLS_LL_HLS_VALIDATION.md#shared-video-clock-repair-ab-while-the-confirmed-baseline-stays-running):
 one pinned old-code signature reproduction, then three predetermined positive
 cold runs and one sustained scene-cut run using the existing immutable codec
 image and read-only mounts. Keep the confirmed default-off exact-71 live
 service/checkout and successful preparation marker unchanged. Full exact-repair
 tests/images and live picture/audio/authorization/lifecycle/device/resource
 acceptance remain pending. **NOT EXECUTED IN CODEX; supplied diagnosis proves
-the controlled old defect, new correction statically reviewed only.**
+the controlled old defect, new correction statically reviewed only at that checkpoint.**
+
+## Common encoded-video input repair A/B passed — 2026-10-05
+
+The complete supplied output pins application
+`71a14d2174dafbc12b1880adde6dc68176bfe9af`, repair
+`a7ffb8b13448a8329c6df24fdcb182ac32ca398c`, diagnostic
+`409482b47e4ed962a2f9a3fd129114a53563f15a` and the unchanged codec image
+`sha256:2c885aa463ee9514b120d541e9852f4e9cd5cc334a72e9373cacf6896c963c48`.
+Helper blob was `b9be81704ccd719afaa15016ee73c253112f12a0`; the five read-only
+repair mounts were the committed model, packager, packager tests, new
+shared-input tests and real-codec fixture. The old fixture blobs match the
+previous phase diagnostic. Negative signature and all three positive cold
+processes returned 0; final Shared-Clock-Exitcode was 0.
+
+The old independent-source code reproduced its expected not-ready signature
+at 24.02 seconds in generation 1: audio/high ready, medium/low blocked at part
+index -1 despite flowing IDRs, no rejected native pushes. This negative PASS
+means the known defect was reproduced, not successful HLS playback.
+
+The repaired code passed all fifteen selected checks in each of the three
+predetermined fresh processes, plus sustained scene cuts once: **46 positive
+top-level passes**, apart from the one old-code expected-defect check.
+
+| Real-codec fixture | Target test duration | Repetitions | Result |
+| --- | --- | --- | --- |
+| Normal cold readiness | 18.08 seconds each | 3 | All four tracks ready, generation 1 |
+| Delayed high input | 18.07 seconds each | 3 | All four tracks ready, generation 1 |
+| Artificially skewed source phases | 18.83 seconds each | 3 | All four tracks ready, generation 1 |
+| Sustained scene cuts | 30.07 seconds | 1 | Parent advancement continued, generation 1 |
+
+The skew fixtures retained the high anchor at 30.8 seconds; all three video
+outputs now begin at 30.8 seconds and share IDRs at 30.8/32.8/34.8/36.8 seconds.
+Each track had codec initialization and three retained parents/MSN 1–3, unlike
+the old medium/low tracks. Exactly one audio and one high-video subscription,
+unchanged input units and no rejected native pushes are enforced by the
+positive assertions. All ten real-codec fixtures stayed in generation 1.
+No readiness deadline, queue or admission limit was relaxed. The warning
+markers for queue_full/drops_closed/push_failed occur within intentionally
+induced error-case unit checks; they are not a live failure capture.
+
+Private synthetic evidence remains under
+`/opt/docker/nekoNew/neko-hls-results-71a14d2174da/shared-clock-ab-20261005T154825115356001Z`.
+The helper did not move the checkout, change preparation markers, build a new
+image, access/restart the live service or edit Caddy. The operator-confirmed
+default-off 71 baseline remains the current runtime checkpoint.
+
+This verifies the controlled phase-admission repair and its focused lifecycle
+regressions. It does not measure the failed live source phases, explain every
+earlier all-stream outage, or establish HLS browser/device acceptance. NEXT
+[full exact-a7ffb8b1 tests/image preparation](HLS_LL_HLS_VALIDATION.md#exact-a7ffb8b1-preparation-after-the-shared-video-clock-ab-passed)
+using a new private output while retaining the working default-off 71 service.
+Default-off repair deployment/browser, same-image enablement, valid playback
+and grouped authorization/lifecycle/device/resource acceptance follow only
+after their respective gates pass. **NOT EXECUTED IN CODEX; supplied isolated
+repair A/B passed, full preparation and enabled/live acceptance pending.**
