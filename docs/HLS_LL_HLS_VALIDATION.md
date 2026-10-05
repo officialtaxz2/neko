@@ -86,8 +86,14 @@ passed with Enable-Exitcode 0, healthy service, private enable snapshot and
 19/19 denial probes. PC/Helium HLS playback was reported after Retry and one
 frozen-picture/page-reload incident; WebRTC kept working. The operator confirmed
 "HLS failed" without its detailed message. Checkout/live image remains
-73d5ff6d, now with conventional HLS enabled. Startup/recovery remains unresolved.
-NEXT [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
+73d5ff6d, now with conventional HLS enabled. Read-only diagnosis then passed
+with Diagnostic-Exitcode 0, healthy active delivery, no sampled exit/OOM/fixed
+error markers, six bootstrap successes and 394 delivered segments. One not-ready
+bootstrap supports a readiness hypothesis without browser-attempt correlation.
+The operator cannot confirm the exact uninterrupted interval and mentions
+possible random reconnects/room actions. Startup/recovery remains unresolved;
+no further ad-hoc operator check is requested at this checkpoint.
+NEXT [consolidated startup/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation).
 Sustained HLS playback
 and grouped acceptance remain
 PENDING.**
@@ -204,7 +210,7 @@ not enabled HLS/device/resource acceptance. The running image now matches
 checkout 73d5ff6d with HLS disabled; the saved prior a7ff image remains under
 `my-neko/brave:rollback-hls-73d5ff6d2911`. Preserve old evidence/tags.
 
-NEXT [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
+NEXT [consolidated startup/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation).
 No pull, rebuild or Caddy change is required. **NOT EXECUTED IN CODEX; supplied
 healthy default-off deployment, 2/2 disabled probes and reported normal-browser
 checkpoint passed; same-image activation/19 probes subsequently passed with
@@ -258,7 +264,7 @@ bounded reported browser checkpoint, not a device/resource or room-event matrix.
 Do not repeat the a7ff baseline or pull later documentation/tooling commits.
 The scoped preparation advanced the checkout to the tested client repair,
 73d5ff6d, and built its images without replacing the enabled a7ff service.
-NEXT the [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
+NEXT the [consolidated startup/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation).
 Section 2's separate exact-a7ffb8b1 activation/denial-probe block subsequently
 passed, and first HLS picture was reported with a later client deadline error.
 WebRTC kept working. Existing 71 evidence and rollback tags remain available.
@@ -782,11 +788,21 @@ supplied. The 20–30-second delay is a rough operator estimate. Initial readine
 buffered content age and a terminal player error are distinct; the current
 three six-second parents/HOLD-BACK=18 cannot establish the failure's cause.
 
-NEXT the [pinned read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis),
-leaving the currently working service unchanged. Do not repeat activation or
-the passed denial probes. First-start/recovery and the sustained room-event/
-role/device/resource matrix stay open. **NOT EXECUTED IN CODEX; supplied
-activation/19 denial probes passed, recovered playback reported.**
+The subsequent [read-only diagnosis passed](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#exact-73-read-only-diagnosis-passed-first-start-reliability-remains-open)
+with a healthy service, one active HLS lease/four running workers, six bootstrap
+successes, 394 successful segments and one not-ready bootstrap; no sampled
+exit/OOM/fixed error markers. Two startup-labelled generations and one idle stop
+are compatible with cold/warm cycles, not proof of a crash loop. Counters span
+participants/retries and cannot explain the frozen picture on their own.
+
+The operator could not confirm the requested interval and mentions possible
+random reconnects/room actions without correlation. NEXT [consolidate the
+remaining investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation)
+into one bounded later step; no additional ad-hoc operator check is requested.
+Preserve the working service and evidence. First-start/recovery and the sustained
+room-event/role/device/resource matrix remain open. **NOT EXECUTED IN CODEX;
+supplied activation/19 probes and read-only diagnosis passed, recovered playback
+reported without uninterrupted acceptance.**
 
 ### Exact-a7ffb8b1 same-image activation and denial probes passed
 
@@ -830,7 +846,7 @@ the client readiness-deadline message. Retry restored HLS and WebRTC kept
 working. The read-only diagnosis and isolated client gate then passed with
 old-fault reproduction and all 52 repaired tests/type/build. Do not repeat
 activation or those checks. Scoped image preparation passed with exit 0;
-NEXT the [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
+NEXT the [consolidated startup/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation).
 Raw logs/credentials remain private. **NOT EXECUTED IN CODEX; supplied
 same-image a7ff activation/HTTP passed; scoped repair images and exact-73
 default-off deployment/browser subsequently passed, sustained repair playback pending.**
@@ -1097,8 +1113,9 @@ Preserve prior evidence and the existing Caddy configuration.
 ### First bounded picture/audio checkpoint (repeat after diagnosis/repair)
 
 **Current checkpoint: application checkout/live image 73d5ff6d, HLS enabled;
-activation/19 probes passed, HLS playback reported after Retry/reload;
-startup/recovery and an uninterrupted room-event interval remain open.**
+activation/19 probes and read-only diagnosis passed, active HLS delivery observed;
+HLS playback reported after Retry/reload; startup/recovery and an uninterrupted
+room-event interval remain open; no further ad-hoc operator test requested now.**
 The prior exact-71 HLS attempt failed at bootstrap; read-only diagnosis and
 same-image default-off recovery passed. The common-source repair A/B, full
 exact-repair preparation, healthy default-off deployment/2 disabled probes and
@@ -1115,9 +1132,12 @@ Default-off exact-73 deployment then passed with exit 0, healthy service and
 2/2 disabled probes; the operator confirmed the requested normal browser check.
 Same-image activation subsequently passed healthy with Enable-Exitcode 0 and
 all 19 denial probes, followed by the PC/Helium Retry/reload report above.
-NEXT the [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis),
-leaving the working service unchanged. The procedure below remains the later
-uninterrupted playback/room-event gate once the failed stage is classified.
+NEXT the [consolidated startup/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation),
+leaving the working service unchanged. The read-only diagnosis has already
+passed; its cumulative counters do not confirm the requested browser interval.
+The operator found the successive checks confusing and mentions possible
+random reconnects/room actions without correlation. The procedure below is
+reference for a later grouped gate, not another current request to the operator.
 Use the new `/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911` checkpoint and
 retain the a7ff/71 evidence and rollback tags separately; do not reuse old paths.
 

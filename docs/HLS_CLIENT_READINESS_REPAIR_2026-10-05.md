@@ -11,7 +11,12 @@ Same-image HLS activation then passed with Enable-Exitcode 0, healthy service
 and 19/19 denial probes. The operator reports HLS playback on PC/Helium after
 an initial Retry and one frozen-picture/page-reload incident; WebRTC kept working.
 "HLS failed" was shown, but its detailed error, exact timing and player path
-are not supplied. Startup reliability and sustained/grouped acceptance remain
+are not supplied. The subsequent read-only diagnosis passed with a healthy
+exact image, no sampled process exit/OOM or fixed error markers, one active
+HLS lease, all four workers running, six bootstrap successes and 394 successful
+segment requests. One not-ready bootstrap is recorded, plausibly explaining
+Retry without correlation to a specific browser attempt. Startup reliability
+and sustained/grouped acceptance remain
 **PENDING**. All execution was on the target server, **NOT EXECUTED IN CODEX**.
 The checkout/live image remains exact 73d5ff6d, now with conventional HLS enabled.
 
@@ -384,7 +389,7 @@ readiness and ongoing stall watchdogs must not be conflated. Do not increase
 timeouts, change buffering/GOPs or enable LL-HLS without evidence of the failed
 stage. No code change is justified by this report alone.
 
-## Next target block: exact-73 read-only playback diagnosis
+## Completed target block: exact-73 read-only playback diagnosis
 
 Keep the currently working conventional-HLS/WebRTC service running and the
 application checkout/image/evidence aligned. This existing helper collects
@@ -414,3 +419,70 @@ repeat enablement or HTTP probes without a new reason. Diagnosis, reliable
 first-start/recovery and sustained/device/authorization/resource acceptance
 remain open. **NOT EXECUTED IN CODEX; supplied activation/19 denial probes passed,
 later playback reported after recovery, startup fault unresolved.**
+
+## Exact-73 read-only diagnosis passed; first-start reliability remains open
+
+The supplied complete safe summary ended with Diagnostic-Exitcode 0 and pins
+application `73d5ff6d29110e3dd06999726a7e88718d09ea23`, helper blob
+`ddfe001618f8733447f4bdd328a8519db9acef06` and actual running container image ID
+`sha256:cf8913d83d2e6fd2b1e5ca3e2af5dbf984f5432ed65722ee738a20775cf1b0cb`.
+This supplies a runtime image-ID observation; prior build-export digests alone
+did not establish it. The container was healthy/running, with zero restarts,
+OOM false and no sampled Neko exits. In 987 application lines, the fixed error
+marker counts were empty.
+
+One HLS lease was active; audio/high/medium/low each had a running worker, an
+init object, 42 retained parts and six retained parents. All four tracks had
+cumulative part/segment publication. The summary records six successful
+bootstraps, 16 successful init requests, 75 keepalives, 763 master requests,
+377 playlists and 394 segments. These are cumulative counters spanning all
+participants/retries, not one uninterrupted browser interval or proof of audio
+playback.
+
+Exactly one bootstrap had result `not_ready`. In the existing server path,
+packager readiness that is not reached before the wait context ends returns
+ErrPackagerNotReady, which maps to HTTP 503; client bootstrap does not retry
+that one-time ticket automatically. This supports readiness as a candidate
+for the reported initial Retry. The counter does not identify the browser
+attempt, elapsed readiness time, deadline versus cancellation, or the cause
+of later frozen-picture recovery. Do not assert a proven 24-second cold-start
+timeout or recurrence of the old client deadline from this summary.
+
+Two packager starts/readiness markers were recorded, with every track's
+generation result labelled `startup`, plus one idle-grace stop. No worker-
+failure/source-restart/timeline-gap marker is shown in the bounded summary;
+the two starts are consistent with the recorded idle stop and a later fresh
+start, not evidence of a crash loop. Seven negotiation rejections are not
+correlated to the user-reported failure. The CLI GStreamer version remains
+unavailable; this does not contradict the observed working packager.
+
+The current working HLS/WebRTC service was unchanged. **NOT EXECUTED IN CODEX;
+supplied read-only diagnosis passed, active delivery demonstrated; reliable
+first-start/recovery, exact browser failure cause and grouped acceptance open.**
+
+## Next: consolidate startup, frozen-picture and room-event investigation
+
+The operator could not reliably answer the follow-up about the exact five-minute
+interval and reports possible random reconnects/room actions, without enough
+detail to correlate transport, cause or duration. The operator explicitly found
+the sequence of checks confusing. Record this as uncertain symptom evidence,
+not a passed interval or a confirmed event-triggered HLS defect. No additional
+ad-hoc command, replay or questionnaire is requested at this checkpoint.
+
+Keep the currently working exact-73 service and saved evidence. Do not repeat
+completed diagnosis/deployment/19 denial probes without a new failure/change.
+Consolidate the remaining first-start, frozen-picture and room-event observations
+into one bounded validation step after static triage; give the operator one
+clear action and observable result at a time. The uninterrupted picture/audio/
+room-event criterion remains open, to be grouped later rather than inferred
+from cumulative successful requests. This does not close the larger matrix.
+
+If a first-start failure recurs, record the fixed UI detail below "HLS failed"
+and approximate wait before Retry/reload, whether picture/audio ever started,
+and whether another HLS viewer was already playing. A warm packager join and
+a cold start after the last HLS viewer leaves plus the 15-second idle grace
+must be distinguished. Preserve a failed-state diagnostic before recovery if
+needed; no broad rebuild, timeout/buffering change or LL-HLS switch is justified
+by the single cumulative not-ready counter. The frozen-picture cause remains
+open. Passive authorization/lifecycle, device/resource/isolation, dependency
+maintenance and final grouped acceptance remain separate pending gates.

@@ -121,7 +121,17 @@ without its detailed error/timing; the roughly 20–30-second lag is not a measu
 latency gate. Checkout/live image is now 73d5ff6d with HLS enabled; the saved
 prior a7ff image remains under the 73 rollback tag. Existing safe counters can
 narrow the server stages, but cannot reconstruct the erased browser error.
-NEXT [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
+Read-only diagnosis subsequently passed with Diagnostic-Exitcode 0: healthy
+image ID `sha256:cf8913d83d2e6fd2b1e5ca3e2af5dbf984f5432ed65722ee738a20775cf1b0cb`,
+987 sampled application lines, zero restarts/OOM/sample exits/fixed error markers,
+one active HLS lease/four running workers, six successful bootstraps and 394
+successful segments. One bootstrap was not-ready; the exact browser attempt
+and elapsed readiness time are not correlated. Two startup-labelled generations,
+two ready markers and one idle stop are consistent with another cold cycle.
+Counts are cumulative across participants/retries, not a five-minute playback
+or audible-audio result. The operator cannot confirm that interval and mentions
+possible random reconnects/room actions; no further ad-hoc check is requested now.
+NEXT [consolidated startup/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation).
 The actual
 live IDR phases remain unmeasured. The repair owns one audio/high subscription
 and four workers; its three high-resolution decoders require a fresh CPU/RSS

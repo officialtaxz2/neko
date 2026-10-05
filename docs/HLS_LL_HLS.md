@@ -405,7 +405,13 @@ activation then passed with Enable-Exitcode 0, healthy service and 19/19 denial
 probes. PC/Helium playback was reported after Retry and one frozen-picture
 reload, with WebRTC unaffected; detailed "HLS failed" text/timing is missing.
 Conventional warm-up/18-second hold-back and a player failure remain distinct.
-Read-only diagnosis, startup/recovery and sustained acceptance remain pending in
+Read-only diagnosis then passed with a healthy active exact-73 service, six
+bootstrap successes, 394 successful segments and one not-ready bootstrap; no
+sampled exit/OOM/fixed error markers. These cumulative counters do not correlate
+the frozen picture or confirm an uninterrupted room-event interval. The operator
+cannot confirm that interval and mentions possible random reconnects/room actions.
+Consolidate the remaining checks into one bounded later step; no extra ad-hoc
+operator test requested now. Startup/recovery and sustained acceptance remain open in
 [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
 
 The selected legacy event bridge now emits `media/hls/state` with `{version:1, backend:"hls", paused:boolean}` before `system/init` and on authoritative room settings updates. It derives private pause from `PrivateMode && !IsAdmin`, independently of control locks. Private pause, stop, detach, logout, replacement and terminal failure invalidate callbacks, destroy MSE, remove listeners, pause the element, remove `src`/`srcObject` and call `load()` to discard URL/MSE buffers. WebRTC recovery never uses this cleanup helper. Private resume reuses the still-valid lease and waits for fresh packaging; Safari autoplay still has one muted retry and the explicit Play gesture. Native fullscreen and supported standard/WebKit PiP remain available.

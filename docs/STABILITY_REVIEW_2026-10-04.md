@@ -296,10 +296,18 @@ is reported after an initial Retry and one frozen-picture reload, with WebRTC
 unaffected. "HLS failed" was confirmed without its detailed message/timing.
 The approximate 20–30-second lag is not measured latency evidence; packaging
 warm-up/hold-back alone cannot establish the cause of the startup failure.
-The currently working exact-73 service remains HLS-enabled while read-only
-diagnosis is pending. First-start/recovery and uninterrupted acceptance stay open.
-Execution is **NOT EXECUTED IN CODEX**; diagnosis and sustained repair acceptance
-remain pending in
+The read-only diagnosis then passed with Diagnostic-Exitcode 0: healthy active
+exact-73 service, no sampled exit/OOM/restarts/fixed error markers, one active
+lease/four running workers, six bootstrap successes and 394 successful segments.
+One not-ready bootstrap supports readiness as a candidate without identifying
+the user's failed attempt or elapsed time. Two startup-labelled generations and
+one idle stop do not establish a crash loop. Counters span retries/participants.
+The operator cannot confirm the exact five-minute interval and mentions possible
+random reconnects/room actions without correlation; the sequence was confusing.
+No further ad-hoc operator check is requested now. Consolidate remaining checks
+into one bounded later step, preserving the working HLS-enabled service/evidence.
+Execution is **NOT EXECUTED IN CODEX**; first-start/recovery and sustained repair
+acceptance remain pending in
 [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
 The actual browser buffer state,
 prior all-stream outage causes, dependency/device and grouped gates remain open.

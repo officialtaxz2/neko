@@ -46,7 +46,13 @@ healthy with Enable-Exitcode 0 and 19/19 denial probes. On PC/Helium the operato
 reports first playback after Retry, one frozen-picture reload, then working
 HLS with WebRTC unaffected. "HLS failed" was confirmed without detailed text;
 startup/recovery remains unresolved. Conventional HLS is currently enabled.
-NEXT [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
+Read-only diagnosis then passed healthy with Diagnostic-Exitcode 0, one active
+HLS lease/four running workers, six bootstrap successes, 394 successful segments
+and one not-ready bootstrap; no sampled exit/OOM or fixed error markers. The
+not-ready result supports a readiness candidate without attempt correlation.
+The operator cannot confirm the requested interval and mentions possible
+random reconnects/room actions. No further ad-hoc operator check is requested now.
+NEXT [consolidated startup/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation).
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -1335,7 +1341,7 @@ and `my-neko/brave:hls-73d5ff6d2911` were prepared. The Brave layer installed
 1.96.61. Prepared image IDs, scope records, successful marker and private snapshot
 are in `/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911`.
 
-NEXT the [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
+NEXT the [consolidated startup/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation).
 The existing deployer validates the preparation/image IDs before stopping Neko
 and saves a7ff as the new rollback target. The default-off deployment subsequently
 passed as recorded below. Preserve the old evidence/tags. Repaired live playback
@@ -1373,9 +1379,32 @@ HOLD-BACK=18, explaining warm-up/buffered delay without establishing the cause
 of the terminal message or frozen picture. The readiness/stall clocks are
 separate. No timeout/buffering/GOP change or LL-HLS switch is justified yet.
 
-Checkout/live image remains 73d5ff6d, now with HLS enabled. NEXT [read-only
-playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis)
-without changing the currently working service. First-start/recovery, exact
-audio/room-event evidence and grouped acceptance remain open. **NOT EXECUTED
-IN CODEX; supplied healthy activation/19 probes passed, later playback after
-recovery reported.**
+Checkout/live image remains 73d5ff6d, now with HLS enabled. The read-only
+diagnosis subsequently passed as recorded below without changing the working
+service. First-start/recovery, exact audio/room-event evidence and grouped
+acceptance remain open. **NOT EXECUTED IN CODEX; supplied healthy activation/
+19 probes passed, later playback after recovery reported.**
+
+## Exact-73 active-delivery diagnosis passed — 2026-10-05
+
+The supplied safe summary ended with Diagnostic-Exitcode 0, exact application
+73d5ff6d, helper blob ddfe001618f8733447f4bdd328a8519db9acef06 and healthy
+running image ID sha256:cf8913d83d2e6fd2b1e5ca3e2af5dbf984f5432ed65722ee738a20775cf1b0cb.
+The bounded 987-line sample shows no Neko exit/OOM/restart/fixed error marker.
+One HLS lease and all four workers were active, with part/parent publication
+for every track. Six successful bootstraps and 394 successful segment requests
+demonstrate delivery across participants/retries; they do not establish an
+uninterrupted browser/audio interval.
+
+One bootstrap was not-ready, supporting readiness as a candidate for the
+initial Retry without identifying the attempt or proving a 24-second timeout.
+Two startup-labelled generations/readiness markers plus one idle stop are
+consistent with cold/warm cycling; no worker-failure/timeline-gap marker is shown.
+The earlier frozen picture remains uncorrelated. The operator cannot reliably
+confirm the requested five-minute interval, mentions possible random reconnects/
+room actions and found the sequence confusing. No extra ad-hoc check is requested.
+
+NEXT [consolidate first-start/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation)
+into one bounded later step with a clear action/result; preserve service/evidence.
+**NOT EXECUTED IN CODEX; supplied read-only diagnosis passed, first-start/
+recovery and grouped acceptance remain open.**
