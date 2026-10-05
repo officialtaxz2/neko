@@ -113,9 +113,15 @@ snapshot/marker under `/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911`.
 Inherited backend evidence is separate from the passed exact client gate.
 Exact-73 default-off deployment then passed healthy with Baseline-Exitcode 0,
 a private baseline snapshot and 2/2 disabled-route probes. The operator confirmed
-the requested normal browser check works. Checkout/live image is now 73d5ff6d
-with HLS disabled; the saved prior a7ff image remains under the 73 rollback tag.
-NEXT [exact-73 same-image HLS enablement and playback](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-same-image-hls-enablement-and-playback).
+the requested normal browser check works. Same-image activation then passed
+healthy with Enable-Exitcode 0, private enable snapshot and 19/19 denial probes.
+On PC/Helium the operator reports an initial Retry and one frozen-picture reload,
+then working HLS while WebRTC continued working. "HLS failed" was confirmed
+without its detailed error/timing; the roughly 20–30-second lag is not a measured
+latency gate. Checkout/live image is now 73d5ff6d with HLS enabled; the saved
+prior a7ff image remains under the 73 rollback tag. Existing safe counters can
+narrow the server stages, but cannot reconstruct the erased browser error.
+NEXT [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
 The actual
 live IDR phases remain unmeasured. The repair owns one audio/high subscription
 and four workers; its three high-resolution decoders require a fresh CPU/RSS

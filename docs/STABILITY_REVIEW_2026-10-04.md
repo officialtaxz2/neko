@@ -288,10 +288,18 @@ is inherited separately; no fresh backend tests/compilation claim.
 Exact-73 default-off deployment then passed healthy with Baseline-Exitcode 0,
 a private baseline snapshot and 2/2 disabled-route probes. The operator confirmed
 the requested ordinary browser check works without a media override. Checkout/
-live image is now 73d5ff6d with HLS disabled. This closes a bounded reported
+live image was then 73d5ff6d with HLS disabled. This closes a bounded reported
 browser checkpoint, not the enabled playback/device/role/resource gates.
-Execution is **NOT EXECUTED IN CODEX**; same-image HLS enablement and sustained
-repaired playback remain pending in
+Same-image HLS activation subsequently passed with Enable-Exitcode 0, healthy
+service, private enable snapshot and 19/19 denial probes. PC/Helium playback
+is reported after an initial Retry and one frozen-picture reload, with WebRTC
+unaffected. "HLS failed" was confirmed without its detailed message/timing.
+The approximate 20–30-second lag is not measured latency evidence; packaging
+warm-up/hold-back alone cannot establish the cause of the startup failure.
+The currently working exact-73 service remains HLS-enabled while read-only
+diagnosis is pending. First-start/recovery and uninterrupted acceptance stay open.
+Execution is **NOT EXECUTED IN CODEX**; diagnosis and sustained repair acceptance
+remain pending in
 [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
 The actual browser buffer state,
 prior all-stream outage causes, dependency/device and grouped gates remain open.

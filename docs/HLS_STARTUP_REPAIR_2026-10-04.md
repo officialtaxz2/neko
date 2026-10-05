@@ -41,8 +41,12 @@ layers, both images and private snapshot/marker. The application checkout is
 now 73d5ff6d. Default-off exact-73 deployment then passed healthy with
 Baseline-Exitcode 0, a private baseline snapshot and 2/2 disabled-route probes;
 the operator confirmed the requested normal browser check works. The live
-image is now also 73d5ff6d with HLS disabled.
-NEXT [exact-73 same-image HLS enablement and playback](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-same-image-hls-enablement-and-playback).
+image is now also 73d5ff6d. Same-image HLS activation subsequently passed
+healthy with Enable-Exitcode 0 and 19/19 denial probes. On PC/Helium the operator
+reports first playback after Retry, one frozen-picture reload, then working
+HLS with WebRTC unaffected. "HLS failed" was confirmed without detailed text;
+startup/recovery remains unresolved. Conventional HLS is currently enabled.
+NEXT [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -1331,7 +1335,7 @@ and `my-neko/brave:hls-73d5ff6d2911` were prepared. The Brave layer installed
 1.96.61. Prepared image IDs, scope records, successful marker and private snapshot
 are in `/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911`.
 
-NEXT the [exact-73 same-image HLS enablement and playback](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-same-image-hls-enablement-and-playback).
+NEXT the [exact-73 read-only playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis).
 The existing deployer validates the preparation/image IDs before stopping Neko
 and saves a7ff as the new rollback target. The default-off deployment subsequently
 passed as recorded below. Preserve the old evidence/tags. Repaired live playback
@@ -1350,8 +1354,28 @@ check works without the HLS override. This is bounded reported browser evidence.
 
 The running image now matches checkout 73d5ff6d with HLS disabled. The prior
 a7ff image is saved as `my-neko/brave:rollback-hls-73d5ff6d2911`; keep older
-evidence and tags. NEXT [same-image conventional-HLS enablement/19 denial probes
-and five-minute repaired playback](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-same-image-hls-enablement-and-playback).
-Enabled repaired playback, lifecycle/device/resource and grouped acceptance
-remain pending. **NOT EXECUTED IN CODEX; supplied default-off deployment,
+evidence and tags. Same-image enablement/19 denial probes subsequently passed
+as recorded below. **NOT EXECUTED IN CODEX; supplied default-off deployment,
 disabled probes and reported normal-browser checkpoint passed.**
+
+## Exact-73 activation and startup-recovery report — 2026-10-05
+
+Same-image conventional-HLS activation passed with Enable-Exitcode 0, healthy
+`my-neko/brave:hls-73d5ff6d2911`, private enable snapshot and 17 public plus two
+cleartext-denial probes. The operator tested on PC/Helium and reports initial
+Retry, one frozen picture requiring reload, then functioning HLS while WebRTC
+continued working. The follow-up confirms a "HLS failed" message but does not
+supply its detailed error or timing; the report describes startup difficulties.
+
+The estimated 20–30-second content lag is not measured latency evidence.
+Conventional packaging requires three six-second parents and advertises
+HOLD-BACK=18, explaining warm-up/buffered delay without establishing the cause
+of the terminal message or frozen picture. The readiness/stall clocks are
+separate. No timeout/buffering/GOP change or LL-HLS switch is justified yet.
+
+Checkout/live image remains 73d5ff6d, now with HLS enabled. NEXT [read-only
+playback diagnosis](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-read-only-playback-diagnosis)
+without changing the currently working service. First-start/recovery, exact
+audio/room-event evidence and grouped acceptance remain open. **NOT EXECUTED
+IN CODEX; supplied healthy activation/19 probes passed, later playback after
+recovery reported.**

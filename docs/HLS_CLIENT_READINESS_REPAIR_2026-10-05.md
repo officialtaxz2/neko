@@ -7,9 +7,13 @@ read-only live diagnosis, with Client-Check-Exitcode 0. Scoped exact-73 image
 preparation then passed with Client-Image-Exitcode 0. Same-image default-off
 deployment passed with Baseline-Exitcode 0, healthy service and 2/2 disabled-route
 probes; the operator confirmed the requested normal browser check works.
-Enabled repair playback and sustained/grouped acceptance remain **PENDING**.
-All execution was on the target server, **NOT EXECUTED IN CODEX**. The checkout
-and running image are now exact 73d5ff6d, with HLS disabled.
+Same-image HLS activation then passed with Enable-Exitcode 0, healthy service
+and 19/19 denial probes. The operator reports HLS playback on PC/Helium after
+an initial Retry and one frozen-picture/page-reload incident; WebRTC kept working.
+"HLS failed" was shown, but its detailed error, exact timing and player path
+are not supplied. Startup reliability and sustained/grouped acceptance remain
+**PENDING**. All execution was on the target server, **NOT EXECUTED IN CODEX**.
+The checkout/live image remains exact 73d5ff6d, now with conventional HLS enabled.
 
 ## Supplied live evidence
 
@@ -288,7 +292,7 @@ it does not demonstrate the repaired client's enabled HLS playback or a device/
 resource/role matrix. **NOT EXECUTED IN CODEX; supplied default-off deployment,
 disabled-route probes and reported normal-browser checkpoint passed.**
 
-## Next target block: exact-73 same-image HLS enablement and playback
+## Completed target block: exact-73 same-image HLS enablement and playback attempt
 
 Keep the exact application checkout/image/evidence aligned; use the existing
 deployer without pulling later documentation commits, rebuilding or changing
@@ -333,3 +337,80 @@ restoring the confirmed same-image default-off baseline as specified in
 [the playback runbook](HLS_LL_HLS_VALIDATION.md#first-bounded-pictureaudio-checkpoint-repeat-after-diagnosisrepair).
 Keep all evidence/rollback tags. WebRTC stays the default, fallback manual,
 and no `master` promotion or full HLS acceptance is implied.
+
+## Exact-73 activation passed; reported playback has startup failures
+
+The supplied enablement identifies application
+`73d5ff6d29110e3dd06999726a7e88718d09ea23`, unchanged deployer blob
+`c6f52dc80fdf605ec908f3fe3856ce23e015e494`, healthy
+`my-neko/brave:hls-73d5ff6d2911` and a private enable snapshot. All seventeen
+public invalid-input/auth-boundary probes and both cleartext-denial probes
+passed, with Enable-Exitcode 0. No new image build, Caddy change or source change
+was part of this block. These probes do not establish valid playback reliability.
+
+The operator tested on a PC with the Chromium-derived Helium browser and
+reports: an initial Retry was needed, a frozen picture required one page reload,
+and subsequent playback worked normally while WebRTC continued working.
+The follow-up characterizes these as startup difficulties and confirms a
+"HLS failed" message. The detailed error, browser version, player path,
+elapsed times, audio-specific result and uninterrupted five-minute room-event
+interval are not supplied. No old 30-second-deadline recurrence is established
+without the detailed message. Later working playback does not close first-start
+or recovery reliability; no TV or full prototype acceptance claim follows.
+
+## Static distinction: cold startup, buffered delay and a failed player
+
+The current packager requires three complete six-second parents for conventional
+HLS readiness (`packager.go` / `playlist.go`); the controlled codec fixtures
+previously became ready around 18 seconds. `ConventionalReadyWindow` remains
+24 seconds, and the client bootstrap request has a separate 30-second bound.
+This preparation precedes attaching the native/MSE player. An idle packager
+stops after 15 seconds, so a lone fresh viewer can encounter another cold start.
+
+The playlist advertises HOLD-BACK=18, and the pinned MSE adapter uses
+liveSyncDurationCount=3 with six-second parents. This is an intended buffered
+distance from the playlist edge, not an additional compulsory 18-second wait
+after every login. Completed media can play immediately when joining an
+already warm stream. [RFC 8216 section 6.3.3](https://www.rfc-editor.org/rfc/rfc8216.html#section-6.3.3)
+explains the conventional live-start recommendation of three target durations;
+it does not certify this application's measured end-to-end delay.
+
+The reported 20–30-second lag is a rough operator estimate, not a measured
+latency gate. Warm-up/hold-back can explain delayed first picture and content,
+but cannot establish the cause of a terminal "HLS failed" or frozen picture
+requiring reload. Candidate stages remain bootstrap readiness, HTTP/playlist
+delivery, decoder/player state and progress monitoring. The separate initial
+readiness and ongoing stall watchdogs must not be conflated. Do not increase
+timeouts, change buffering/GOPs or enable LL-HLS without evidence of the failed
+stage. No code change is justified by this report alone.
+
+## Next target block: exact-73 read-only playback diagnosis
+
+Keep the currently working conventional-HLS/WebRTC service running and the
+application checkout/image/evidence aligned. This existing helper collects
+bounded private logs, container state and cumulative fixed HLS counters; it
+makes no credentialed playback attempt or service change. It cannot reconstruct
+browser error details erased by a reload. Run once before any restart or rebuild.
+
+```bash
+set +e
+bash -e -o pipefail <<'NEKO_HLS_DIAG'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "73d5ff6d29110e3dd06999726a7e88718d09ea23"
+
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911
+test "$(stat -c %a "$output")" = 700
+bash deploy/diagnose-hls-playback.sh "$PWD" "$output"
+NEKO_HLS_DIAG
+printf 'Diagnostic-Exitcode: %s\n' "$?"
+```
+
+Share only its fixed safe summary; raw logs, lease paths, WebSocket URLs and
+credentials remain private. If a future attempt fails, record its exact fixed
+UI detail and whether picture/audio ever started before Retry/reload. Do not
+repeat enablement or HTTP probes without a new reason. Diagnosis, reliable
+first-start/recovery and sustained/device/authorization/resource acceptance
+remain open. **NOT EXECUTED IN CODEX; supplied activation/19 denial probes passed,
+later playback reported after recovery, startup fault unresolved.**
