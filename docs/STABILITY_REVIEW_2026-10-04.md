@@ -162,14 +162,17 @@ with Repair-Prepare-Exitcode 0: all thirteen selected native/startup checks
 passed in the rebuilt GStreamer 1.26.2 image, all four codec fixtures stayed in
 generation 1, and base/Brave images were built. The supplied tail omits earlier
 client/Go/fuzz output; final script success covers those preceding stages.
-NEXT exact-repair default-off deployment/browser confirmation; the confirmed
-default-off exact-71 service remains unchanged until deployment. No successful HLS
+Default-off exact-repair deployment then passed with Baseline-Exitcode 0,
+healthy service, a private baseline snapshot and 2/2 disabled probes; the operator
+reported the requested normal browser check works. NEXT same-image HLS
+activation/denial probes, then one bounded admin picture/audio attempt alongside
+WebRTC. No successful HLS
 picture/audio or room-event interval is demonstrated, and live IDR phases remain unmeasured.
 New repair/gates: NOT EXECUTED IN CODEX; supplied isolated A/B, full preparation
 and default-off deployment/browser plus activation/invalid-input gates passed;
 enabled HLS failed, diagnosis/recovery, controlled reproduction and isolated
-common-source repair A/B and full exact-repair preparation passed; deployment
-and enabled acceptance remain pending.
+common-source repair A/B, full exact-repair preparation and default-off
+deployment/browser passed; enabled acceptance remains pending.
 The actual native blocker and role of the separate capabilities rejection
 remain unconfirmed; enabled live playback and isolation/device
 acceptance are pending. Dependency-audit report exit 1 is not a security pass.

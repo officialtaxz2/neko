@@ -26,9 +26,11 @@ checks passed, including three cold runs and one scene-cut check; all ten codec
 fixtures stayed in generation 1. Full exact-a7ffb8b1 preparation then passed
 with Repair-Prepare-Exitcode 0: all thirteen selected native/startup checks
 passed in the rebuilt GStreamer 1.26.2 image, all four codec fixtures stayed in
-generation 1, and base/Brave images were built. NEXT exact-repair default-off
-deployment and normal browser confirmation; exact-71 remains running with
-HLS disabled until deployment.
+generation 1, and base/Brave images were built. Default-off exact-repair
+deployment then passed with Baseline-Exitcode 0, healthy service and 2/2 disabled
+probes; the operator reported the requested normal browser check works. NEXT
+same-image conventional-HLS activation/denial probes, then one bounded admin
+picture/audio attempt alongside WebRTC. HLS remains disabled until activation.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -1211,10 +1213,38 @@ The final private snapshot and successful exact-commit marker are under
 The deployer must compare the new marker and actual prepared image ID before
 touching the service. Build-export digests are not a supplied runtime inspection.
 
-NEXT [exact-a7ffb8b1 default-off deployment/browser confirmation](HLS_LL_HLS_VALIDATION.md#exact-a7ffb8b1-default-off-deployment-and-browser-confirmation--next),
+The next step was [exact-a7ffb8b1 default-off deployment/browser confirmation](HLS_LL_HLS_VALIDATION.md#exact-a7ffb8b1-default-off-deployment-and-browser-confirmation-passed),
 with the working 71 image saved as the new rollback target. Only after healthy
 deployment and ordinary login/picture/audio/control confirmation, proceed to
 separate same-image enablement and bounded HLS playback. Valid browser picture/
 audio, room-event interval and grouped authorization/lifecycle/device/resource
 acceptance remain pending. **NOT EXECUTED IN CODEX; supplied exact-repair
-automated/image preparation passed, deployment and enabled/live acceptance pending.**
+automated/image preparation passed, deployment and enabled/live acceptance pending at that checkpoint.**
+
+## Exact-a7ffb8b1 default-off deployment/browser checkpoint passed — 2026-10-05
+
+The supplied baseline output identifies application
+`a7ffb8b13448a8329c6df24fdcb182ac32ca398c` and unchanged deployer blob
+`c6f52dc80fdf605ec908f3fe3856ce23e015e494`. The deployer replaced the running
+service with `my-neko/brave:hls-a7ffb8b13448` without the HLS overlay. The
+container became healthy; the loopback HTTP binding remains 127.0.0.1:8082
+and the established UDP ports remain published. Its private baseline snapshot
+was recorded under `/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448`.
+Both disabled bootstrap/media probes returned the expected 404 (2/2), and
+Baseline-Exitcode was 0. The deployer's existing saved prior-image mechanism
+retains the working 71 image under `my-neko/brave:rollback-hls-a7ffb8b13448`;
+older evidence/rollback tags remain available. No Caddy change was part of this block.
+
+The operator then replied "borwser klappt" to the requested private-window
+normal login/picture/audio/control check without a media override. This closes
+the bounded reported default-off repair-image browser checkpoint. It is not
+an enabled HLS/device/resource or five-minute room-event result.
+
+NEXT [same-image conventional-HLS activation and denial probes](HLS_LL_HLS_VALIDATION.md#exact-a7ffb8b1-same-image-activation-and-denial-probes--next),
+without pulling documentation commits or rebuilding. Then perform one bounded
+admin HLS picture/audio attempt alongside a working WebRTC viewer. If bootstrap
+or playback fails, capture read-only diagnosis before restoring this confirmed
+same-image default-off baseline; no repeated blind attempts. Valid playback,
+room-event isolation, passive authorization/lifecycle and grouped device/resource
+acceptance remain pending. **NOT EXECUTED IN CODEX; supplied healthy default-off
+deployment and reported browser checkpoint passed, enabled/live acceptance pending.**

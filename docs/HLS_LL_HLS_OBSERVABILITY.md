@@ -98,11 +98,15 @@ built. The supplied tail omits earlier client/Go/fuzz output; final script
 success covers those stages without separately shown fresh counts. The running
 default-off 71 service stayed unchanged. The new private snapshot/success marker
 is under `/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448`.
-NEXT exact-repair default-off deployment/browser confirmation. The actual
+Default-off exact-repair deployment then passed with Baseline-Exitcode 0,
+healthy service, a private baseline snapshot and 2/2 disabled-route probes;
+the operator reported the requested normal browser check works. NEXT same-image
+conventional-HLS activation/denial probes, then one bounded picture/audio
+attempt alongside WebRTC. The actual
 live IDR phases remain unmeasured. The repair owns one audio/high subscription
 and four workers; its three high-resolution decoders require a fresh CPU/RSS
 comparison. **NOT EXECUTED IN CODEX; supplied reproduction and isolated repair
-A/B and full exact-repair preparation passed, deployment and enabled acceptance pending.**
+A/B, full preparation and default-off deployment/browser passed, enabled acceptance pending.**
 
 | Metric family | Evidence |
 | --- | --- |
