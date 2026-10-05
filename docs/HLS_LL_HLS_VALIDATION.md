@@ -21,8 +21,11 @@ attempt failed with bootstrap failure and an operator-confirmed WebRTC outage.
 Latest enablement CLI/HTTP outcomes are not supplied. Read-only diagnosis and
 same-image default-off restoration passed with exit 0, healthy service and 2/2
 disabled-route probes; the operator confirmed normal login/picture/audio again.
-NEXT summarize the saved startup/capture evidence without service changes;
-keep HLS disabled. Working HLS playback
+Saved startup analysis also passed: audio/high/medium subscriptions remained,
+low reached only its capture-create marker. A bounded native-construction
+registry-lock correction and fixed capture-stage tracing are prepared, not
+runtime-verified. NEXT run the isolated registry A/B plus codec gate at unchanged
+97ba4ad9; keep HLS disabled. Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -54,7 +57,7 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-### Failed attempt recovered: inspect the saved startup evidence
+### Failed attempt recovered; saved analysis passed; isolated registry gate next
 
 The diagnosis/restoration block below completed with Diagnostic-Exitcode 0 and
 Recovery-Exitcode 0 at 97ba4ad9. The image returned healthy without HLS and both
@@ -64,7 +67,26 @@ lines, one negotiation rejection, one not-ready bootstrap and no sampled
 process exit/OOM or generation/lease-open marker. It does not establish the
 rejection's role or prove that startup was never attempted.
 
-NEXT extract [summarize-hls-startup.py](../deploy/summarize-hls-startup.py) from
+The supplied saved analysis from helper 7a51ecbb passed with
+Saved-Check-Exitcode 0: audio/high/medium subscriptions persisted, low source
+generation remained zero and the fixed sequence stopped at its capture-create
+marker before idle-stop scheduling. The earlier matching environment record
+had HLS enabled. A global Go sample-registry lock held across native pipeline
+construction is corrected in the repository; it can spread a constructor stall
+to every media callback. The exact native blocker remains unconfirmed.
+
+NEXT extract [validate-hls-startup-isolation.sh](../deploy/validate-hls-startup-isolation.sh)
+from the reviewed repair commit into the existing private directory, record that
+commit, and invoke it with repository, private output and the full repair hash,
+as in the operator block. It requires application HEAD to stay at 97ba4ad9 and
+verifies the existing codec image's baseline source before any fixture run.
+Negative control must fail with the specific registry-wait marker; positive
+control must pass the new regression plus all three prior codec tests. It
+changes no checkout, live service or preparation marker. The A/B gate is
+pending, **NOT EXECUTED IN CODEX**; full repair-image checks/build and capture/
+browser acceptance follow only after its output is reviewed. Keep HLS disabled.
+
+**Completed file-only analysis block:** extract [summarize-hls-startup.py](../deploy/summarize-hls-startup.py) from
 the reviewed helper commit into the existing private directory, recording that
 commit as in the operator block. Leave application HEAD at 97ba4ad9. Run:
 
@@ -78,7 +100,7 @@ It reads only the latest saved failure archive, prints fixed stage/rejection
 enums and allowlisted capture/delivery metrics, and changes no service state.
 Raw files remain private; share only its printed summary. An earlier matching
 environment record and a room-wide stage sequence do not identify a correlated
-cause. Target execution of this new helper is pending, **NOT EXECUTED IN CODEX**.
+cause. The supplied execution passed; **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md) for supplied evidence.
 
 **Completed incident recovery block:** retained for the record, not the next step.

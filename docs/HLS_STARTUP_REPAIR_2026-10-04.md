@@ -364,3 +364,67 @@ cause. The real-codec fixtures bypass production capture subscription startup,
 so their successful GOP/timestamp checks do not validate that path. Keep HLS
 disabled and inspect the saved evidence before choosing a repair or another
 enabled checkpoint.
+
+## Saved low-source startup boundary and registry isolation repair — 2026-10-05
+
+The supplied file-only summary from helper 7a51ecbb completed with
+Saved-Check-Exitcode 0. It read the saved 97ba4ad9 diagnostic stamped
+20261005T101606874367498Z, with 84 application log lines. Its closest earlier
+environment record matched the diagnostic image/application and had HLS enabled;
+this supports the recorded configuration but is not a new live inspection.
+
+The fixed sequence shows a capabilities/request rejection with not_allowed at
+line 44, then audio pipeline creation/first listener at 45/46, high at 47/48,
+medium at 49/50, low creation at 51, and idle-stop scheduling at 52. No low
+first-listener completion appears. Cumulative central HLS open attempts/error
+are both 1. HLS subscriptions for audio/high/medium remain 1 each; no low
+subscription series is present. Source generations are 1 for audio/high/medium
+and 0 for low. The audio streamsink counters remain zero. This locates the last
+observed progress inside low-source startup before generation advancement, not
+in playlist decoding. It does not identify the exact native call or correlate
+the capabilities rejection with that successful ticket's bootstrap request.
+
+Static inspection confirms a sharing defect: gst.createPipeline holds the
+global pipelinesLock across C.gstreamer_pipeline_create/gst_parse_launch.
+Every active goHandlePipelineBuffer also acquires that lock. A blocked native
+constructor therefore blocks all sample callbacks, including other streams.
+Capture CreatePipeline increments its generation only after native construction
+and appsink attachment, consistent with low remaining at generation 0. The
+archive lacks a native stack, so the actual native blocker and whether this
+mutex caused the reported incident remain unconfirmed.
+
+The bounded repair moves the global registry lock to map insertion only. IDs
+remain atomic, native contexts/channels are fully initialized before registration,
+and samples cannot arrive before the caller attaches/plays the new pipeline.
+No native construction runs under the sample-registry mutex; existing callback
+lookup and teardown behavior are otherwise retained. Capture adds four fixed
+Info markers after parse/attachment and before/after Play; the saved-summary
+allowlist understands these markers. They add no participant/pipeline values.
+This containment repair does not promise a stuck native constructor will return
+or complete the HLS worker set. HLS remains disabled on the working service.
+
+A target-only registry regression deliberately holds the sample-registry mutex
+while a known-missing element is parsed. Prior code cannot return until that
+mutex is released and fails with the fixed expected marker. Corrected code must
+return the parse error independently. It uses no actual room or credentials.
+[validate-hls-startup-isolation.sh](../deploy/validate-hls-startup-isolation.sh)
+pins the existing codec-validation image ID, checks seven baseline source blobs
+against unchanged 97ba4ad9, mounts the new test for the negative control, then
+mounts only the corrected gst.go for the positive control plus all three
+existing codec checks. Unexpected failure/pass stops the gate. Reports are
+private and timestamped; no checkout, live service or prepared-image marker is
+changed. The fresh-image codec gate also includes this fourth test.
+
+NEXT run this isolated A/B gate before application rebuild/deployment. The
+source changes, tracing, regression and helper are statically reviewed only:
+**NOT EXECUTED IN CODEX; target A/B, full checks/image and live capture/HLS
+acceptance pending**. Preserve the recovered image and old evidence. Never
+infer production capture or a resolved WebRTC outage from the codec fixtures.
+
+The [GStreamer parse contract](https://gstreamer.freedesktop.org/documentation/gstreamer/gstparse.html#gst_parse_launch)
+describes native element construction separately from the Go registry. Its
+[ximagesrc documentation](https://gstreamer.freedesktop.org/documentation/ximagesrc/index.html)
+also requires early XInitThreads for threaded capture. No such call is present
+in the inspected source; whether deployment initializes it externally remains
+unknown. Record that as a separate follow-up, not a second unmeasured change in
+this mutex-isolation block or an established cause of the current native stall.

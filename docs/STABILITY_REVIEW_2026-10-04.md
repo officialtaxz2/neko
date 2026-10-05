@@ -99,10 +99,15 @@ are not supplied. Read-only diagnosis then passed with 84 log lines, one
 negotiation rejection and one not-ready bootstrap, but no sampled process
 exit/OOM or generation/lease-open marker. Same-image restoration returned the
 prepared image healthy without HLS, with Recovery-Exitcode 0 and 2/2 disabled
-probes; the operator confirmed normal login/picture/audio again. NEXT analyze
-the saved startup/capture evidence with the file-only helper. The rejection's
-role and exact startup blocker remain unconfirmed; enabled isolation/device
-acceptance is still pending.
+probes; the operator confirmed normal login/picture/audio again. Saved analysis
+subsequently passed with exit 0: audio/high/medium subscriptions persisted while
+low reached only its capture-create marker and remained at generation 0. Static
+inspection confirmed a global registry mutex held during native construction,
+also acquired by every media sample callback. Its scope is narrowed to registry
+insertion; fixed capture-phase tracing and a target-only regression/A/B helper
+are prepared. NEXT isolated registry plus codec gate, with HLS disabled. The
+actual native blocker and role of the separate capabilities rejection remain
+unconfirmed; runtime repair, enabled isolation/device acceptance are pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.
 

@@ -55,6 +55,10 @@ def main():
 
     stages = (
         ("creating pipeline", "capture_pipeline_create"),
+        ("capture pipeline parsed", "capture_pipeline_parsed"),
+        ("capture appsink attached", "capture_appsink_attached"),
+        ("capture pipeline play started", "capture_play_started"),
+        ("capture pipeline play completed", "capture_play_completed"),
         ("first listener, starting", "capture_first_listener"),
         ("adding listener", "capture_listener_adding"),
         ("started emitting samples", "capture_sample_loop_start"),

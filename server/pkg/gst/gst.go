@@ -88,9 +88,9 @@ func createPipeline(pipelineStr string, sampleCapacity int, runningTimeSamples b
 	pipelineStrUnsafe := C.CString(pipelineStr)
 	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
 
-	pipelinesLock.Lock()
-	defer pipelinesLock.Unlock()
-
+	// Native construction can block while elements/plugins initialize. The
+	// registry lock is also used by every active appsink callback; holding it
+	// here would stop unrelated capture while a new pipeline is still opening.
 	var gstError *C.GError
 	ctx := C.gstreamer_pipeline_create(pipelineStrUnsafe, C.int(id), C.gboolean(boolToGBoolean(runningTimeSamples)), &gstError)
 
@@ -112,7 +112,9 @@ func createPipeline(pipelineStr string, sampleCapacity int, runningTimeSamples b
 		done:    make(chan struct{}),
 	}
 
+	pipelinesLock.Lock()
 	pipelines[p.id] = p
+	pipelinesLock.Unlock()
 	return p, nil
 }
 

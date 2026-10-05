@@ -352,11 +352,15 @@ func (manager *StreamSinkManagerCtx) CreatePipeline() error {
 	if err != nil {
 		return err
 	}
+	manager.logger.Info().Msg("capture pipeline parsed")
 
 	manager.pipeline.AttachAppsink("appsink")
+	manager.logger.Info().Msg("capture appsink attached")
 	manager.generation.Add(1)
 	manager.sequence.Store(0)
+	manager.logger.Info().Msg("capture pipeline play started")
 	manager.pipeline.Play()
+	manager.logger.Info().Msg("capture pipeline play completed")
 
 	pipeline := manager.pipeline
 	manager.wg.Go(func() {
