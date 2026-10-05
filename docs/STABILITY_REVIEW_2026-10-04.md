@@ -157,14 +157,19 @@ Common high-source fan-out is implemented and statically reviewed, preserving
 provider timestamps and the fixed limits. Its isolated repair A/B then passed
 at a7ffb8b1 with Shared-Clock-Exitcode 0: old defect reproduced once; 46 positive
 top-level checks passed across three cold runs plus one scene-cut check, all
-ten codec fixtures in generation 1. NEXT full exact-a7ffb8b1 tests/image
-preparation with the confirmed default-off exact-71 service unchanged. No successful HLS
+ten codec fixtures in generation 1. Full exact-a7ffb8b1 preparation then passed
+with Repair-Prepare-Exitcode 0: all thirteen selected native/startup checks
+passed in the rebuilt GStreamer 1.26.2 image, all four codec fixtures stayed in
+generation 1, and base/Brave images were built. The supplied tail omits earlier
+client/Go/fuzz output; final script success covers those preceding stages.
+NEXT exact-repair default-off deployment/browser confirmation; the confirmed
+default-off exact-71 service remains unchanged until deployment. No successful HLS
 picture/audio or room-event interval is demonstrated, and live IDR phases remain unmeasured.
 New repair/gates: NOT EXECUTED IN CODEX; supplied isolated A/B, full preparation
 and default-off deployment/browser plus activation/invalid-input gates passed;
 enabled HLS failed, diagnosis/recovery, controlled reproduction and isolated
-common-source repair A/B passed; full exact-repair preparation/deployment and
-enabled acceptance remain pending.
+common-source repair A/B and full exact-repair preparation passed; deployment
+and enabled acceptance remain pending.
 The actual native blocker and role of the separate capabilities rejection
 remain unconfirmed; enabled live playback and isolation/device
 acceptance are pending. Dependency-audit report exit 1 is not a security pass.

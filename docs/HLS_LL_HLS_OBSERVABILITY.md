@@ -90,11 +90,19 @@ Shared-Clock-Exitcode 0: old defect reproduced once, all fifteen positive
 checks passed three cold runs plus one scene-cut check (46 positive top-level
 passes). All ten codec fixtures stayed in generation 1; normal/delayed/skewed
 fixture durations were 18.08/18.07/18.83 seconds each run, scene cuts 30.07 seconds.
-NEXT full exact-a7ffb8b1 tests/image preparation with HLS disabled. The actual
+Full exact-a7ffb8b1 preparation then passed with Repair-Prepare-Exitcode 0:
+thirteen selected native/startup checks passed in the rebuilt GStreamer 1.26.2
+image; all four codec fixtures stayed in generation 1 (normal/delayed/skewed
+18.08/18.07/18.83 seconds, scene cuts 30.08 seconds), and base/Brave images were
+built. The supplied tail omits earlier client/Go/fuzz output; final script
+success covers those stages without separately shown fresh counts. The running
+default-off 71 service stayed unchanged. The new private snapshot/success marker
+is under `/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448`.
+NEXT exact-repair default-off deployment/browser confirmation. The actual
 live IDR phases remain unmeasured. The repair owns one audio/high subscription
 and four workers; its three high-resolution decoders require a fresh CPU/RSS
 comparison. **NOT EXECUTED IN CODEX; supplied reproduction and isolated repair
-A/B passed, full exact-repair preparation/deployment and enabled acceptance pending.**
+A/B and full exact-repair preparation passed, deployment and enabled acceptance pending.**
 
 | Metric family | Evidence |
 | --- | --- |

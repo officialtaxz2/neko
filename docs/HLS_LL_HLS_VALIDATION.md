@@ -61,8 +61,14 @@ The common high-source fan-out repair A/B subsequently passed at a7ffb8b1 with
 Shared-Clock-Exitcode 0: the old defect reproduced once; all fifteen corrected
 checks passed in three fresh processes, plus one sustained scene-cut check
 (46 positive top-level passes). All ten real-codec fixtures stayed in generation 1.
-NEXT section 1's full exact-a7ffb8b1 tests/image preparation while the target
-service remains on the confirmed default-off 71 image.
+Full exact-a7ffb8b1 preparation then passed with Repair-Prepare-Exitcode 0:
+all thirteen selected native/startup checks passed in the rebuilt GStreamer
+1.26.2 image, including four real-codec fixtures in generation 1, and base/Brave
+images were built. The supplied excerpt starts inside that codec-image build;
+preceding client/Go/fuzz steps are covered by final script success without
+separately shown fresh counts. NEXT section 1's exact-repair default-off
+deployment and normal browser confirmation; the running service is still
+the confirmed default-off 71 image until that deployment is invoked.
 Working HLS playback
 and grouped acceptance remain
 PENDING.**
@@ -110,8 +116,8 @@ rejected native pushes. The skewed video outputs shared IDRs at
 reproduction, not playback acceptance. Checkout, markers and live service
 were unchanged. **NOT EXECUTED IN CODEX; supplied isolated repair A/B passed.**
 
-Prepare the complete exact repair using a new private evidence directory.
-This moves the clean `testing` checkout to the repair and runs the established
+The following completed preparation used a new private evidence directory.
+It moved the clean `testing` checkout to the repair and ran the established
 automated/image gate; it does not replace the running default-off 71 service,
 edit Caddy or enable HLS. The permitted starting commits include the repair
 itself so a stopped preparation can be resumed without an obsolete-head check.
@@ -146,10 +152,56 @@ Only final success validates its exact-commit marker. A failure leaves it
 The old successful marker does not validate the new repair. Dependency-audit
 exit 1 remains a report to classify, not a passing security audit.
 
-After full preparation passes, deploy that exact repair image default-off and
+This preparation subsequently passed with Repair-Prepare-Exitcode 0 and
+AUTOMATED/IMAGE GATE PASSED. All thirteen selected native/startup checks passed;
+the four real-codec fixtures stayed in generation 1 with normal/delayed/skewed
+test durations 18.08/18.07/18.83 seconds and sustained scene cuts 30.08 seconds.
+The application image is `my-neko/brave:hls-a7ffb8b13448`. Earlier client/Go/fuzz
+output is outside the supplied excerpt, so only final script success covers
+those preceding stages; do not assign fresh individual counts from this tail.
+The running default-off 71 service was unchanged. Dependency-audit exit 1
+remains an open report item. **NOT EXECUTED IN CODEX; supplied full preparation passed.**
+
+### Exact-a7ffb8b1 default-off deployment and browser confirmation — NEXT
+
+Deploy the prepared exact repair image default-off and
 confirm ordinary browser login/picture/audio/control before a separate
 same-image enablement and bounded HLS playback attempt. Those stages and the
 grouped authorization/lifecycle/device/resource matrix remain pending.
+
+The following block restarts Neko, retains the adaptive/WebCodecs overlays and
+saves the current working 71 image as the new repair's rollback tag before
+replacement. The deployer checks the exact preparation marker and image ID
+before stopping the service; if the new image fails to become healthy, it
+restores the saved image without the HLS overlay. No new build or Caddy change
+is needed. Keep HEAD at the prepared repair, rather than newer documentation
+commits on `origin/testing`, and retain both evidence directories.
+
+```bash
+set +e
+bash -e -o pipefail <<'NEKO_HLS_BASELINE'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "a7ffb8b13448a8329c6df24fdcb182ac32ca398c"
+
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448
+test "$(stat -c %a "$output")" = 700
+
+bash deploy/deploy-hls-media.sh baseline "$output"
+docker compose -f docker-compose.validation.yaml run --rm -T \
+  hls-http-checks disabled </dev/null
+NEKO_HLS_BASELINE
+printf 'Baseline-Exitcode: %s\n' "$?"
+```
+
+Review the output, then in a fresh private browser window open
+`https://neko.taxzvps.de/` without a media override and check normal login,
+moving picture, audible audio and control take/release. The exact-repair
+default-off deployment and this operator browser check are pending. Do not
+enable HLS before both pass. Afterward use a separate exact-a7ffb8b1
+enablement/denial-probe block, then one bounded admin HLS attempt alongside a
+working WebRTC viewer. Earlier 71 deployment/probe blocks below are historical.
 
 ### Exact-71a14d21 preparation/default-off deployment/browser checkpoint passed
 
@@ -919,9 +971,9 @@ reported HLS connecting, then failed with "HLS bootstrap failed; retry manually"
 and only WebRTC streaming works. No successful HLS picture/audio or five-minute
 room-event interval is supplied. The read-only diagnosis/default-off restoration
 below passed, and the operator confirmed normal login/picture/audio. The
-shared-video-clock repair A/B below subsequently passed at a7ffb8b1. NEXT full
-exact-repair tests/images in section 1, then default-off deployment/browser
-confirmation before another playback attempt.
+shared-video-clock repair A/B and full exact-repair preparation subsequently
+passed at a7ffb8b1. NEXT exact-repair default-off deployment/browser confirmation
+in section 1 before another playback attempt.
 Retain the 71 private
 evidence directory and existing rollback tag; do not reuse earlier 800/97 output paths.
 
@@ -1079,9 +1131,10 @@ The supplied operator block pinned repair
 once at 24.02 seconds; all fifteen positive checks passed in three processes,
 plus one scene-cut check (46 positive top-level passes). All ten codec fixtures
 remained in generation 1. Full exact-repair tests/image preparation in section 1
-is NEXT; default-off deployment and HLS-enabled live/device/lifecycle acceptance
-follow separately. **NOT EXECUTED IN CODEX; supplied repair A/B passed,
-full exact-repair preparation and live acceptance pending.**
+then passed with Repair-Prepare-Exitcode 0. Exact-repair default-off deployment
+and browser confirmation are NEXT; HLS-enabled live/device/lifecycle acceptance
+follows separately. **NOT EXECUTED IN CODEX; supplied repair A/B and full
+preparation passed, new image deployment and live acceptance pending.**
 
 ### Remaining valid-delivery matrix
 

@@ -23,8 +23,12 @@ defect in all three cold runs with its aligned control passing. The common
 high-source fan-out correction A/B then passed at a7ffb8b1 with
 Shared-Clock-Exitcode 0: the old defect reproduced once and 46 positive top-level
 checks passed, including three cold runs and one scene-cut check; all ten codec
-fixtures stayed in generation 1. NEXT full exact-a7ffb8b1 tests/image preparation
-while exact-71 remains running with HLS disabled.
+fixtures stayed in generation 1. Full exact-a7ffb8b1 preparation then passed
+with Repair-Prepare-Exitcode 0: all thirteen selected native/startup checks
+passed in the rebuilt GStreamer 1.26.2 image, all four codec fixtures stayed in
+generation 1, and base/Brave images were built. NEXT exact-repair default-off
+deployment and normal browser confirmation; exact-71 remains running with
+HLS disabled until deployment.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -1159,10 +1163,58 @@ default-off 71 baseline remains the current runtime checkpoint.
 
 This verifies the controlled phase-admission repair and its focused lifecycle
 regressions. It does not measure the failed live source phases, explain every
-earlier all-stream outage, or establish HLS browser/device acceptance. NEXT
+earlier all-stream outage, or establish HLS browser/device acceptance. The next step was
 [full exact-a7ffb8b1 tests/image preparation](HLS_LL_HLS_VALIDATION.md#exact-a7ffb8b1-preparation-after-the-shared-video-clock-ab-passed)
 using a new private output while retaining the working default-off 71 service.
 Default-off repair deployment/browser, same-image enablement, valid playback
 and grouped authorization/lifecycle/device/resource acceptance follow only
 after their respective gates pass. **NOT EXECUTED IN CODEX; supplied isolated
-repair A/B passed, full preparation and enabled/live acceptance pending.**
+repair A/B passed, full preparation and enabled/live acceptance pending at that checkpoint.**
+
+## Full exact-a7ffb8b1 preparation passed — 2026-10-05
+
+The supplied excerpt begins partway through dependency installation for the
+codec-validation image and ends with AUTOMATED/IMAGE GATE PASSED and
+Repair-Prepare-Exitcode 0. The built image tags and final private output path
+identify application `a7ffb8b13448a8329c6df24fdcb182ac32ca398c` from the pinned
+operator preparation block. Earlier client checks/type/build, general Go
+checks/fuzz jobs and server-check image output are outside the excerpt. Their
+completion is covered by the unchanged fail-fast script's final success;
+do not claim fresh individual counts from this tail.
+
+The rebuilt GStreamer 1.26.2 image explicitly passed all thirteen selected
+native/startup checks: native registry/mapping, initial-video-IDR retention,
+cancellation/overflow, AAC drainage, same-unit fan-out/peer failure,
+construction/cleanup, and four real-codec fixtures. The latter passed in one
+generation each:
+
+| Real-codec fixture | Target test duration | Recorded result |
+| --- | --- | --- |
+| Normal cold readiness | 18.08 seconds | All four tracks ready, generation 1 |
+| Delayed high input | 18.07 seconds | All four tracks ready, generation 1 |
+| Artificially skewed source phases | 18.83 seconds | Shared video IDRs, all four tracks ready, generation 1 |
+| Sustained scene cuts | 30.08 seconds | Parents advanced to MSN 3–5, generation 1 |
+
+All four real-codec traces show zero rejected native pushes. The skew fixture
+preserved the high anchor at 30.8 seconds and common video IDRs at
+30.8/32.8/34.8/36.8 seconds. All tracks retained codec initialization and three
+parents. The mediahls package completed in 85.394 seconds; gst in 0.206 seconds.
+queue_full/drops_closed/push_failed warnings occur in deliberate failure-case
+unit checks, not live stream diagnosis. Dependency-audit report exit 1 remains
+open; final preparation success is not a passing security audit.
+
+The client and server image stages completed, followed by both
+`my-neko/base:hls-a7ffb8b13448` and `my-neko/brave:hls-a7ffb8b13448` builds.
+The final private snapshot and successful exact-commit marker are under
+`/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448`. The existing default-off
+71 service was unchanged; keep its image/evidence and prior rollback tags.
+The deployer must compare the new marker and actual prepared image ID before
+touching the service. Build-export digests are not a supplied runtime inspection.
+
+NEXT [exact-a7ffb8b1 default-off deployment/browser confirmation](HLS_LL_HLS_VALIDATION.md#exact-a7ffb8b1-default-off-deployment-and-browser-confirmation--next),
+with the working 71 image saved as the new rollback target. Only after healthy
+deployment and ordinary login/picture/audio/control confirmation, proceed to
+separate same-image enablement and bounded HLS playback. Valid browser picture/
+audio, room-event interval and grouped authorization/lifecycle/device/resource
+acceptance remain pending. **NOT EXECUTED IN CODEX; supplied exact-repair
+automated/image preparation passed, deployment and enabled/live acceptance pending.**
