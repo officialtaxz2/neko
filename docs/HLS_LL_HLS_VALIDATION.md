@@ -22,11 +22,13 @@ Latest enablement CLI/HTTP outcomes are not supplied. Read-only diagnosis and
 same-image default-off restoration passed with exit 0, healthy service and 2/2
 disabled-route probes; the operator confirmed normal login/picture/audio again.
 Saved startup analysis also passed: audio/high/medium subscriptions remained,
-low reached only its capture-create marker. The isolated 48f4acf2 gate returned
-Isolation-Check-Exitcode 1: registry isolation, timestamp mapping and scene cuts
-passed, but smooth cold readiness failed at 24.02 seconds. No repair deployment
-follows. NEXT per-rendition startup diagnostics comparing both constructors at
-unchanged 97ba4ad9; keep HLS disabled. Working HLS playback
+low reached only its capture-create marker. The isolated 48f4acf2 gate failed
+on smooth cold readiness. Paired diagnosis from helper 88f2b25d then completed
+with exit 0: each constructor passed two starts and failed one; medium began
+before the high anchor and had only two parents at the failed deadline.
+A bounded initial-output anchor wait is prepared, not target-verified.
+NEXT isolated anchor A/B and repeated codec gate at unchanged 97ba4ad9;
+keep HLS disabled. Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -58,7 +60,7 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-### Failed attempt recovered; registry comparison partial; codec diagnosis next
+### Failed attempt recovered; startup race localized; anchor repair gate next
 
 The diagnosis/restoration block below completed with Diagnostic-Exitcode 0 and
 Recovery-Exitcode 0 at 97ba4ad9. The image returned healthy without HLS and both
@@ -80,23 +82,31 @@ The supplied [registry A/B gate](../deploy/validate-hls-startup-isolation.sh)
 at repair 48f4acf2 reproduced the expected old-constructor mutex wait (2.00 s).
 The corrected registry test and encoder timestamp mapping passed; the smooth
 fixture failed readiness at 24.02 s, while scene cuts passed at 30.19 s in
-generation 1. Overall Isolation-Check-Exitcode was 1. This blocks rebuild and
-deployment; the source of the readiness failure is not established.
+generation 1. Overall Isolation-Check-Exitcode was 1. This blocked rebuild and
+deployment; that output did not identify the incomplete rendition.
 
-NEXT extract [diagnose-hls-codec-startup.sh](../deploy/diagnose-hls-codec-startup.sh)
-from the reviewed helper commit into the existing private directory and invoke
-it with repository, output directory and the full helper commit, as in the
-operator block. It checks seven source blobs in the existing pinned 97ba4ad9
-codec image, then runs three sequential smooth cold starts with each constructor
-version. Both use the same added per-rendition test observations; the production
-packager, encoder, clocks, handoff and 24 s readiness deadline are unchanged.
-It prints fixed synthetic timestamp/keyframe/anchor and parent-readiness data.
-The wrapper can perturb scheduling, so passing observations do not erase the
-earlier failed gate. Exit 0 means complete diagnostic collection, including
-any printed failed test counts; it does not authorize HLS enablement.
-No checkout, live service or preparation marker changes. The diagnostic is
-pending, **NOT EXECUTED IN CODEX**; full repair checks/image and capture/browser
-acceptance remain pending. Keep HLS disabled.
+The supplied [paired diagnostic](../deploy/diagnose-hls-codec-startup.sh) at
+helper 88f2b25d completed with Startup-Diagnostic-Exitcode 0. Both original and
+isolated constructors passed two starts and failed one. In each failure, medium
+observed its initial 30 s IDR before the high anchor and had parents 2/3 only;
+the other three renditions had parents 1/2/3. No input rejection or generation
+restart was recorded. This supports the pre-anchor admission defect and does
+not attribute it to the registry correction. Diagnostic success is not HLS
+acceptance; no checkout/service/preparation-marker changes occurred.
+
+NEXT extract [validate-hls-anchor-startup.sh](../deploy/validate-hls-anchor-startup.sh)
+from the reviewed repair commit into the existing private output directory and
+invoke it with repository, output directory and that full commit, as in the
+operator block. It verifies seven baseline sources in the existing codec image
+and holds the registry correction constant on both sides. The old packager must
+fail the ordered initial-IDR test with its specific marker. The new packager
+must pass that test, cancellation/overflow checks, registry/timestamp checks and
+both real-codec fixtures in three repetitions. Positive exit 0 and all required
+pass counts are mandatory. The 24 s readiness limit, codec profiles and queue
+bounds are unchanged. No checkout, live service or prepared marker changes.
+The new repair/helper are **NOT EXECUTED IN CODEX**; target A/B, full application
+checks/image and native capture/browser acceptance remain pending. Keep HLS
+disabled until these blocks are separately reviewed.
 
 **Completed file-only analysis block:** extract [summarize-hls-startup.py](../deploy/summarize-hls-startup.py) from
 the reviewed helper commit into the existing private directory, recording that

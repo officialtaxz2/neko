@@ -108,11 +108,16 @@ insertion; fixed capture-phase tracing and a target-only regression/A/B helper
 are prepared. The isolated gate at 48f4acf2 returned exit 1: the expected old
 mutex-wait failure and corrected registry pass were observed, and timestamp
 mapping and scene cuts passed, but smooth cold readiness failed at 24.02 s.
-NEXT paired constructor startup diagnostics with bounded per-rendition test
-observations; keep HLS disabled and application HEAD at 97ba4ad9. The actual
-native blocker, cold-readiness cause and role of the separate capabilities
-rejection remain unconfirmed; repair deployment and enabled isolation/device
-acceptance are pending.
+The paired diagnosis at helper 88f2b25d then completed with exit 0: both
+constructors passed two starts and failed one. Each failure left only medium
+with two parents (MSN 2/3), after its first 30 s IDR was observed before the
+high anchor; the others had three parents. This supports the pre-anchor sample
+loss separately from registry isolation. A bounded first-output wait for high's
+anchor is prepared, preserving cancellation and overflow handling. NEXT isolated
+anchor A/B plus three repetitions of the codec/regression gates; keep HLS
+disabled and application HEAD at 97ba4ad9. The actual native blocker and role of
+the separate capabilities rejection remain unconfirmed; full repair checks,
+deployment and enabled isolation/device acceptance are pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.
 

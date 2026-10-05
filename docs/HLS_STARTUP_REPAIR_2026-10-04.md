@@ -476,8 +476,8 @@ atomic admission trace; a keyframe observed before anchor creation is suggestive
 not proof it was discarded, because another worker can establish the anchor
 before acceptSample runs.
 
-NEXT run [diagnose-hls-codec-startup.sh](../deploy/diagnose-hls-codec-startup.sh)
-at unchanged application 97ba4ad9 with its existing private output directory.
+The completed [diagnose-hls-codec-startup.sh](../deploy/diagnose-hls-codec-startup.sh)
+run used unchanged application 97ba4ad9 with its existing private output directory.
 It verifies the same seven baseline image sources and pins the image ID. Two
 separate network-disabled containers use identical diagnostic fixtures: one
 retains the original constructor; one mounts exactly the reviewed 48f4acf2
@@ -490,6 +490,77 @@ Diagnostic exit 0 means all six attempts and snapshots were collected, including
 any failing test counts. It is not a passing acceptance gate or permission to
 enable HLS, and does not erase the earlier failure even if all six attempts pass.
 Review per-track output/anchor/parent state before choosing a repair. Keep HLS
-disabled. The new fixture/helper have only been statically reviewed:
-**NOT EXECUTED IN CODEX; target diagnostic, reproducible complete repair gate,
-full application checks/image and enabled capture/browser acceptance pending**.
+disabled. The supplied target results are recorded below. **NOT EXECUTED IN
+CODEX; reproducible complete repair gate, full application checks/image and
+enabled capture/browser acceptance pending**.
+
+## Paired startup diagnosis complete; initial-output anchor repair — 2026-10-05
+
+The operator supplied the completed diagnostic from helper
+88f2b25d02fb6734326e284ca31bd4297cb34bf6, helper blob
+208da8cbdc3ce74a434029a3915f7b653fe3ddb7, fixture blob
+a13242690ccc35bee78784a2807f859b2f3fe8bb and registry repair blob
+35cf5d8402a6c733a46c512e38341872187e3bf2. Application HEAD remained at 97ba4ad9;
+the verified codec image remained
+sha256:06df176c5da073548fb20b423335d10cd1ed92a1db1fb5989dd6dacf9d200d3f.
+Private evidence stamp: codec-startup-diagnostic-20261005T110330529448096Z.
+Startup-Diagnostic-Exitcode was 0, meaning complete observations, not acceptance.
+
+| Constructor | Attempt 1 | Attempt 2 | Attempt 3 | Package outcome |
+| --- | --- | --- | --- | --- |
+| Original 97ba4ad9 | failed 24.04 s | passed 18.10 s | passed 18.09 s | exit 1, 60.456 s |
+| Registry-isolated 48f4acf2 | failed 24.02 s | passed 18.09 s | passed 18.09 s | exit 1, 60.418 s |
+
+All six attempts stayed in generation 1 with a common high anchor at 30 s and
+zero rejected input pushes. In each failing attempt, medium's first encoded
+output was a valid, configured 30 s IDR observed before that anchor. Its next
+IDRs were at 32/34/36 s, with the anchor set. It had init, healthy output and
+LL readiness, but only parents MSN 2/3 and no conventional readiness at the
+deadline. Audio/high/low all retained parents 1/2/3 and were conventionally
+ready. Successful starts retained MSN 1/2/3 for every rendition.
+
+Together with the admission code, this localizes the fixture timeout: medium's
+initial pre-anchor IDR was not admitted; the next eligible parent boundary was
+at 36 s (six seconds after anchor), so its third complete parent required the
+24-second boundary. This is independently reproduced with both constructors;
+the registry correction did not create this observed admission defect. It is
+not proof that production capture has matching clocks, nor an explanation of
+the separate native low-source stall or all-stream outage. No service, checkout
+or prepared-image marker changed during the diagnosis.
+
+The bounded HLS-only repair now holds each non-high worker's first received
+output until high establishes the generation's anchor. High continues to
+establish the anchor from its first keyframe without waiting. Only the already
+received sample is held; existing eight-sample native handoffs, provider queues,
+codec profiles, timestamps and 24-second readiness deadline are unchanged. The
+wait releases all publication locks, rechecks the anchor after notifications,
+and exits on generation cancellation. A handoff overflow or closed drop channel
+still requests the existing worker_failure restart, with the existing fixed
+overflow metric. Once anchored, the ordinary admission rules still discard
+samples earlier than the anchor and enforce aligned IDRs; this is not an
+arbitrary-skew repair.
+
+The ordered regression starts medium's output before high's initial keyframe.
+The old pump signals its next select after discarding that initial IDR; the
+corrected pump holds it. High is then admitted and the synthetic clock advances
+only to 18 seconds. Medium must retain parents 1/2/3. Separate checks cover an
+unrelated notification, cancellation without publication/restart, overflow and
+closed drop-channel termination. These exercise the production output pump,
+not only a helper's return value.
+
+NEXT run [validate-hls-anchor-startup.sh](../deploy/validate-hls-anchor-startup.sh)
+with unchanged application 97ba4ad9 and its existing private output directory.
+The pinned codec image's seven baseline blobs are rechecked. Both comparisons
+mount the same registry repair and observed fixtures. Old packager.go must fail
+the ordered test with its fixed initial-IDR-loss marker; corrected packager.go
+must pass the ordered/lifecycle regressions, registry and encoder mapping tests,
+and smooth/scene-cut real-codec fixtures in three repetitions. The positive
+process timeout is 180 seconds per package and every required test must have
+three explicit passes. There is no image build or live service access.
+
+Keep HLS disabled. Passing this bounded gate would allow preparation of full
+exact-commit checks/images; it would not establish live capture, browser/media,
+authorization/lifecycle or mixed-backend isolation acceptance. The new repair,
+regressions and helper have been statically reviewed only:
+**NOT EXECUTED IN CODEX; target anchor A/B, full application checks/image and
+enabled capture/browser acceptance pending**.

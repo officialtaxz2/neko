@@ -536,6 +536,7 @@ func workerFormatIdentityMatches(worker *packagerWorker, source types.MediaSourc
 }
 
 func (packager *Packager) pumpOutput(ctx context.Context, worker *packagerWorker) {
+	anchorReady := worker.track.id == "high"
 	for {
 		select {
 		case <-ctx.Done():
@@ -576,6 +577,16 @@ func (packager *Packager) pumpOutput(ctx context.Context, worker *packagerWorker
 				return
 			}
 			sample.Timestamp = worker.transcoder.CapturedAt(sample)
+			if !anchorReady {
+				// Preserve this first output, especially an initial video IDR,
+				// until high establishes the shared timeline. Dropping it here
+				// postpones admission to the next parent and consumes readiness.
+				// Only this sample is held; existing bounded handoffs stay intact.
+				if !packager.waitForAnchor(ctx, worker) {
+					return
+				}
+				anchorReady = true
+			}
 			if err := packager.acceptSample(worker.track, sample); err != nil {
 				packager.logger.Warn().Err(err).Str("variant", worker.track.id).Msg("HLS sample rejected")
 				packager.requestRestart("format_change")
@@ -583,6 +594,35 @@ func (packager *Packager) pumpOutput(ctx context.Context, worker *packagerWorker
 			}
 		}
 	}
+}
+
+func (packager *Packager) waitForAnchor(ctx context.Context, worker *packagerWorker) bool {
+	for ctx.Err() == nil {
+		packager.mu.Lock()
+		ready, notify := packager.anchorSet, packager.notify
+		packager.mu.Unlock()
+		if ready {
+			return ctx.Err() == nil
+		}
+		select {
+		case <-ctx.Done():
+			return false
+		case <-notify:
+		case _, ok := <-worker.transcoder.Drops():
+			if ctx.Err() == nil {
+				if ok {
+					kind := "video"
+					if worker.track.audio {
+						kind = "audio"
+					}
+					hlsDrops.WithLabelValues(worker.track.id, "worker", kind, "queue_full").Inc()
+				}
+				packager.requestRestart("worker_failure")
+			}
+			return false
+		}
+	}
+	return false
 }
 
 func (packager *Packager) acceptSample(track *trackState, sample types.Sample) error {
