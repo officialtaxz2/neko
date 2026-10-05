@@ -11,8 +11,9 @@ cuts passed once. Full exact-71a14d21 preparation subsequently passed with
 Repair-Prepare-Exitcode 0: all nine selected startup checks passed in the rebuilt
 codec image and base/Brave images were built. The running service was unchanged.
 Default-off 71 deployment then passed with Baseline-Exitcode 0, healthy service
-and 2/2 disabled-route probes. NEXT fresh normal-browser confirmation before
-HLS enablement.
+and 2/2 disabled-route probes. The operator confirmed normal browser behavior
+without HLS. NEXT same-image 71 conventional-HLS enablement and the 19 HTTP
+denial probes.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -773,8 +774,8 @@ No service access, image build, checkout or marker mutation occurs in this A/B.
 
 Source/diffs are statically reviewed; **NOT EXECUTED IN CODEX; supplied
 controlled A/B and subsequent full exact-repair preparation passed as recorded
-below. The new-image default-off baseline also passed; fresh normal-browser
-confirmation and enabled live acceptance remain pending**.
+below. The new-image default-off baseline and requested normal-browser
+checkpoint also passed; enabled live acceptance remains pending**.
 A passing controlled A/B does not prove the cause of the
 unobserved earlier worker restart, native low-source stall or all-stream outage.
 
@@ -894,9 +895,9 @@ stall and reported all-stream outage still lack a confirmed live cause.
 
 The next step at that checkpoint was the exact-71 default-off deployment block in
 [validation section 1](HLS_LL_HLS_VALIDATION.md#1-prepare-exact-tests-and-images-without-replacing-the-service),
-which subsequently passed as recorded below. NEXT normal login/picture/audio/control
-in a fresh private browser window. No rebuild or Caddy change is needed. Keep
-HLS disabled until the browser checkpoint passes and is reviewed. Enabled HLS picture/audio,
+which subsequently passed as recorded below. Its normal-browser checkpoint
+also subsequently passed. NEXT section 2's same-image HLS enablement/HTTP
+denial gate; no rebuild or Caddy change is needed. Enabled HLS picture/audio,
 valid authorization/lifecycle, room-event/isolation and grouped device/resource
 acceptance remain pending. **NOT EXECUTED IN CODEX; supplied target preparation passed.**
 
@@ -913,10 +914,28 @@ HTTP probes returned the expected 404 (2/2 passed).
 
 The running application is now the prepared 71 image, not the earlier 97
 baseline. This verifies deployment health and disabled-route behavior only.
-Fresh normal login/picture/audio/control in a private browser window has not
-yet been confirmed. Keep HLS disabled and do not repeat baseline deployment.
+At that deployment checkpoint, fresh normal-browser confirmation was still
+pending. The operator subsequently confirmed the requested check works
+without HLS, as recorded below. Do not repeat baseline deployment.
 The prior working image and private failure/A/B evidence remain available.
-NEXT obtain that browser confirmation before same-image HLS activation.
+NEXT the same-image conventional-HLS activation/HTTP denial gate.
 Enabled live capture/playback, the previous all-stream symptom's cause and
 authorization/lifecycle/isolation/device/resource acceptance remain pending.
 **NOT EXECUTED IN CODEX; supplied target baseline passed.**
+
+## Default-off exact-71 browser checkpoint confirmed — 2026-10-05
+
+The operator replied "Ja ohne klappt alles" to the requested fresh
+normal-browser login/picture/audio/control check without HLS. This closes the
+default-off 71a14d21 browser checkpoint after its healthy deployment and 2/2
+disabled-route probes. No additional build or service mutation occurred in
+Codex, and no enabled-HLS playback claim follows from this confirmation.
+
+NEXT [validation section 2](HLS_LL_HLS_VALIDATION.md#2-explicit-conventional-hls-deployment-and-invalid-input-checks):
+enable conventional HLS in the same prepared 71 image and review the 17 public
+plus 2 cleartext-denial probes before one valid admin playback attempt.
+Keep application HEAD/evidence at 71, preserve the saved rollback tag and use
+the already-reviewed Caddy configuration without another merge/reload.
+Enabled live capture/picture/audio, the earlier all-stream symptom's cause and
+authorization/lifecycle/isolation/device/resource acceptance remain pending.
+**NOT EXECUTED IN CODEX; operator-confirmed default-off browser behavior only.**

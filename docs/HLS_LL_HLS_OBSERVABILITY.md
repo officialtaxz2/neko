@@ -71,10 +71,12 @@ snapshot/success marker is under /opt/docker/nekoNew/neko-hls-results-71a14d2174
 Dependency-audit exit 1 remains an open report item, not security acceptance.
 Default-off deployment of my-neko/brave:hls-71a14d2174da then passed with
 Baseline-Exitcode 0, healthy service, a private baseline snapshot and 2/2
-disabled bootstrap/media probes returning 404. NEXT fresh normal-browser
-login/picture/audio/control confirmation before same-image HLS activation;
-keep HLS disabled. **NOT EXECUTED IN CODEX; supplied A/B, full preparation and
-default-off baseline passed, browser confirmation and enabled acceptance pending.**
+disabled bootstrap/media probes returning 404. The operator confirmed the
+requested normal-browser check works without HLS. NEXT same-image conventional
+HLS activation and 17 public plus 2 cleartext-denial probes, followed by review
+before valid playback. **NOT EXECUTED IN CODEX; supplied A/B, full preparation,
+default-off baseline and requested browser checkpoint passed; enabled CLI/HTTP
+and live acceptance pending.**
 
 | Metric family | Evidence |
 | --- | --- |

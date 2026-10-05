@@ -141,12 +141,13 @@ cuts 30.19 s, all generation 1), and base/Brave images were built. The supplied
 tail omits earlier client/Go/fuzz output; the script's reported final success
 covers those stages without separately shown counts. The service stayed
 unchanged during preparation. Default-off 71 deployment then passed with
-Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. NEXT fresh
-normal-browser login/picture/audio/control confirmation before HLS activation.
+Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. The operator
+then confirmed the requested normal-browser check works without HLS. NEXT
+same-image conventional-HLS activation and the 19 HTTP denial probes.
 New repair/gates: NOT EXECUTED IN CODEX; supplied isolated A/B, full preparation
-and default-off deployment passed. Keep HLS disabled.
+and default-off deployment/browser checkpoint passed; enabled outcomes pending.
 The actual native blocker and role of the separate capabilities rejection
-remain unconfirmed; the fresh browser checkpoint and enabled isolation/device
+remain unconfirmed; enabled live playback and isolation/device
 acceptance are pending. Dependency-audit report exit 1 is not a security pass.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.
