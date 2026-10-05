@@ -8,13 +8,15 @@ eight new regression cases. The supplied exact-68 isolated gate passed all
 Scoped image preparation subsequently passed with Image-Prepare-Exitcode 0
 using helper `28d081a4`, fresh client build and base/Brave images, while the
 working exact-73 service stayed running. Backend evidence is inherited from
-identical sources, not freshly rerun. **NOT EXECUTED IN CODEX**; candidate
-activation/live acceptance remain pending. The application checkout is now
-exact `68dbdd4a8dd798886302b235c1f8f208452e0c6e`. NEXT activate that prepared
-image using `deploy-hls-media.sh enable` and private evidence
-`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`, then the single bounded
-browser check in the linked review. Keep the checkout pinned; do not pull later
-tooling/docs as a prepared image. Retain old images/evidence. Historical
+identical sources, not freshly rerun. Activation subsequently passed with
+Start-Exitcode 0, healthy `my-neko/brave:hls-68dbdd4a8dd7` and a private enable
+snapshot. Checkout/live are now exact `68dbdd4a8dd798886302b235c1f8f208452e0c6e`.
+HLS worked after Retry per operator report; the initial error, uninterrupted
+interval and concurrent WebRTC result are not separately supplied.
+**NOT EXECUTED IN CODEX**; reliable first start/wider live acceptance remain open.
+NEXT existing read-only playback diagnosis into
+`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7` with the service retained.
+Keep the checkout pinned and old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed
 client/image/HTTP-denial gates without a new reason.
 

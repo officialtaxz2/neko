@@ -1,13 +1,13 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **TARGET CLIENT AND IMAGE GATES PASSED / ACTIVATION AND LIVE ACCEPTANCE PENDING**.
+Status: **TARGET CLIENT/IMAGE GATES AND HEALTHY ACTIVATION PASSED / FIRST START AND WIDER LIVE ACCEPTANCE OPEN**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
-The latest supplied running deployment remains exact application
-`73d5ff6d29110e3dd06999726a7e88718d09ea23`, conventional HLS enabled, with
-WebRTC working. The server checkout is now exact application
-`68dbdd4a8dd798886302b235c1f8f208452e0c6e`; its prepared image is not yet running.
+Checkout and running deployment are now exact application
+`68dbdd4a8dd798886302b235c1f8f208452e0c6e`, conventional HLS enabled, with
+Start-Exitcode 0 and a healthy container. The operator reports HLS needed
+Retry, then worked without problems; reliable first-start acceptance remains open.
 
 ## What the existing evidence establishes
 
@@ -103,19 +103,20 @@ revocation tests remain. The never-ready case also checks a pending Play with
 Static diff and surrounding-source review completed;
 no dependency, package script, backend or deployment configuration changed.
 The supplied target gate below passed the full client tests, TypeScript check
-and client build. Scoped candidate image preparation also passed; candidate
-activation and browser acceptance remain **PENDING**.
+and client build. Scoped candidate image preparation and healthy activation
+also passed; reliable first-start and wider browser acceptance remain **OPEN**.
 
 ## One grouped target checkpoint later
 
 The isolated client-checks and scoped image preparation stages below have now
-passed. Continue with exact-68 activation described at the end of this record;
-do not rerun passed preparation without changed source or a new failure.
+passed, followed by healthy exact-68 activation. Continue with the read-only
+diagnosis at the end of this record; do not rerun passed preparation without
+changed source or a new failure.
 
-Keep the working exact-73 service and private evidence while this candidate is
-reviewed. Do not repeat completed activation/denial probes or ask the operator
-to answer another ad-hoc questionnaire now. The new repository commit is a
-candidate, not a deployed or accepted image.
+Keep the now-running exact-68 service and private evidence. Do not repeat
+completed activation/denial probes or ask the operator to answer another
+ad-hoc questionnaire. The image is deployed; its first-start reliability and
+wider live acceptance remain open.
 
 The completed first stage ran the existing client validation service against
 an isolated checkout of the exact reviewed candidate, with the server fixture
@@ -138,7 +139,8 @@ provenance. Group the next live browser check into one clearly described
 checkpoint with a simultaneous WebRTC viewer. The bounded first activation
 check below precedes wider cold/warm, join and deliberate Pause/resume checks.
 Record one compact result; collect failed-state diagnostics before recovery
-only if needed. No candidate activation or live acceptance has been supplied.
+only if needed. Candidate activation has now passed; the supplied post-Retry
+playback report does not establish reliable first start or the wider matrix.
 
 The reported frozen picture and event-associated reconnects remain
 uncorrelated; these source repairs are not a confirmed explanation of all
@@ -210,11 +212,12 @@ reproduction of old code.
 
 The operator block first runs `bash -n` on the extracted helper, then invokes
 it once with these arguments. Supplied syntax checking and image preparation
-passed as recorded below; candidate activation/live acceptance remain
-**PENDING / NOT EXECUTED IN CODEX**. Keep old images/evidence and `master`;
+passed as recorded below; activation/live acceptance were still pending at
+that preparation stage. All execution is supplied, **NOT EXECUTED IN CODEX**.
+Keep old images/evidence and `master`;
 no completed HTTP-denial gate is repeated during this preparation block.
 
-## Supplied exact-68 image preparation passed; activation next
+## Supplied exact-68 image preparation and subsequent activation
 
 The supplied complete target output used tooling commit
 `28d081a4430b43ba03d074157e009670f93b6b9a` and preparer blob
@@ -241,9 +244,9 @@ Docker export digests are not substituted for those inspected IDs.
 These are supplied target results, **NOT EXECUTED IN CODEX**. Application
 checkout exact-68 and live container exact-73 are distinct states.
 
-The next operator block activates the prepared image once, using the existing
-deployer and exact evidence directory. Keep the application checkout pinned;
-do not pull later docs/tooling commits before using this prepared image:
+The supplied operator block below activated the prepared image once, using the
+existing deployer and exact evidence directory. It required the application
+checkout to stay pinned; later docs/tooling commits were not deployed:
 
 ```bash
 set +e
@@ -276,6 +279,63 @@ WebRTC continues. No multi-part questionnaire is needed. Preserve the failed
 state for a bounded diagnostic if it fails; do not infer a warm-up cause from
 "HLS failed" alone.
 
-Activation, this bounded browser interval and wider device, authorization/
-lifecycle, latency/resource/isolation, dependency and final grouped acceptance
-remain pending. Preserve the prior images/evidence and pinned `master`.
+At preparation, activation and this bounded browser interval remained pending.
+The subsequent activation/playback result is recorded below. Wider device,
+authorization/lifecycle, latency/resource/isolation, dependency and final grouped
+acceptance remain pending. Preserve prior images/evidence and pinned `master`.
+
+## Supplied exact-68 activation passed; first start still needs Retry
+
+The supplied target command pinned application
+`68dbdd4a8dd798886302b235c1f8f208452e0c6e` and the existing private directory
+`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`. It invoked the unchanged
+deployer blob `c6f52dc80fdf605ec908f3fe3856ce23e015e494` with `enable`. Container
+replacement completed healthy on `my-neko/brave:hls-68dbdd4a8dd7`, a private
+enable snapshot was recorded, and the output ended with `Start-Exitcode: 0`.
+
+The operator reports HLS first needed Retry HLS, then worked without problems.
+Asked for the fixed first-failure detail, the operator could not recall it and
+described only the default failed text; this does not identify an error branch.
+The detailed first error, elapsed time, separately observed audio, exact
+five-minute/room-event interval and concurrent WebRTC result are not supplied.
+Do not silently mark those individual checks passed or classify this as a
+confirmed packager, player or prior 30-second-deadline failure.
+
+Static review confirms conventional bootstrap waits for all four tracks to
+have three complete six-second parents, bounded by `ConventionalReadyWindow`
+24 seconds. The client separately bounds the bootstrap request at 30 seconds
+and initial player readiness at 30 seconds after attachment. A failed readiness
+wait releases its reference; the last reference schedules a 15-second idle grace,
+so packaging can remain active during that interval;
+a manual Retry obtains a fresh ticket and can join already warmed media.
+This explains how Retry could help a cold start, not which stage failed here.
+No timeout, buffering, codec or automatic-ticket-retry change is justified yet.
+
+NEXT retain the working service and collect the existing bounded read-only
+diagnostic. Its fixed bootstrap result counters distinguish server not-ready,
+successful lease creation and response-write failures; packager markers and
+worker/object metrics provide surrounding evidence. Counts remain cumulative
+and bounded logs are not an attempt-correlated trace. The helper is unchanged
+at blob `ddfe001618f8733447f4bdd328a8519db9acef06` and already exists at the
+application checkout, so no fetch/pull or restart is needed:
+
+```bash
+set +e
+bash -Ee -o pipefail <<'NEKO_HLS_DIAG'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "68dbdd4a8dd798886302b235c1f8f208452e0c6e"
+bash deploy/diagnose-hls-playback.sh "$PWD" \
+  /opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7
+NEKO_HLS_DIAG
+printf 'Diagnostic-Exitcode: %s\n' "$?"
+```
+
+The helper writes raw evidence only inside a new private subdirectory and
+prints its allowlisted summary. Share the printed summary, not private logs,
+cookies or complete lease/WebSocket URLs. It does not request credentialed
+playback, stop/recreate the container or change configuration.
+
+Activation passed and post-Retry playback is reported, **NOT EXECUTED IN CODEX**.
+This new diagnostic is pending. Reliable first start and wider live acceptance
+remain open; retain the existing images/evidence and pinned `master`.

@@ -10,9 +10,11 @@ Latest HLS source review (2026-10-05): fixes paused-time stall accounting,
 monitoring before first readiness and mixed HTTP/readiness error budgets, plus
 player-event handling. The supplied exact-68 target gate passed **all 60 client
 tests, TypeScript and build**. Scoped exact-68 image preparation also passed
-(`Image-Prepare-Exitcode: 0`); deployment and browser acceptance remain pending.
-The server checkout is now exact `68dbdd4a`, while the running service remains
-exact `73d5ff6d`, with previously reported HLS/WebRTC playback. See the
+(`Image-Prepare-Exitcode: 0`). Exact-68 activation then passed healthy with
+`Start-Exitcode: 0`; checkout and running service are now exact `68dbdd4a`.
+The operator reports HLS works after Retry. Reliable first start and wider
+browser acceptance remain open; NEXT read-only diagnosis of the initial
+failure. See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 
 ### IMPLEMENTED

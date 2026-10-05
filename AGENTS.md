@@ -11,16 +11,18 @@ server results, **NOT EXECUTED IN CODEX**. Scoped exact-68 image preparation
 also passed with Image-Prepare-Exitcode 0 using helper `28d081a4`: fresh client
 build, base/Brave images and private preparation evidence recorded. Backend
 evidence is inherited through identical exact-73 sources; no fresh Go/codec/
-fuzz result is claimed. Candidate activation/live acceptance and dependency
-maintenance remain pending.
-The latest supplied running deployment stays exact `73d5ff6d`, conventional
-HLS enabled, with WebRTC working; the server checkout is now exact `68dbdd4a`.
-NEXT activate its prepared image with `deploy-hls-media.sh enable` and private
-evidence `/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`, then one bounded
-fresh-window HLS/WebRTC browser check. Keep that application checkout pinned;
-do not pull later tooling/docs as the prepared application. Retain old images
-and evidence. Do not repeat passed client/image/HTTP-denial gates without a
-new reason. Prior results below apply only to their recorded commits.
+fuzz result is claimed. Exact-68 activation subsequently passed with
+Start-Exitcode 0, a healthy `my-neko/brave:hls-68dbdd4a8dd7` and private enable
+snapshot. The operator reports HLS needed Retry, then worked without problems;
+the detailed initial error, uninterrupted interval and concurrent WebRTC
+result are not separately supplied. Reliable first-start acceptance stays open.
+The latest supplied checkout/live deployment is exact `68dbdd4a`, conventional
+HLS enabled. NEXT collect the existing read-only playback diagnostic into
+`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`, preserving the running
+service and failed/successful bootstrap counters; the cold-start explanation
+is still a hypothesis. Keep the application pinned, old images/evidence and
+dependency maintenance open. Do not repeat passed client/image/HTTP-denial
+gates without a new reason. Prior results below apply only to their commits.
 `master` remains pinned at `d9105ef8`.
 
 ## Purpose

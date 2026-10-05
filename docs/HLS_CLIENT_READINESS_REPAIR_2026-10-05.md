@@ -471,9 +471,12 @@ gate then passed all 60 tests, TypeScript and build with Client-Check-Exitcode 0
 Scoped exact-68 image preparation subsequently passed with
 Image-Prepare-Exitcode 0 using helper `28d081a4`, fresh client build and both
 images, while the active target remained exact-73. Backend evidence is
-inherited through identical sources. The checkout is now exact-68; activation
-and live validation remain pending. NEXT activate its prepared image with the
-existing deployer, then one bounded fresh-window HLS/WebRTC browser check.
+inherited through identical sources. Exact-68 activation then passed healthy
+with Start-Exitcode 0; checkout/live are now exact-68, conventional HLS enabled.
+The operator reports Retry was needed, then HLS worked without problems. The
+initial error, timed/event interval and concurrent WebRTC result are not
+separately supplied; reliable first start and wider live validation stay open.
+NEXT existing read-only playback diagnosis while retaining the working service.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 
 The operator could not reliably answer the follow-up about the exact five-minute

@@ -1184,11 +1184,17 @@ Scoped exact-68 image preparation subsequently passed with
 Image-Prepare-Exitcode 0 using helper `28d081a4`: fresh client build, base/Brave
 images and private snapshot/marker recorded, with identical backend evidence
 inherited. The checkout is now exact-68; the working exact-73 HLS/WebRTC
-container remained unchanged. **NOT EXECUTED IN CODEX; activation and live
-acceptance remain pending.** NEXT use the existing `deploy-hls-media.sh enable`
-with `/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7` at exact application
-`68dbdd4a8dd798886302b235c1f8f208452e0c6e`, then one fresh-window HLS/WebRTC
-browser check. Keep the application pinned and old images/evidence retained.
+container remained unchanged during preparation. Activation subsequently
+passed with Start-Exitcode 0, healthy `my-neko/brave:hls-68dbdd4a8dd7` and a
+private enable snapshot. Checkout/live are now exact application
+`68dbdd4a8dd798886302b235c1f8f208452e0c6e`. The operator reports HLS needed
+Retry, then worked without problems; the initial error, five-minute/event
+interval and concurrent WebRTC result are not separately confirmed.
+**NOT EXECUTED IN CODEX; reliable first start and wider acceptance remain open.**
+NEXT collect the existing read-only playback diagnostic into
+`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7` while retaining the working
+service. Cold-start warm-up is a hypothesis, not a demonstrated cause. Keep
+the application pinned and old images/evidence retained.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 Historical results below apply only to their recorded commits.
 
