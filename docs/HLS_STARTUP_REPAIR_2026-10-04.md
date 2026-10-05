@@ -415,11 +415,11 @@ existing codec checks. Unexpected failure/pass stops the gate. Reports are
 private and timestamped; no checkout, live service or prepared-image marker is
 changed. The fresh-image codec gate also includes this fourth test.
 
-NEXT run this isolated A/B gate before application rebuild/deployment. The
-source changes, tracing, regression and helper are statically reviewed only:
-**NOT EXECUTED IN CODEX; target A/B, full checks/image and live capture/HLS
-acceptance pending**. Preserve the recovered image and old evidence. Never
-infer production capture or a resolved WebRTC outage from the codec fixtures.
+The supplied isolated A/B gate subsequently failed overall, as recorded below.
+Only the registry regression's comparison passed; fixed capture-stage tracing
+is not deployed. **NOT EXECUTED IN CODEX; full checks/image and live capture/HLS
+acceptance pending**. Preserve the recovered image and old evidence. Never infer
+production capture or a resolved WebRTC outage from the codec fixtures.
 
 The [GStreamer parse contract](https://gstreamer.freedesktop.org/documentation/gstreamer/gstparse.html#gst_parse_launch)
 describes native element construction separately from the Go registry. Its
@@ -428,3 +428,68 @@ also requires early XInitThreads for threaded capture. No such call is present
 in the inspected source; whether deployment initializes it externally remains
 unknown. Record that as a separate follow-up, not a second unmeasured change in
 this mutex-isolation block or an established cause of the current native stall.
+
+## Isolated registry gate failed; cold readiness diagnostic next — 2026-10-05
+
+The supplied target run used repair/helper commit
+48f4acf2685b2247e8606deaedb162b9380afeb9, helper blob
+a85c72cb736df6709155c9ca3b1ae6b5e48affe9, unchanged application 97ba4ad9 and
+codec-validation image
+sha256:06df176c5da073548fb20b423335d10cd1ed92a1db1fb5989dd6dacf9d200d3f.
+The helper verified seven baseline source blobs before either fixture run.
+
+- The old constructor reproduced the fixed expected registry-wait failure in
+  2.00 seconds (negative-control exit 1).
+- With only the registry correction mounted, its regression passed in 0.00 s,
+  and encoder running-time mapping passed in 0.01 s.
+- Smooth real-codec conventional readiness failed at 24.02 s. The sampled logs
+  show generation 1 startup and idle-stop scheduling, with no sample rejection
+  or generation restart. They do not identify which rendition was incomplete.
+- The scene-cut fixture then became ready in generation 1 and passed at 30.19 s.
+  The mediahls package failed overall after 54.430 s; positive-control exit and
+  final Isolation-Check-Exitcode were both 1.
+
+This is a failed overall acceptance gate. It confirms the deliberately tested
+mutex coupling and correction, not complete cold-start reliability. Earlier
+successful smooth tests remain valid earlier observations; this new failure
+prevents treating them as a reproducible startup guarantee. The failed gate did
+not compare old and corrected smooth startup side by side, so it does not prove
+the registry correction introduced this failure. Checkout, live service and
+prepared-image markers were unchanged; the working baseline remains without HLS.
+
+Static inspection identifies one possible ordering defect: acceptSample drops
+output while the high rendition has not established the common anchor. If
+another video's initial aligned IDR arrives first and is discarded, subsequent
+two-second IDRs cannot join until the next six-second parent boundary. Producing
+three complete parents from that point reaches the 24-second readiness limit,
+leaving no startup margin. This is a hypothesis about the smooth fixture;
+the supplied failure lacks the per-rendition timestamps needed to establish it.
+It does not explain the native low-source stall by itself.
+
+The existing real-codec fixtures now wrap the production factory only with
+bounded test observations. They retain input/output counts, first/last PTS/DTS,
+the first four output keyframes and the observed anchor, plus init/failure/
+part/parent readiness snapshots. They retain no media payload or credentials.
+Production codec pipelines, channels, clocks, packager code and readiness
+deadlines are unchanged. The observations can perturb scheduling and are not an
+atomic admission trace; a keyframe observed before anchor creation is suggestive,
+not proof it was discarded, because another worker can establish the anchor
+before acceptSample runs.
+
+NEXT run [diagnose-hls-codec-startup.sh](../deploy/diagnose-hls-codec-startup.sh)
+at unchanged application 97ba4ad9 with its existing private output directory.
+It verifies the same seven baseline image sources and pins the image ID. Two
+separate network-disabled containers use identical diagnostic fixtures: one
+retains the original constructor; one mounts exactly the reviewed 48f4acf2
+gst.go correction. Each runs three sequential fresh smooth packagers, with a
+120-second process timeout and the unchanged 24-second per-start readiness
+deadline. There is no retry-until-pass rule, live room or service restart.
+Evidence is private, timestamped and records helper/fixture/repair source blobs.
+
+Diagnostic exit 0 means all six attempts and snapshots were collected, including
+any failing test counts. It is not a passing acceptance gate or permission to
+enable HLS, and does not erase the earlier failure even if all six attempts pass.
+Review per-track output/anchor/parent state before choosing a repair. Keep HLS
+disabled. The new fixture/helper have only been statically reviewed:
+**NOT EXECUTED IN CODEX; target diagnostic, reproducible complete repair gate,
+full application checks/image and enabled capture/browser acceptance pending**.

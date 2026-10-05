@@ -22,10 +22,11 @@ Latest enablement CLI/HTTP outcomes are not supplied. Read-only diagnosis and
 same-image default-off restoration passed with exit 0, healthy service and 2/2
 disabled-route probes; the operator confirmed normal login/picture/audio again.
 Saved startup analysis also passed: audio/high/medium subscriptions remained,
-low reached only its capture-create marker. A bounded native-construction
-registry-lock correction and fixed capture-stage tracing are prepared, not
-runtime-verified. NEXT run the isolated registry A/B plus codec gate at unchanged
-97ba4ad9; keep HLS disabled. Working HLS playback
+low reached only its capture-create marker. The isolated 48f4acf2 gate returned
+Isolation-Check-Exitcode 1: registry isolation, timestamp mapping and scene cuts
+passed, but smooth cold readiness failed at 24.02 seconds. No repair deployment
+follows. NEXT per-rendition startup diagnostics comparing both constructors at
+unchanged 97ba4ad9; keep HLS disabled. Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -57,7 +58,7 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-### Failed attempt recovered; saved analysis passed; isolated registry gate next
+### Failed attempt recovered; registry comparison partial; codec diagnosis next
 
 The diagnosis/restoration block below completed with Diagnostic-Exitcode 0 and
 Recovery-Exitcode 0 at 97ba4ad9. The image returned healthy without HLS and both
@@ -75,16 +76,27 @@ had HLS enabled. A global Go sample-registry lock held across native pipeline
 construction is corrected in the repository; it can spread a constructor stall
 to every media callback. The exact native blocker remains unconfirmed.
 
-NEXT extract [validate-hls-startup-isolation.sh](../deploy/validate-hls-startup-isolation.sh)
-from the reviewed repair commit into the existing private directory, record that
-commit, and invoke it with repository, private output and the full repair hash,
-as in the operator block. It requires application HEAD to stay at 97ba4ad9 and
-verifies the existing codec image's baseline source before any fixture run.
-Negative control must fail with the specific registry-wait marker; positive
-control must pass the new regression plus all three prior codec tests. It
-changes no checkout, live service or preparation marker. The A/B gate is
-pending, **NOT EXECUTED IN CODEX**; full repair-image checks/build and capture/
-browser acceptance follow only after its output is reviewed. Keep HLS disabled.
+The supplied [registry A/B gate](../deploy/validate-hls-startup-isolation.sh)
+at repair 48f4acf2 reproduced the expected old-constructor mutex wait (2.00 s).
+The corrected registry test and encoder timestamp mapping passed; the smooth
+fixture failed readiness at 24.02 s, while scene cuts passed at 30.19 s in
+generation 1. Overall Isolation-Check-Exitcode was 1. This blocks rebuild and
+deployment; the source of the readiness failure is not established.
+
+NEXT extract [diagnose-hls-codec-startup.sh](../deploy/diagnose-hls-codec-startup.sh)
+from the reviewed helper commit into the existing private directory and invoke
+it with repository, output directory and the full helper commit, as in the
+operator block. It checks seven source blobs in the existing pinned 97ba4ad9
+codec image, then runs three sequential smooth cold starts with each constructor
+version. Both use the same added per-rendition test observations; the production
+packager, encoder, clocks, handoff and 24 s readiness deadline are unchanged.
+It prints fixed synthetic timestamp/keyframe/anchor and parent-readiness data.
+The wrapper can perturb scheduling, so passing observations do not erase the
+earlier failed gate. Exit 0 means complete diagnostic collection, including
+any printed failed test counts; it does not authorize HLS enablement.
+No checkout, live service or preparation marker changes. The diagnostic is
+pending, **NOT EXECUTED IN CODEX**; full repair checks/image and capture/browser
+acceptance remain pending. Keep HLS disabled.
 
 **Completed file-only analysis block:** extract [summarize-hls-startup.py](../deploy/summarize-hls-startup.py) from
 the reviewed helper commit into the existing private directory, recording that

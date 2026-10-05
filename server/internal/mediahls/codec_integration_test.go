@@ -163,8 +163,11 @@ func TestRealCodecsReachConventionalPackagerReadiness(t *testing.T) {
 		}
 	}
 	provider := &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4)}
-	packager := newPackager(provider, gstTranscoderFactory{})
+	diagnostics := &codecFixtureDiagnostics{tracks: make(map[string]*codecFixtureTrace)}
+	packager := newPackager(provider, diagnostics)
+	diagnostics.packager = packager
 	defer packager.Shutdown()
+	defer diagnostics.log(t)
 	ctx, cancel := context.WithTimeout(context.Background(), ConventionalReadyWindow+time.Second)
 	defer cancel()
 	if err := packager.Acquire(ctx, ModeHLS); err != nil {
@@ -213,8 +216,11 @@ func TestRealSceneCutsPreservePackagerGeneration(t *testing.T) {
 		}
 	}
 	provider := &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4), sceneCuts: true}
-	packager := newPackager(provider, gstTranscoderFactory{})
+	diagnostics := &codecFixtureDiagnostics{tracks: make(map[string]*codecFixtureTrace)}
+	packager := newPackager(provider, diagnostics)
+	diagnostics.packager = packager
 	defer packager.Shutdown()
+	defer diagnostics.log(t)
 	ctx, cancel := context.WithTimeout(context.Background(), ConventionalReadyWindow+2*ParentDuration+4*time.Second)
 	defer cancel()
 	if err := packager.Acquire(ctx, ModeHLS); err != nil {
@@ -280,5 +286,146 @@ func TestRealSceneCutsPreservePackagerGeneration(t *testing.T) {
 			}
 			return
 		}
+	}
+}
+
+// Test-only observations preserve the production channels, factory and clocks.
+// They retain counts/timestamps and the first four keyframes, never media bytes.
+// Concurrent snapshots are diagnostic evidence, not an atomic admission trace.
+type codecFixtureDiagnostics struct {
+	mu       sync.Mutex
+	packager *Packager
+	tracks   map[string]*codecFixtureTrace
+}
+
+type codecFixtureOutput struct {
+	PTS, DTS           time.Duration
+	PTSValid, DTSValid bool
+	Keyframe           bool
+	CodecConfigBytes   int
+	AnchorSet          bool
+	AnchorPTS          time.Duration
+}
+
+type codecFixtureTrace struct {
+	mu                          sync.Mutex
+	inputs, rejected, outputs   uint64
+	firstInputPTS, lastInputPTS time.Duration
+	firstInputKeyframe          bool
+	first, last                 codecFixtureOutput
+	keyframes                   []codecFixtureOutput
+}
+
+func (diagnostics *codecFixtureDiagnostics) NewAudio(source types.MediaSource) (transcoder, error) {
+	inner, err := (gstTranscoderFactory{}).NewAudio(source)
+	return diagnostics.wrap(source.ID, inner, err)
+}
+
+func (diagnostics *codecFixtureDiagnostics) NewVideo(variant Variant, source types.MediaSource) (transcoder, error) {
+	inner, err := (gstTranscoderFactory{}).NewVideo(variant, source)
+	return diagnostics.wrap(source.ID, inner, err)
+}
+
+func (diagnostics *codecFixtureDiagnostics) wrap(id string, inner transcoder, err error) (transcoder, error) {
+	if err != nil {
+		return nil, err
+	}
+	trace := &codecFixtureTrace{}
+	diagnostics.mu.Lock()
+	diagnostics.tracks[id] = trace
+	diagnostics.mu.Unlock()
+	return &codecFixtureObservedTranscoder{transcoder: inner, packager: diagnostics.packager, trace: trace}, nil
+}
+
+type codecFixtureObservedTranscoder struct {
+	transcoder
+	packager *Packager
+	trace    *codecFixtureTrace
+}
+
+func (observed *codecFixtureObservedTranscoder) Push(unit types.EncodedMediaUnit) bool {
+	accepted := observed.transcoder.Push(unit)
+	observed.trace.mu.Lock()
+	if observed.trace.inputs == 0 {
+		observed.trace.firstInputPTS = unit.PTS
+		observed.trace.firstInputKeyframe = unit.Keyframe
+	}
+	observed.trace.inputs++
+	observed.trace.lastInputPTS = unit.PTS
+	if !accepted {
+		observed.trace.rejected++
+	}
+	observed.trace.mu.Unlock()
+	return accepted
+}
+
+func (observed *codecFixtureObservedTranscoder) CapturedAt(sample types.Sample) time.Time {
+	capturedAt := observed.transcoder.CapturedAt(sample)
+	observed.packager.mu.Lock()
+	anchorSet, anchorPTS := observed.packager.anchorSet, observed.packager.anchorPTS
+	observed.packager.mu.Unlock()
+	output := codecFixtureOutput{
+		PTS: sample.PTS, DTS: sample.DTS, PTSValid: sample.PTSValid, DTSValid: sample.DTSValid,
+		Keyframe: !sample.DeltaUnit, CodecConfigBytes: len(sample.CodecConfig),
+		AnchorSet: anchorSet, AnchorPTS: anchorPTS,
+	}
+	observed.trace.mu.Lock()
+	if observed.trace.outputs == 0 {
+		observed.trace.first = output
+	}
+	observed.trace.outputs++
+	observed.trace.last = output
+	if output.Keyframe && len(observed.trace.keyframes) < 4 {
+		observed.trace.keyframes = append(observed.trace.keyframes, output)
+	}
+	observed.trace.mu.Unlock()
+	return capturedAt
+}
+
+func (diagnostics *codecFixtureDiagnostics) log(t *testing.T) {
+	diagnostics.packager.mu.Lock()
+	generation := diagnostics.packager.generation
+	anchorSet, anchorPTS := diagnostics.packager.anchorSet, diagnostics.packager.anchorPTS
+	tracks := make(map[string]*trackState, len(diagnostics.packager.tracks))
+	for id, track := range diagnostics.packager.tracks {
+		tracks[id] = track
+	}
+	diagnostics.packager.mu.Unlock()
+	t.Logf("CODEC_DIAGNOSTIC packager generation=%d anchor_set=%t anchor_pts=%s", generation, anchorSet, anchorPTS)
+	for _, id := range []string{"audio", "high", "medium", "low"} {
+		diagnostics.mu.Lock()
+		trace := diagnostics.tracks[id]
+		diagnostics.mu.Unlock()
+		if trace == nil {
+			t.Logf("CODEC_DIAGNOSTIC output track=%s present=false", id)
+		} else {
+			trace.mu.Lock()
+			line := fmt.Sprintf("CODEC_DIAGNOSTIC output track=%s inputs=%d rejected=%d input_first_pts=%s input_first_keyframe=%t input_last_pts=%s outputs=%d first=%+v last=%+v keyframes=%+v",
+				id, trace.inputs, trace.rejected, trace.firstInputPTS, trace.firstInputKeyframe, trace.lastInputPTS,
+				trace.outputs, trace.first, trace.last, trace.keyframes)
+			trace.mu.Unlock()
+			t.Log(line)
+		}
+		track := tracks[id]
+		if track == nil {
+			t.Logf("CODEC_DIAGNOSTIC track=%s present=false", id)
+			continue
+		}
+		track.mu.RLock()
+		age := time.Duration(-1)
+		if !track.lastOutput.IsZero() {
+			age = time.Since(track.lastOutput).Round(time.Millisecond)
+		}
+		var firstParent, lastParent uint64
+		if len(track.segments) > 0 {
+			firstParent = track.segments[0].Sequence
+			lastParent = track.segments[len(track.segments)-1].Sequence
+		}
+		line := fmt.Sprintf("CODEC_DIAGNOSTIC track=%s generation=%d init=%t failed=%t ll_ready=%t hls_ready=%t parents=%d first_parent_msn=%d last_parent_msn=%d parts=%d part_index=%d base_msn=%d next_msn=%d next_part=%d dts_set=%t last_dts_ticks=%d timescale=%d last_output_age=%s",
+			id, track.generation, track.initReady, track.failed, track.llReady, track.hlsReady,
+			len(track.segments), firstParent, lastParent, len(track.parts), track.partIndex, track.baseMSN, track.nextMSN,
+			track.nextPart, track.dtsSet, track.lastDTS, track.timescale, age)
+		track.mu.RUnlock()
+		t.Log(line)
 	}
 }

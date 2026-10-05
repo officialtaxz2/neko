@@ -105,9 +105,14 @@ low reached only its capture-create marker and remained at generation 0. Static
 inspection confirmed a global registry mutex held during native construction,
 also acquired by every media sample callback. Its scope is narrowed to registry
 insertion; fixed capture-phase tracing and a target-only regression/A/B helper
-are prepared. NEXT isolated registry plus codec gate, with HLS disabled. The
-actual native blocker and role of the separate capabilities rejection remain
-unconfirmed; runtime repair, enabled isolation/device acceptance are pending.
+are prepared. The isolated gate at 48f4acf2 returned exit 1: the expected old
+mutex-wait failure and corrected registry pass were observed, and timestamp
+mapping and scene cuts passed, but smooth cold readiness failed at 24.02 s.
+NEXT paired constructor startup diagnostics with bounded per-rendition test
+observations; keep HLS disabled and application HEAD at 97ba4ad9. The actual
+native blocker, cold-readiness cause and role of the separate capabilities
+rejection remain unconfirmed; repair deployment and enabled isolation/device
+acceptance are pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.
 
