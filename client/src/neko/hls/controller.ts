@@ -317,12 +317,18 @@ export class HLSMediaController {
         this.listeners.push(() => video.removeEventListener(event, handler))
       }
       listen('canplay', () => {
+        this.clearReadinessTimer()
         this.callbacks.setPlayable(true)
         this.callbacks.resolution(video.videoWidth, video.videoHeight)
         if (this.desiredPlaying && video.paused) void this.play()
       })
       listen('resize', () => this.callbacks.resolution(video.videoWidth, video.videoHeight))
-      listen('playing', () => { this.lastProgress = Date.now(); this.callbacks.setPlaying(true); this.callbacks.setStatus('streaming') })
+      listen('playing', () => {
+        this.clearReadinessTimer()
+        this.lastProgress = Date.now()
+        this.callbacks.setPlaying(true)
+        this.callbacks.setStatus('streaming')
+      })
       listen('pause', () => this.callbacks.setPlaying(false))
       listen('error', () => this.fail('HLS media playback failed; retry manually'))
       listen('ended', () => this.fail('HLS playback ended; retry manually'))
@@ -331,23 +337,34 @@ export class HLSMediaController {
       this.lastProgress = Date.now()
       this.callbacks.setPlayer(kind)
       this.callbacks.setStatus('connecting')
+      // This deadline covers initial readiness only. Arm before attachment so
+      // even an immediate canplay/playing event can cancel it; later buffering
+      // is covered by the separate playback-progress watchdog.
+      this.readinessTimer = this.later(() => {
+        if (!current()) return
+        this.readinessTimer = undefined
+        if (video.readyState < 3) this.fail('HLS playback did not become ready; retry manually')
+      }, 30000)
       if (kind === 'mse') {
         const player = module!.createMSEPlayer(video, this.master, this.mode, (detail) => { if (current()) this.fail(detail) })
         if (!current()) { player.destroy(); return }
         this.player = player
       } else { this.player = { destroy() {} }; video.src = this.master; video.load() }
-      this.readinessTimer = this.later(() => { if (current() && video.readyState < 3) this.fail('HLS playback did not become ready; retry manually') }, 30000)
     } catch (_) { if (current()) this.fail('HLS player could not start; retry manually') }
     finally { if (this.playerGeneration === playerGeneration) this.attaching = false }
   }
 
-  private clearPlayer() {
-    this.playerGeneration++
+  private clearReadinessTimer() {
     if (this.readinessTimer !== undefined) {
       window.clearTimeout(this.readinessTimer)
       this.timers.delete(this.readinessTimer)
       this.readinessTimer = undefined
     }
+  }
+
+  private clearPlayer() {
+    this.playerGeneration++
+    this.clearReadinessTimer()
     for (const request of this.playerRequests) request.abort()
     this.playerRequests.clear()
     this.attaching = false
