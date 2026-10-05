@@ -144,11 +144,14 @@ unchanged during preparation. Default-off 71 deployment then passed with
 Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. The operator
 then confirmed the requested normal-browser check works without HLS. Same-image
 conventional-HLS activation then passed with Enable-Exitcode 0, healthy service
-and 17/17 public plus 2/2 cleartext-denial probes. NEXT one valid admin HLS
-playback attempt alongside WebRTC and the bounded room-event check if both work.
+and 17/17 public plus 2/2 cleartext-denial probes. The subsequent HLS attempt
+failed after connecting with "HLS bootstrap failed; retry manually"; the operator
+reported only WebRTC streaming works. NEXT read-only diagnosis before same-image
+default-off restoration; no successful HLS picture/audio or room-event interval
+is demonstrated. The generic client detail does not identify a cause.
 New repair/gates: NOT EXECUTED IN CODEX; supplied isolated A/B, full preparation
 and default-off deployment/browser plus activation/invalid-input gates passed;
-enabled playback remains pending.
+enabled HLS failed and diagnostic/recovery evidence remains pending.
 The actual native blocker and role of the separate capabilities rejection
 remain unconfirmed; enabled live playback and isolation/device
 acceptance are pending. Dependency-audit report exit 1 is not a security pass.

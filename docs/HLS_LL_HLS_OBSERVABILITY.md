@@ -74,12 +74,14 @@ Baseline-Exitcode 0, healthy service, a private baseline snapshot and 2/2
 disabled bootstrap/media probes returning 404. The operator confirmed the
 requested normal-browser check works without HLS. Same-image conventional HLS
 activation then passed with Enable-Exitcode 0, healthy service, a private enable
-snapshot and 17/17 public plus 2/2 cleartext-denial probes. NEXT one valid admin
-HLS playback attempt alongside WebRTC, then the bounded room-event check if
-both work. The invalid credentials do not prove packager readiness or valid
-delivery. Capture the read-only diagnostic before restoration if the prior
-symptom recurs. **NOT EXECUTED IN CODEX; supplied preparation/baseline/browser
-and activation/invalid-input gates passed; enabled playback/acceptance pending.**
+snapshot and 17/17 public plus 2/2 cleartext-denial probes. The subsequent live
+HLS attempt failed after connecting with "HLS bootstrap failed; retry manually";
+the operator reported only WebRTC streaming works. NEXT read-only diagnosis
+before same-image default-off restoration. The generic client detail does not
+identify a particular HTTP/result/readiness cause; inspect the fixed summary
+and saved evidence before another attempt. **NOT EXECUTED IN CODEX; supplied
+preparation/baseline/browser and activation/invalid-input gates passed; live
+HLS failed, diagnostic/recovery and acceptance pending.**
 
 | Metric family | Evidence |
 | --- | --- |

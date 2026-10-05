@@ -13,8 +13,9 @@ codec image and base/Brave images were built. The running service was unchanged.
 Default-off 71 deployment then passed with Baseline-Exitcode 0, healthy service
 and 2/2 disabled-route probes. The operator confirmed normal browser behavior
 without HLS. Same-image 71 conventional-HLS activation then passed with
-Enable-Exitcode 0, healthy service and 19/19 denial probes. NEXT one valid admin
-HLS playback attempt alongside an ordinary WebRTC viewer.
+Enable-Exitcode 0, healthy service and 19/19 denial probes. The live HLS attempt
+then failed with bootstrap failure; the operator reported WebRTC streaming works.
+NEXT read-only diagnosis, then same-image default-off restoration.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -968,3 +969,28 @@ same-image default-off restoration; the pinned conditional recovery block is
 prepared in the runbook, not executed. Valid authorization/lifecycle and
 grouped device/resource acceptance remain pending. **NOT EXECUTED IN CODEX;
 supplied exact-71 activation/HTTP passed, enabled playback pending.**
+
+## Exact-71 enabled HLS bootstrap failed; WebRTC reported working — 2026-10-05
+
+The operator reported that only the WebRTC stream works. HLS initially showed
+connecting, then failed with "HLS bootstrap failed; retry manually" and the
+Retry HLS/Use WebRTC actions. No successful HLS picture/audio or room-event
+interval is demonstrated. The earlier activation/19 denial probes remain a
+passing boundary gate, not valid playback acceptance.
+
+The client uses this same terminal detail for non-201 bootstrap responses and
+request/response-processing exceptions. The message alone does not distinguish
+HTTP denial, readiness timeout, network failure or invalid response parsing.
+Do not infer a particular cause or mark the prior all-stream symptom resolved
+from this report. This attempt's HTTP status/log/metric evidence is not supplied.
+
+NEXT the pinned read-only diagnosis followed by same-image default-off baseline
+restoration in [validation section 3](HLS_LL_HLS_VALIDATION.md#first-bounded-pictureaudio-checkpoint-repeat-after-diagnosisrepair).
+It preserves raw logs privately and prints a fixed safe summary before the
+service restart. Diagnostic failure must not prevent restoration. Both helpers
+are unchanged at exact application 71a14d2174dafbc12b1880adde6dc68176bfe9af;
+no source fix, new image, checkout movement or Caddy change is required for
+this evidence/recovery step. The restart briefly interrupts existing viewers.
+Confirm normal behavior after restoration, then analyze the saved evidence
+before another HLS attempt or repair. **NOT EXECUTED IN CODEX; supplied live
+HLS failure, diagnostic/recovery results pending.**

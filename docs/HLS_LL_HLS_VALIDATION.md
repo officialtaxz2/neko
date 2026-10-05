@@ -49,8 +49,10 @@ Default-off 71 deployment then passed with Baseline-Exitcode 0, healthy service
 and 2/2 disabled-route probes. The operator confirmed the requested normal
 browser check works without HLS. Same-image 71a14d21 conventional-HLS activation
 then passed with Enable-Exitcode 0, healthy service, an enable snapshot and
-17/17 public plus 2/2 cleartext-denial probes. NEXT one valid admin HLS playback
-attempt alongside WebRTC in section 3. Working HLS playback
+17/17 public plus 2/2 cleartext-denial probes. The subsequent HLS attempt failed
+with "HLS bootstrap failed; retry manually" after connecting; the operator
+reported only WebRTC streaming works. NEXT section 3's read-only diagnosis,
+then confirmed same-image default-off restoration. Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -845,9 +847,12 @@ Preserve prior evidence and the existing Caddy configuration.
 
 **Current checkpoint: exact application/image 71a14d21.** Preparation,
 default-off deployment/browser and same-image activation/19 denial probes
-passed. One valid enabled playback attempt and this five-minute room-event
-check remain pending. Retain the 71 private evidence directory and existing
-rollback tag; do not reuse earlier 800/97 output paths.
+passed, but the subsequent HLS attempt failed during bootstrap. The operator
+reported HLS connecting, then failed with "HLS bootstrap failed; retry manually",
+and only WebRTC streaming works. No successful HLS picture/audio or five-minute
+room-event interval is supplied. NEXT the read-only diagnosis/default-off
+restoration block below, before another playback attempt. Retain the 71 private
+evidence directory and existing rollback tag; do not reuse earlier 800/97 output paths.
 
 Keep one ordinary WebRTC viewer connected, with changing video/audio in the
 shared browser. In a separate private browser window, open the deployment root
@@ -902,8 +907,9 @@ printf 'Recovery-Exitcode: %s\n' "$?"
 ```
 
 Share the fixed diagnostic/deployment/probe output and confirm normal browser
-behavior after restoration. This recovery block is conditional on failure,
-**NOT EXECUTED IN CODEX and not yet executed at the current checkpoint**.
+behavior after restoration. The reported exact-71 bootstrap failure makes this
+the current NEXT block. **NOT EXECUTED IN CODEX; target diagnostic/recovery
+outcomes not yet supplied.**
 
 ### Remaining valid-delivery matrix
 
