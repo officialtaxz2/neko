@@ -17,7 +17,7 @@ import (
 const (
 	PackagerIdleGrace       = 15 * time.Second
 	RenditionFailureWindow  = 12 * time.Second
-	ConventionalReadyWindow = 24 * time.Second
+	ConventionalReadyWindow = 28 * time.Second
 	LowLatencyReadyWindow   = 6 * time.Second
 	PartDuration            = time.Second
 	ParentDuration          = 6 * time.Second

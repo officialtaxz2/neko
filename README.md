@@ -15,7 +15,12 @@ tests, TypeScript and build**. Scoped exact-68 image preparation also passed
 The operator reports HLS works after Retry. Reliable first start and wider
 browser acceptance remain open. Read-only diagnosis then passed: one server
 not-ready bootstrap, one successful bootstrap and generation-1 delivery,
-without a sampled crash. NEXT extract startup durations from saved evidence.
+without a sampled crash. The saved timing summary then passed: one request
+took approximately 24 seconds, the other at most 1 ms. A bounded server-only
+candidate raises conventional startup allowance from 24 to 28 seconds inside
+the existing 30-second HTTP/client limits. This is not yet a verified fix.
+NEXT focused target HLS tests/image preparation, retaining the running exact-68
+service; cold-start acceptance follows separately. NOT EXECUTED IN CODEX.
 See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 

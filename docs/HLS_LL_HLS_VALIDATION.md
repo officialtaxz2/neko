@@ -17,10 +17,18 @@ interval and concurrent WebRTC result are not separately supplied.
 Read-only diagnosis subsequently passed with Diagnostic-Exitcode 0, one
 not-ready and one successful bootstrap, generation-1 delivery and 17 successful
 segments; no sampled process exit/OOM. The lease closed and packaging stopped
-after idle grace. NEXT the extended saved-file startup summary on
-`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7` to extract the fixed bootstrap
-duration histogram; helper execution is pending. Retain the service.
-Keep the checkout pinned and old images/evidence. Historical
+after idle grace. The saved timing summary then passed with Timing-Exitcode 0:
+one request at most 1 ms, one approximately 24 seconds, total 24.001096458
+seconds. This supports investigating the readiness deadline, without exact
+attempt/readiness correlation. The new server-only candidate raises
+conventional startup allowance from 24 to 28 seconds; LL-HLS stays six seconds
+and the client/server HTTP limits stay 30 seconds. The p95 first-picture/audio
+and latency targets remain 24 seconds. NEXT the focused HLS package/native
+checks and image preparation in `deploy/prepare-hls-startup-window.sh`, keeping
+the live exact-68 image running. The helper verifies that the only server delta
+is the startup constant and that client/runtime/deployment sources match.
+Fresh candidate checks are PENDING / NOT EXECUTED IN CODEX. Reliable cold start
+requires later activation/browser evidence. Preserve old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed
 client/image/HTTP-denial gates without a new reason.
 

@@ -21,12 +21,18 @@ HLS enabled. Its read-only diagnostic subsequently passed with
 Diagnostic-Exitcode 0: healthy image, no sampled exit/OOM, one not-ready and one
 successful bootstrap, one startup generation per track and 17 successful
 segment requests; the lease closed and the packager stopped after idle grace.
-This identifies a server availability rejection, not its exact cause or elapsed
-time. NEXT use the bounded saved-file startup summary with added bootstrap
-duration histogram extraction in `/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`.
-Do not repeat playback/restart the service to collect this already saved data.
-The helper change is statically reviewed, NOT EXECUTED IN CODEX. Keep the
-application pinned, old images/evidence and dependency maintenance open.
+The saved timing summary from helper `833cff60` then passed with
+Timing-Exitcode 0: two requests total 24.001096458 seconds, one at most 1 ms,
+the other approximately 24 seconds. This fits a readiness deadline followed
+by an immediate warmed Retry, without exact attempt/readiness correlation.
+The new server-only candidate raises ConventionalReadyWindow from 24 to 28
+seconds within the unchanged 30-second HTTP/client limits; LL-HLS stays six
+seconds. This is a bounded candidate, not a confirmed first-start fix; the
+p95 24-second acceptance target remains unchanged. NEXT use the separate
+`deploy/prepare-hls-startup-window.sh` for focused HLS/native checks and image
+preparation while retaining the live exact-68 service. New candidate checks
+are PENDING / NOT EXECUTED IN CODEX. Preserve old images/evidence and keep
+dependency maintenance open. Cold-start acceptance follows preparation.
 Do not repeat passed client/image/HTTP-denial
 gates without a new reason. Prior results below apply only to their commits.
 `master` remains pinned at `d9105ef8`.

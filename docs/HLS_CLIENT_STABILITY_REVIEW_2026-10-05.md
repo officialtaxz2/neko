@@ -10,7 +10,12 @@ Start-Exitcode 0 and a healthy container. The operator reports HLS needed
 Retry, then worked without problems; reliable first-start acceptance remains open.
 Read-only diagnosis subsequently passed: one not-ready and one successful
 bootstrap, generation-1 server delivery and no sampled process exit/OOM.
-NEXT extract bootstrap durations from the already saved evidence.
+The saved timing summary subsequently passed with Timing-Exitcode 0: one
+request approximately 24 seconds, one at most 1 ms. The server-only candidate
+now raises conventional readiness allowance from 24 to 28 seconds, preserving
+the outer 30-second limits. NEXT focused target HLS/native checks and image
+preparation, with the running exact-68 service retained. This is a bounded
+candidate, not a confirmed first-start fix; new checks remain pending.
 
 ## What the existing evidence establishes
 
@@ -80,8 +85,9 @@ socket loss or an unobserved server/delivery failure.
 The scoped MSE loader's URL/body/concurrency bounds and generation cleanup,
 server bootstrap error mapping, packager readiness/idle windows and private
 resume path were also inspected. The existing cumulative not-ready count
-does not justify changing cold-start timeouts, codec/GOPs, buffering, rendition
-selection or automatic recovery. Those values remain as previously specified.
+did not by itself justify changing cold-start timeouts, codec/GOPs, buffering,
+rendition selection or automatic recovery. The later supplied duration evidence
+and bounded server-only candidate are recorded at the end of this document.
 
 ## Regression coverage prepared for the target
 
@@ -393,8 +399,89 @@ instant media first became ready. This bounded evidence can distinguish a
 long wait from an immediate rejection and guide the next focused repair.
 
 The extended helper blob is `9f99fe05046c32956d7850a96277de03ede2e657`.
-It is statically reviewed; its syntax/runtime verification is
-**PENDING / NOT EXECUTED IN CODEX**. Extract it from the separately pinned
-tooling commit into the private exact-68 output directory and run it there
-against the saved application commit. Keep checkout/live exact-68, prior
-images/evidence and `master`; no new image or restart is requested.
+At this checkpoint its target execution was pending; the supplied successful
+result and next candidate are recorded below. It was NOT EXECUTED IN CODEX.
+
+## Supplied saved timing gate passed; bounded server startup candidate
+
+The supplied operator block extracted `deploy/summarize-hls-startup.py` from
+tooling commit `833cff60ff7420c670ed681ce6b96f660053714f` into the existing
+private exact-68 directory, without changing the application checkout or
+running container. It ended with **Timing-Exitcode: 0**. The summary used saved
+diagnostic stamp `20261005T202801416992672Z` and the same 137 log lines.
+
+The conventional bootstrap histogram has two observations totaling
+24.001096458 seconds. The cumulative 0.001-second bucket has one observation;
+all buckets through 15 seconds have one, and the 30-second/+Inf buckets have
+two. Consequently one request took at most 1 ms and the other approximately
+24 seconds (24.000096458 to 24.001096458 seconds from the aggregate).
+These are server request durations, not stream latency or first-picture time.
+The duration histogram combines result classes and is not individually joined
+to the one `not_ready` and one successful bootstrap counter.
+
+The saved sequence has one startup generation, a scheduled idle stop before
+packager readiness and one subsequently opened lease. Together with the
+reported successful Retry, this strongly fits a first request exhausting the
+24-second readiness window and a quick warm join. It does not establish the
+exact instant all four tracks became ready, prove which duration belongs to
+which result or identify the source of the extra startup time. Static review
+found readiness notifications on publication and no missing wake-up in that
+path; this is not a claim of exhaustive concurrency verification.
+
+The bounded implementation candidate changes only
+`ConventionalReadyWindow` in `server/internal/mediahls/packager.go`, from 24 to
+28 seconds. This allows four additional seconds for conventional readiness
+while remaining below the existing 30-second client bootstrap and server
+response-write bounds. It does not add an automatic retry, ticket reuse or
+backend switch. Earlier request work, cancellation or response delivery can
+consume the remaining outer margin; 28 seconds is not an end-to-end guarantee.
+LL-HLS still waits six seconds. The same conventional constant also applies
+to private lease resume. All-four-track readiness, three six-second parents,
+idle grace, codec/GOP, capture subscriptions, client and HTTP security remain
+unchanged. The p95 24-second first-picture/audio and glass-to-glass acceptance
+targets remain open and are not relaxed by this allowance.
+
+The candidate is statically reviewed, **PENDING / NOT EXECUTED IN CODEX** for
+runtime verification. It may remove the observed boundary failure; a reliable
+first-start fix cannot be claimed until target cold-start playback succeeds.
+No new test merely asserting the constant is added. Existing full HLS package
+tests and selected native startup/anchor/shared-input/scene-cut checks are the
+focused automated gate; actual target cold start remains necessary.
+
+## Next: prepare the server-only candidate without replacing live exact-68
+
+`deploy/prepare-hls-startup-window.sh` is a separate target-only helper invoked
+with repository, baseline evidence directory, new evidence directory and the
+full selected candidate commit. It verifies a clean `testing` fast-forward
+from exact-68, its own selected-commit blob, the baseline preparation marker
+and both tagged/live image IDs. Source guards require the entire server delta
+to be exactly the 24-to-28-second constant change, and unchanged client,
+runtime, app, build, Compose, collector and deployer sources. Client/runtime/
+configuration evidence is inherited from the exact-68 checkpoint; it is not
+reported as a freshly rerun client or HTTP-denial matrix.
+
+Only after those guards does the helper fast-forward the checkout and create
+a new private 0700 directory outside Git and prior evidence. It builds
+`server-checks` first, ensuring the native validation image inherits candidate
+sources; runs `go test ./internal/mediahls -count=1`; builds and runs the
+existing native HLS validation image; and builds separate candidate base/Brave
+tags with a fresh client bundle. The server Dockerfile also compiles the
+candidate. The native command uses `-count=1` and includes conventional
+readiness, delayed high anchor, skewed sources and sustained scene cuts.
+Unchanged client tests, unrelated Go packages, fuzz jobs and the 19 public
+denial probes are not repeated at this focused checkpoint.
+
+The helper has no stop/up/recreate/reload action. It verifies unchanged
+container ID and live image before recording the private snapshot and final
+candidate validation marker. A failed or incomplete preparation leaves the
+marker pending and preserves prior evidence. Its syntax, focused tests and
+image builds are **NOT EXECUTED IN CODEX**. The latest supplied live image
+remains `my-neko/brave:hls-68dbdd4a8dd7`; no candidate deployment has occurred.
+
+After preparation passes, activate the exact prepared image in one separate
+operator step and check one fresh private-window HLS start without Retry;
+retain a failure for the bounded diagnostic if necessary. Group the sustained
+picture/audio/room-event comparison later. Frozen-picture, device, passive
+authorization/lifecycle, numeric latency, resource/isolation, dependency and
+final grouped acceptance remain open. Preserve all previous images/evidence
+and pinned `master`.

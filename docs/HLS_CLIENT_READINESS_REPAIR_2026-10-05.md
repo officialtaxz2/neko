@@ -1,5 +1,15 @@
 # HLS client startup deadline repair — 2026-10-05
 
+Latest follow-up: [the client stability/timing record](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md)
+supersedes the historical exact-73 status below. The supplied live service is
+now exact-68. Its saved timing gate passed with one approximately 24-second
+request and one request at most 1 ms, fitting a readiness deadline then warmed
+Retry without individual attempt correlation. The new server-only candidate
+raises conventional readiness allowance to 28 seconds inside the unchanged
+30-second HTTP/client limits. Focused target tests/image preparation and later
+cold-start acceptance remain pending; the running exact-68 service is retained
+during preparation. NOT EXECUTED IN CODEX; no verified first-start fix claimed.
+
 Status: client-only repair `73d5ff6d29110e3dd06999726a7e88718d09ea23` is
 implemented and statically reviewed on `testing`. Supplied target results
 passed the old-defect reproduction, all 52 client tests, type/build and the

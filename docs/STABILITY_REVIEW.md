@@ -14,9 +14,15 @@ The reported frozen-picture/room-event symptoms are not yet correlated to these
 defects. Exact-68 read-only diagnosis subsequently passed: one not-ready and
 one successful bootstrap, generation-1 delivery and 17 successful segments,
 without a sampled process exit/OOM; normal idle-stop cleanup was recorded.
-NEXT the bounded saved-file bootstrap duration summary, retaining the service
-and old evidence. The server availability rejection is demonstrated; its exact
-cause and elapsed time remain unknown. The initial fixed error, timed/event
+The saved timing summary then passed: one request approximately 24 seconds,
+one at most 1 ms, two requests totaling 24.001096458 seconds. The sequence fits
+a readiness deadline followed by a warmed Retry, without attempt correlation.
+The new bounded server-only candidate changes conventional startup allowance
+from 24 to 28 seconds inside the unchanged 30-second HTTP/client limits. It is
+not yet a verified fix. NEXT focused HLS/native tests and image preparation
+while retaining the running exact-68 service and prior evidence; candidate
+checks are PENDING / NOT EXECUTED IN CODEX. Cold-start acceptance follows.
+The initial fixed error, timed/event
 interval and concurrent WebRTC result are not separately supplied. The wider device,
 authorization/lifecycle and resource gates stay open.
 

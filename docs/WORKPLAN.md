@@ -1195,12 +1195,19 @@ The read-only diagnostic subsequently passed with Diagnostic-Exitcode 0:
 healthy service, no sampled exit/OOM, one not-ready and one successful
 bootstrap, one startup generation per track and 17 successful segments.
 The lease closed and packaging stopped after idle grace; zero current objects
-are consistent with that cleanup. A server availability rejection is confirmed;
-its exact error/cancellation cause and elapsed time remain unknown. NEXT use
-the extended `summarize-hls-startup.py` on the saved private exact-68 evidence
-to extract the fixed bootstrap duration histogram. The helper is statically
-reviewed, NOT EXECUTED IN CODEX; no new playback/restart is needed. Keep the
-application pinned and old images/evidence retained.
+are consistent with that cleanup. The saved histogram summary then passed
+with Timing-Exitcode 0 using helper `833cff60`: two requests total
+24.001096458 seconds, one at most 1 ms and the other approximately 24 seconds.
+This fits the 24-second readiness deadline followed by a warmed Retry, without
+per-attempt correlation or a measurement of first media readiness.
+The server-only candidate raises conventional startup allowance to 28 seconds
+within the existing 30-second HTTP/client limits; LL-HLS, codecs, playlists,
+client behavior and the p95 24-second acceptance target stay unchanged.
+NEXT focused HLS package/native checks and candidate image preparation through
+`deploy/prepare-hls-startup-window.sh`, preserving the running exact-68 service
+and old evidence. New checks are PENDING / NOT EXECUTED IN CODEX. Activation
+and one cold-start browser check follow only after preparation; do not claim
+the initial Retry defect is fixed before that evidence.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 Historical results below apply only to their recorded commits.
 

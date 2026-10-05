@@ -5,8 +5,12 @@ tests/type/build, scoped image preparation and healthy activation passed.
 Checkout/live are now exact-68 with conventional HLS enabled. HLS playback
 worked after Retry per operator report; reliable first start and wider live
 acceptance remain open. Read-only diagnosis passed with one not-ready and one
-successful bootstrap, generation-1 delivery and no sampled crash. NEXT extract
-bootstrap durations from saved evidence while retaining the working service.
+successful bootstrap, generation-1 delivery and no sampled crash. The saved
+timing summary passed: one request approximately 24 seconds and one at most
+1 ms. A server-only candidate raises conventional startup allowance to 28
+seconds within the existing 30-second HTTP/client limits. Its focused target
+tests/image preparation and cold-start acceptance are pending; retain the
+working exact-68 service during preparation. NOT EXECUTED IN CODEX.
 Authorization/lifecycle and grouped
 device/resource acceptance
 remain pending; no automatic selection or full HLS acceptance claim exists**.
@@ -154,7 +158,7 @@ An LL-HLS playlist accepts only decimal `_HLS_msn` and `_HLS_part` directives; `
 
 The multivariant playlist contains `EXTM3U`, `EXT-X-VERSION:7`, `EXT-X-INDEPENDENT-SEGMENTS`, one `EXT-X-MEDIA:TYPE=AUDIO` entry, and one `EXT-X-STREAM-INF` per ready video rendition. Every stream entry includes measured `BANDWIDTH`, `AVERAGE-BANDWIDTH`, exact `RESOLUTION`, `FRAME-RATE`, the emitted H.264 plus AAC `CODECS` values, and the shared audio group. It contains no absolute URI, credential, session ID or unavailable rendition.
 
-A conventional media playlist contains at least `EXTM3U`, `EXT-X-VERSION:7`, `EXT-X-TARGETDURATION:6`, monotonically increasing `EXT-X-MEDIA-SEQUENCE`, the current `EXT-X-DISCONTINUITY-SEQUENCE`, `EXT-X-SERVER-CONTROL:HOLD-BACK=18`, `EXT-X-MAP`, `EXT-X-PROGRAM-DATE-TIME` and exactly three completed `EXTINF` entries once warm. Conventional backend open becomes ready only after the audio and every advertised video rendition have an init section plus three complete aligned parents. It waits for at most 24 seconds; expiry fails bootstrap with `503` and leaves the prior primary delivery unchanged.
+A conventional media playlist contains at least `EXTM3U`, `EXT-X-VERSION:7`, `EXT-X-TARGETDURATION:6`, monotonically increasing `EXT-X-MEDIA-SEQUENCE`, the current `EXT-X-DISCONTINUITY-SEQUENCE`, `EXT-X-SERVER-CONTROL:HOLD-BACK=18`, `EXT-X-MAP`, `EXT-X-PROGRAM-DATE-TIME` and exactly three completed `EXTINF` entries once warm. Conventional backend open becomes ready only after the audio and every advertised video rendition have an init section plus three complete aligned parents. The current server-only candidate waits for at most 28 seconds (24 seconds in the deployed exact-68 image); expiry fails bootstrap with `503` and leaves the prior primary delivery unchanged. The same constant also bounds conventional readiness during private lease resume. The extra four seconds are a bounded startup allowance pending target validation, not a change to segment duration, playback hold-back or the measured acceptance targets below. The outer client bootstrap and server response-write limits remain 30 seconds; earlier work or request cancellation can still end a request sooner.
 
 An LL-HLS media playlist uses version 9 and adds `EXT-X-PART-INF:PART-TARGET=1`, `EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,HOLD-BACK=18,PART-HOLD-BACK=3`, current `EXT-X-PART` entries, one next-part `EXT-X-PRELOAD-HINT`, and `EXT-X-RENDITION-REPORT` for every other ready rendition. Audio parts are independently decodable. Video parts beginning at the aligned 0/2/4-second IDRs carry `INDEPENDENT=YES`; other video parts do not. Normal parts are one second and satisfy the specification's 85%-of-target rule; only the permitted final/independent/gap exceptions may be shorter. LL-HLS backend open becomes ready after the audio and every advertised video rendition have an init section plus three complete aligned parts, including an independent video start. It waits for at most six seconds; expiry has the same fail-without-replacement behavior. Completed parents accumulate into the fixed three-parent window after startup.
 
