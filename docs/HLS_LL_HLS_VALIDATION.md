@@ -33,8 +33,11 @@ stayed in generation 1. The subsequent full exact-414639d2 preparation FAILED
 with Repair-Prepare-Exitcode 1: smooth readiness restarted with worker_failure
 and failed its generation-1 assertion at 20.03 s; scene cuts passed at 30.19 s
 in generation 1. Earlier client/type/build, Go/fuzz and registry/mapping/anchor
-checks passed, but new base/Brave image steps were not reached. NEXT isolated
-worker-stage/cold-start diagnosis on the rebuilt 414 codec image, retaining
+checks passed, but new base/Brave image steps were not reached. The 53034495
+worker diagnosis completed with exit 0: all six checks passed in three fresh
+processes, each smooth fixture ready at 18.11 s in generation 1; the earlier
+worker failure was not reproduced. NEXT controlled delayed-high audio-anchor
+A/B with the narrower video-only hold on the pinned 414 codec image, retaining
 the running default-off 97ba4ad9 service. Keep HLS disabled. Working HLS playback
 and grouped acceptance remain
 PENDING.**
@@ -67,7 +70,51 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-### Full exact-414639d2 preparation failed; worker startup diagnosis next
+### Worker diagnosis passed; controlled audio-anchor A/B next
+
+The supplied worker diagnostic from helper 53034495 completed with
+Worker-Diagnostic-Exitcode 0. All six checks passed in three fresh processes;
+each smooth fixture reached readiness in 18.11 s in generation 1, with
+audio/high/medium/low retaining parents MSN 1/2/3 and zero rejected pushes.
+The audio first-output delay was 19/19/20 ms and high's 96/74/74 ms. The
+overflow/closure warnings are from deliberate lifecycle unit cases, not the
+real-codec intervals. The prior failure did not recur, so this observation
+does not identify its cause or clear the failed full-preparation marker.
+
+Static review identified a bounded startup hazard: the initial-output wait
+also stops AAC drainage while high's initial video IDR is pending. At 48 kHz
+with 1024-sample AAC access units, a stopped eight-frame output handoff can
+fill within a small fraction of a second. The narrow repair leaves only video
+waiting for high. AAC continues through ordinary admission, which discards
+unanchored samples and retains the common-timeline offsets of later samples.
+No queue/deadline/encoder/clock change or new buffer is added.
+
+NEXT [validate-hls-audio-anchor.sh](../deploy/validate-hls-audio-anchor.sh),
+keeping application HEAD 414639d2 and the running default-off 97ba4ad9 service.
+The helper uses the image ID recorded by the supplied worker diagnostic,
+rechecks eight baseline source blobs and holds native/capture/encoder sources
+constant. Both sides use identical new fixtures and the same fixed logging;
+only packager.go differs in the positive comparison.
+
+The old packager must first fail the new audio-drainage unit with its fixed
+wait marker. A real-codec negative control delays only generation 1's first
+high input by 256 ms, derived from twelve AAC frame periods. It must fail with
+exactly two generations and the fixed audio/anchor/queue_full marker. This is
+an injected test condition, not a production setting. An unexpected outcome
+stops the gate rather than attributing a different failure to this mechanism.
+
+The corrected side runs eight startup checks in three fresh processes,
+including normal and delayed-high real-codec readiness, initial video-IDR
+retention, AAC drainage/timestamp offset, cancellation/overflow and registry/
+encoder mapping. The first process also repeats the scene-cut fixture once.
+Each uses -count=1 and a 90 s per-package timeout, with unchanged 24 s HLS
+readiness. Passing requires every selected check, not a diagnostic-only exit.
+The controlled comparison can verify this mechanism; it cannot retroactively
+prove the cause of the unobserved earlier worker restart or live outage.
+**NOT EXECUTED IN CODEX; target A/B pending.** Keep HLS disabled; no full
+preparation, marker bypass or deployment before the controlled gate passes.
+
+### Failed full preparation and completed worker diagnosis (historical)
 
 The full preparation output ended with Repair-Prepare-Exitcode 1. All 47 client
 tests, TypeScript/build, 13 Go packages, both 30 s fuzz jobs, the server build,
@@ -85,10 +132,10 @@ is understood. The service remains the previously confirmed default-off 97
 deployment; the checkout and mutable codec-validation tag now contain 414.
 Old helpers that expect the 97 image intentionally reject this new tag.
 
-NEXT [diagnose-hls-worker-startup.sh](../deploy/diagnose-hls-worker-startup.sh)
-with the exact 414 checkout and private output
-/opt/docker/nekoNew/neko-hls-results-414639d2493a. Fetch the reviewed helper
-commit without merging it. The helper pins the rebuilt codec image ID, checks
+The completed [diagnose-hls-worker-startup.sh](../deploy/diagnose-hls-worker-startup.sh) used
+the exact 414 checkout and private output
+/opt/docker/nekoNew/neko-hls-results-414639d2493a. Helper 53034495 was fetched
+without merging it. The helper pins the rebuilt codec image ID, checks
 eight original source blobs and mounts only fixed restart-stage logging and
 bounded fixture observations. The first two replaced workers plus the latest
 worker are retained per track; restarting cannot erase the first attempt.
@@ -106,7 +153,7 @@ fixtures only and remain in a new private subdirectory. The helper never
 accesses the live service, changes HEAD or replaces preparation markers.
 The intentional overflow/closed-channel unit cases also emit worker restart
 markers; classify real-codec failures only within their own test interval.
-New observation code/helper: **NOT EXECUTED IN CODEX; target diagnosis pending**.
+Observation code/helper: **NOT EXECUTED IN CODEX; supplied target results above**.
 
 ### Earlier passing anchor A/B and failed preparation block (historical)
 

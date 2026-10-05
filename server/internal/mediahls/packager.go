@@ -536,7 +536,11 @@ func workerFormatIdentityMatches(worker *packagerWorker, source types.MediaSourc
 }
 
 func (packager *Packager) pumpOutput(ctx context.Context, worker *packagerWorker) {
-	anchorReady := worker.track.id == "high"
+	// Retain initial video IDRs while waiting for high, but keep draining AAC.
+	// Audio has no IDR to preserve; blocking its output would fill the bounded
+	// native handoff while high's first frame is still being encoded. Ordinary
+	// admission discards unanchored AAC and preserves later samples' timestamps.
+	anchorReady := worker.track.audio || worker.track.id == "high"
 	for {
 		select {
 		case <-ctx.Done():

@@ -154,6 +154,19 @@ func (subscription *codecFixtureSubscription) Close() error {
 }
 
 func TestRealCodecsReachConventionalPackagerReadiness(t *testing.T) {
+	testRealCodecsReachConventionalPackagerReadiness(t, 0)
+}
+
+func TestRealDelayedHighAnchorPreservesPackagerGeneration(t *testing.T) {
+	// Inject a delay longer than the eight-frame AAC output handoff can hold,
+	// but shorter than a provider queue window. This is a test condition, not a
+	// production tuning value; only generation 1's first high input is delayed.
+	delay := time.Duration(WorkerHandoffCapacity+4) * 1024 * time.Second / 48_000
+	testRealCodecsReachConventionalPackagerReadiness(t, delay)
+}
+
+func testRealCodecsReachConventionalPackagerReadiness(t *testing.T, highInputDelay time.Duration) {
+	t.Helper()
 	if err := validateGSTTranscoderElements(); err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +176,9 @@ func TestRealCodecsReachConventionalPackagerReadiness(t *testing.T) {
 		}
 	}
 	provider := &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4)}
-	diagnostics := &codecFixtureDiagnostics{tracks: make(map[string]*codecFixtureTrace)}
+	diagnostics := &codecFixtureDiagnostics{
+		tracks: make(map[string]*codecFixtureTrace), highInputDelay: highInputDelay,
+	}
 	packager := newPackager(provider, diagnostics)
 	diagnostics.packager = packager
 	defer packager.Shutdown()
@@ -289,7 +304,9 @@ func TestRealSceneCutsPreservePackagerGeneration(t *testing.T) {
 	}
 }
 
-// Test-only observations preserve the production channels, factory and clocks.
+// Default test observations preserve production channels, factory and clocks.
+// The named delayed-high fixture adds a bounded delay to its first high input;
+// it neither changes media timestamps nor delays any replacement generation.
 // They retain counts/timestamps and the first four keyframes, never media bytes.
 // Keep the first two replaced workers plus the latest worker per track so an
 // automatic restart cannot erase the failed startup's observations.
@@ -299,6 +316,7 @@ type codecFixtureDiagnostics struct {
 	packager *Packager
 	tracks   map[string]*codecFixtureTrace
 	previous map[string][]*codecFixtureTrace
+	highInputDelay time.Duration
 }
 
 type codecFixtureOutput struct {
@@ -352,16 +370,28 @@ func (diagnostics *codecFixtureDiagnostics) wrap(id string, inner transcoder, er
 	}
 	diagnostics.tracks[id] = trace
 	diagnostics.mu.Unlock()
-	return &codecFixtureObservedTranscoder{transcoder: inner, packager: diagnostics.packager, trace: trace}, nil
+	var firstInputDelay time.Duration
+	if id == "high" && generation == 1 {
+		firstInputDelay = diagnostics.highInputDelay
+	}
+	return &codecFixtureObservedTranscoder{
+		transcoder: inner, packager: diagnostics.packager, trace: trace,
+		firstInputDelay: firstInputDelay,
+	}, nil
 }
 
 type codecFixtureObservedTranscoder struct {
 	transcoder
 	packager *Packager
 	trace    *codecFixtureTrace
+	firstInputDelay time.Duration // only the input pump reads or updates this
 }
 
 func (observed *codecFixtureObservedTranscoder) Push(unit types.EncodedMediaUnit) bool {
+	if observed.firstInputDelay > 0 {
+		time.Sleep(observed.firstInputDelay)
+		observed.firstInputDelay = 0
+	}
 	accepted := observed.transcoder.Push(unit)
 	observed.trace.mu.Lock()
 	if observed.trace.inputs == 0 {

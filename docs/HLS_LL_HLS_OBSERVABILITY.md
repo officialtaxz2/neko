@@ -46,7 +46,16 @@ failed checks in their output; diagnostic exit 0 does not pass preparation.
 The deliberate anchor-overflow lifecycle test also produces restart markers:
 interpret them within the corresponding `=== RUN` / test-result interval.
 Keep live HLS disabled until the failed full-preparation gate is resolved.
-These observation changes are **NOT EXECUTED IN CODEX; target checks pending**.
+The supplied 53034495 run passed all six checks in three fresh processes,
+with smooth readiness at 18.11 s in generation 1 each; it did not reproduce
+the earlier worker failure. The new [controlled audio-anchor A/B](../deploy/validate-hls-audio-anchor.sh)
+uses identical observed fixtures on both sides and requires the old AAC hold
+to produce a real audio/anchor/queue_full restart under injected high delay.
+Its positive side must keep normal/delayed-high codec fixtures in generation 1
+and retain video-IDR/timestamp/lifecycle coverage. The production repair drains
+AAC during startup instead of holding its first sample; only video waits for
+high. AAC admitted after the anchor keeps its actual presentation offset.
+**NOT EXECUTED IN CODEX; controlled A/B target checks pending.**
 
 | Metric family | Evidence |
 | --- | --- |

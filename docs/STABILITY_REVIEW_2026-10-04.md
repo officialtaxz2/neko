@@ -121,9 +121,15 @@ Full exact-414639d2 preparation then FAILED with Repair-Prepare-Exitcode 1:
 and anchor lifecycle checks passed. Smooth readiness restarted with
 worker_failure and failed its generation-1 assertion at 20.03 s; scene cuts
 passed at 30.19 s in generation 1. New base/Brave image steps were not reached.
-NEXT bounded worker-stage/cold-start diagnosis on the rebuilt 414 codec image,
-retaining first-generation observations and the working default-off 97ba4ad9
-service. Keep HLS disabled. The actual native blocker and
+The 53034495 worker diagnosis then passed all six checks in three fresh
+processes: each smooth fixture ready at 18.11 s in generation 1, without
+rejected pushes or a real-codec restart. Intentional overflow/closure warnings
+belonged to their unit cases. The prior worker failure was not reproduced.
+Static review found that waiting for high also stops AAC drainage; the narrow
+repair keeps AAC flowing through ordinary pre-anchor discard while preserving
+the initial-video-IDR hold. NEXT controlled delayed-high audio-anchor A/B on
+the pinned 414 codec image, retaining the working default-off 97ba4ad9 service.
+New repair/gates: NOT EXECUTED IN CODEX; target checks pending. Keep HLS disabled. The actual native blocker and
 role of the separate capabilities rejection remain unconfirmed; full repair
 checks, deployment and enabled isolation/device acceptance are pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.

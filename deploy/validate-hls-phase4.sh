@@ -17,7 +17,7 @@ printf 'validation_commit=%s\nimage_tag=%s\n' "$NEKO_VALIDATION_COMMIT" "$image_
 
 docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml \
   -f docker-compose.webcodecs-ws.yaml -f docker-compose.hls.yaml config --quiet
-bash -n deploy/collect-hls-media.sh deploy/validate-hls-phase4.sh deploy/deploy-hls-media.sh deploy/validate-hls-startup-isolation.sh deploy/diagnose-hls-codec-startup.sh deploy/validate-hls-anchor-startup.sh deploy/diagnose-hls-worker-startup.sh
+bash -n deploy/collect-hls-media.sh deploy/validate-hls-phase4.sh deploy/deploy-hls-media.sh deploy/validate-hls-startup-isolation.sh deploy/diagnose-hls-codec-startup.sh deploy/validate-hls-anchor-startup.sh deploy/diagnose-hls-worker-startup.sh deploy/validate-hls-audio-anchor.sh
 docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks --help </dev/null
 docker compose -f docker-compose.validation.yaml run --rm -T client-checks </dev/null
 docker compose -f docker-compose.validation.yaml build server-checks </dev/null

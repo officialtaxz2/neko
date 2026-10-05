@@ -9,4 +9,4 @@ RUN set -eux; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
-CMD ["go", "test", "-tags", "hlsintegration", "./pkg/gst", "./internal/mediahls", "-run", "TestNativeParseFailureDoesNotWaitForSampleRegistry|TestEncoderSegmentMapsToRunningTimeWithoutChangingCapture|TestPackagerRetainsInitialSamplesUntilAnchor|TestPackagerAnchorWait|TestRealCodecsReachConventionalPackagerReadiness|TestRealSceneCutsPreservePackagerGeneration", "-count=1", "-v", "-timeout=90s"]
+CMD ["go", "test", "-tags", "hlsintegration", "./pkg/gst", "./internal/mediahls", "-run", "TestNativeParseFailureDoesNotWaitForSampleRegistry|TestEncoderSegmentMapsToRunningTimeWithoutChangingCapture|TestPackagerRetainsInitialSamplesUntilAnchor|TestPackagerAnchorWait|TestPackagerAudioDrainsBeforeAnchor|TestRealCodecsReachConventionalPackagerReadiness|TestRealDelayedHighAnchorPreservesPackagerGeneration|TestRealSceneCutsPreservePackagerGeneration", "-count=1", "-v", "-timeout=90s"]

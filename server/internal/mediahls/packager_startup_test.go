@@ -185,3 +185,76 @@ func TestPackagerAnchorWaitHonorsOverflow(t *testing.T) {
 		})
 	}
 }
+
+// Samples is called at the output pump's next select, after admission of the
+// previous sample. A barrier on each re-entry proves pre-anchor AAC is drained,
+// rather than merely received and then held indefinitely.
+type startupAudioTranscoder struct {
+	*fakeTranscoder
+	reentered chan struct{}
+}
+
+func (encoder *startupAudioTranscoder) Samples() <-chan types.Sample {
+	select {
+	case encoder.reentered <- struct{}{}:
+	default:
+	}
+	return encoder.samples
+}
+
+func TestPackagerAudioDrainsBeforeAnchor(t *testing.T) {
+	packager := newPackager(newFakeHLSProvider(), fakeTranscoderFactory{})
+	encoder := &startupAudioTranscoder{
+		fakeTranscoder: &fakeTranscoder{
+			audio: true, samples: make(chan types.Sample, WorkerHandoffCapacity),
+			drops: make(chan struct{}, 1),
+		},
+		reentered: make(chan struct{}, 1),
+	}
+	track := &trackState{
+		id: "audio", audio: true, generation: 1, timescale: 48_000,
+		baseMSN: 1, nextMSN: 1, partIndex: -1,
+		muxer: newFragmentMuxer(48_000), lastOutput: time.Now(),
+	}
+	packager.tracks["audio"] = track
+	high, highEncoder := startupWorker(t, "high")
+	packager.tracks["high"] = high.track
+	_, done := startStartupPump(t, packager, &packagerWorker{track: track, transcoder: encoder})
+	waitStartupSignal(t, encoder.reentered)
+	for index := 0; index < WorkerHandoffCapacity+2; index++ {
+		unit := startupUnit(0)
+		unit.PTS = 30*time.Second + time.Duration(index)*1024*time.Second/48_000
+		unit.DTS, unit.Duration = unit.PTS, 1024*time.Second/48_000
+		unit.CapturedAt = time.Unix(0, 0).Add(unit.PTS)
+		encoder.Push(unit)
+		select {
+		case <-encoder.reentered:
+		case <-done:
+			t.Fatal("audio output pump stopped before anchor")
+		case <-time.After(time.Second):
+			t.Fatal("audio output waited for the high anchor")
+		}
+	}
+	track.mu.RLock()
+	published := track.initReady || track.dtsSet
+	track.mu.RUnlock()
+	if published {
+		t.Fatal("unanchored AAC was published")
+	}
+
+	highEncoder.Push(startupUnit(0))
+	if err := packager.acceptSample(high.track, <-highEncoder.samples); err != nil {
+		t.Fatal(err)
+	}
+	unit := startupUnit(0)
+	unit.PTS = 30*time.Second + 250*time.Millisecond
+	unit.DTS, unit.Duration = unit.PTS, 1024*time.Second/48_000
+	unit.CapturedAt = time.Unix(0, 0).Add(unit.PTS)
+	encoder.Push(unit)
+	waitStartupSignal(t, encoder.reentered)
+	track.mu.RLock()
+	defer track.mu.RUnlock()
+	if !track.initReady || !track.dtsSet || len(track.partSamples) != 1 || track.partSamples[0].dts != 12_000 {
+		t.Fatal("anchored AAC lost its 250 ms offset on the common timeline")
+	}
+}
