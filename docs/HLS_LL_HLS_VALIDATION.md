@@ -18,9 +18,11 @@ and server/base/Brave builds. Default-off repair-image deployment then passed
 with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. The
 operator reported the requested normal browser check works. The subsequent HLS
 attempt failed with bootstrap failure and an operator-confirmed WebRTC outage.
-Latest enablement CLI/HTTP outcomes are not supplied. NEXT capture private
-diagnosis before restart and restore the confirmed same-image baseline without
-HLS, then confirm normal browser recovery; working HLS playback
+Latest enablement CLI/HTTP outcomes are not supplied. Read-only diagnosis and
+same-image default-off restoration passed with exit 0, healthy service and 2/2
+disabled-route probes; the operator confirmed normal login/picture/audio again.
+NEXT summarize the saved startup/capture evidence without service changes;
+keep HLS disabled. Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -52,7 +54,34 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-### Current failed attempt: diagnose first, then restore the confirmed baseline
+### Failed attempt recovered: inspect the saved startup evidence
+
+The diagnosis/restoration block below completed with Diagnostic-Exitcode 0 and
+Recovery-Exitcode 0 at 97ba4ad9. The image returned healthy without HLS and both
+disabled-route probes passed. The operator confirmed normal login/picture/audio
+again. Do not repeat recovery or enablement now. The saved diagnostic has 84 log
+lines, one negotiation rejection, one not-ready bootstrap and no sampled
+process exit/OOM or generation/lease-open marker. It does not establish the
+rejection's role or prove that startup was never attempted.
+
+NEXT extract [summarize-hls-startup.py](../deploy/summarize-hls-startup.py) from
+the reviewed helper commit into the existing private directory, recording that
+commit as in the operator block. Leave application HEAD at 97ba4ad9. Run:
+
+```bash
+output=/opt/docker/nekoNew/neko-hls-results-97ba4ad9ab3e
+python3 "$output/summarize-hls-startup.py" "$output" \
+  97ba4ad9ab3e635da936a58c8a7ec795da05ba46
+```
+
+It reads only the latest saved failure archive, prints fixed stage/rejection
+enums and allowlisted capture/delivery metrics, and changes no service state.
+Raw files remain private; share only its printed summary. An earlier matching
+environment record and a room-wide stage sequence do not identify a correlated
+cause. Target execution of this new helper is pending, **NOT EXECUTED IN CODEX**.
+See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md) for supplied evidence.
+
+**Completed incident recovery block:** retained for the record, not the next step.
 
 Do not rerun preparation or enablement while this incident remains open. The
 operator reported HLS bootstrap failure and WebRTC outage after the confirmed
@@ -85,12 +114,12 @@ printf 'Recovery-Exitcode: %s\n' "$?"
 Supply only this block's printed safe summary and deployment/probe output.
 Do not paste its private raw application/supervisor logs. Confirm normal
 login/picture/audio/control in a fresh browser window after recovery. Diagnosis,
-restoration and fresh browser recovery are pending. Review the incident evidence
+restoration and fresh browser recovery subsequently passed. Review the incident evidence
 before any further HLS attempt. Keep checkout, evidence,
 Caddy and master unchanged. This block is **NOT EXECUTED IN CODEX**.
 
-This block passed at exact 97ba4ad9 with Repair-Check-Exitcode 0; keep the
-prepared images and private directory for the default-off deployment below.
+The earlier preparation block below passed at exact 97ba4ad9 with
+Repair-Check-Exitcode 0; keep its prepared images and private directory.
 
 For this incident, fetch `origin/testing` and fast-forward to the exact reviewed
 GOP-repair application commit `97ba4ad9ab3e635da936a58c8a7ec795da05ba46` below.
@@ -170,7 +199,7 @@ The operator then reported the requested normal login/picture/audio/control
 check works. This is bounded target evidence, **NOT EXECUTED IN CODEX**; wider
 role/recovery/device checks are not implied. The subsequent HLS attempt failed
 and WebRTC also stopped working per operator report; use the diagnosis/recovery
-block above before any further enablement. Caddy and old private evidence are retained.
+record and saved-evidence summary above before any further enablement. Caddy and old private evidence are retained.
 Do not infer enabled HLS playback from this baseline.
 
 Check default-off public routes with the credential-free probe:
@@ -235,8 +264,9 @@ bootstrap failure followed by all streams stopping. The subsequent read-only
 diagnostic, default-off restoration and isolated GOP comparison passed, as
 recorded below; exact 97ba4ad9 preparation and default-off deployment then passed.
 The operator then reported normal browser checks work. Its subsequent HLS
-attempt failed, and the operator confirmed WebRTC outage; diagnosis/recovery is
-now the next step. The original activation used section 2's plain
+attempt failed, and the operator confirmed WebRTC outage. Diagnosis/recovery
+subsequently passed; saved-evidence analysis is now the next step. The original
+activation used section 2's plain
 image/probe helper, keeping this same application commit and evidence directory.
 Do not repeat the completed Caddy source merge. Public valid-lease playback,
 production capture skew and the full lifecycle/device/resource matrix remain
@@ -263,7 +293,8 @@ GOP A/B gate subsequently passed. Exact 97ba4ad9 preparation and default-off
 deployment also passed; the operator reported the requested normal browser
 check works. Its subsequent live HLS attempt failed with bootstrap failure, and
 the operator confirmed WebRTC outage. The latest activation CLI/HTTP results
-are not supplied. Use section 1's diagnosis/recovery block before any retry.
+are not supplied. Diagnosis/default-off restoration and normal browser recovery
+subsequently passed. Use section 1's saved-evidence summary before any retry.
 Do not reuse the old preparation
 marker or repeat the completed source-merging Caddy activation.
 

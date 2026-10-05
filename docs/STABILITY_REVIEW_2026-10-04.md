@@ -95,9 +95,14 @@ passed with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes.
 The operator reported normal login/picture/audio/control work. The subsequent
 HLS attempt failed with `HLS bootstrap failed; retry manually`, and the operator
 confirmed that WebRTC also stopped working. Latest activation CLI/HTTP outcomes
-are not supplied. NEXT capture private diagnosis before restart and restore the
-confirmed same-image baseline without HLS, then confirm normal browser recovery.
-Fresh diagnosis, restoration and enabled isolation/device acceptance remain pending.
+are not supplied. Read-only diagnosis then passed with 84 log lines, one
+negotiation rejection and one not-ready bootstrap, but no sampled process
+exit/OOM or generation/lease-open marker. Same-image restoration returned the
+prepared image healthy without HLS, with Recovery-Exitcode 0 and 2/2 disabled
+probes; the operator confirmed normal login/picture/audio again. NEXT analyze
+the saved startup/capture evidence with the file-only helper. The rejection's
+role and exact startup blocker remain unconfirmed; enabled isolation/device
+acceptance is still pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.
 

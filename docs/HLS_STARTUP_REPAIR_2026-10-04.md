@@ -316,3 +316,51 @@ the disabled-route probes and fresh normal browser behavior before further
 HLS attempts. Diagnosis, restoration and browser recovery are pending.
 No new build, checkout change or Caddy modification is required for this block.
 The operator report is target evidence; runtime work is **NOT EXECUTED IN CODEX**.
+
+## GOP-repair failure captured and baseline recovered — 2026-10-05
+
+The supplied read-only diagnostic completed with Diagnostic-Exitcode 0 at exact
+application 97ba4ad9ab3e635da936a58c8a7ec795da05ba46, using diagnostic blob
+5b4b064926f83eccc28fe8bd596db93ba9c19ff1. The sampled image ID was
+sha256:5a7e95f71d927bda838d1ee603e3453fbaaa567bc6760b0b29c5fabb4f2ce3ec;
+the container was running/healthy with zero Docker restarts, no OOM and no
+Neko process exit in the bounded Supervisor sample. Metrics responded.
+
+Only 84 application log lines were captured. They included one HLS negotiation
+rejection; the summary contained no generation-start, ready, lease-open or fixed
+codec/timeline error marker. The cumulative bootstrap metrics included
+not_ready=1, bad_request=8, too_large=1 and unauthorized=1. The other visible
+HTTP counters are denial-shaped probes, not successful delivery. Unlike the
+earlier 80020d99 diagnosis, this sample does not demonstrate a ready packager
+or any successful segment request. Absence of markers/families is not proof
+that a packager was never attempted. The negotiation rejection may belong to
+another participant/request; do not identify it as the bootstrap/outage cause.
+Runtime gst-inspect remains unavailable, not proof of absent codecs.
+
+Baseline mode then completed with Recovery-Exitcode 0, prepared image
+my-neko/brave:hls-97ba4ad9ab3e healthy and 2/2 disabled-route 404 probes passing.
+The operator confirmed normal login, picture and audio all work again after
+this restoration. The HLS failure is recovered, not resolved. Latest enablement
+CLI/HTTP probe output is still not supplied. These are supplied target results,
+**NOT EXECUTED IN CODEX**; fresh enabled playback remains failed/pending.
+
+NEXT use [summarize-hls-startup.py](../deploy/summarize-hls-startup.py) against
+the latest saved private diagnostic. It reads files only, classifies fixed
+capture/start/rejection markers, selects allowlisted capture/delivery metrics,
+and optionally compares the closest earlier saved environment record with the
+diagnostic image/application. It prints neither original log lines nor
+participant IDs, pipeline strings, headers or credentials. Sequences span all
+participants and earlier environment evidence does not prove live enablement.
+No service request/restart, application checkout/build or HLS attempt is needed.
+This helper is statically reviewed only; target execution is pending.
+
+Static inspection places the not-ready result after ticket redemption and live
+session authorization, in backend readiness/opening. The central manager does
+not hold its global delivery mutex while backend.Open runs. The shared capture
+AddListener/keyframe/native-pipeline path and the global GStreamer registry
+mutex held during native construction still warrant investigation if the saved
+stages stop there; no correlated stack establishes either as this failure's
+cause. The real-codec fixtures bypass production capture subscription startup,
+so their successful GOP/timestamp checks do not validate that path. Keep HLS
+disabled and inspect the saved evidence before choosing a repair or another
+enabled checkpoint.
