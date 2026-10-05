@@ -14,8 +14,12 @@ snapshot. Checkout/live are now exact `68dbdd4a8dd798886302b235c1f8f208452e0c6e`
 HLS worked after Retry per operator report; the initial error, uninterrupted
 interval and concurrent WebRTC result are not separately supplied.
 **NOT EXECUTED IN CODEX**; reliable first start/wider live acceptance remain open.
-NEXT existing read-only playback diagnosis into
-`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7` with the service retained.
+Read-only diagnosis subsequently passed with Diagnostic-Exitcode 0, one
+not-ready and one successful bootstrap, generation-1 delivery and 17 successful
+segments; no sampled process exit/OOM. The lease closed and packaging stopped
+after idle grace. NEXT the extended saved-file startup summary on
+`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7` to extract the fixed bootstrap
+duration histogram; helper execution is pending. Retain the service.
 Keep the checkout pinned and old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed
 client/image/HTTP-denial gates without a new reason.

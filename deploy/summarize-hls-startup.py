@@ -34,6 +34,47 @@ def field(line, record, name):
     return match[1].strip('"') if match else ""
 
 
+def bootstrap_durations(text):
+    """Return only the fixed bootstrap histogram, not arbitrary metric labels."""
+    # Match the registered buckets in server/internal/mediahls/metrics.go.
+    bounds = ("0.001", "0.005", "0.01", "0.025", "0.05", "0.1", "0.25",
+              "0.5", "1", "2", "5", "7", "15", "30", "+Inf")
+    modes = {}
+    for line in text.splitlines():
+        match = re.fullmatch(
+            r'neko_media_hls_request_duration_seconds_(sum|count|bucket)\{([^{}]*)\} ([0-9.eE+\-]+)', line)
+        if not match:
+            continue
+        labels = {}
+        for pair in match[2].split(","):
+            label = re.fullmatch(r'([a-z_]+)="([^"\\]*)"', pair)
+            if not label or label[1] in labels:
+                break
+            labels[label[1]] = label[2]
+        else:
+            expected = {"mode", "resource", "le"} if match[1] == "bucket" else {"mode", "resource"}
+            if set(labels) != expected or labels["mode"] not in {"hls", "ll-hls"} or labels["resource"] != "bootstrap":
+                continue
+            if match[1] == "bucket" and labels["le"] not in bounds:
+                continue
+            value = float(match[3])
+            if not math.isfinite(value) or value < 0 or (match[1] != "sum" and not value.is_integer()):
+                continue
+            series = modes.setdefault(labels["mode"], {})
+            key = (match[1], labels.get("le", ""))
+            if key in series:
+                fail("duplicate bootstrap histogram series in saved evidence")
+            series[key] = value
+    return [{
+        "mode": mode,
+        "observations": int(series[("count", "")]) if ("count", "") in series else None,
+        "total_seconds": series.get(("sum", "")),
+        "cumulative_buckets": [{"upper_bound_seconds": bound,
+                                "observations": int(series[("bucket", bound)])}
+                               for bound in bounds if ("bucket", bound) in series],
+    } for mode, series in sorted(modes.items())]
+
+
 def main():
     if len(sys.argv) != 3 or not re.fullmatch(r"[0-9a-f]{40}", sys.argv[2]):
         fail("Usage: python3 summarize-hls-startup.py OUTPUT_DIR APPLICATION_COMMIT")
@@ -137,7 +178,8 @@ def main():
         "reason": {"initial", "startup", "resume", "timestamp_reset", "source_restart", "source_end", "format_change", "provider_overflow", "worker_failure", "rendition_rejoin", "unknown"},
     }
     metrics = []
-    for line in read_private(report / "metrics.prom").splitlines():
+    metric_text = read_private(report / "metrics.prom")
+    for line in metric_text.splitlines():
         match = re.fullmatch(r'([a-z_]+)\{([^{}]*)\} ([0-9.eE+\-]+)', line)
         if not match or match[1] not in families:
             continue
@@ -178,7 +220,8 @@ def main():
         "application_log_lines_captured": len(lines),
         "stage_counts": dict(counts), "stage_sequence": sequence[-80:],
         "capture_delivery_metrics": metrics, "saved_environment": environment,
-        "limits": "Saved bounded logs and cumulative metrics only; sequence spans all participants, not one correlated HLS attempt. An earlier matching environment record is not proof of live enablement. No service access/change, credentialed request or new playback attempt.",
+        "bootstrap_request_durations": bootstrap_durations(metric_text),
+        "limits": "Saved bounded logs and cumulative metrics only; sequence spans all participants, not one correlated HLS attempt. Bootstrap durations aggregate all results; histogram buckets give ranges, not exact per-attempt times or the time media first became ready. An earlier matching environment record is not proof of live enablement. No service access/change, credentialed request or new playback attempt.",
     }, indent=2, sort_keys=True))
 
 

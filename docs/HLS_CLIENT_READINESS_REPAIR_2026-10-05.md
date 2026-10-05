@@ -476,7 +476,10 @@ with Start-Exitcode 0; checkout/live are now exact-68, conventional HLS enabled.
 The operator reports Retry was needed, then HLS worked without problems. The
 initial error, timed/event interval and concurrent WebRTC result are not
 separately supplied; reliable first start and wider live validation stay open.
-NEXT existing read-only playback diagnosis while retaining the working service.
+Read-only diagnosis then passed with Diagnostic-Exitcode 0, one not-ready and
+one successful bootstrap, generation-1 delivery and 17 successful segments,
+without a sampled process exit/OOM; normal idle-stop cleanup was recorded.
+NEXT saved-file bootstrap duration extraction while retaining the service.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 
 The operator could not reliably answer the follow-up about the exact five-minute

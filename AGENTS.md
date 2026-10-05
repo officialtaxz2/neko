@@ -17,11 +17,17 @@ snapshot. The operator reports HLS needed Retry, then worked without problems;
 the detailed initial error, uninterrupted interval and concurrent WebRTC
 result are not separately supplied. Reliable first-start acceptance stays open.
 The latest supplied checkout/live deployment is exact `68dbdd4a`, conventional
-HLS enabled. NEXT collect the existing read-only playback diagnostic into
-`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`, preserving the running
-service and failed/successful bootstrap counters; the cold-start explanation
-is still a hypothesis. Keep the application pinned, old images/evidence and
-dependency maintenance open. Do not repeat passed client/image/HTTP-denial
+HLS enabled. Its read-only diagnostic subsequently passed with
+Diagnostic-Exitcode 0: healthy image, no sampled exit/OOM, one not-ready and one
+successful bootstrap, one startup generation per track and 17 successful
+segment requests; the lease closed and the packager stopped after idle grace.
+This identifies a server availability rejection, not its exact cause or elapsed
+time. NEXT use the bounded saved-file startup summary with added bootstrap
+duration histogram extraction in `/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`.
+Do not repeat playback/restart the service to collect this already saved data.
+The helper change is statically reviewed, NOT EXECUTED IN CODEX. Keep the
+application pinned, old images/evidence and dependency maintenance open.
+Do not repeat passed client/image/HTTP-denial
 gates without a new reason. Prior results below apply only to their commits.
 `master` remains pinned at `d9105ef8`.
 

@@ -11,10 +11,13 @@ exact-68 activation then passed healthy with Start-Exitcode 0. The operator
 reports HLS works after Retry; reliable first start and wider live acceptance
 remain open. All results are supplied target evidence, NOT EXECUTED IN CODEX.
 The reported frozen-picture/room-event symptoms are not yet correlated to these
-defects. NEXT the existing read-only playback diagnosis at the pinned exact-68
-checkout, retaining the running service and old images/evidence. Cold-start
-warm-up is a hypothesis; the initial fixed error, timed/event interval and
-concurrent WebRTC result are not separately supplied. The wider device,
+defects. Exact-68 read-only diagnosis subsequently passed: one not-ready and
+one successful bootstrap, generation-1 delivery and 17 successful segments,
+without a sampled process exit/OOM; normal idle-stop cleanup was recorded.
+NEXT the bounded saved-file bootstrap duration summary, retaining the service
+and old evidence. The server availability rejection is demonstrated; its exact
+cause and elapsed time remain unknown. The initial fixed error, timed/event
+interval and concurrent WebRTC result are not separately supplied. The wider device,
 authorization/lifecycle and resource gates stay open.
 
 Operator direction recorded on 2026-10-04. This is a required review and validation plan, not a claim that the reported device failures have been reproduced or fixed.

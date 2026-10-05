@@ -1191,10 +1191,16 @@ private enable snapshot. Checkout/live are now exact application
 Retry, then worked without problems; the initial error, five-minute/event
 interval and concurrent WebRTC result are not separately confirmed.
 **NOT EXECUTED IN CODEX; reliable first start and wider acceptance remain open.**
-NEXT collect the existing read-only playback diagnostic into
-`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7` while retaining the working
-service. Cold-start warm-up is a hypothesis, not a demonstrated cause. Keep
-the application pinned and old images/evidence retained.
+The read-only diagnostic subsequently passed with Diagnostic-Exitcode 0:
+healthy service, no sampled exit/OOM, one not-ready and one successful
+bootstrap, one startup generation per track and 17 successful segments.
+The lease closed and packaging stopped after idle grace; zero current objects
+are consistent with that cleanup. A server availability rejection is confirmed;
+its exact error/cancellation cause and elapsed time remain unknown. NEXT use
+the extended `summarize-hls-startup.py` on the saved private exact-68 evidence
+to extract the fixed bootstrap duration histogram. The helper is statically
+reviewed, NOT EXECUTED IN CODEX; no new playback/restart is needed. Keep the
+application pinned and old images/evidence retained.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 Historical results below apply only to their recorded commits.
 

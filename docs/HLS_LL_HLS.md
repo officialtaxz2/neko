@@ -4,8 +4,10 @@ Status: **Phases 1–3 and Phase 4 assets implemented on testing. Exact-68 clien
 tests/type/build, scoped image preparation and healthy activation passed.
 Checkout/live are now exact-68 with conventional HLS enabled. HLS playback
 worked after Retry per operator report; reliable first start and wider live
-acceptance remain open. NEXT read-only diagnosis of the initial failure while
-retaining the working service. Authorization/lifecycle and grouped
+acceptance remain open. Read-only diagnosis passed with one not-ready and one
+successful bootstrap, generation-1 delivery and no sampled crash. NEXT extract
+bootstrap durations from saved evidence while retaining the working service.
+Authorization/lifecycle and grouped
 device/resource acceptance
 remain pending; no automatic selection or full HLS acceptance claim exists**.
 
@@ -410,7 +412,9 @@ scoped image preparation (Image-Prepare-Exitcode 0), with the working exact-73
 service unchanged during preparation. Subsequent exact-68 activation passed
 healthy with Start-Exitcode 0. The operator reports HLS works after Retry;
 reliable first start and wider browser validation remain open. The next step
-is read-only diagnosis while retaining the running exact-68 service.
+is the saved-file bootstrap duration summary: read-only diagnosis passed with
+one not-ready and one successful bootstrap plus generation-1 segment delivery,
+but does not identify the exact error cause or elapsed time. Retain exact-68.
 The earlier client-only correction follows
 the first-picture/premature-timeout report at a7ffb8b1. Its isolated target gate
 reproduced the old fault and passed all 52 repaired client tests/type/build;

@@ -13,8 +13,10 @@ tests, TypeScript and build**. Scoped exact-68 image preparation also passed
 (`Image-Prepare-Exitcode: 0`). Exact-68 activation then passed healthy with
 `Start-Exitcode: 0`; checkout and running service are now exact `68dbdd4a`.
 The operator reports HLS works after Retry. Reliable first start and wider
-browser acceptance remain open; NEXT read-only diagnosis of the initial
-failure. See the
+browser acceptance remain open. Read-only diagnosis then passed: one server
+not-ready bootstrap, one successful bootstrap and generation-1 delivery,
+without a sampled crash. NEXT extract startup durations from saved evidence.
+See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 
 ### IMPLEMENTED

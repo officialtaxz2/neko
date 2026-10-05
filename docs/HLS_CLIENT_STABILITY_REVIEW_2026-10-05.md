@@ -8,6 +8,9 @@ Checkout and running deployment are now exact application
 `68dbdd4a8dd798886302b235c1f8f208452e0c6e`, conventional HLS enabled, with
 Start-Exitcode 0 and a healthy container. The operator reports HLS needed
 Retry, then worked without problems; reliable first-start acceptance remains open.
+Read-only diagnosis subsequently passed: one not-ready and one successful
+bootstrap, generation-1 server delivery and no sampled process exit/OOM.
+NEXT extract bootstrap durations from the already saved evidence.
 
 ## What the existing evidence establishes
 
@@ -109,9 +112,9 @@ also passed; reliable first-start and wider browser acceptance remain **OPEN**.
 ## One grouped target checkpoint later
 
 The isolated client-checks and scoped image preparation stages below have now
-passed, followed by healthy exact-68 activation. Continue with the read-only
-diagnosis at the end of this record; do not rerun passed preparation without
-changed source or a new failure.
+passed, followed by healthy exact-68 activation and read-only diagnosis.
+Continue with the saved-file duration summary at the end of this record;
+do not rerun passed preparation without changed source or a new failure.
 
 Keep the now-running exact-68 service and private evidence. Do not repeat
 completed activation/denial probes or ask the operator to answer another
@@ -337,5 +340,61 @@ cookies or complete lease/WebSocket URLs. It does not request credentialed
 playback, stop/recreate the container or change configuration.
 
 Activation passed and post-Retry playback is reported, **NOT EXECUTED IN CODEX**.
-This new diagnostic is pending. Reliable first start and wider live acceptance
-remain open; retain the existing images/evidence and pinned `master`.
+This diagnostic subsequently passed as recorded below. Reliable first start
+and wider live acceptance remain open; retain the existing images/evidence
+and pinned `master`.
+
+## Supplied exact-68 diagnosis passed; server availability rejection recorded
+
+The supplied complete diagnostic ended with `Diagnostic-Exitcode: 0`, using
+unchanged helper blob `ddfe001618f8733447f4bdd328a8519db9acef06`. It captured
+137 application-log lines and available metrics. The exact-68 container was
+running/healthy, with zero container restarts, no OOM kill and no sampled
+supervisor Neko exit or fixed GStreamer/media error marker. Its inspected image
+ID was `sha256:0669e21d1d3c12694f447348d76f1449846eda9992fff358672f14d5d07d38ae`.
+The unavailable `gst-inspect` CLI version is not evidence of missing codecs.
+
+The startup counters contain exactly one `bootstrap_total{result="not_ready"}`
+and one success. All four workers started successfully once; each track has
+one `startup` generation. There is one packager-ready marker, one opened/
+active/closed lease and one idle-grace stop. All tracks published init, parts
+and segments, with 17 successful segment requests, 36 master requests,
+13 child-playlist requests, three init requests and two keepalives.
+This establishes successful server media delivery after an availability
+rejection and fits the reported Retry, without individual attempt correlation.
+
+No active lease/worker or retained object remains at capture. That agrees with
+the lease-close and idle-stop sequence; it does not demonstrate a crash or
+claim that HLS was still playing at the diagnostic instant. The counters do
+not establish five uninterrupted minutes, room-event behavior or simultaneous
+WebRTC success.
+
+The `not_ready` label aggregates the server's HTTP-503 availability mapping:
+readiness wait failure, codec/source unavailability and paused media can share
+that label. Also, `waitReady` maps both its own deadline and parent request
+cancellation to `ErrPackagerNotReady`. Thus a server rejection is established,
+but a 24-second cold-start timeout is not yet measured or proved. No timeout/
+buffering or automatic fallback change has been made.
+
+NEXT read the bootstrap-duration histogram already retained in private
+`metrics.prom` using the extended file-only `deploy/summarize-hls-startup.py`.
+It extracts only the registered `mode`/`resource="bootstrap"` histogram and
+fixed bucket boundaries, finite nonnegative totals and integer observation
+counts. Unexpected/duplicate labels, other resources, escaped values and
+non-finite values cannot reach the output; duplicate valid series fail with
+fixed text. The existing private-file, symlink, exact-commit and size guards
+remain in place. No service access, credentialed request, dependency change or
+fresh playback is required.
+
+The emitted `bootstrap_request_durations` contains the cumulative observation
+count, total seconds and cumulative buckets. Durations aggregate successes
+and failures; buckets provide ranges, not an exact failed-attempt time or the
+instant media first became ready. This bounded evidence can distinguish a
+long wait from an immediate rejection and guide the next focused repair.
+
+The extended helper blob is `9f99fe05046c32956d7850a96277de03ede2e657`.
+It is statically reviewed; its syntax/runtime verification is
+**PENDING / NOT EXECUTED IN CODEX**. Extract it from the separately pinned
+tooling commit into the private exact-68 output directory and run it there
+against the saved application commit. Keep checkout/live exact-68, prior
+images/evidence and `master`; no new image or restart is requested.
