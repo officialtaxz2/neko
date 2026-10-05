@@ -90,7 +90,7 @@ A source subscription connects a delivery backend to encoded capture output. It 
 This distinction permits:
 
 - one WebRTC or WebSocket source subscription per participant;
-- one HLS packaging subscription per active variant, shared by multiple authorized playlist viewers;
+- one shared high-video HLS packaging subscription feeding all three scaled renditions, plus one audio subscription, shared by multiple authorized playlist viewers; this 2026-10-05 correction preserves one source-unit clock after the earlier per-variant source phases reproduced an admission failure;
 - capture demand to be counted accurately without pretending every HTTP segment request is a new encoder listener.
 
 ### Participant delivery

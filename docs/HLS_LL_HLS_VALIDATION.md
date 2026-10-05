@@ -54,8 +54,12 @@ with "HLS bootstrap failed; retry manually" after connecting; the operator
 reported only WebRTC streaming works. Read-only diagnosis and same-image
 default-off restoration passed; the operator confirmed normal login/picture/audio.
 The diagnosis found 759/564 medium/low keyframe-admission drops and cumulative
-part/segment publication only for audio/high. NEXT section 3's isolated
-source-clock-phase diagnostic against unchanged exact-71 production code.
+part/segment publication only for audio/high. The isolated source-phase
+diagnostic then passed: its aligned control became ready in 18.11 seconds,
+and three cold skew runs reproduced not-ready in generation 1 at 24.02 seconds.
+The common high-source fan-out repair is implemented and statically reviewed.
+NEXT section 3's isolated shared-video-clock repair A/B while the target remains
+on the confirmed default-off 71 image.
 Working HLS playback
 and grouped acceptance remain
 PENDING.**
@@ -856,7 +860,8 @@ reported HLS connecting, then failed with "HLS bootstrap failed; retry manually"
 and only WebRTC streaming works. No successful HLS picture/audio or five-minute
 room-event interval is supplied. The read-only diagnosis/default-off restoration
 below passed, and the operator confirmed normal login/picture/audio. NEXT the
-isolated source-clock-phase diagnostic below, before another playback attempt.
+isolated shared-video-clock repair A/B below, after the clock-phase diagnostic
+reproduced the defect in all three runs. This precedes another playback attempt.
 Retain the 71 private
 evidence directory and existing rollback tag; do not reuse earlier 800/97 output paths.
 
@@ -956,7 +961,62 @@ bash "$output/diagnose-hls-clock-skew.sh" "$PWD" "$output" "$helper_commit"
 The operator block supplies the reviewed full helper commit. Do not merge/pull,
 rebuild, change Caddy, enable HLS or replace preparation markers for this step.
 Synthetic fixture output can be shared; live raw logs remain private.
-**NOT EXECUTED IN CODEX; target control/reproduction results pending.**
+This diagnostic subsequently passed at helper
+409482b47e4ed962a2f9a3fd129114a53563f15a with Clock-Skew-Exitcode 0. The aligned
+control reached all-four-track readiness in generation 1 at 18.11 seconds.
+All three skew runs reproduced not-ready at 24.02 seconds, with audio/high
+ready, medium/low at part index -1 and no parts/parents, flowing IDRs and no
+rejected native pushes. This is a controlled defect reproduction, not the
+actual unmeasured live timestamp phases. **NOT EXECUTED IN CODEX; supplied
+control/reproduction passed.**
+
+### Shared-video-clock repair A/B while the confirmed baseline stays running
+
+The repair feeds one exact high-video subscription's same immutable encoded
+units into all three existing scale/encode workers. One audio subscription
+remains separate. The first video frame, provider PTS/DTS and fixed GOP phase
+are shared; timestamps are not shifted to disguise skew. Capability output
+IDs/geometry/rates stay high/1280x720/25, medium/854x480/20 and low/640x360/15,
+with all input `source_id` values now high. Input FORMAT still requires the
+complete exact high profile; emitted output caps are checked per rendition.
+Provider capacity 64, native handoff 8, 24-second readiness and HTTP/security
+limits are unchanged. A failed encoder input restarts the HLS generation;
+partial construction and cancellation close the two owned subscriptions and
+all created encoders. Three high-resolution decoders change CPU/RSS costs;
+the later resource comparison must be repeated.
+
+NEXT [validate-hls-shared-clock.sh](../deploy/validate-hls-shared-clock.sh).
+Keep the live checkout/service at default-off exact application
+71a14d2174dafbc12b1880adde6dc68176bfe9af and the existing 0700 evidence directory.
+The helper pins the codec image ID recorded by the supplied diagnosis,
+sha256:2c885aa463ee9514b120d541e9852f4e9cd5cc334a72e9373cacf6896c963c48,
+verifies eleven old source blobs and unchanged native/capture/encoder sources,
+and mounts the selected repair sources read-only into isolated containers.
+No image build, checkout move, live service access/restart, preparation-marker
+replacement or Caddy edit is part of this gate.
+
+The old 409482b4 fixture must reproduce its expected defect once. Three fixed
+cold positive processes then run fifteen selected checks, including same-unit
+fan-out and peer-failure cleanup, partial/successful construction cleanup,
+cold FORMAT/generation handling, initial-IDR/AAC lifecycle, timestamp mapping,
+normal readiness, delayed high input and the skewed-source case. Sustained
+scene cuts run once in the first process. Positive codec fixtures require all
+four tracks ready in generation 1, exactly one audio/high subscription, no
+rejected native pushes and IDRs on the common clock. Suite timeout is 120
+seconds to include the added fixture; each production readiness deadline
+remains 24 seconds. Any unexpected signature/failure stops the gate.
+
+Export the helper from the reviewed full repair commit outside Git and check
+it with `bash -n`, then invoke:
+
+```bash
+bash "$output/validate-hls-shared-clock.sh" "$PWD" "$output" "$repair_commit"
+```
+
+The exact operator block supplies `repair_commit`. Share its synthetic output.
+After this gate passes, full exact-repair tests/image preparation is the next
+stage; HLS-enabled live/device/lifecycle acceptance follows separately.
+**NOT EXECUTED IN CODEX; repair A/B and full/live acceptance pending.**
 
 ### Remaining valid-delivery matrix
 

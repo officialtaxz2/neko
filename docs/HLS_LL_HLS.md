@@ -1,6 +1,6 @@
 # HLS / Low-Latency HLS passive delivery contract
 
-Status: **version-1 design plus Phases 1–3 and Phase 4 deployment/observability assets implemented on `testing`. At exact application `93f1fa63`, the 47-test/type/build/server/fuzz/image preparation gate passed; operator helper `2484a022` subsequently passed the 11-host preserving Caddy merge/reload, synthetic runtime-error log redaction, healthy conventional-HLS deployment and 17 public plus 2 cleartext-denial probes. First valid picture/audio and room-event checks are NEXT; authorization/lifecycle, device/resource and grouped acceptance remain pending. The audit is classified, with dependency work open; no automatic selection or full HLS acceptance claim exists**.
+Status: **Phases 1–3 and Phase 4 assets implemented on testing. Live HLS bootstrap at 71a14d21 failed; default-off recovery/browser passed. The isolated source-phase diagnostic reproduced the admission defect in three cold runs with aligned control passing. Common high-source fan-out correction implemented and statically reviewed; NEXT isolated repair A/B while the confirmed target stays HLS-disabled. Full repair preparation, live picture/audio, authorization/lifecycle and grouped device/resource acceptance remain pending; no automatic selection or full HLS acceptance claim exists**.
 
 This document is the normative contract for the first default-off passive/view-only HTTP-streaming prototype. It specializes the encoded-source/subscription and participant-delivery boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It does not authorize a second desktop capture, a stable-deployment change or a claim that any untested device supports the proposed path.
 
@@ -58,7 +58,7 @@ Every real Smart-TV result MUST record manufacturer, model, OS/firmware, browser
 ```text
 existing shared desktop capture / encoded provider
         |
-        | one bounded source subscription per active video variant
+        | one bounded high-video subscription, common encoded-unit fan-out
         | one bounded source subscription for shared audio
         v
 default-off HLS packager set
@@ -72,11 +72,13 @@ default-off HLS packager set
         session B ---------------------------------------+
 ```
 
-There is one process-wide packager set for the single active Neko room, not one encoder or muxer per viewer. One audio worker is shared by all variants. Each active video variant has exactly one decode/encode/mux worker and one provider subscription, shared across both `hls` and `ll-hls` viewers. Regular and low-latency modes render different playlist views over the same retained objects.
+There is one process-wide packager set for the single active Neko room, not one encoder or muxer per viewer. One audio worker owns one audio provider subscription. One high-video provider subscription feeds the same immutable encoded units to all three video decode/encode/mux workers. All video variants therefore begin from the same first source keyframe and provider clock. Both subscriptions and all four workers are shared across `hls` and `ll-hls` viewers. Regular and low-latency modes render different playlist views over the same retained objects.
+
+The 2026-10-05 source-phase diagnosis reproduced the prior independent-source admission defect in three cold runs. The common-video-input correction is implemented and statically reviewed; its repair A/B, full preparation and live acceptance remain pending. The running target service remains the confirmed default-off 71a14d21 image. This supersedes the original one-video-subscription-per-rendition topology; it does not claim the actual failed live source phases were measured.
 
 The first authorized lease starts all three configured variants so the multivariant playlist is internally consistent and can adapt immediately. The hard version-1 maximum is three video variants plus one audio rendition. When the last unpaused lease closes, the set enters a 15-second idle grace and then closes subscriptions, workers and retained objects. A new viewer after teardown starts a new packager generation.
 
-The packager consumes the existing encoded provider. On the current VP8/Opus deployment it decodes and re-encodes once per active rendition. This is intentionally less efficient than a future shared raw-frame tee, but it does not create another desktop capture and keeps the first prototype behind the existing source contract. A later optimization may add HLS-compatible provider sources only if it preserves the same capture, authorization and isolation invariants.
+The packager consumes the existing encoded provider. On the current VP8/Opus deployment each video worker decodes the same high VP8 input and scales/re-encodes it to its advertised output. All variant capability `source_id` values are `high`; output IDs remain `high`, `medium`, `low`. This preserves provider PTS/DTS and avoids independently phased tier captures. It reduces HLS provider subscriptions from four to two, but three high-resolution decoders replace the prior differently sized inputs; CPU/RSS costs must be remeasured. A future shared raw-frame tee remains a separate optimization. No second desktop capture or per-viewer encoder is created.
 
 Per-viewer ownership remains in `MediaDeliveryManager`:
 
@@ -91,17 +93,17 @@ Per-viewer ownership remains in `MediaDeliveryManager`:
 
 ## Renditions, timestamps and keyframes
 
-The initial target-server profile is:
+The fixed HLS output ladder on the initial target-server profile is:
 
-| ID | Source geometry/rate on the current profile | H.264 video target | Initial `AVERAGE-BANDWIDTH` including audio | Initial peak `BANDWIDTH` |
+| ID | Encoded HLS output geometry/rate | H.264 video target | Initial `AVERAGE-BANDWIDTH` including audio | Initial peak `BANDWIDTH` |
 | --- | --- | ---: | ---: | ---: |
 | `high` | 1280x720 at 25 fps | 3,000 kbit/s | 3,128,000 | 4,000,000 |
-| `medium` | approximately 854x480 at 20 fps | 1,100 kbit/s | 1,228,000 | 1,500,000 |
+| `medium` | 854x480 at 20 fps | 1,100 kbit/s | 1,228,000 | 1,500,000 |
 | `low` | 640x360 at 15 fps | 365 kbit/s | 493,000 | 650,000 |
 
-The packager MUST take actual width, height and frame rate from the first complete provider `FORMAT`; it MUST NOT publish zero or guessed dimensions. The table is the first deployment target, not permission to mislabel another configuration. `AVERAGE-BANDWIDTH` and `BANDWIDTH` MUST be replaced with measured values before acceptance and must satisfy the Apple live-stream guidance recorded in the sources below.
+The packager MUST require a complete high-source provider `FORMAT` matching the configured 1280x720/25-fps VP8 input and a consistent nonzero generation. All renditions use that single input. Their output width, height and frame rate MUST match their emitted H.264 caps and the advertised table; a mismatch is rejected. The packager MUST NOT publish zero or guessed output dimensions. `AVERAGE-BANDWIDTH` and `BANDWIDTH` MUST be replaced with measured values before acceptance and must satisfy the Apple live-stream guidance recorded in the sources below.
 
-All renditions use a closed two-second GOP. With the current rates this means 50, 40 and 30 frames respectively. IDRs align to the same two-second presentation boundaries across variants. A six-second parent segment begins on an aligned IDR; the parts at 0, 2 and 4 seconds are marked `INDEPENDENT=YES`. Other parts are not advertised as independent.
+All renditions use a closed two-second GOP. With the current rates this means 50, 40 and 30 frames respectively. Their shared source-unit sequence and first PTS establish the same GOP phase; timestamp rebasing of individual renditions or arrival-time substitution is forbidden. IDRs align to the same two-second presentation boundaries across variants. A six-second parent segment begins on an aligned IDR; the parts at 0, 2 and 4 seconds are marked `INDEPENDENT=YES`. Other parts are not advertised as independent.
 
 Provider `PTS`, `DTS`, validity, duration, generation and discontinuity are authoritative inputs. The packager maps them onto one zero-based presentation timeline per packager generation, uses a 90 kHz video timescale and 48 kHz audio timescale, and never substitutes wall-clock arrival as media time. One wall-clock/monotonic anchor per generation produces `EXT-X-PROGRAM-DATE-TIME`; it does not alter media PTS.
 

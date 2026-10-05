@@ -67,7 +67,7 @@ type Config struct {
 
 type Variant struct {
 	ID               string
-	SourceID         string
+	SourceID         string // Encoded capture input; ID names the scaled HLS output.
 	Width            uint32
 	Height           uint32
 	FrameRate        uint32
@@ -77,8 +77,8 @@ type Variant struct {
 
 var fixedVariants = []Variant{
 	{ID: "high", SourceID: "high", Width: 1280, Height: 720, FrameRate: 25, AverageBandwidth: 3_128_000, Bandwidth: 4_000_000},
-	{ID: "medium", SourceID: "medium", Width: 854, Height: 480, FrameRate: 20, AverageBandwidth: 1_228_000, Bandwidth: 1_500_000},
-	{ID: "low", SourceID: "low", Width: 640, Height: 360, FrameRate: 15, AverageBandwidth: 493_000, Bandwidth: 650_000},
+	{ID: "medium", SourceID: "high", Width: 854, Height: 480, FrameRate: 20, AverageBandwidth: 1_228_000, Bandwidth: 1_500_000},
+	{ID: "low", SourceID: "high", Width: 640, Height: 360, FrameRate: 15, AverageBandwidth: 493_000, Bandwidth: 650_000},
 }
 
 func FixedVariants() []Variant {

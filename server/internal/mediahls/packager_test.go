@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -36,7 +37,7 @@ func (provider *fakeHLSProvider) Subscribe(_ context.Context, request types.Sour
 	subscription := &fakeHLSSubscription{id:source.ID, source:source, events:make(chan types.MediaEvent, 64)}
 	if source.Kind == types.MediaKindVideo {
 		for _, variant := range FixedVariants() {
-			if variant.SourceID == source.ID {
+			if variant.ID == source.ID {
 				subscription.source.Width = variant.Width
 				subscription.source.Height = variant.Height
 				subscription.source.FrameRateNumerator = variant.FrameRate
@@ -66,6 +67,7 @@ type fakeHLSSubscription struct {
 	id string
 	source types.MediaSource
 	events chan types.MediaEvent
+	closed atomic.Int32
 }
 
 func (subscription *fakeHLSSubscription) ID() string { return subscription.id }
@@ -73,7 +75,7 @@ func (subscription *fakeHLSSubscription) Source() types.MediaSource { return sub
 func (subscription *fakeHLSSubscription) Events() <-chan types.MediaEvent { return subscription.events }
 func (*fakeHLSSubscription) Switch(context.Context, types.MediaSelector) error { return errors.New("not supported") }
 func (*fakeHLSSubscription) SetPaused(bool) error { return nil }
-func (*fakeHLSSubscription) Close() error { return nil }
+func (subscription *fakeHLSSubscription) Close() error { subscription.closed.Add(1); return nil }
 func (subscription *fakeHLSSubscription) emit(unit types.EncodedMediaUnit) {
 	subscription.events <- types.MediaEvent{Type:types.MediaEventTypeUnit, Source:subscription.source, Unit:unit}
 }
@@ -92,6 +94,7 @@ type fakeTranscoder struct {
 	variant Variant
 	samples chan types.Sample
 	drops chan struct{}
+	closed atomic.Int32
 }
 
 func (transcoder *fakeTranscoder) Samples() <-chan types.Sample { return transcoder.samples }
@@ -109,16 +112,17 @@ func (transcoder *fakeTranscoder) Push(unit types.EncodedMediaUnit) bool {
 	transcoder.samples <- sample
 	return true
 }
-func (*fakeTranscoder) Close() {}
+func (transcoder *fakeTranscoder) Close() { transcoder.closed.Add(1) }
 
 func TestPackagerSharesOneWorkerSetAndPublishesBothModes(t *testing.T) {
 	provider := newFakeHLSProvider()
 	packager := newPackager(provider, fakeTranscoderFactory{})
+	defer packager.Shutdown()
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	first := make(chan error,1)
 	go func(){ first <- packager.Acquire(ctx,ModeHLS) }()
-	waitHLSCondition(t, func() bool { return provider.count()==4 })
+	waitHLSCondition(t, func() bool { return provider.count()==2 })
 
 	now := time.Now()
 	emit := func(id string) {
@@ -130,10 +134,10 @@ func TestPackagerSharesOneWorkerSetAndPublishesBothModes(t *testing.T) {
 	}
 	emit("high")
 	waitHLSCondition(t, func() bool { packager.mu.Lock(); defer packager.mu.Unlock(); return packager.anchorSet })
-	emit("audio"); emit("medium"); emit("low")
+	emit("audio")
 	if err:=<-first; err!=nil { t.Fatal(err) }
 	if err:=packager.Acquire(ctx,ModeLLHLS); err!=nil { t.Fatal(err) }
-	if provider.count()!=4 { t.Fatalf("provider subscriptions = %d",provider.count()) }
+	if provider.count()!=2 { t.Fatalf("provider subscriptions = %d",provider.count()) }
 	master,err:=packager.Master(); if err!=nil||len(master)==0 { t.Fatalf("master = %q, %v",master,err) }
 	conventional,err:=packager.Playlist(ctx,ModeHLS,"high",PlaylistDirectives{}); if err!=nil||len(conventional)==0 { t.Fatalf("HLS playlist = %q, %v",conventional,err) }
 	lowLatency,err:=packager.Playlist(ctx,ModeLLHLS,"high",PlaylistDirectives{}); if err!=nil||len(lowLatency)==0 { t.Fatalf("LL-HLS playlist = %q, %v",lowLatency,err) }

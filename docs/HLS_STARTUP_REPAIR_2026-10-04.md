@@ -18,8 +18,10 @@ then failed with bootstrap failure; the operator reported WebRTC streaming works
 Read-only diagnosis and same-image default-off restoration subsequently passed;
 the operator confirmed normal login/picture/audio. The saved diagnosis found
 medium/low admission drops and cumulative part/segment publication only for
-audio/high. NEXT the isolated source-clock-phase diagnostic against unchanged
-exact-71 production code; keep HLS disabled.
+audio/high. The isolated clock-phase diagnostic subsequently reproduced the
+defect in all three cold runs with its aligned control passing. The common
+high-source fan-out correction is implemented and statically reviewed; NEXT
+its isolated repair A/B while exact-71 remains running with HLS disabled.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -1041,4 +1043,68 @@ signature reproduced, not acceptance. No live restart, new image, application
 checkout movement, preparation-marker change or Caddy edit is involved.
 Production repair is deliberately pending target reproduction. **NOT EXECUTED
 IN CODEX; supplied diagnosis/recovery passed, controlled reproduction and
-enabled live acceptance pending.**
+enabled live acceptance pending at that checkpoint.**
+
+## Independent source/GOP phase defect reproduced — 2026-10-05
+
+The full supplied clock diagnostic identifies application
+71a14d2174dafbc12b1880adde6dc68176bfe9af, helper
+409482b47e4ed962a2f9a3fd129114a53563f15a and codec image
+sha256:2c885aa463ee9514b120d541e9852f4e9cd5cc334a72e9373cacf6896c963c48.
+Its helper/fixture blobs were 5bc3086d2bf12e1a555478e04bd752c94b999c1a,
+723975ed19cdbbca68bb9e2e7caf2f066565fe3c and
+5f800a1437b2c1bd4b171952873250a7e0c8a2e4 respectively. All four subprocesses
+returned zero, and Clock-Skew-Exitcode was 0.
+
+The aligned positive control became conventionally ready at 18.11 seconds,
+with all four tracks in generation 1, three parents/MSN 1–3 per track and no
+rejected pushes. Each of the three cold skew runs reproduced not-ready at
+24.02 seconds without restarting. The high anchor was 30.8 seconds; medium
+IDRs were at 30.05/32.05/34.05/36.05 seconds, low at
+30.1/32.1/34.1/36.1 seconds. Their initial IDRs precede high's anchor, and
+subsequent IDRs occupy odd one-second buckets, so neither track can join the
+common six-second parent. Both remained init-ready, not failed and at part
+index -1, with no parts/parents despite 479/359 consumed outputs and four
+observed IDRs. Audio/high were ready with three parents. All native pushes
+were accepted. This confirms the controlled phase-admission defect and shows
+why the prior aligned fixture missed it. It is not a measurement of the live
+capture phases or proof that every earlier outage had this same cause.
+
+## Common encoded-video input correction — implemented, target A/B pending
+
+`model.go` now identifies high as the encoded input for all three HLS output
+variants. `packager.go` opens one high-video provider subscription and one
+audio subscription. The video input pump fans each same immutable unit into
+the three existing bounded transcoders before advancing to the next source
+event. Scaling/rate conversion and fixed-GOP encoding remain per output.
+Input PTS/DTS, duration, generation and media bytes are preserved; no per-track
+time shift, relaxed part admission, longer readiness or larger queue is used.
+Strict high-source FORMAT/generation and emitted per-rendition caps checks
+remain. Failure of any native push still requests a bounded HLS-generation
+restart. Shared-source ownership handles successful shutdown and partial
+construction without duplicate subscription closes.
+
+This replaces four HLS provider subscriptions with two while retaining four
+workers. The three video decoders now consume high-resolution input, so CPU/RSS
+costs must be measured anew; no universal resource benefit is claimed. No
+capture/WebRTC/WebCodecs implementation or native wrapper was changed.
+Capability `source_id` values reflect the common input; output IDs and player
+geometry/rate contract are unchanged. The client fixture was updated accordingly.
+
+New unit checks cover unchanged fan-out timestamps/bytes, peer push rejection,
+partial construction and normal cancellation/resource ownership. The codec
+fixture verifies one audio/high subscription, equal first video PTS and four
+aligned IDRs per output. Its new skew case uses the reproduced source phases.
+The prior expected-defect check skips under the repaired topology and is used
+only from the pinned 409482b4 fixture against the old image. Full preparation's
+codec selection includes the new checks; only its whole-suite timeout moves
+from 90 to 120 seconds, while per-attempt readiness remains 24 seconds.
+
+NEXT the [shared-video-clock A/B](HLS_LL_HLS_VALIDATION.md#shared-video-clock-repair-ab-while-the-confirmed-baseline-stays-running):
+one pinned old-code signature reproduction, then three predetermined positive
+cold runs and one sustained scene-cut run using the existing immutable codec
+image and read-only mounts. Keep the confirmed default-off exact-71 live
+service/checkout and successful preparation marker unchanged. Full exact-repair
+tests/images and live picture/audio/authorization/lifecycle/device/resource
+acceptance remain pending. **NOT EXECUTED IN CODEX; supplied diagnosis proves
+the controlled old defect, new correction statically reviewed only.**

@@ -76,6 +76,9 @@ type packagerWorker struct {
 	formatReady  bool
 	metricActive bool
 	wg           sync.WaitGroup
+	// Only the high worker owns video input. All renditions receive the same
+	// immutable unit, so their first frame, PTS and fixed GOP phase agree.
+	inputPeers []*packagerWorker
 }
 
 type Packager struct {
@@ -320,17 +323,28 @@ func (packager *Packager) startGeneration(parent context.Context, reason string)
 	}
 	workers = append(workers, audioWorker)
 
+	var videoInput *packagerWorker
 	for _, variant := range FixedVariants() {
-		source, ok := exactSource(packager.provider.Sources(types.MediaKindVideo), variant.SourceID)
-		if !ok {
-			hlsPackagerStarts.WithLabelValues(variant.ID, "error").Inc()
-			return cleanupOnError(types.ErrMediaSourceNotFound)
+		var worker *packagerWorker
+		if videoInput == nil {
+			source, ok := exactSource(packager.provider.Sources(types.MediaKindVideo), variant.SourceID)
+			if !ok {
+				hlsPackagerStarts.WithLabelValues(variant.ID, "error").Inc()
+				return cleanupOnError(types.ErrMediaSourceNotFound)
+			}
+			worker, err = packager.newWorker(ctx, variant.ID, variant, source, generation, discontinuity, baseMSN, startedAt)
+		} else {
+			worker, err = packager.newRenditionWorker(variant.ID, variant, videoInput.source, generation, discontinuity, baseMSN, startedAt)
 		}
-		worker, err := packager.newWorker(ctx, variant.ID, variant, source, generation, discontinuity, baseMSN, startedAt)
 		if err != nil {
 			return cleanupOnError(err)
 		}
 		workers = append(workers, worker)
+		if videoInput == nil {
+			videoInput = worker
+		} else {
+			videoInput.inputPeers = append(videoInput.inputPeers, worker)
+		}
 	}
 
 	packager.mu.Lock()
@@ -346,8 +360,11 @@ func (packager *Packager) startGeneration(parent context.Context, reason string)
 	packager.logger.Info().Uint64("generation", generation).Str("reason", reason).Msg("HLS packager generation started")
 
 	for _, worker := range workers {
-		worker.wg.Add(2)
-		go func(worker *packagerWorker) { defer worker.wg.Done(); packager.pumpInput(ctx, worker) }(worker)
+		worker.wg.Add(1)
+		if worker.subscription != nil {
+			worker.wg.Add(1)
+			go func(worker *packagerWorker) { defer worker.wg.Done(); packager.pumpInput(ctx, worker) }(worker)
+		}
 		go func(worker *packagerWorker) { defer worker.wg.Done(); packager.pumpOutput(ctx, worker) }(worker)
 	}
 	go packager.monitorGeneration(ctx, workers, startedAt)
@@ -385,14 +402,25 @@ func (packager *Packager) newWorker(ctx context.Context, id string, variant Vari
 		return nil, ErrCodecUnsupported
 	}
 	source = openedSource
+	worker, err := packager.newRenditionWorker(id, variant, source, generation, discontinuity, baseMSN, startedAt)
+	if err != nil {
+		_ = subscription.Close()
+		return nil, err
+	}
+	worker.subscription = subscription
+	return worker, nil
+}
+
+func (packager *Packager) newRenditionWorker(id string, variant Variant, source types.MediaSource, generation, discontinuity, baseMSN uint64, startedAt time.Time) (*packagerWorker, error) {
+	audio := id == "audio"
 	var encoder transcoder
+	var err error
 	if audio {
 		encoder, err = packager.factory.NewAudio(source)
 	} else {
 		encoder, err = packager.factory.NewVideo(variant, source)
 	}
 	if err != nil {
-		_ = subscription.Close()
 		hlsPackagerStarts.WithLabelValues(id, "error").Inc()
 		return nil, err
 	}
@@ -408,7 +436,7 @@ func (packager *Packager) newWorker(ctx context.Context, id string, variant Vari
 		lastOutput: startedAt,
 	}
 	return &packagerWorker{
-		track: track, subscription: subscription, transcoder: encoder,
+		track: track, transcoder: encoder,
 		source: types.CloneMediaSource(source),
 	}, nil
 }
@@ -419,7 +447,9 @@ func stopPackagerWorkers(workers []*packagerWorker) {
 
 func closePackagerWorkers(workers []*packagerWorker, countMetrics bool) {
 	for _, worker := range workers {
-		_ = worker.subscription.Close()
+		if worker.subscription != nil {
+			_ = worker.subscription.Close()
+		}
 	}
 	for _, worker := range workers {
 		worker.wg.Wait()
@@ -447,6 +477,7 @@ func exactSource(sources []types.MediaSource, id string) (types.MediaSource, boo
 }
 
 func (packager *Packager) pumpInput(ctx context.Context, worker *packagerWorker) {
+	targets := append([]*packagerWorker{worker}, worker.inputPeers...)
 	for {
 		select {
 		case <-ctx.Done():
@@ -480,19 +511,30 @@ func (packager *Packager) pumpInput(ctx context.Context, worker *packagerWorker)
 				}
 				worker.source = types.CloneMediaSource(event.Source)
 				worker.formatReady = true
+				for _, peer := range worker.inputPeers {
+					peer.source = types.CloneMediaSource(event.Source)
+					peer.formatReady = true
+				}
 			case types.MediaEventTypeUnit:
 				if !worker.formatReady || event.Unit.Generation == 0 || event.Unit.Generation != worker.source.Generation {
 					packager.requestRestart("source_restart")
 					return
 				}
-				if !worker.transcoder.Push(event.Unit) {
-					kind := "video"
-					if worker.track.audio {
-						kind = "audio"
+				for _, target := range targets {
+					if ctx.Err() != nil {
+						return
 					}
-					hlsDrops.WithLabelValues(worker.track.id, "worker", kind, "queue_full").Inc()
-					packager.requestWorkerRestart(worker, "input", "push_failed")
-					return
+					// Reuse bounded native handoffs without another Go queue;
+					// preserve timestamps and the immutable source bytes.
+					if !target.transcoder.Push(event.Unit) {
+						kind := "video"
+						if target.track.audio {
+							kind = "audio"
+						}
+						hlsDrops.WithLabelValues(target.track.id, "worker", kind, "queue_full").Inc()
+						packager.requestWorkerRestart(target, "input", "push_failed")
+						return
+					}
 				}
 			case types.MediaEventTypeDiscontinuity:
 				// A cold video subscription first publishes identity, then its
@@ -520,9 +562,12 @@ func workerFormatMatches(worker *packagerWorker, source types.MediaSource) bool 
 	if worker.track.audio {
 		return source.Kind == types.MediaKindAudio && source.Codec.Name == "opus" && source.Codec.ClockRate == 48_000 && source.Codec.Channels == 2
 	}
-	return source.Kind == types.MediaKindVideo && source.Codec.Name == "vp8" &&
-		source.Width == worker.track.variant.Width && source.Height == worker.track.variant.Height &&
-		source.FrameRateNumerator == worker.track.variant.FrameRate && source.FrameRateDenominator == 1
+	// Every video rendition scales the same complete high-source format. Output
+	// geometry/rate remain checked against the rendition in acceptSample.
+	input := fixedVariants[0]
+	return source.Kind == types.MediaKindVideo && source.Codec.Name == "vp8" && source.ID == input.SourceID &&
+		source.Width == input.Width && source.Height == input.Height &&
+		source.FrameRateNumerator == input.FrameRate && source.FrameRateDenominator == 1
 }
 
 func workerFormatIdentityMatches(worker *packagerWorker, source types.MediaSource) bool {

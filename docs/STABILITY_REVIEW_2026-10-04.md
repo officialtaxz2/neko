@@ -151,12 +151,16 @@ one not-ready bootstrap, medium/low admission drops of 759/564 and cumulative
 part/segment publication only for audio/high; no sampled Neko exit/OOM was found.
 Same-image default-off restoration passed with a healthy service and 2/2
 disabled-route probes; the operator confirmed normal login/picture/audio.
-NEXT the isolated source-clock-phase diagnostic against unchanged exact-71
-production code. No successful HLS picture/audio or room-event interval is
-demonstrated, and live IDR phases remain unmeasured.
+The isolated source-phase diagnosis reproduced not-ready in all three cold
+runs at 24.02 seconds in generation 1; aligned control passed at 18.11 seconds.
+Common high-source fan-out is implemented and statically reviewed, preserving
+provider timestamps and the fixed limits. NEXT its isolated repair A/B with
+the confirmed default-off exact-71 service unchanged. No successful HLS
+picture/audio or room-event interval is demonstrated, and live IDR phases remain unmeasured.
 New repair/gates: NOT EXECUTED IN CODEX; supplied isolated A/B, full preparation
 and default-off deployment/browser plus activation/invalid-input gates passed;
-enabled HLS failed, diagnosis/recovery passed and controlled reproduction remains pending.
+enabled HLS failed, diagnosis/recovery and controlled reproduction passed;
+repair checks/full preparation and enabled acceptance remain pending.
 The actual native blocker and role of the separate capabilities rejection
 remain unconfirmed; enabled live playback and isolation/device
 acceptance are pending. Dependency-audit report exit 1 is not a security pass.

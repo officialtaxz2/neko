@@ -21,8 +21,10 @@ type codecFixtureProvider struct {
 	origin    time.Time
 	errors    chan error
 	sceneCuts bool
-	// Diagnostic-only source phases; nil retains the aligned acceptance fixture.
+	// Optional synthetic source phases; nil retains the aligned fixture.
 	clockOffsets map[string]time.Duration
+	mu sync.Mutex
+	subscriptions map[string]int
 }
 
 func (provider *codecFixtureProvider) Sources(kind types.MediaKind) []types.MediaSource {
@@ -35,6 +37,12 @@ func (provider *codecFixtureProvider) Subscribe(ctx context.Context, request typ
 		return nil, types.ErrMediaSourceNotFound
 	}
 	source.Generation = 2 // starting source demand advances the planning generation
+	provider.mu.Lock()
+	if provider.subscriptions == nil {
+		provider.subscriptions = make(map[string]int)
+	}
+	provider.subscriptions[source.ID]++
+	provider.mu.Unlock()
 	pipelineSource := "audiotestsrc is-live=true wave=sine samplesperbuffer=960 ! audio/x-raw,format=S16LE,rate=48000,channels=2 ! opusenc bitrate=128000 ! appsink name=appsink max-buffers=8 drop=true sync=false"
 	var rate uint32 = 50
 	if source.Kind == types.MediaKindVideo {
@@ -43,7 +51,7 @@ func (provider *codecFixtureProvider) Subscribe(ctx context.Context, request typ
 			pattern = "black"
 		}
 		for _, variant := range FixedVariants() {
-			if variant.SourceID == source.ID {
+			if variant.ID == source.ID {
 				source.Width, source.Height = variant.Width, variant.Height
 				source.FrameRateNumerator, source.FrameRateDenominator = variant.FrameRate, 1
 				rate = variant.FrameRate
@@ -168,6 +176,18 @@ func TestRealDelayedHighAnchorPreservesPackagerGeneration(t *testing.T) {
 }
 
 func testRealCodecsReachConventionalPackagerReadiness(t *testing.T, highInputDelay time.Duration) {
+	testRealCodecsWithSourcePhases(t, highInputDelay, nil)
+}
+
+func TestRealSkewedSourcesShareVideoClock(t *testing.T) {
+	testRealCodecsWithSourcePhases(t, 0, map[string]time.Duration{
+		"high": 800 * time.Millisecond,
+		"medium": 50 * time.Millisecond,
+		"low": 100 * time.Millisecond,
+	})
+}
+
+func testRealCodecsWithSourcePhases(t *testing.T, highInputDelay time.Duration, phases map[string]time.Duration) {
 	t.Helper()
 	if err := validateGSTTranscoderElements(); err != nil {
 		t.Fatal(err)
@@ -177,7 +197,7 @@ func testRealCodecsReachConventionalPackagerReadiness(t *testing.T, highInputDel
 			t.Fatal(err)
 		}
 	}
-	provider := &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4)}
+	provider := &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4), clockOffsets: phases}
 	diagnostics := &codecFixtureDiagnostics{
 		tracks: make(map[string]*codecFixtureTrace), highInputDelay: highInputDelay,
 	}
@@ -218,6 +238,39 @@ func testRealCodecsReachConventionalPackagerReadiness(t *testing.T, highInputDel
 	packager.mu.Unlock()
 	if generation != 1 {
 		t.Fatalf("cold fixture caused %d packager generations", generation)
+	}
+	provider.mu.Lock()
+	counts := make(map[string]int, len(provider.subscriptions))
+	for id, count := range provider.subscriptions {
+		counts[id] = count
+	}
+	provider.mu.Unlock()
+	if len(counts) != 2 || counts["audio"] != 1 || counts["high"] != 1 {
+		t.Fatalf("shared video fixture opened unexpected subscriptions: %v", counts)
+	}
+	var firstVideoPTS time.Duration
+	for _, id := range []string{"high", "medium", "low"} {
+		diagnostics.mu.Lock()
+		trace := diagnostics.tracks[id]
+		diagnostics.mu.Unlock()
+		if trace == nil {
+			t.Fatalf("shared video fixture trace %s missing", id)
+		}
+		trace.mu.Lock()
+		firstPTS, rejected := trace.firstInputPTS, trace.rejected
+		frames := append([]codecFixtureOutput(nil), trace.keyframes...)
+		trace.mu.Unlock()
+		if id == "high" {
+			firstVideoPTS = firstPTS
+		}
+		if firstPTS != firstVideoPTS || rejected != 0 || len(frames) != 4 {
+			t.Fatalf("shared video %s first=%s rejected=%d IDRs=%d", id, firstPTS, rejected, len(frames))
+		}
+		for index, frame := range frames {
+			if !frame.PTSValid || !frame.DTSValid || !frame.Keyframe || frame.DTS != firstVideoPTS+time.Duration(index)*2*time.Second {
+				t.Fatalf("shared video %s IDR %d is not on the common clock: %+v", id, index, frame)
+			}
+		}
 	}
 }
 
@@ -350,7 +403,7 @@ func (diagnostics *codecFixtureDiagnostics) NewAudio(source types.MediaSource) (
 
 func (diagnostics *codecFixtureDiagnostics) NewVideo(variant Variant, source types.MediaSource) (transcoder, error) {
 	inner, err := (gstTranscoderFactory{}).NewVideo(variant, source)
-	return diagnostics.wrap(source.ID, inner, err)
+	return diagnostics.wrap(variant.ID, inner, err)
 }
 
 func (diagnostics *codecFixtureDiagnostics) wrap(id string, inner transcoder, err error) (transcoder, error) {

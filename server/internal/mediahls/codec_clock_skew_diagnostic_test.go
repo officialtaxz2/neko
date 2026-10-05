@@ -14,6 +14,9 @@ import (
 // omitted by the aligned fixture; they are not measured target capture skew.
 // Keep the extra tag out of normal codec-image/full-preparation checks.
 func TestDiagnosticSkewedVideoKeyframesBlockReadiness(t *testing.T) {
+	if fixedVariants[1].SourceID == fixedVariants[0].SourceID {
+		t.Skip("expected-defect fixture is only for the pinned pre-repair independent-source packager")
+	}
 	if err := validateGSTTranscoderElements(); err != nil {
 		t.Fatal(err)
 	}
