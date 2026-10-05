@@ -142,10 +142,13 @@ tail omits earlier client/Go/fuzz output; the script's reported final success
 covers those stages without separately shown counts. The service stayed
 unchanged during preparation. Default-off 71 deployment then passed with
 Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. The operator
-then confirmed the requested normal-browser check works without HLS. NEXT
-same-image conventional-HLS activation and the 19 HTTP denial probes.
+then confirmed the requested normal-browser check works without HLS. Same-image
+conventional-HLS activation then passed with Enable-Exitcode 0, healthy service
+and 17/17 public plus 2/2 cleartext-denial probes. NEXT one valid admin HLS
+playback attempt alongside WebRTC and the bounded room-event check if both work.
 New repair/gates: NOT EXECUTED IN CODEX; supplied isolated A/B, full preparation
-and default-off deployment/browser checkpoint passed; enabled outcomes pending.
+and default-off deployment/browser plus activation/invalid-input gates passed;
+enabled playback remains pending.
 The actual native blocker and role of the separate capabilities rejection
 remain unconfirmed; enabled live playback and isolation/device
 acceptance are pending. Dependency-audit report exit 1 is not a security pass.

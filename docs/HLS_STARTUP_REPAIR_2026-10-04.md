@@ -12,8 +12,9 @@ Repair-Prepare-Exitcode 0: all nine selected startup checks passed in the rebuil
 codec image and base/Brave images were built. The running service was unchanged.
 Default-off 71 deployment then passed with Baseline-Exitcode 0, healthy service
 and 2/2 disabled-route probes. The operator confirmed normal browser behavior
-without HLS. NEXT same-image 71 conventional-HLS enablement and the 19 HTTP
-denial probes.
+without HLS. Same-image 71 conventional-HLS activation then passed with
+Enable-Exitcode 0, healthy service and 19/19 denial probes. NEXT one valid admin
+HLS playback attempt alongside an ordinary WebRTC viewer.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -939,3 +940,31 @@ the already-reviewed Caddy configuration without another merge/reload.
 Enabled live capture/picture/audio, the earlier all-stream symptom's cause and
 authorization/lifecycle/isolation/device/resource acceptance remain pending.
 **NOT EXECUTED IN CODEX; operator-confirmed default-off browser behavior only.**
+
+## Exact-71 HLS activation/invalid-input checkpoint passed — 2026-10-05
+
+The supplied enable block identified application
+71a14d2174dafbc12b1880adde6dc68176bfe9af and unchanged deployer blob
+c6f52dc80fdf605ec908f3fe3856ce23e015e494. It redeployed
+my-neko/brave:hls-71a14d2174da with conventional HLS enabled; the container
+became healthy and the private enable snapshot was recorded under
+/opt/docker/nekoNew/neko-hls-results-71a14d2174da. All 17 public invalid-input
+probes passed with expected statuses and headers. Both direct loopback
+cleartext bootstrap/media probes returned the expected 403. Enable-Exitcode
+was 0; no source/image or Caddy change occurred beyond using the HLS overlay.
+
+This closes the exact-71 activation/invalid-input gate only. Synthetic unknown
+tickets/cookies do not open a valid playback lease or start/demonstrate live
+packager readiness. Previous all-stream failures are still not explained by
+this result. Keep the saved rollback tag and all prior evidence.
+
+NEXT [validation section 3](HLS_LL_HLS_VALIDATION.md#first-bounded-pictureaudio-checkpoint-repeat-after-diagnosisrepair):
+first verify ordinary WebRTC works with HLS enabled, then make one HLS admin
+attempt in a separate private window while WebRTC remains connected. Record
+picture/audio, startup impression, exact failure if present and the ordinary
+viewer status. Only if both work, extend to five foreground minutes with chat,
+control release/take and participant join. A failure must be diagnosed before
+same-image default-off restoration; the pinned conditional recovery block is
+prepared in the runbook, not executed. Valid authorization/lifecycle and
+grouped device/resource acceptance remain pending. **NOT EXECUTED IN CODEX;
+supplied exact-71 activation/HTTP passed, enabled playback pending.**

@@ -72,11 +72,14 @@ Dependency-audit exit 1 remains an open report item, not security acceptance.
 Default-off deployment of my-neko/brave:hls-71a14d2174da then passed with
 Baseline-Exitcode 0, healthy service, a private baseline snapshot and 2/2
 disabled bootstrap/media probes returning 404. The operator confirmed the
-requested normal-browser check works without HLS. NEXT same-image conventional
-HLS activation and 17 public plus 2 cleartext-denial probes, followed by review
-before valid playback. **NOT EXECUTED IN CODEX; supplied A/B, full preparation,
-default-off baseline and requested browser checkpoint passed; enabled CLI/HTTP
-and live acceptance pending.**
+requested normal-browser check works without HLS. Same-image conventional HLS
+activation then passed with Enable-Exitcode 0, healthy service, a private enable
+snapshot and 17/17 public plus 2/2 cleartext-denial probes. NEXT one valid admin
+HLS playback attempt alongside WebRTC, then the bounded room-event check if
+both work. The invalid credentials do not prove packager readiness or valid
+delivery. Capture the read-only diagnostic before restoration if the prior
+symptom recurs. **NOT EXECUTED IN CODEX; supplied preparation/baseline/browser
+and activation/invalid-input gates passed; enabled playback/acceptance pending.**
 
 | Metric family | Evidence |
 | --- | --- |
