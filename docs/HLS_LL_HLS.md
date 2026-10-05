@@ -399,7 +399,9 @@ the first-picture/premature-timeout report at a7ffb8b1. Its isolated target gate
 reproduced the old fault and passed all 52 repaired client tests/type/build;
 scoped image preparation passed with Client-Image-Exitcode 0, a fresh client
 build and cached unchanged server/runtime layers, leaving enabled a7ff running.
-New image default-off deployment and browser acceptance remain pending in
+Default-off exact-73 deployment then passed healthy with Baseline-Exitcode 0,
+2/2 disabled-route probes and the reported normal-browser checkpoint. Same-image
+HLS enablement and repaired live browser acceptance remain pending in
 [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
 
 The selected legacy event bridge now emits `media/hls/state` with `{version:1, backend:"hls", paused:boolean}` before `system/init` and on authoritative room settings updates. It derives private pause from `PrivateMode && !IsAdmin`, independently of control locks. Private pause, stop, detach, logout, replacement and terminal failure invalidate callbacks, destroy MSE, remove listeners, pause the element, remove `src`/`srcObject` and call `load()` to discard URL/MSE buffers. WebRTC recovery never uses this cleanup helper. Private resume reuses the still-valid lease and waits for fresh packaging; Safari autoplay still has one muted retry and the explicit Play gesture. Native fullscreen and supported standard/WebKit PiP remain available.

@@ -38,8 +38,11 @@ then passed with old-fault reproduction and all 52 repaired tests/type/build
 (Client-Check-Exitcode 0). Scoped exact-73d5ff6d image preparation then passed
 with Client-Image-Exitcode 0: fresh client build, cached unchanged server/runtime
 layers, both images and private snapshot/marker. The application checkout is
-now 73d5ff6d, while live a7ffb8b1 still has conventional HLS enabled.
-NEXT [exact-73 default-off deployment and normal-browser confirmation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-default-off-deployment-and-browser-check).
+now 73d5ff6d. Default-off exact-73 deployment then passed healthy with
+Baseline-Exitcode 0, a private baseline snapshot and 2/2 disabled-route probes;
+the operator confirmed the requested normal browser check works. The live
+image is now also 73d5ff6d with HLS disabled.
+NEXT [exact-73 same-image HLS enablement and playback](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-same-image-hls-enablement-and-playback).
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -1328,8 +1331,27 @@ and `my-neko/brave:hls-73d5ff6d2911` were prepared. The Brave layer installed
 1.96.61. Prepared image IDs, scope records, successful marker and private snapshot
 are in `/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911`.
 
-NEXT the [exact-73 default-off deployment and normal-browser check](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-default-off-deployment-and-browser-check).
+NEXT the [exact-73 same-image HLS enablement and playback](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-same-image-hls-enablement-and-playback).
 The existing deployer validates the preparation/image IDs before stopping Neko
-and saves the current a7ff image as the new rollback target. Preserve the old
-evidence/tags. Deployment, repaired live playback and grouped acceptance remain
-pending. **NOT EXECUTED IN CODEX; supplied scoped image preparation passed.**
+and saves a7ff as the new rollback target. The default-off deployment subsequently
+passed as recorded below. Preserve the old evidence/tags. Repaired live playback
+and grouped acceptance remain pending. **NOT EXECUTED IN CODEX; supplied scoped
+image preparation passed.**
+
+## Exact-73 default-off deployment/browser checkpoint passed — 2026-10-05
+
+The supplied baseline identifies application
+`73d5ff6d29110e3dd06999726a7e88718d09ea23`, unchanged deployer blob
+`c6f52dc80fdf605ec908f3fe3856ce23e015e494` and healthy image
+`my-neko/brave:hls-73d5ff6d2911`. A private baseline snapshot was recorded,
+disabled bootstrap/media each returned the expected 404 (2/2), and
+Baseline-Exitcode was 0. The operator confirmed the requested normal browser
+check works without the HLS override. This is bounded reported browser evidence.
+
+The running image now matches checkout 73d5ff6d with HLS disabled. The prior
+a7ff image is saved as `my-neko/brave:rollback-hls-73d5ff6d2911`; keep older
+evidence and tags. NEXT [same-image conventional-HLS enablement/19 denial probes
+and five-minute repaired playback](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-same-image-hls-enablement-and-playback).
+Enabled repaired playback, lifecycle/device/resource and grouped acceptance
+remain pending. **NOT EXECUTED IN CODEX; supplied default-off deployment,
+disabled probes and reported normal-browser checkpoint passed.**

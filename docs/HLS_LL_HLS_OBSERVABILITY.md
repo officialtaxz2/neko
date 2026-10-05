@@ -110,9 +110,12 @@ passed, with the live service unchanged. Scoped exact-73d5ff6d preparation then
 passed with Client-Image-Exitcode 0: fresh client bundle `index-CrHQRMnq.js`,
 cached unchanged server/runtime layers, both base/Brave images and private
 snapshot/marker under `/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911`.
-The checkout is now 73d5ff6d while the enabled a7ff service remains running;
-inherited backend evidence is separate from the passed exact client gate.
-NEXT [exact-73 default-off deployment and normal-browser confirmation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-default-off-deployment-and-browser-check).
+Inherited backend evidence is separate from the passed exact client gate.
+Exact-73 default-off deployment then passed healthy with Baseline-Exitcode 0,
+a private baseline snapshot and 2/2 disabled-route probes. The operator confirmed
+the requested normal browser check works. Checkout/live image is now 73d5ff6d
+with HLS disabled; the saved prior a7ff image remains under the 73 rollback tag.
+NEXT [exact-73 same-image HLS enablement and playback](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-same-image-hls-enablement-and-playback).
 The actual
 live IDR phases remain unmeasured. The repair owns one audio/high subscription
 and four workers; its three high-resolution decoders require a fresh CPU/RSS

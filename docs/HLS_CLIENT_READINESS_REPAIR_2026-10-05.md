@@ -4,11 +4,12 @@ Status: client-only repair `73d5ff6d29110e3dd06999726a7e88718d09ea23` is
 implemented and statically reviewed on `testing`. Supplied target results
 passed the old-defect reproduction, all 52 client tests, type/build and the
 read-only live diagnosis, with Client-Check-Exitcode 0. Scoped exact-73 image
-preparation then passed with Client-Image-Exitcode 0. Deployment/browser and
-sustained playback remain **PENDING**. All execution was on the target server,
-**NOT EXECUTED IN CODEX**. The application checkout is now exact 73d5ff6d;
-the live a7ffb8b1 image remains running with conventional HLS enabled until
-the next default-off deployment.
+preparation then passed with Client-Image-Exitcode 0. Same-image default-off
+deployment passed with Baseline-Exitcode 0, healthy service and 2/2 disabled-route
+probes; the operator confirmed the requested normal browser check works.
+Enabled repair playback and sustained/grouped acceptance remain **PENDING**.
+All execution was on the target server, **NOT EXECUTED IN CODEX**. The checkout
+and running image are now exact 73d5ff6d, with HLS disabled.
 
 ## Supplied live evidence
 
@@ -231,9 +232,10 @@ records and successful preparation marker are under
 manifest/config digests are not a supplied runtime container image-ID check.
 The deployer will compare the actual prepared image against `images.txt` before
 stopping the current service. **NOT EXECUTED IN CODEX; supplied scoped image
-preparation passed, new image deployment/browser/acceptance pending.**
+preparation passed; default-off deployment/browser subsequently passed below,
+enabled acceptance pending.**
 
-## Next target block: exact-73 default-off deployment and browser check
+## Completed target block: exact-73 default-off deployment and browser check
 
 Use the existing deployer without fetching/merging newer documentation/tooling
 commits. This block restarts Neko on the prepared repair image with HLS disabled,
@@ -267,3 +269,67 @@ This loads the new client bundle. Supply the output and browser result before
 same-image conventional-HLS enablement and the sustained picture/audio gate.
 That enablement/manual playback matrix remains pending; a scoped image build
 does not establish the fix on a real browser or TV.
+
+## Exact-73 default-off deployment and reported browser checkpoint passed
+
+The supplied output identifies application
+`73d5ff6d29110e3dd06999726a7e88718d09ea23`, unchanged deployer blob
+`c6f52dc80fdf605ec908f3fe3856ce23e015e494` and healthy container image
+`my-neko/brave:hls-73d5ff6d2911`. The private baseline snapshot was recorded
+under `/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911`. Disabled bootstrap
+and media returned their expected 404 (2/2); Baseline-Exitcode was 0. The
+loopback binding remains 127.0.0.1:8082 and the established UDP ports remain
+published. The existing deployer preserves the prior a7ff image under
+`my-neko/brave:rollback-hls-73d5ff6d2911`.
+
+The operator replied "Funktioniert ohne media=hls extra." to the requested
+normal browser check. This closes the bounded reported default-off checkpoint;
+it does not demonstrate the repaired client's enabled HLS playback or a device/
+resource/role matrix. **NOT EXECUTED IN CODEX; supplied default-off deployment,
+disabled-route probes and reported normal-browser checkpoint passed.**
+
+## Next target block: exact-73 same-image HLS enablement and playback
+
+Keep the exact application checkout/image/evidence aligned; use the existing
+deployer without pulling later documentation commits, rebuilding or changing
+Caddy. The existing rollback tag remains the saved a7ff image. Enable only
+conventional HLS with the reviewed overlay, then require healthy service and
+all seventeen public plus two cleartext-denial probes before valid playback.
+These probes verify request boundaries, not the corrected client timer.
+
+```bash
+set +e
+bash -e -o pipefail <<'NEKO_HLS_ENABLE'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "73d5ff6d29110e3dd06999726a7e88718d09ea23"
+
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911
+test "$(stat -c %a "$output")" = 700
+
+bash deploy/deploy-hls-media.sh enable "$output"
+docker compose -f docker-compose.validation.yaml run --rm -T \
+  hls-http-checks enabled </dev/null
+docker compose -f docker-compose.validation.yaml run --rm -T \
+  -e NEKO_PUBLIC_BASE_URL=http://127.0.0.1:8082 \
+  hls-http-checks insecure-denied </dev/null
+NEKO_HLS_ENABLE
+printf 'Enable-Exitcode: %s\n' "$?"
+```
+
+After Enable-Exitcode 0, keep one normal WebRTC viewer connected and open a
+new private window at `https://neko.taxzvps.de/?media=hls` as an admin diagnostic.
+Use Play/unmute if required. Observe changing picture and audible audio for
+five foreground minutes, including another participant's message, control
+release/take and a fresh join. Record device/browser, any fixed error and whether
+WebRTC keeps working. Do not retry away a failure before recording it. The
+previous approximately 30-second startup error must not return after readiness.
+This initial bounded interval is separate from the full role/device/resource/
+numeric acceptance matrix. Enablement and repaired live playback are pending.
+
+If an HTTP gate fails or playback fails, capture the safe diagnosis before
+restoring the confirmed same-image default-off baseline as specified in
+[the playback runbook](HLS_LL_HLS_VALIDATION.md#first-bounded-pictureaudio-checkpoint-repeat-after-diagnosisrepair).
+Keep all evidence/rollback tags. WebRTC stays the default, fallback manual,
+and no `master` promotion or full HLS acceptance is implied.

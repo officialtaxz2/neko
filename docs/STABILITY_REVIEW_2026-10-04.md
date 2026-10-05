@@ -285,8 +285,13 @@ the client rebuilt as `index-CrHQRMnq.js`, unchanged server/runtime layers were
 cached, and both images/private snapshot/marker were recorded. The checkout
 advanced to 73 while the enabled a7ff service remained running. Backend evidence
 is inherited separately; no fresh backend tests/compilation claim.
-Execution is **NOT EXECUTED IN CODEX**; repaired-image default-off deployment,
-normal-browser confirmation and sustained playback remain pending in
+Exact-73 default-off deployment then passed healthy with Baseline-Exitcode 0,
+a private baseline snapshot and 2/2 disabled-route probes. The operator confirmed
+the requested ordinary browser check works without a media override. Checkout/
+live image is now 73d5ff6d with HLS disabled. This closes a bounded reported
+browser checkpoint, not the enabled playback/device/role/resource gates.
+Execution is **NOT EXECUTED IN CODEX**; same-image HLS enablement and sustained
+repaired playback remain pending in
 [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
 The actual browser buffer state,
 prior all-stream outage causes, dependency/device and grouped gates remain open.
