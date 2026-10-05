@@ -140,11 +140,13 @@ nine selected startup checks (normal 18.11 s, delayed-high 18.09 s and scene
 cuts 30.19 s, all generation 1), and base/Brave images were built. The supplied
 tail omits earlier client/Go/fuzz output; the script's reported final success
 covers those stages without separately shown counts. The service stayed
-unchanged. NEXT deploy the prepared 71 image default-off and confirm normal
-browser login/picture/audio/control. New repair/gates: NOT EXECUTED IN CODEX;
-supplied isolated A/B and full preparation passed. Keep HLS disabled.
+unchanged during preparation. Default-off 71 deployment then passed with
+Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. NEXT fresh
+normal-browser login/picture/audio/control confirmation before HLS activation.
+New repair/gates: NOT EXECUTED IN CODEX; supplied isolated A/B, full preparation
+and default-off deployment passed. Keep HLS disabled.
 The actual native blocker and role of the separate capabilities rejection
-remain unconfirmed; new-image deployment and enabled isolation/device
+remain unconfirmed; the fresh browser checkpoint and enabled isolation/device
 acceptance are pending. Dependency-audit report exit 1 is not a security pass.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.

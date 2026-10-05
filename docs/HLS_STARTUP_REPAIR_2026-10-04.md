@@ -10,7 +10,9 @@ reproduced, all eight corrected checks passed three fresh processes and scene
 cuts passed once. Full exact-71a14d21 preparation subsequently passed with
 Repair-Prepare-Exitcode 0: all nine selected startup checks passed in the rebuilt
 codec image and base/Brave images were built. The running service was unchanged.
-NEXT deploy the prepared 71 image default-off and confirm normal browser use.
+Default-off 71 deployment then passed with Baseline-Exitcode 0, healthy service
+and 2/2 disabled-route probes. NEXT fresh normal-browser confirmation before
+HLS enablement.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -771,7 +773,8 @@ No service access, image build, checkout or marker mutation occurs in this A/B.
 
 Source/diffs are statically reviewed; **NOT EXECUTED IN CODEX; supplied
 controlled A/B and subsequent full exact-repair preparation passed as recorded
-below. New-image baseline and enabled live acceptance remain pending**.
+below. The new-image default-off baseline also passed; fresh normal-browser
+confirmation and enabled live acceptance remain pending**.
 A passing controlled A/B does not prove the cause of the
 unobserved earlier worker restart, native low-source stall or all-stream outage.
 
@@ -889,10 +892,31 @@ working default-off 97ba4ad9 image until the next operator block. Preserve its
 rollback capability and the private failure/A/B evidence. The native low-source
 stall and reported all-stream outage still lack a confirmed live cause.
 
-NEXT the exact-71 default-off deployment block in
+The next step at that checkpoint was the exact-71 default-off deployment block in
 [validation section 1](HLS_LL_HLS_VALIDATION.md#1-prepare-exact-tests-and-images-without-replacing-the-service),
-then normal login/picture/audio/control in a fresh private browser window.
-No rebuild or Caddy change is needed. Keep HLS disabled until that baseline
-and browser checkpoint pass and are reviewed. Enabled HLS picture/audio,
+which subsequently passed as recorded below. NEXT normal login/picture/audio/control
+in a fresh private browser window. No rebuild or Caddy change is needed. Keep
+HLS disabled until the browser checkpoint passes and is reviewed. Enabled HLS picture/audio,
 valid authorization/lifecycle, room-event/isolation and grouped device/resource
 acceptance remain pending. **NOT EXECUTED IN CODEX; supplied target preparation passed.**
+
+## Default-off exact-71a14d21 deployment passed — 2026-10-05
+
+The supplied operator block ended with Baseline-Exitcode 0. It identified
+application 71a14d2174dafbc12b1880adde6dc68176bfe9af and deployer blob
+c6f52dc80fdf605ec908f3fe3856ce23e015e494. The unchanged deployer checked the
+preparation marker/image record, saved the prior image and deployed
+my-neko/brave:hls-71a14d2174da without the HLS overlay. The container became
+healthy and a private baseline snapshot was recorded under
+/opt/docker/nekoNew/neko-hls-results-71a14d2174da. The two disabled bootstrap/media
+HTTP probes returned the expected 404 (2/2 passed).
+
+The running application is now the prepared 71 image, not the earlier 97
+baseline. This verifies deployment health and disabled-route behavior only.
+Fresh normal login/picture/audio/control in a private browser window has not
+yet been confirmed. Keep HLS disabled and do not repeat baseline deployment.
+The prior working image and private failure/A/B evidence remain available.
+NEXT obtain that browser confirmation before same-image HLS activation.
+Enabled live capture/playback, the previous all-stream symptom's cause and
+authorization/lifecycle/isolation/device/resource acceptance remain pending.
+**NOT EXECUTED IN CODEX; supplied target baseline passed.**

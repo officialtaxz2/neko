@@ -45,8 +45,9 @@ Full exact-71a14d21 preparation then passed with Repair-Prepare-Exitcode 0:
 all nine selected startup checks passed in the rebuilt GStreamer 1.26.2 image,
 including normal/delayed-high readiness and scene cuts in generation 1;
 base/Brave images were built and the running service stayed unchanged.
-NEXT deploy the prepared 71 image default-off and obtain fresh normal-browser
-confirmation. Keep HLS disabled. Working HLS playback
+Default-off 71 deployment then passed with Baseline-Exitcode 0, healthy service
+and 2/2 disabled-route probes. NEXT fresh normal-browser confirmation before
+enablement. Keep HLS disabled. Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -78,7 +79,7 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-### Exact-71a14d21 preparation passed; default-off deployment/browser next
+### Exact-71a14d21 preparation/default-off deployment passed; browser next
 
 The supplied output ended with AUTOMATED/IMAGE GATE PASSED and
 Repair-Prepare-Exitcode 0. It begins inside the codec-image build, so earlier
@@ -96,12 +97,13 @@ my-neko/base:hls-71a14d2174da and my-neko/brave:hls-71a14d2174da were built.
 The final snapshot and success marker are under
 /opt/docker/nekoNew/neko-hls-results-71a14d2174da. Dependency-audit report exit 1
 is an open classification/remediation item, not a passing security audit.
-The running default-off 97 service remained unchanged. Full 414 preparation
+During preparation, the running default-off 97 service remained unchanged. Full 414 preparation
 remains a separate failed checkpoint; retain its PENDING marker and evidence.
 
-NEXT deploy only the prepared exact-71 image with HLS disabled. This block
-restarts Neko, retains the adaptive/WebCodecs overlays and saves the current
-image as the rollback tag before replacement. The deployer checks the exact
+The following block deployed the prepared exact-71 image with HLS disabled and
+passed with Baseline-Exitcode 0. It restarted Neko, retained the adaptive/WebCodecs
+overlays and saved the current image as the rollback tag before replacement.
+The deployer checks the exact
 preparation marker and image ID before touching the service, and restores the
 saved image if the new container fails to become healthy. No Caddy change or
 new build is needed. Keep application HEAD at 71; later documentation commits
@@ -125,13 +127,21 @@ NEKO_HLS_BASELINE
 printf 'Baseline-Exitcode: %s\n' "$?"
 ```
 
-After this block passes, confirm normal login, picture, audio and control
+The supplied baseline output identifies application
+71a14d2174dafbc12b1880adde6dc68176bfe9af and deployer blob
+c6f52dc80fdf605ec908f3fe3856ce23e015e494. my-neko/brave:hls-71a14d2174da deployed
+healthy, the private baseline snapshot was recorded and both disabled HLS
+bootstrap/media probes returned their expected 404 (2/2). Do not repeat the
+baseline as the next step. The existing Caddy configuration was unchanged.
+
+NEXT confirm normal login, picture, audio and control
 take/release in a fresh private browser window at https://neko.taxzvps.de/
 without a media override. Supply the deployment/probe output and browser
 result before any enabled HLS attempt. Preparation does not validate native
 live capture, browser playback or the earlier all-stream outage's cause.
-Default-off 71 deployment and its browser checkpoint, enabled HLS and grouped
-acceptance remain pending. **NOT EXECUTED IN CODEX; supplied preparation passed.**
+Default-off 71 deployment passed; its browser checkpoint, enabled HLS and
+grouped acceptance remain pending. **NOT EXECUTED IN CODEX; supplied preparation
+and baseline passed.**
 
 ### Controlled audio-anchor A/B and completed full preparation block (historical)
 
@@ -184,8 +194,8 @@ HLS readiness. See [provenance and exact results](HLS_STARTUP_REPAIR_2026-10-04.
 This passes the controlled AAC-overflow comparison, not full preparation or
 live playback. The earlier failed 414 preparation marker remains PENDING.
 **NOT EXECUTED IN CODEX; supplied target A/B passed.** Full exact-71a14d21
-tests/images subsequently passed as recorded above; new-image baseline and
-enabled live acceptance remain pending.
+tests/images and default-off deployment subsequently passed as recorded above;
+fresh normal-browser confirmation and enabled live acceptance remain pending.
 
 The following block was run to fast-forward to the exact application repair
 and prepare its tests/images in a separate directory. It passed; do not repeat
