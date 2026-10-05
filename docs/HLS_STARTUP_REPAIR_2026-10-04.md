@@ -268,13 +268,29 @@ remain open; no advisory identity/reachability or remediation claim follows
 from these aggregate counts. These are supplied target results,
 **NOT EXECUTED IN CODEX**.
 
-NEXT use the same checkout and new private directory with the reviewed
+The next step was to use the same checkout and new private directory with the reviewed
 deploy-hls-media.sh baseline action (blob
 c6f52dc80fdf605ec908f3fe3856ce23e015e494), then run both disabled-route probes.
 The helper verifies preparation/image identity, saves the currently running
 image for rollback and starts the prepared repair image without HLS while
 preserving adaptive/WebCodecs overlays. This restarts active sessions; startup
-health failure attempts the saved prior image. Default-off deployment/browser
-confirmation is pending: verify normal login, picture, audio and control in a
-private browser window before a separate enabled HLS checkpoint. Preserve old
-evidence, the existing Caddy configuration and the stable master branch.
+health failure attempts the saved prior image. The supplied deployment result
+is recorded below; browser confirmation remains pending.
+
+## Exact GOP-repair default-off deployment passed — 2026-10-05
+
+At unchanged application 97ba4ad9ab3e635da936a58c8a7ec795da05ba46, the tracked
+deployer recorded blob c6f52dc80fdf605ec908f3fe3856ce23e015e494 and completed
+baseline mode with Baseline-Exitcode 0. The prepared
+my-neko/brave:hls-97ba4ad9ab3e image started healthy; both public disabled-route
+probes returned the expected 404 (2/2). The helper retained the new private
+directory and recorded its snapshot. These are supplied target results,
+**NOT EXECUTED IN CODEX**.
+
+Fresh manual normal login/picture/audio/control confirmation on this exact
+image is pending; the earlier browser pass at 80020d99 does not fill this gate.
+NEXT confirm that baseline in a private browser window before enabling HLS on
+the same image and repeating its HTTP boundary plus bounded actual playback/
+room-event checkpoint. Preserve evidence, Caddy settings and master. Full
+enabled HLS, isolation, authorization/lifecycle and device acceptance remain
+open; a healthy container and two disabled routes do not establish playback.

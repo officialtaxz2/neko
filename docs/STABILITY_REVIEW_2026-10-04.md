@@ -90,8 +90,9 @@ its role in the all-stream symptom remains a hypothesis pending live isolation
 acceptance. Full exact 97ba4ad9 checks/image preparation subsequently passed:
 47 client tests, TypeScript/build, 13 Go packages, both fuzz jobs, all three
 codec tests and server/base/Brave builds, with Repair-Check-Exitcode 0. Audit
-exit 1 remains open findings. NEXT deploy the prepared image without HLS and
-confirm normal login/picture/audio/control; enabled isolation/device acceptance
+exit 1 remains open findings. Default-off deployment of hls-97ba4ad9ab3e then
+passed with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes.
+NEXT confirm normal login/picture/audio/control; enabled isolation/device acceptance
 remains pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Live HLS stays disabled.
