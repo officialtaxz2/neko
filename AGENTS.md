@@ -1,5 +1,17 @@
 # AGENTS.md
 
+Latest source-only checkpoint (2026-10-05): the requested
+[HLS client stability review](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md)
+corrected pause/startup progress monitoring and independent HTTP/readiness
+failure budgets, with defensive player-event handling and fixed bootstrap
+availability detail. Eight regression cases are prepared. **NOT EXECUTED IN
+CODEX**; new target tests/type/build/image and live acceptance are pending.
+The latest supplied running deployment stays exact `73d5ff6d`, conventional
+HLS enabled, with WebRTC working. NEXT validate this candidate with isolated
+client-checks, then group later image/browser checks; no extra ad-hoc operator
+action now. Prior results below apply only to their recorded commits. `master`
+remains pinned at `d9105ef8`.
+
 ## Purpose
 
 This repository is a customized fork of [`m1k1o/neko`](https://github.com/m1k1o/neko). It preserves Neko's shared server-side browser/desktop model while carrying fork-specific client work for mobile/touch usability, playback/reconnect recovery, and UI/UX.

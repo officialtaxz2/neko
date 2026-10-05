@@ -40,9 +40,11 @@ export class HLSMediaController {
   private readinessTimer?: number
   private listeners: Array<() => void> = []
   private attaching = false
+  private playbackReady = false
   private lastTime = 0
   private lastProgress = 0
   private statusFailures = 0
+  private readinessFailures = 0
   private statusRunning = false
   private keepAliveAt = 0
 
@@ -81,13 +83,17 @@ export class HLSMediaController {
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ticket: payload.ticket }) }, 30000)
       .then(async (response) => {
         if (!this.current(generation)) return
-        if (response.status !== 201) { this.fail('HLS bootstrap failed; retry manually'); return }
+        if (response.status !== 201) {
+          this.fail(response.status === 503 ? 'HLS media was unavailable at startup; retry manually' : 'HLS bootstrap failed; retry manually')
+          return
+        }
         const text = await response.text()
         if (!this.current(generation)) return
         if (text.length > 2048) throw new Error('bounded bootstrap')
         this.master = hlsLeaseURL(JSON.parse(text), this.mode, this.base)
         this.keepAliveAt = Date.now() + 15000
         this.statusFailures = 0
+        this.readinessFailures = 0
         this.watchLease()
       }).catch(() => { if (this.current(generation)) this.fail('HLS bootstrap failed; retry manually') })
   }
@@ -111,6 +117,10 @@ export class HLSMediaController {
     if (this.privatePaused === paused) return
     this.privatePaused = paused
     if (this.stopped) return
+    // A room-authorized pause/resume starts a new readiness interval. It must
+    // not inherit either the old warm-up count or old HTTP failures.
+    this.statusFailures = 0
+    this.readinessFailures = 0
     if (paused) {
       this.clearPlayer()
       this.callbacks.setStatus('paused', 'Private mode')
@@ -136,6 +146,9 @@ export class HLSMediaController {
     const playSequence = ++this.playSequence
     const current = () => this.current(generation) && this.playerGeneration === playerGeneration && this.video === video &&
       !this.privatePaused && this.desiredPlaying && this.playSequence === playSequence
+    // Deliberate pauses are not stalled playback. Start measuring afresh when
+    // resuming, but repeated Play calls on an unpaused stall cannot defer it.
+    if (video.paused) this.resetProgress(video)
     // Invoke play immediately from the gesture, before any asynchronous work.
     let attempt: Promise<void>
     try { attempt = video.play() } catch (_) { attempt = Promise.reject(new Error('play blocked')) }
@@ -252,18 +265,22 @@ export class HLSMediaController {
         if (!this.current(generation)) return
         if (terminalHLSStatus(response.status)) { this.fail('HLS authorization or media availability ended'); return }
         if (response.status === 503) {
+          // A valid not-ready response is not an HTTP connection failure.
+          this.statusFailures = 0
           this.clearPlayer()
           this.callbacks.setStatus(this.privatePaused ? 'paused' : 'connecting', this.privatePaused ? 'Private mode' : 'Waiting for fresh media')
-          if (!this.privatePaused && ++this.statusFailures >= 30) this.fail('HLS media did not become ready')
+          if (!this.privatePaused && ++this.readinessFailures >= 30) this.fail('HLS media did not become ready')
           return
         }
         const text = await response.text()
         if (!response.ok || !validHLSPlaylist(text, this.master, this.master, this.mode)) throw new Error('playlist')
         this.masterText = text
         this.statusFailures = 0
+        this.readinessFailures = 0
         if (!this.privatePaused && !this.player && !this.attaching) await this.openPlayer()
+        if (!this.current(generation)) return
         const video = this.video
-        if (video && this.player && this.desiredPlaying && !video.paused) {
+        if (video && this.player && this.playbackReady && this.desiredPlaying && !video.paused) {
           if (video.currentTime !== this.lastTime) { this.lastTime = video.currentTime; this.lastProgress = Date.now() }
           else if (Date.now() - this.lastProgress > 20000) this.fail('HLS playback stalled; retry manually')
         }
@@ -318,14 +335,19 @@ export class HLSMediaController {
       }
       listen('canplay', () => {
         this.clearReadinessTimer()
+        if (!this.playbackReady) this.resetProgress(video)
+        this.playbackReady = true
         this.callbacks.setPlayable(true)
         this.callbacks.resolution(video.videoWidth, video.videoHeight)
         if (this.desiredPlaying && video.paused) void this.play()
       })
       listen('resize', () => this.callbacks.resolution(video.videoWidth, video.videoHeight))
       listen('playing', () => {
+        if (video.paused) return // An already queued event cannot undo Pause.
         this.clearReadinessTimer()
-        this.lastProgress = Date.now()
+        this.playbackReady = true
+        this.resetProgress(video)
+        this.callbacks.setPlayable(true)
         this.callbacks.setPlaying(true)
         this.callbacks.setStatus('streaming')
       })
@@ -334,7 +356,7 @@ export class HLSMediaController {
       listen('ended', () => this.fail('HLS playback ended; retry manually'))
       video.muted = this.muted
       try { video.volume = this.volume } catch (_) {}
-      this.lastProgress = Date.now()
+      this.resetProgress(video)
       this.callbacks.setPlayer(kind)
       this.callbacks.setStatus('connecting')
       // This deadline covers initial readiness only. Arm before attachment so
@@ -344,14 +366,23 @@ export class HLSMediaController {
         if (!current()) return
         this.readinessTimer = undefined
         if (video.readyState < 3) this.fail('HLS playback did not become ready; retry manually')
+        else { this.playbackReady = true; this.resetProgress(video) }
       }, 30000)
       if (kind === 'mse') {
         const player = module!.createMSEPlayer(video, this.master, this.mode, (detail) => { if (current()) this.fail(detail) })
         if (!current()) { player.destroy(); return }
         this.player = player
       } else { this.player = { destroy() {} }; video.src = this.master; video.load() }
+      // Attachment can dispatch canplay synchronously before the MSE factory
+      // returns its player. Complete that deferred autoplay only for this player.
+      if (current() && this.playbackReady && this.desiredPlaying && video.paused) void this.play()
     } catch (_) { if (current()) this.fail('HLS player could not start; retry manually') }
     finally { if (this.playerGeneration === playerGeneration) this.attaching = false }
+  }
+
+  private resetProgress(video: HTMLVideoElement) {
+    this.lastTime = video.currentTime
+    this.lastProgress = Date.now()
   }
 
   private clearReadinessTimer() {
@@ -364,6 +395,7 @@ export class HLSMediaController {
 
   private clearPlayer() {
     this.playerGeneration++
+    this.playbackReady = false
     this.clearReadinessTimer()
     for (const request of this.playerRequests) request.abort()
     this.playerRequests.clear()

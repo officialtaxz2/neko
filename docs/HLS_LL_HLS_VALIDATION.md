@@ -1,5 +1,14 @@
 # HLS / LL-HLS Phase 4 target-server validation
 
+**Latest source-only follow-up — 2026-10-05:**
+[client stability repairs](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md) correct
+pause/startup progress monitoring and independent HTTP/readiness budgets, with
+eight new regression cases prepared. **NOT EXECUTED IN CODEX**; candidate
+tests/type/build/image and live acceptance are pending. Retain the working
+exact-73 service. The next validation is one grouped later checkpoint, beginning
+with isolated client-checks; historical 52-test and deployment results below do
+not validate this new candidate. No additional ad-hoc operator action now.
+
 Repository assets prepared on 2026-10-04. **The automated/image preparation and
 activation/invalid-input gates passed at exact application `93f1fa63`;
 the first playback attempt FAILED and normal login then timed out.

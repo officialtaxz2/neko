@@ -15,9 +15,9 @@ const manifest = '#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",URI="audio/i
 const child = '#EXTM3U\n#EXT-X-MAP:URI="init-1.mp4"\n#EXTINF:6,\nseg-1.m4s\n'
 const flush = async () => { await new Promise(setImmediate); await new Promise(setImmediate) }
 
-function harness({ eligible = true, autoplay = true, fetcher, mse = false } = {}) {
+function harness({ eligible = true, autoplay = true, fetcher, mse = false, mseAttach } = {}) {
   let now = 0, id = 0, revoked = false
-  const timers = new Map(), status = [], events = [], requests = []
+  const timers = new Map(), status = [], events = [], requests = [], playing = [], playable = []
   const exports = {}
   const window = {
     setTimeout(callback, delay) { const key = ++id; timers.set(key, { at:now + delay, callback }); return key },
@@ -45,7 +45,7 @@ function harness({ eligible = true, autoplay = true, fetcher, mse = false } = {}
       if (path === './protocol.js') return protocol
       if (path === './player' && mse) return {
         mseSupported: () => true,
-        createMSEPlayer(video) { video.src = 'blob:synthetic-hls'; return { destroy() {} } },
+        createMSEPlayer(video) { video.src = 'blob:synthetic-hls'; mseAttach?.(video); return { destroy() {} } },
       }
       throw new Error(`Unexpected module: ${path}`)
     },
@@ -61,7 +61,7 @@ function harness({ eligible = true, autoplay = true, fetcher, mse = false } = {}
   const controller = new exports.HLSMediaController('wss://neko.example/prefix/ws', 'hls', {
     sendEvent: (event, payload) => events.push({ event, payload }), eligible: () => eligible,
     eventSocketOpen: () => true, autoplay: () => autoplay, setStatus: (state, detail) => status.push({ state, detail }),
-    setPlayer() {}, setPlayable() {}, setPlaying() {}, setMuted() {}, resolution() {},
+    setPlayer() {}, setPlayable: (value) => playable.push(value), setPlaying: (value) => playing.push(value), setMuted() {}, resolution() {},
   })
   controller.attach(video)
   const advance = async (ms) => {
@@ -78,7 +78,7 @@ function harness({ eligible = true, autoplay = true, fetcher, mse = false } = {}
   const negotiate = async () => {
     controller.start(); controller.handleCapabilities(capabilities); controller.handleOffer(offer); await flush()
   }
-  return { controller, video, timers, status, events, requests, advance, negotiate, revoke: () => { revoked = true } }
+  return { controller, video, timers, status, events, requests, playing, playable, advance, negotiate, revoke: () => { revoked = true } }
 }
 
 test('unadvertised and ineligible HLS modes terminate without a bootstrap or another backend', async () => {
@@ -226,15 +226,26 @@ test('initial HLS readiness cannot later turn buffering into a startup timeout',
 
 test('HLS that never becomes playable still times out and clears resources', async () => {
   for (const mse of [false, true]) {
-    const h = harness({ autoplay:false, mse })
-    await h.negotiate()
-    await h.advance(29999)
-    assert.notEqual(h.status.at(-1).state, 'terminal')
-    await h.advance(1)
-    assert.deepEqual(h.status.at(-1), { state:'terminal', detail:'HLS playback did not become ready; retry manually' })
-    assert.equal(h.video.src, '')
-    assert.equal(h.video.handlers.size, 0)
-    assert.equal(h.timers.size, 0)
+    for (const pendingPlay of [false, true]) {
+      const h = harness({ autoplay:false, mse })
+      await h.negotiate()
+      let complete, playing
+      if (pendingPlay) {
+        h.video.play = () => {
+          h.video.paused = false
+          return new Promise((resolve) => { complete = resolve })
+        }
+        playing = h.controller.play()
+      }
+      await h.advance(29999)
+      assert.notEqual(h.status.at(-1).state, 'terminal')
+      await h.advance(1)
+      assert.deepEqual(h.status.at(-1), { state:'terminal', detail:'HLS playback did not become ready; retry manually' })
+      assert.equal(h.video.src, '')
+      assert.equal(h.video.handlers.size, 0)
+      assert.equal(h.timers.size, 0)
+      if (pendingPlay) { complete(); assert.equal(await playing, false) }
+    }
   }
 })
 
@@ -288,4 +299,180 @@ test('stale readiness events cannot cancel the new player deadline after private
   await h.advance(1)
   assert.deepEqual(h.status.at(-1), { state:'terminal', detail:'HLS playback did not become ready; retry manually' })
   assert.equal(h.timers.size, 0)
+})
+
+test('a pending first Play keeps the startup budget separate from the stall budget', async () => {
+  for (const mse of [false, true]) {
+    const h = harness({ mse })
+    await h.negotiate()
+    let complete
+    h.video.play = () => {
+      h.video.playCalls++; h.video.paused = false
+      return new Promise((resolve) => { complete = resolve })
+    }
+    const playing = h.controller.play()
+    await h.advance(25000)
+    assert.equal(h.status.some(({state}) => state === 'terminal'), false)
+    h.video.readyState = 3
+    h.video.fire('canplay')
+    complete()
+    assert.equal(await playing, true)
+    h.video.fire('playing')
+    await h.advance(20000)
+    assert.equal(h.status.at(-1).state, 'streaming')
+    await h.advance(1000)
+    assert.deepEqual(h.status.at(-1), { state:'terminal', detail:'HLS playback stalled; retry manually' })
+    assert.equal(h.video.src, '')
+    assert.equal(h.timers.size, 0)
+  }
+})
+
+test('a long deliberate Pause is not counted as a stall when Play resumes', async () => {
+  for (const mse of [false, true]) {
+    const h = harness({ mse })
+    await h.negotiate()
+    h.video.readyState = 3
+    h.video.fire('canplay')
+    await flush()
+    h.video.fire('playing')
+    h.video.currentTime = 1
+    await h.advance(1000)
+    h.controller.pause()
+    await h.advance(46000)
+    let complete
+    h.video.play = () => {
+      h.video.paused = false
+      return new Promise((resolve) => { complete = resolve })
+    }
+    const resumed = h.controller.play()
+    // paused becomes false before the asynchronous playing event is dispatched.
+    await h.advance(1000)
+    assert.equal(h.status.some(({state}) => state === 'terminal'), false)
+    complete()
+    assert.equal(await resumed, true)
+    h.video.fire('playing')
+    for (let second = 2; second <= 6; second++) {
+      h.video.currentTime = second
+      await h.advance(1000)
+    }
+    assert.equal(h.status.at(-1).state, 'streaming')
+    assert.equal(h.requests.filter(({url}) => url.endsWith('/session')).length, 1)
+    h.controller.stop()
+    assert.equal(h.timers.size, 0)
+  }
+})
+
+test('repeated Play on an unpaused frozen player cannot extend the stall deadline', async () => {
+  const h = harness()
+  await h.negotiate()
+  h.video.readyState = 3
+  h.video.fire('canplay')
+  await flush()
+  h.video.fire('playing')
+  await h.advance(19000)
+  assert.equal(await h.controller.play(), true)
+  await h.advance(2000)
+  assert.deepEqual(h.status.at(-1), { state:'terminal', detail:'HLS playback stalled; retry manually' })
+  assert.equal(h.timers.size, 0)
+})
+
+test('an already queued playing event cannot report playback after a deliberate Pause', async () => {
+  const h = harness()
+  await h.negotiate()
+  h.video.readyState = 3
+  h.video.fire('canplay')
+  await flush()
+  const queuedPlaying = h.video.handlers.get('playing')
+  h.controller.pause()
+  queuedPlaying()
+  assert.equal(h.playing.at(-1), false)
+  assert.notEqual(h.status.at(-1).state, 'streaming')
+  await h.advance(35000)
+  assert.equal(h.status.some(({state}) => state === 'terminal'), false)
+  h.controller.stop()
+})
+
+test('immediate MSE readiness completes autoplay after attachment and preserves manual Play', async () => {
+  for (const autoplay of [true, false]) {
+    const h = harness({ mse:true, autoplay, mseAttach(video) { video.readyState = 3; video.fire('canplay') } })
+    await h.negotiate()
+    assert.equal(h.video.playCalls, autoplay ? 1 : 0)
+    assert.equal(h.playable.at(-1), true)
+    if (autoplay) h.video.fire('playing')
+    for (let second = 1; second <= 35; second++) {
+      h.video.currentTime = second
+      await h.advance(1000)
+    }
+    assert.equal(h.status.some(({state}) => state === 'terminal'), false)
+    h.controller.stop()
+    assert.equal(h.timers.size, 0)
+  }
+})
+
+test('not-ready polls and consecutive HTTP failures use independent budgets', async () => {
+  let state = 'ready'
+  const h = harness({ autoplay:false, fetcher: async (url) => {
+    if (url.endsWith('/session')) return new Response(JSON.stringify({ mode:'hls', master:masterPath, idle_expires_in_ms:30000 }), { status:201 })
+    if (url.endsWith('/keepalive')) return new Response(null, { status:204 })
+    if (state === 'fault') throw new Error('synthetic network failure')
+    if (state === 'warming') return new Response(null, { status:503 })
+    return new Response(url.endsWith('/index.m3u8') ? child : manifest)
+  } })
+  await h.negotiate()
+  state = 'warming'
+  await h.advance(3000)
+  state = 'fault'
+  await h.advance(1000)
+  assert.equal(h.status.some(({state}) => state === 'terminal'), false,
+    'one HTTP failure was incorrectly added to not-ready polls')
+  state = 'warming'
+  await h.advance(1000)
+  state = 'ready'
+  await h.advance(1000)
+  assert.ok(h.video.src)
+  state = 'fault'
+  await h.advance(2000)
+  assert.equal(h.status.some(({state}) => state === 'terminal'), false)
+  await h.advance(1000)
+  assert.deepEqual(h.status.at(-1), { state:'terminal', detail:'HLS HTTP connection failed; retry manually' })
+  assert.equal(h.video.src, '')
+  assert.equal(h.timers.size, 0)
+})
+
+test('private resume gets a fresh bounded readiness interval while renewing the same lease', async () => {
+  const h = harness({ autoplay:false, fetcher: async (url) => {
+    if (url.endsWith('/session')) return new Response(JSON.stringify({ mode:'hls', master:masterPath, idle_expires_in_ms:30000 }), { status:201 })
+    if (url.endsWith('/keepalive')) return new Response(null, { status:204 })
+    return new Response(null, { status:503 })
+  } })
+  await h.negotiate()
+  // negotiate() includes the first not-ready poll at t=0.
+  await h.advance(28000)
+  assert.equal(h.status.at(-1).state, 'connecting')
+  h.controller.setPrivatePaused(true)
+  await h.advance(46000)
+  assert.equal(h.status.at(-1).state, 'paused')
+  h.controller.setPrivatePaused(false)
+  await h.advance(29000)
+  assert.equal(h.status.at(-1).state, 'connecting')
+  await h.advance(1000)
+  assert.deepEqual(h.status.at(-1), { state:'terminal', detail:'HLS media did not become ready' })
+  assert.equal(h.requests.filter(({url}) => url.endsWith('/session')).length, 1)
+  assert.ok(h.requests.filter(({url}) => url.endsWith('/keepalive')).length >= 6)
+  assert.equal(h.timers.size, 0)
+})
+
+test('bootstrap unavailability has a fixed detail and still requires an explicit Retry', async () => {
+  for (const status of [503, 500]) {
+    const h = harness({ fetcher: async () => new Response('untrusted-secret https://other.example/private', { status }) })
+    await h.negotiate()
+    assert.deepEqual(h.status.at(-1), { state:'terminal', detail:status === 503 ?
+      'HLS media was unavailable at startup; retry manually' : 'HLS bootstrap failed; retry manually' })
+    await h.advance(60000)
+    assert.equal(h.requests.length, 1)
+    assert.equal(h.events.filter(({event}) => event.endsWith('/create')).length, 1)
+    assert.equal(h.video.src, '')
+    assert.equal(h.timers.size, 0)
+    assert.doesNotMatch(h.status.at(-1).detail, /secret|example|private/)
+  }
 })

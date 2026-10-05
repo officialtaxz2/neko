@@ -6,6 +6,13 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 
 ## Status
 
+Latest HLS source review (2026-10-05): fixes paused-time stall accounting,
+monitoring before first readiness and mixed HTTP/readiness error budgets, plus
+player-event handling. Eight regression cases are prepared; **new target
+tests/build/deployment and browser acceptance are pending**. The running server
+remains exact `73d5ff6d`, with previously reported HLS/WebRTC playback. See the
+[focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
+
 ### IMPLEMENTED
 
 Repository implementation is listed here independently of runtime validation. The latest upstream integration is statically reviewed and the operator has confirmed that all applicable target-server build and regression checks passed after correcting the Brave policy mount filename. The opt-in adaptive profile was separately built, tuned and accepted on the target server on 2026-09-10 for the documented three-viewer scenario. These acceptances apply to the tested deployment; they are not universal device-support claims.

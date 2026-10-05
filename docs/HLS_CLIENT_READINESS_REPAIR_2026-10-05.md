@@ -462,6 +462,15 @@ first-start/recovery, exact browser failure cause and grouped acceptance open.**
 
 ## Next: consolidate startup, frozen-picture and room-event investigation
 
+The requested follow-up static work is now recorded in
+[the client stability review](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
+It corrects paused-time stall accounting, premature first-play monitoring and
+mixed HTTP/readiness failure counts, plus bounded attachment/event handling
+and fixed bootstrap availability detail. Eight regression cases are prepared;
+tests/type/build and live validation of this new candidate remain pending.
+The active target remains exact-73. Keep the later checks grouped; no new
+ad-hoc operator action is requested by the source-only review.
+
 The operator could not reliably answer the follow-up about the exact five-minute
 interval and reports possible random reconnects/room actions, without enough
 detail to correlate transport, cause or duration. The operator explicitly found

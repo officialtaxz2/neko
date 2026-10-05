@@ -393,8 +393,13 @@ Bootstrap sends the one-time ticket only in the same-origin HTTPS POST body. The
 The initial player readiness deadline is 30 seconds and is disarmed on the
 first current-player `canplay` or `playing` event; later buffering cannot
 reactivate it. It is armed before attachment so immediate readiness is covered.
-The separate 20-second progress watchdog remains active when playback is
-requested and the element is not paused. This client-only correction follows
+The separate 20-second progress watchdog remains active after first readiness
+when playback is requested and the element is not paused. The follow-up
+[client stability review](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md) gates that
+watchdog until readiness, resets its clock on deliberate resume, separates
+HTTP/readiness failure counts and prepares eight new regression cases. This
+new candidate is statically reviewed only; target automation/build/browser
+validation remain pending. The earlier client-only correction follows
 the first-picture/premature-timeout report at a7ffb8b1. Its isolated target gate
 reproduced the old fault and passed all 52 repaired client tests/type/build;
 scoped image preparation passed with Client-Image-Exitcode 0, a fresh client
