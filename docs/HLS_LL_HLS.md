@@ -1,6 +1,12 @@
 # HLS / Low-Latency HLS passive delivery contract
 
-Status: **Phases 1–3 and Phase 4 assets implemented on testing. Live HLS bootstrap at 71a14d21 failed; default-off recovery/browser passed. The isolated source-phase diagnostic reproduced the admission defect in three cold runs with aligned control passing. Common high-source fan-out correction implemented and statically reviewed; NEXT isolated repair A/B while the confirmed target stays HLS-disabled. Full repair preparation, live picture/audio, authorization/lifecycle and grouped device/resource acceptance remain pending; no automatic selection or full HLS acceptance claim exists**.
+Status: **Phases 1–3 and Phase 4 assets implemented on testing. Exact-68 client
+tests/type/build and scoped image preparation passed; its activation and live
+acceptance remain pending. The prior exact-73 conventional-HLS service is still
+running, with reported HLS/WebRTC playback and unresolved startup/frozen-picture
+symptoms. NEXT activate the prepared exact-68 image and run one bounded browser
+checkpoint. Authorization/lifecycle and grouped device/resource acceptance
+remain pending; no automatic selection or full HLS acceptance claim exists**.
 
 This document is the normative contract for the first default-off passive/view-only HTTP-streaming prototype. It specializes the encoded-source/subscription and participant-delivery boundary in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It does not authorize a second desktop capture, a stable-deployment change or a claim that any untested device supports the proposed path.
 
@@ -398,8 +404,11 @@ when playback is requested and the element is not paused. The follow-up
 [client stability review](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md) gates that
 watchdog until readiness, resets its clock on deliberate resume, separates
 HTTP/readiness failure counts and prepares eight new regression cases. This
-exact-68 candidate passed the supplied isolated 60-test/type/build gate;
-image preparation and browser validation remain pending. The earlier client-only correction follows
+exact-68 candidate passed the supplied isolated 60-test/type/build gate and
+scoped image preparation (Image-Prepare-Exitcode 0), with the working exact-73
+service unchanged. Candidate activation and browser validation remain pending;
+the next step is one prepared-image activation and bounded browser checkpoint.
+The earlier client-only correction follows
 the first-picture/premature-timeout report at a7ffb8b1. Its isolated target gate
 reproduced the old fault and passed all 52 repaired client tests/type/build;
 scoped image preparation passed with Client-Image-Exitcode 0, a fresh client

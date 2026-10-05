@@ -5,10 +5,14 @@ Latest requested source-only follow-up (2026-10-05):
 corrects paused-time stalls, monitoring before first readiness and mixed
 HTTP/readiness error counts, with defensive player-event handling. Eight new
 regression cases passed in the supplied exact-68 isolated 60-test/type/build
-gate (Client-Check-Exitcode 0); image and live acceptance remain pending.
+gate (Client-Check-Exitcode 0). Scoped exact-68 image preparation subsequently
+passed with Image-Prepare-Exitcode 0 while the exact-73 service stayed running;
+activation and live acceptance remain pending. All results are supplied target
+evidence, NOT EXECUTED IN CODEX.
 The reported frozen-picture/room-event symptoms are not yet correlated to these
-defects. Prepare exact-68 images with inherited identical backend evidence while
-retaining exact-73, then group later activation/browser checks.
+defects. NEXT activate the prepared exact-68 image at its pinned checkout,
+retaining old images/evidence, then one bounded fresh-window HLS/WebRTC browser
+check. The wider device, authorization/lifecycle and resource gates stay open.
 
 Operator direction recorded on 2026-10-04. This is a required review and validation plan, not a claim that the reported device failures have been reproduced or fixed.
 

@@ -5,12 +5,18 @@
 pause/startup progress monitoring and independent HTTP/readiness budgets, with
 eight new regression cases. The supplied exact-68 isolated gate passed all
 60 tests, TypeScript and build with Client-Check-Exitcode 0.
-**NOT EXECUTED IN CODEX**; candidate image/live acceptance are pending.
-NEXT prepare exact-68 images with the separately pinned
-`prepare-hls-client-stability.sh`, passed private client report and identical
-exact-73 backend evidence. Retain the working service; group activation/browser
-follow-up later. Historical 52-test/deployment results apply to their commits;
-no repeated client gate or extra browser questionnaire now.
+Scoped image preparation subsequently passed with Image-Prepare-Exitcode 0
+using helper `28d081a4`, fresh client build and base/Brave images, while the
+working exact-73 service stayed running. Backend evidence is inherited from
+identical sources, not freshly rerun. **NOT EXECUTED IN CODEX**; candidate
+activation/live acceptance remain pending. The application checkout is now
+exact `68dbdd4a8dd798886302b235c1f8f208452e0c6e`. NEXT activate that prepared
+image using `deploy-hls-media.sh enable` and private evidence
+`/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`, then the single bounded
+browser check in the linked review. Keep the checkout pinned; do not pull later
+tooling/docs as a prepared image. Retain old images/evidence. Historical
+52-test/deployment results apply only to their commits; no repeat of completed
+client/image/HTTP-denial gates without a new reason.
 
 Repository assets prepared on 2026-10-04. **The automated/image preparation and
 activation/invalid-input gates passed at exact application `93f1fa63`;

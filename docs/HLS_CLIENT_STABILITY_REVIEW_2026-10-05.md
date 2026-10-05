@@ -1,11 +1,13 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **TARGET CLIENT GATE PASSED / IMAGE AND LIVE ACCEPTANCE PENDING**.
-The supplied exact-68 target result passed all 60 tests, TypeScript and build.
+Status: **TARGET CLIENT AND IMAGE GATES PASSED / ACTIVATION AND LIVE ACCEPTANCE PENDING**.
+The supplied exact-68 target result passed all 60 tests, TypeScript and build;
+scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
 The latest supplied running deployment remains exact application
 `73d5ff6d29110e3dd06999726a7e88718d09ea23`, conventional HLS enabled, with
-WebRTC working. This review changes repository source only.
+WebRTC working. The server checkout is now exact application
+`68dbdd4a8dd798886302b235c1f8f208452e0c6e`; its prepared image is not yet running.
 
 ## What the existing evidence establishes
 
@@ -101,22 +103,23 @@ revocation tests remain. The never-ready case also checks a pending Play with
 Static diff and surrounding-source review completed;
 no dependency, package script, backend or deployment configuration changed.
 The supplied target gate below passed the full client tests, TypeScript check
-and client build. Candidate image preparation and browser acceptance remain
-**PENDING**.
+and client build. Scoped candidate image preparation also passed; candidate
+activation and browser acceptance remain **PENDING**.
 
 ## One grouped target checkpoint later
 
-The isolated client-checks stage below has now passed. Continue with exact-68
-image preparation described at the end of this record; do not rerun the passed
-client stage without a changed source or a new failure.
+The isolated client-checks and scoped image preparation stages below have now
+passed. Continue with exact-68 activation described at the end of this record;
+do not rerun passed preparation without changed source or a new failure.
 
 Keep the working exact-73 service and private evidence while this candidate is
 reviewed. Do not repeat completed activation/denial probes or ask the operator
 to answer another ad-hoc questionnaire now. The new repository commit is a
 candidate, not a deployed or accepted image.
 
-First run the existing client validation service against an isolated checkout
-of the exact reviewed candidate, with the server fixture tree retained:
+The completed first stage ran the existing client validation service against
+an isolated checkout of the exact reviewed candidate, with the server fixture
+tree retained:
 
 ```bash
 # Real target server only; cwd is the isolated candidate Git/source root.
@@ -130,13 +133,12 @@ the full candidate commit and final result. The older
 pinned to the earlier a7ff-to-73 checkpoint; do not reuse them for this repair
 or treat the prior 52-test result as validation of these changes.
 
-Only after that passes, prepare the exact candidate image with the validated
-unchanged backend and rollback provenance. Group the live browser checks into
-one clearly described checkpoint: cold and warm HLS start, picture/audio during
-chat/join/control actions, and deliberate Pause/resume with a simultaneous
-WebRTC viewer. Record one compact result; collect failed-state diagnostics
-before recovery only if it fails. No image preparation, activation or live
-acceptance has been performed for this candidate.
+The completed image stage uses the validated unchanged backend and prior-image
+provenance. Group the next live browser check into one clearly described
+checkpoint with a simultaneous WebRTC viewer. The bounded first activation
+check below precedes wider cold/warm, join and deliberate Pause/resume checks.
+Record one compact result; collect failed-state diagnostics before recovery
+only if needed. No candidate activation or live acceptance has been supplied.
 
 The reported frozen picture and event-associated reconnects remain
 uncorrelated; these source repairs are not a confirmed explanation of all
@@ -173,7 +175,7 @@ exact client candidate, not a fresh server/codec/fuzz run, image deployment or
 browser playback interval. The reported frozen picture and event-associated
 reconnects remain uncorrelated pending live candidate validation.
 
-## Next operator block: prepare exact-68 images while exact-73 stays running
+## Completed image preparation: exact-68 while exact-73 stays running
 
 `deploy/prepare-hls-client-stability.sh` is a separate target-only helper,
 statically reviewed in the later tooling commit. Keep the application candidate
@@ -207,9 +209,73 @@ exact-73/a7ff backend; the passed 60-test result is not represented as an A/B
 reproduction of old code.
 
 The operator block first runs `bash -n` on the extracted helper, then invokes
-it once with these arguments. Syntax checking, image preparation and live
-candidate acceptance are **PENDING / NOT EXECUTED IN CODEX**. Only after the
-image block passes should the existing exact-image deployer activate it with
-rollback evidence and the grouped browser test. Keep old images/evidence and
-`master`; no renewed browser questionnaire or completed HTTP-denial gate is
-requested during this preparation block.
+it once with these arguments. Supplied syntax checking and image preparation
+passed as recorded below; candidate activation/live acceptance remain
+**PENDING / NOT EXECUTED IN CODEX**. Keep old images/evidence and `master`;
+no completed HTTP-denial gate is repeated during this preparation block.
+
+## Supplied exact-68 image preparation passed; activation next
+
+The supplied complete target output used tooling commit
+`28d081a4430b43ba03d074157e009670f93b6b9a` and preparer blob
+`a3494e08414ddb5cf6d2f95294f6fc6325d1a93d`. The extracted helper passed
+`bash -n`, checked the passed private client report and baseline provenance,
+then fast-forwarded the clean application checkout from exact-73 to exact-68.
+
+The Docker client stage rebuilt with Vite 6.4.3: 673 modules, fresh main bundle
+`index-urce48rY.js`, completed in 5.23 seconds. The unchanged server/runtime
+build layers were cached. Both `my-neko/base:hls-68dbdd4a8dd7` and
+`my-neko/brave:hls-68dbdd4a8dd7` were built; the Brave image installed version
+1.96.61. No fresh Go, codec or fuzz run is shown or claimed. Backend evidence
+is inherited through the identical exact-73/a7ff source and preparation chain.
+
+The private directory `/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`
+contains the candidate image-ID records, inherited/client evidence references,
+preparation log, snapshot and completed validation marker. The helper's final
+checks found the prior exact-73 container and image unchanged. The output ended
+with `CLIENT STABILITY IMAGE GATE PASSED; backend evidence inherited; running
+service unchanged.` and `Image-Prepare-Exitcode: 0`. Actual candidate image IDs
+are retained in private `images.txt`, not printed in this supplied output;
+Docker export digests are not substituted for those inspected IDs.
+
+These are supplied target results, **NOT EXECUTED IN CODEX**. Application
+checkout exact-68 and live container exact-73 are distinct states.
+
+The next operator block activates the prepared image once, using the existing
+deployer and exact evidence directory. Keep the application checkout pinned;
+do not pull later docs/tooling commits before using this prepared image:
+
+```bash
+set +e
+bash -Ee -o pipefail <<'NEKO_HLS_START'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "68dbdd4a8dd798886302b235c1f8f208452e0c6e"
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7
+test "$(stat -c %a "$output")" = 700
+bash deploy/deploy-hls-media.sh enable "$output"
+NEKO_HLS_START
+printf 'Start-Exitcode: %s\n' "$?"
+```
+
+This restarts Neko briefly. The unchanged deployer verifies the preparation
+marker/image ID and saves the running image for rollback before stopping it.
+The current conventional-HLS overlay and Caddy configuration are retained;
+no second default-off baseline restart or repeat of the unchanged 19 denial
+probes is required at this client-only checkpoint. No fresh public denial
+result is claimed. A healthy-container result does not establish media success.
+
+After Start-Exitcode 0, open a fresh private browser window at
+`https://neko.taxzvps.de/?media=hls` and log in as admin for diagnostics. Observe
+whether moving picture/audio start without Retry. Keep it running for five
+minutes; in a separate normal WebRTC window at `https://neko.taxzvps.de/`, send
+one chat message and take/release control once. Report start without Retry or
+Retry needed, five-minute stability or the exact fixed UI error, and whether
+WebRTC continues. No multi-part questionnaire is needed. Preserve the failed
+state for a bounded diagnostic if it fails; do not infer a warm-up cause from
+"HLS failed" alone.
+
+Activation, this bounded browser interval and wider device, authorization/
+lifecycle, latency/resource/isolation, dependency and final grouped acceptance
+remain pending. Preserve the prior images/evidence and pinned `master`.

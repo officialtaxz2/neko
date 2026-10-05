@@ -7,16 +7,21 @@ failure budgets, with defensive player-event handling and fixed bootstrap
 availability detail. The supplied exact-68 isolated target gate passed all
 60 client tests, TypeScript and build (Client-Check-Exitcode 0); report
 `/opt/docker/nekoNew/neko-hls-client-check-68dbdd4a-lJbw35xa`. These are supplied
-server results, **NOT EXECUTED IN CODEX**. Candidate image/live acceptance and
-dependency maintenance remain pending.
+server results, **NOT EXECUTED IN CODEX**. Scoped exact-68 image preparation
+also passed with Image-Prepare-Exitcode 0 using helper `28d081a4`: fresh client
+build, base/Brave images and private preparation evidence recorded. Backend
+evidence is inherited through identical exact-73 sources; no fresh Go/codec/
+fuzz result is claimed. Candidate activation/live acceptance and dependency
+maintenance remain pending.
 The latest supplied running deployment stays exact `73d5ff6d`, conventional
-HLS enabled, with WebRTC working. NEXT extract the separately pinned target-only
-`prepare-hls-client-stability.sh` helper and prepare exact-68 images using the
-passed client report and identical exact-73 backend evidence; retain the live
-service, then group later activation/browser checks. Do not rerun the passed
-client gate without a new reason. Prior results below apply only to their
-recorded commits. `master`
-remains pinned at `d9105ef8`.
+HLS enabled, with WebRTC working; the server checkout is now exact `68dbdd4a`.
+NEXT activate its prepared image with `deploy-hls-media.sh enable` and private
+evidence `/opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7`, then one bounded
+fresh-window HLS/WebRTC browser check. Keep that application checkout pinned;
+do not pull later tooling/docs as the prepared application. Retain old images
+and evidence. Do not repeat passed client/image/HTTP-denial gates without a
+new reason. Prior results below apply only to their recorded commits.
+`master` remains pinned at `d9105ef8`.
 
 ## Purpose
 

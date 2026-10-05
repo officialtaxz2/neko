@@ -468,10 +468,13 @@ It corrects paused-time stall accounting, premature first-play monitoring and
 mixed HTTP/readiness failure counts, plus bounded attachment/event handling
 and fixed bootstrap availability detail. The supplied exact-68 isolated target
 gate then passed all 60 tests, TypeScript and build with Client-Check-Exitcode 0.
-Image and live validation remain pending. NEXT prepare candidate images with
-the separately pinned stability helper and private passed client report while
-the active target remains exact-73. Keep later activation/browser checks grouped;
-do not repeat the passed client stage without a new reason.
+Scoped exact-68 image preparation subsequently passed with
+Image-Prepare-Exitcode 0 using helper `28d081a4`, fresh client build and both
+images, while the active target remained exact-73. Backend evidence is
+inherited through identical sources. The checkout is now exact-68; activation
+and live validation remain pending. NEXT activate its prepared image with the
+existing deployer, then one bounded fresh-window HLS/WebRTC browser check.
+Do not repeat passed client/image/HTTP-denial gates without a new reason.
 
 The operator could not reliably answer the follow-up about the exact five-minute
 interval and reports possible random reconnects/room actions, without enough

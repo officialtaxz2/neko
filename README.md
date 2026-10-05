@@ -9,9 +9,10 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 Latest HLS source review (2026-10-05): fixes paused-time stall accounting,
 monitoring before first readiness and mixed HTTP/readiness error budgets, plus
 player-event handling. The supplied exact-68 target gate passed **all 60 client
-tests, TypeScript and build**; image preparation/deployment and browser
-acceptance remain pending. The running server
-remains exact `73d5ff6d`, with previously reported HLS/WebRTC playback. See the
+tests, TypeScript and build**. Scoped exact-68 image preparation also passed
+(`Image-Prepare-Exitcode: 0`); deployment and browser acceptance remain pending.
+The server checkout is now exact `68dbdd4a`, while the running service remains
+exact `73d5ff6d`, with previously reported HLS/WebRTC playback. See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 
 ### IMPLEMENTED
