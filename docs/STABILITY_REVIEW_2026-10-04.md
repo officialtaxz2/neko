@@ -92,7 +92,8 @@ acceptance. Full exact 97ba4ad9 checks/image preparation subsequently passed:
 codec tests and server/base/Brave builds, with Repair-Check-Exitcode 0. Audit
 exit 1 remains open findings. Default-off deployment of hls-97ba4ad9ab3e then
 passed with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes.
-NEXT confirm normal login/picture/audio/control; enabled isolation/device acceptance
+The operator reported normal login/picture/audio/control work. NEXT is same-image
+conventional HLS enablement and 19 denial probes; enabled isolation/device acceptance
 remains pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Live HLS stays disabled.

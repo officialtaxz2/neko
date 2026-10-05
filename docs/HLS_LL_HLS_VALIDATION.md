@@ -15,8 +15,9 @@ including 30.19 seconds of scene cuts in generation 1. Exact 97ba4ad9
 automated/image preparation then passed with Repair-Check-Exitcode 0: 47 client
 tests, TypeScript/build, 13 Go packages, both fuzz jobs, all three codec tests
 and server/base/Brave builds. Default-off repair-image deployment then passed
-with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. NEXT is
-manual normal login/picture/audio/control confirmation; working HLS playback
+with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. The
+operator reported the requested normal browser check works. NEXT is same-image
+conventional HLS activation and its 19 HTTP denial probes; working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -96,7 +97,7 @@ and applicable repairs before final acceptance. An unavailable registry or
 invalid report leaves this review pending. Do not run `npm audit fix --force`.
 If a repair changes the commit, repeat the exact automated/image gate.
 
-### GOP-repair default-off deployment passed: browser check NEXT
+### GOP-repair default-off deployment/browser checkpoint passed
 
 The supplied 97ba4ad9 preparation passed 47 client tests, TypeScript/build,
 all 13 configured Go packages, both fuzz jobs, the trailing server/plugin build,
@@ -125,9 +126,10 @@ preserving adaptive/WebCodecs. Active sessions disconnect. A failed health
 startup attempts the saved prior image. The supplied baseline run returned
 Baseline-Exitcode 0 with helper blob c6f52dc80fdf605ec908f3fe3856ce23e015e494,
 healthy my-neko/brave:hls-97ba4ad9ab3e and 2/2 public disabled-route 404 probes.
-This is target evidence, **NOT EXECUTED IN CODEX**. Fresh normal login/picture/
-audio/control confirmation is pending; supply that result before a separate
-enabled block. Existing Caddy settings and old private evidence are retained.
+The operator then reported the requested normal login/picture/audio/control
+check works. This is bounded target evidence, **NOT EXECUTED IN CODEX**; wider
+role/recovery/device checks are not implied. NEXT use section 2's same-image
+conventional HLS enable/probe block. Caddy and old private evidence are retained.
 Do not infer enabled HLS playback from this baseline.
 
 Check default-off public routes with the credential-free probe:
@@ -191,7 +193,8 @@ The subsequent section 2 activation passed, but the operator again reported HLS
 bootstrap failure followed by all streams stopping. The subsequent read-only
 diagnostic, default-off restoration and isolated GOP comparison passed, as
 recorded below; exact 97ba4ad9 preparation and default-off deployment then passed.
-NEXT is its manual browser check. The original activation used section 2's plain
+The operator then reported normal browser checks work; NEXT is same-image HLS
+activation and its HTTP probes. The original activation used section 2's plain
 image/probe helper, keeping this same application commit and evidence directory.
 Do not repeat the completed Caddy source merge. Public valid-lease playback,
 production capture skew and the full lifecycle/device/resource matrix remain
@@ -215,8 +218,8 @@ same-image activation also passed with Enable-Exitcode 0, healthy service and
 19/19 HTTP denial probes; the operator again reported failed HLS bootstrap and
 all streams stopping afterward. Diagnosis/default-off recovery and the isolated
 GOP A/B gate subsequently passed. Exact 97ba4ad9 preparation and default-off
-deployment also passed; fresh normal browser confirmation remains pending.
-The prepared 97ba4ad9 activation block below follows that confirmation.
+deployment also passed; the operator reported the requested normal browser
+check works. NEXT run the prepared 97ba4ad9 activation/probe block below.
 Do not reuse the old preparation
 marker or repeat the completed source-merging Caddy activation.
 
@@ -271,7 +274,7 @@ printf 'Enable-Exitcode: %s\n' "$?"
 ```
 
 Adjust the direct port/prefix to the actual bind when needed. The deploy helper
-captures the running image under a rollback tag **before** stopping the service,
+keeps the rollback tag saved before the first baseline replacement,
 preserves adaptive/WebCodecs, enables HLS using the tested image and waits for
 health. Startup failure attempts an immediate restore without the HLS overlay.
 HTTP probe failure does not itself roll back; review/rollback explicitly.
@@ -399,8 +402,8 @@ not establish the all-stream outage's unique cause or production playback.
 
 Full checks/build and fresh-image preparation subsequently passed at exact
 97ba4ad9, followed by healthy default-off deployment and 2/2 disabled-route
-probes, as recorded in section 1. NEXT confirm normal login/picture/audio/control
-before a separate enabled block.
+probes and reported normal browser checks, as recorded in section 1. NEXT is
+the separate same-image HLS activation/probe block.
 Preserve prior evidence and the existing Caddy configuration.
 
 ### First bounded picture/audio checkpoint (repeat after diagnosis/repair)

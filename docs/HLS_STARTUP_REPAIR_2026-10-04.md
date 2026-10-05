@@ -275,9 +275,9 @@ The helper verifies preparation/image identity, saves the currently running
 image for rollback and starts the prepared repair image without HLS while
 preserving adaptive/WebCodecs overlays. This restarts active sessions; startup
 health failure attempts the saved prior image. The supplied deployment result
-is recorded below; browser confirmation remains pending.
+and browser response are recorded below.
 
-## Exact GOP-repair default-off deployment passed — 2026-10-05
+## Exact GOP-repair default-off deployment/browser checkpoint passed — 2026-10-05
 
 At unchanged application 97ba4ad9ab3e635da936a58c8a7ec795da05ba46, the tracked
 deployer recorded blob c6f52dc80fdf605ec908f3fe3856ce23e015e494 and completed
@@ -287,10 +287,11 @@ probes returned the expected 404 (2/2). The helper retained the new private
 directory and recorded its snapshot. These are supplied target results,
 **NOT EXECUTED IN CODEX**.
 
-Fresh manual normal login/picture/audio/control confirmation on this exact
-image is pending; the earlier browser pass at 80020d99 does not fill this gate.
-NEXT confirm that baseline in a private browser window before enabling HLS on
-the same image and repeating its HTTP boundary plus bounded actual playback/
-room-event checkpoint. Preserve evidence, Caddy settings and master. Full
+The operator answered the requested fresh normal login/picture/audio/control
+check with "ja klappt alles soweit ich denke". This is bounded reported browser
+evidence on the new image; no detailed role/recovery/device matrix or enabled
+HLS playback is implied. NEXT enable conventional HLS on this same image and
+repeat its 17 public plus two direct cleartext-denial probes, then the bounded
+actual picture/audio/room-event checkpoint. Preserve evidence, Caddy and master. Full
 enabled HLS, isolation, authorization/lifecycle and device acceptance remain
 open; a healthy container and two disabled routes do not establish playback.
