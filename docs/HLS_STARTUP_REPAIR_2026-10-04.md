@@ -35,8 +35,11 @@ followed around 30 seconds by an initial-readiness timeout. Retry restored HLS
 and WebRTC kept working. Client-only repair 73d5ff6d disarms the obsolete start
 timer on readiness. The supplied read-only diagnosis and isolated client gate
 then passed with old-fault reproduction and all 52 repaired tests/type/build
-(Client-Check-Exitcode 0). NEXT [scoped client-only image preparation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-client-only-image-preparation).
-The live application remains a7ffb8b1 with conventional HLS enabled.
+(Client-Check-Exitcode 0). Scoped exact-73d5ff6d image preparation then passed
+with Client-Image-Exitcode 0: fresh client build, cached unchanged server/runtime
+layers, both images and private snapshot/marker. The application checkout is
+now 73d5ff6d, while live a7ffb8b1 still has conventional HLS enabled.
+NEXT [exact-73 default-off deployment and normal-browser confirmation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-default-off-deployment-and-browser-check).
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -1281,7 +1284,8 @@ change is included. See [the client repair record and next exact block](HLS_CLIE
 
 That read-only/client gate subsequently passed, as recorded below. The live
 service stayed unchanged. The client repair is **NOT EXECUTED IN CODEX**;
-new image preparation/deployment and sustained/grouped acceptance remain pending.
+scoped image preparation subsequently passed as recorded below; new image
+deployment and sustained/grouped acceptance remain pending.
 
 ## Client-readiness A/B/type/build and live diagnosis passed — 2026-10-05
 
@@ -1301,9 +1305,31 @@ Client-Check-Exitcode 0. Evidence is the private a7ff subdirectory
 service were unchanged. Native/MSE/lifecycle regression coverage supports the
 controlled client correction; no repaired image is deployed yet.
 
-NEXT the [pinned client-only image preparation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-client-only-image-preparation)
-with application 73d5ff6d and independent tooling 4a957f3e. Exact client success
+The [scoped client-only image preparation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#completed-target-block-client-only-image-preparation)
+uses application 73d5ff6d and independent tooling 4a957f3e. Exact client success
 and unchanged a7ff backend source evidence are recorded separately; no repeat
 Go/fuzz/codec result at 73 is claimed. The running enabled a7ff service remains
-during image assembly. New images/deployment and sustained/grouped acceptance
-remain pending. **NOT EXECUTED IN CODEX; supplied diagnosis/client gate passed.**
+during image assembly. That image preparation subsequently passed as recorded
+below. New deployment and sustained/grouped acceptance remain pending.
+**NOT EXECUTED IN CODEX; supplied diagnosis/client gate passed.**
+
+## Scoped client repair images prepared — 2026-10-05
+
+The complete supplied target output from tooling 4a957f3e ended with CLIENT
+REPAIR IMAGE GATE PASSED / Client-Image-Exitcode 0. The checkout advanced to
+`73d5ff6d29110e3dd06999726a7e88718d09ea23`, while the enabled a7ff container
+and actual image stayed unchanged through both builds and the private snapshot.
+
+Vite 6.4.3 rebuilt the client as `index-CrHQRMnq.js`, matching the passing
+isolated client gate. Unchanged server build/plugin/runtime layers were cached;
+backend tests/codec/fuzz evidence is inherited separately from a7ff, with no
+fresh backend test or compilation claim. Both `my-neko/base:hls-73d5ff6d2911`
+and `my-neko/brave:hls-73d5ff6d2911` were prepared. The Brave layer installed
+1.96.61. Prepared image IDs, scope records, successful marker and private snapshot
+are in `/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911`.
+
+NEXT the [exact-73 default-off deployment and normal-browser check](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-default-off-deployment-and-browser-check).
+The existing deployer validates the preparation/image IDs before stopping Neko
+and saves the current a7ff image as the new rollback target. Preserve the old
+evidence/tags. Deployment, repaired live playback and grouped acceptance remain
+pending. **NOT EXECUTED IN CODEX; supplied scoped image preparation passed.**

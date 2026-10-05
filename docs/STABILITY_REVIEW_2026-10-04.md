@@ -280,8 +280,13 @@ gate passed in the supplied target output: old-fault reproduction, all 52
 repaired client tests, TypeScript and Vite build, with Client-Check-Exitcode 0.
 The safe live diagnosis passed with a healthy a7ff image, two bootstrap
 successes and 486 delivered segments; no sampled process exit/OOM was found.
-Execution is **NOT EXECUTED IN CODEX**; scoped image preparation and repaired-
-image deployment/sustained playback remain pending in
+Scoped exact-73d5ff6d image preparation then passed with Client-Image-Exitcode 0:
+the client rebuilt as `index-CrHQRMnq.js`, unchanged server/runtime layers were
+cached, and both images/private snapshot/marker were recorded. The checkout
+advanced to 73 while the enabled a7ff service remained running. Backend evidence
+is inherited separately; no fresh backend tests/compilation claim.
+Execution is **NOT EXECUTED IN CODEX**; repaired-image default-off deployment,
+normal-browser confirmation and sustained playback remain pending in
 [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
 The actual browser buffer state,
 prior all-stream outage causes, dependency/device and grouped gates remain open.

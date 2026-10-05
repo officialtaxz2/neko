@@ -397,7 +397,9 @@ The separate 20-second progress watchdog remains active when playback is
 requested and the element is not paused. This client-only correction follows
 the first-picture/premature-timeout report at a7ffb8b1. Its isolated target gate
 reproduced the old fault and passed all 52 repaired client tests/type/build;
-new image preparation/deployment and browser acceptance remain pending in
+scoped image preparation passed with Client-Image-Exitcode 0, a fresh client
+build and cached unchanged server/runtime layers, leaving enabled a7ff running.
+New image default-off deployment and browser acceptance remain pending in
 [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
 
 The selected legacy event bridge now emits `media/hls/state` with `{version:1, backend:"hls", paused:boolean}` before `system/init` and on authoritative room settings updates. It derives private pause from `PrivateMode && !IsAdmin`, independently of control locks. Private pause, stop, detach, logout, replacement and terminal failure invalidate callbacks, destroy MSE, remove listeners, pause the element, remove `src`/`srcObject` and call `load()` to discard URL/MSE buffers. WebRTC recovery never uses this cleanup helper. Private resume reuses the still-valid lease and waits for fresh packaging; Safari autoplay still has one muted retry and the explicit Play gesture. Native fullscreen and supported standard/WebKit PiP remain available.

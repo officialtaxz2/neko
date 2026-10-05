@@ -3,10 +3,12 @@
 Status: client-only repair `73d5ff6d29110e3dd06999726a7e88718d09ea23` is
 implemented and statically reviewed on `testing`. Supplied target results
 passed the old-defect reproduction, all 52 client tests, type/build and the
-read-only live diagnosis, with Client-Check-Exitcode 0. New image preparation/
-deployment and sustained playback remain **PENDING**. All execution was on the
-target server, **NOT EXECUTED IN CODEX**. The running application remains exact
-`a7ffb8b13448a8329c6df24fdcb182ac32ca398c`, with conventional HLS enabled.
+read-only live diagnosis, with Client-Check-Exitcode 0. Scoped exact-73 image
+preparation then passed with Client-Image-Exitcode 0. Deployment/browser and
+sustained playback remain **PENDING**. All execution was on the target server,
+**NOT EXECUTED IN CODEX**. The application checkout is now exact 73d5ff6d;
+the live a7ffb8b1 image remains running with conventional HLS enabled until
+the next default-off deployment.
 
 ## Supplied live evidence
 
@@ -144,7 +146,7 @@ and Vite reported large chunks; neither prevented this gate. No dependency
 update or passing security-audit claim follows. **NOT EXECUTED IN CODEX;
 supplied read-only diagnosis and exact client A/B/tests/type/build passed.**
 
-## Next target block: client-only image preparation
+## Completed target block: client-only image preparation
 
 The helper is pinned independently at tooling commit
 `4a957f3e1f632896b3da3d4b816f5d4008bdbad4`. Application source remains pinned to
@@ -189,7 +191,8 @@ and the private snapshot succeed, with the original live container/image still
 unchanged. Final success qualifies the scoped repair-image preparation, not
 the full enabled acceptance matrix. There is no service recreation, Caddy edit,
 test repetition or HLS enablement change in this block. This helper has only
-been statically reviewed in Codex; target syntax/build/preparation is pending.
+been statically reviewed in Codex; its supplied target syntax/build/preparation
+subsequently passed as recorded below.
 
 After reviewing success, deploy the new image default-off using the established
 helper/new evidence path, confirm normal login/picture/audio/control, then enable
@@ -204,3 +207,63 @@ baseline, keeping the application checkout and matching evidence aligned.
 Earlier all-stream outage causes, TV compatibility, sustained A/V, authorization/
 lifecycle, resource/isolation, dependency remediation and grouped acceptance
 remain open. There is no automatic fallback or full acceptance claim.
+
+## Scoped exact-73 image preparation passed
+
+The complete supplied output identifies helper
+`4a957f3e1f632896b3da3d4b816f5d4008bdbad4`, application
+`73d5ff6d29110e3dd06999726a7e88718d09ea23`, inherited backend a7ffb8b1 and
+final CLIENT REPAIR IMAGE GATE PASSED / Client-Image-Exitcode 0. The clean
+checkout advanced from a7ff to 73; the existing enabled a7ff container/image
+stayed unchanged through both builds and the private snapshot.
+
+The client Docker stage rebuilt with Vite 6.4.3, transforming 673 modules and
+producing `index-CrHQRMnq.js`, matching the isolated passing client gate. The
+server build, plugins and common runtime layers were cached; no fresh backend
+test/codec/fuzz run or new server compilation is claimed. Both
+`my-neko/base:hls-73d5ff6d2911` and `my-neko/brave:hls-73d5ff6d2911` built.
+The Brave stage installed version 1.96.61. The existing large-chunk and manual-
+page warnings did not stop the build.
+
+Private evidence, exact prepared image-ID records, the scope/inherited-source
+records and successful preparation marker are under
+`/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911`. The displayed Docker build
+manifest/config digests are not a supplied runtime container image-ID check.
+The deployer will compare the actual prepared image against `images.txt` before
+stopping the current service. **NOT EXECUTED IN CODEX; supplied scoped image
+preparation passed, new image deployment/browser/acceptance pending.**
+
+## Next target block: exact-73 default-off deployment and browser check
+
+Use the existing deployer without fetching/merging newer documentation/tooling
+commits. This block restarts Neko on the prepared repair image with HLS disabled,
+retains adaptive/WebCodecs overlays, and saves the running a7ff image as
+`my-neko/brave:rollback-hls-73d5ff6d2911` before replacement. A failed startup
+attempt restores that saved image without HLS. Existing a7ff/71 evidence and
+rollback tags remain available; no Caddy edit, image rebuild or pruning.
+
+```bash
+set +e
+bash -e -o pipefail <<'NEKO_HLS_BASELINE'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "73d5ff6d29110e3dd06999726a7e88718d09ea23"
+
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911
+test "$(stat -c %a "$output")" = 700
+
+bash deploy/deploy-hls-media.sh baseline "$output"
+docker compose -f docker-compose.validation.yaml run --rm -T \
+  hls-http-checks disabled </dev/null
+NEKO_HLS_BASELINE
+printf 'Baseline-Exitcode: %s\n' "$?"
+```
+
+Review healthy deployment and the two expected disabled-route 404 probes.
+Then use a new private browser window at `https://neko.taxzvps.de/` without a
+media override and check normal login, changing picture, audio and control.
+This loads the new client bundle. Supply the output and browser result before
+same-image conventional-HLS enablement and the sustained picture/audio gate.
+That enablement/manual playback matrix remains pending; a scoped image build
+does not establish the fix on a real browser or TV.

@@ -106,7 +106,13 @@ The operator reported first HLS picture and the compact streaming label, then
 the initial-readiness error around 30 seconds; retry restored HLS and WebRTC
 kept working. The supplied read-only diagnosis and isolated client gate then
 passed: old deadline fault reproduced and all 52 repaired tests/type/build
-passed, with the live service unchanged. NEXT [scoped client-only image preparation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-client-only-image-preparation).
+passed, with the live service unchanged. Scoped exact-73d5ff6d preparation then
+passed with Client-Image-Exitcode 0: fresh client bundle `index-CrHQRMnq.js`,
+cached unchanged server/runtime layers, both base/Brave images and private
+snapshot/marker under `/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911`.
+The checkout is now 73d5ff6d while the enabled a7ff service remains running;
+inherited backend evidence is separate from the passed exact client gate.
+NEXT [exact-73 default-off deployment and normal-browser confirmation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-exact-73-default-off-deployment-and-browser-check).
 The actual
 live IDR phases remain unmeasured. The repair owns one audio/high subscription
 and four workers; its three high-resolution decoders require a fresh CPU/RSS
