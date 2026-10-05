@@ -198,8 +198,8 @@ the old code to fail with the timeline-gap marker. An unrelated failure or
 unexpected pass stops the gate. It then mounts only the corrected transcoder
 and requires all three codec integration tests to pass. It keeps new timestamped
 private reports without changing the service, checkout or preparation marker.
-Its supplied outcome is recorded below. Full repair application checks/build,
-deployment and live/device acceptance remain **PENDING; NOT EXECUTED IN CODEX**.
+Its supplied outcome and subsequent full repair checks/build are recorded below.
+Deployment and live/device acceptance remain **PENDING; NOT EXECUTED IN CODEX**.
 The all-stream symptom and shared capture/room-event isolation still require
 explicit target verification before a full acceptance claim.
 
@@ -234,9 +234,47 @@ outage. No new application image was built or deployed by this comparison;
 live HLS remains disabled and fresh post-restoration browser confirmation is
 still pending. These are supplied target results, **NOT EXECUTED IN CODEX**.
 
-NEXT fast-forward the clean target testing checkout to exact 97ba4ad9 and run
+The next step was to fast-forward the clean target checkout to 97ba4ad9 and run
 validate-hls-phase4.sh with a new private ../neko-hls-results-97ba4ad9ab3e
 directory. Preserve the 80020d99 evidence and rollback image. Review the full
 checks/build, three fresh-image integration tests and uniquely tagged images
 before default-off deployment/browser confirmation and a separate enabled HLS
-checkpoint. Do not repeat the Caddy merge or promote master.
+checkpoint. That preparation subsequently passed, as recorded below.
+
+## Exact GOP-repair automated/image gate passed — 2026-10-05
+
+The operator confirmed a clean target testing checkout at
+97ba4ad9ab3e635da936a58c8a7ec795da05ba46. The supplied validation run then
+completed with Repair-Check-Exitcode 0 and AUTOMATED/IMAGE GATE PASSED. Evidence
+is in ../neko-hls-results-97ba4ad9ab3e; the success marker names the same full
+application commit. This checkpoint did not replace the live service.
+
+All 47 client tests, TypeScript checking and Vite production build passed. The
+13 configured Go packages passed, followed by successful 30-second fuzz jobs:
+mediaws 1,447,749 executions and mediahls 621,533 executions. The trailing
+server/plugin build and codec-validation image build passed. GStreamer 1.26.2
+was reported. All three integration tests passed: timestamp mapping 0.01
+seconds, smooth readiness 18.11 seconds and sustained scene cuts 30.19 seconds,
+with the scene-cut fixture remaining in generation 1. The mediahls integration
+package completed in 48.500 seconds. These are bounded fixture results, not
+production capture/device or cross-backend isolation acceptance.
+
+Both uniquely tagged images were built successfully:
+my-neko/base:hls-97ba4ad9ab3e and my-neko/brave:hls-97ba4ad9ab3e. Cached layers
+were used. The helper retained image IDs in private images.txt and wrote the
+success marker after its final snapshot. The dependency audit returned 1;
+npm ci reported 20 findings (11 low, 3 moderate, 5 high, 1 critical). Findings
+remain open; no advisory identity/reachability or remediation claim follows
+from these aggregate counts. These are supplied target results,
+**NOT EXECUTED IN CODEX**.
+
+NEXT use the same checkout and new private directory with the reviewed
+deploy-hls-media.sh baseline action (blob
+c6f52dc80fdf605ec908f3fe3856ce23e015e494), then run both disabled-route probes.
+The helper verifies preparation/image identity, saves the currently running
+image for rollback and starts the prepared repair image without HLS while
+preserving adaptive/WebCodecs overlays. This restarts active sessions; startup
+health failure attempts the saved prior image. Default-off deployment/browser
+confirmation is pending: verify normal login, picture, audio and control in a
+private browser window before a separate enabled HLS checkpoint. Preserve old
+evidence, the existing Caddy configuration and the stable master branch.

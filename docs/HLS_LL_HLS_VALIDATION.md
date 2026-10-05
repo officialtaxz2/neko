@@ -11,8 +11,11 @@ Read-only diagnosis/default-off restoration passed, showing two timeline-gap
 rejections and earlier valid server delivery without a sampled process crash.
 The isolated target GOP A/B gate passed at repair commit 97ba4ad9 on 2026-10-05:
 old code reproduced two timeline gaps; all three repaired codec tests passed,
-including 30.19 seconds of scene cuts in generation 1. Exact repair-commit
-automated/image preparation, working HLS playback and grouped acceptance remain
+including 30.19 seconds of scene cuts in generation 1. Exact 97ba4ad9
+automated/image preparation then passed with Repair-Check-Exitcode 0: 47 client
+tests, TypeScript/build, 13 Go packages, both fuzz jobs, all three codec tests
+and server/base/Brave builds. NEXT is default-off repair-image deployment and
+browser confirmation; working HLS playback and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
@@ -42,6 +45,9 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 `/opt/docker/nekoNew/neko`; keep the existing adaptive and WebCodecs overlays.
 
 ## 1. Prepare exact tests and images without replacing the service
+
+This block passed at exact 97ba4ad9 with Repair-Check-Exitcode 0; keep the
+prepared images and private directory for the default-off deployment below.
 
 For this incident, fetch `origin/testing` and fast-forward to the exact reviewed
 GOP-repair application commit `97ba4ad9ab3e635da936a58c8a7ec795da05ba46` below.
@@ -87,6 +93,37 @@ gate**. Review advisory/package/version, production versus build reachability
 and applicable repairs before final acceptance. An unavailable registry or
 invalid report leaves this review pending. Do not run `npm audit fix --force`.
 If a repair changes the commit, repeat the exact automated/image gate.
+
+### GOP-repair image prepared: default-off deployment/browser check NEXT
+
+The supplied 97ba4ad9 preparation passed 47 client tests, TypeScript/build,
+all 13 configured Go packages, both fuzz jobs, the trailing server/plugin build,
+all three real-codec integration tests with GStreamer 1.26.2, and uniquely
+tagged base/Brave builds. Readiness passed in 18.11 seconds; sustained scene
+cuts passed in 30.19 seconds in generation 1. The running service was not
+replaced. Audit exit 1 remains open findings. See
+[the full repair record](HLS_STARTUP_REPAIR_2026-10-04.md) for exact limits.
+These are supplied target results, **NOT EXECUTED IN CODEX**.
+
+Keep application HEAD at 97ba4ad9ab3e635da936a58c8a7ec795da05ba46. Its tracked
+deployer already contains the reviewed baseline action (blob
+c6f52dc80fdf605ec908f3fe3856ce23e015e494); no helper extraction or checkout
+update is needed. Run from /opt/docker/nekoNew/neko:
+
+```bash
+output=/opt/docker/nekoNew/neko-hls-results-97ba4ad9ab3e
+bash deploy/deploy-hls-media.sh baseline "$output"
+docker compose -f docker-compose.validation.yaml run --rm -T \
+  hls-http-checks disabled </dev/null
+```
+
+The helper checks the exact preparation marker and image ID before replacement,
+saves the current image for rollback and recreates Neko without the HLS overlay,
+preserving adaptive/WebCodecs. Active sessions disconnect. A failed health
+startup attempts the saved prior image. Deployment, disabled-route probes and
+fresh normal login/picture/audio/control confirmation are pending; supply their
+results before a separate enabled block. Existing Caddy settings and old private
+evidence are retained. Do not infer enabled HLS playback from this baseline.
 
 Check default-off public routes with the credential-free probe:
 
@@ -148,7 +185,8 @@ room-event/device matrix or enabled HLS playback was reported.
 The subsequent section 2 activation passed, but the operator again reported HLS
 bootstrap failure followed by all streams stopping. The subsequent read-only
 diagnostic, default-off restoration and isolated GOP comparison passed, as
-recorded below; NEXT is exact 97ba4ad9 automated/image preparation. The original
+recorded below; exact 97ba4ad9 preparation then passed and NEXT is its default-off
+deployment/browser check. The original
 activation sequence used section 2's plain
 image/probe helper, keeping this same application commit and evidence directory.
 Do not repeat the completed Caddy source merge. Public valid-lease playback,
@@ -352,10 +390,9 @@ The [repair record](HLS_STARTUP_REPAIR_2026-10-04.md) contains full provenance a
 limits. These are supplied target results, **NOT EXECUTED IN CODEX**; they do
 not establish the all-stream outage's unique cause or production playback.
 
-NEXT run section 1 at exact 97ba4ad9 with a new private result directory while
-live HLS remains disabled. Full checks/build and fresh-image preparation are
-pending. After their output is reviewed, deploy that image without HLS and
-confirm normal login/picture/audio/control before a separate enabled block.
+Full checks/build and fresh-image preparation subsequently passed at exact
+97ba4ad9, as recorded in section 1. NEXT deploy that prepared image without HLS
+and confirm normal login/picture/audio/control before a separate enabled block.
 Preserve prior evidence and the existing Caddy configuration.
 
 ### First bounded picture/audio checkpoint (repeat after diagnosis/repair)

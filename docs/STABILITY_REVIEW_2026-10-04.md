@@ -87,7 +87,12 @@ and failed readiness (expected negative exit 1); all three repaired codec tests
 passed, including 30.19 seconds of scene cuts in generation 1, with overall exit
 0. This verifies the fixed-boundary defect/correction in the bounded fixture;
 its role in the all-stream symptom remains a hypothesis pending live isolation
-acceptance. Full exact-commit checks/build/images are NEXT and still pending.
+acceptance. Full exact 97ba4ad9 checks/image preparation subsequently passed:
+47 client tests, TypeScript/build, 13 Go packages, both fuzz jobs, all three
+codec tests and server/base/Brave builds, with Repair-Check-Exitcode 0. Audit
+exit 1 remains open findings. NEXT deploy the prepared image without HLS and
+confirm normal login/picture/audio/control; enabled isolation/device acceptance
+remains pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Live HLS stays disabled.
 
