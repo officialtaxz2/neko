@@ -48,14 +48,22 @@ interpret them within the corresponding `=== RUN` / test-result interval.
 Keep live HLS disabled until the failed full-preparation gate is resolved.
 The supplied 53034495 run passed all six checks in three fresh processes,
 with smooth readiness at 18.11 s in generation 1 each; it did not reproduce
-the earlier worker failure. The new [controlled audio-anchor A/B](../deploy/validate-hls-audio-anchor.sh)
-uses identical observed fixtures on both sides and requires the old AAC hold
-to produce a real audio/anchor/queue_full restart under injected high delay.
-Its positive side must keep normal/delayed-high codec fixtures in generation 1
-and retain video-IDR/timestamp/lifecycle coverage. The production repair drains
-AAC during startup instead of holding its first sample; only video waits for
-high. AAC admitted after the anchor keeps its actual presentation offset.
-**NOT EXECUTED IN CODEX; controlled A/B target checks pending.**
+the earlier worker failure. The [controlled audio-anchor A/B](../deploy/validate-hls-audio-anchor.sh)
+at repair 71a14d21 subsequently passed with Audio-Anchor-Exitcode 0. Identical
+observed fixtures on both sides reproduced the old blocked-drainage unit and
+a real audio/anchor/queue_full restart under 256 ms injected high-input delay.
+Its positive side passed eight checks in each of three fresh processes plus
+scene cuts once (25 top-level passes); all seven real-codec fixtures stayed in
+generation 1 with zero rejected pushes. Normal readiness was 18.10/18.11/18.11 s,
+delayed-high readiness 18.09 s each and scene cuts 30.09 s. The production repair
+drains AAC during startup instead of holding its first sample; only video waits
+for high. AAC admitted after the anchor keeps its actual presentation offset.
+The injected delay is a test condition, not a deployment setting; this
+controlled reproduction does not identify the earlier unobserved restart or
+live all-stream outage. No preparation marker or service changed. NEXT full
+exact-71a14d21 tests/image preparation while retaining the working default-off
+97 service and HLS disabled. **NOT EXECUTED IN CODEX; supplied target A/B passed,
+full preparation and live acceptance pending.**
 
 | Metric family | Evidence |
 | --- | --- |

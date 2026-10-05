@@ -127,10 +127,17 @@ rejected pushes or a real-codec restart. Intentional overflow/closure warnings
 belonged to their unit cases. The prior worker failure was not reproduced.
 Static review found that waiting for high also stops AAC drainage; the narrow
 repair keeps AAC flowing through ordinary pre-anchor discard while preserving
-the initial-video-IDR hold. NEXT controlled delayed-high audio-anchor A/B on
-the pinned 414 codec image, retaining the working default-off 97ba4ad9 service.
-New repair/gates: NOT EXECUTED IN CODEX; target checks pending. Keep HLS disabled. The actual native blocker and
-role of the separate capabilities rejection remain unconfirmed; full repair
+the initial-video-IDR hold. The controlled audio-anchor A/B at 71a14d21 passed
+with Audio-Anchor-Exitcode 0: old blocked drainage and audio/anchor/queue_full
+reproduced under 256 ms injected high-input delay; all eight corrected checks
+passed three fresh processes and scene cuts passed once (25 top-level passes).
+All seven real-codec fixtures stayed in generation 1, with no rejected pushes.
+This verifies that controlled AAC-overflow mechanism, not the earlier
+unobserved worker restart or live all-stream outage. No preparation marker or
+live service changed. NEXT full exact-71a14d21 tests/image preparation, retaining
+the working default-off 97ba4ad9 service. New repair/gates: NOT EXECUTED IN
+CODEX; supplied isolated A/B passed, full preparation pending. Keep HLS disabled.
+The actual native blocker and role of the separate capabilities rejection remain unconfirmed; full repair
 checks, deployment and enabled isolation/device acceptance are pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.

@@ -4,8 +4,10 @@ Status: source changes statically reviewed on `testing`; the exact 80020d99
 target automated/image gate and both real-codec integration tests passed.
 Latest full preparation at 414639d2 FAILED with a worker_failure restart during
 smooth cold readiness; bounded stage/history diagnosis then passed three
-fresh starts without reproducing it. Narrower video-only anchor hold and a
-controlled AAC-overflow A/B are prepared; target A/B is pending.
+fresh starts without reproducing it. The narrower video-only anchor hold at
+71a14d21 passed the controlled AAC-overflow A/B: both old-code failures
+reproduced, all eight corrected checks passed three fresh processes and scene
+cuts passed once. NEXT full exact-71a14d21 tests/image preparation.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -746,10 +748,10 @@ generation 1's first high input by twelve AAC periods: 256 ms. Replacement
 generations and other inputs are not delayed and no PTS is changed. This
 injection is solely a controlled test condition, not a deployment value.
 
-NEXT [validate-hls-audio-anchor.sh](../deploy/validate-hls-audio-anchor.sh) from
-the reviewed repair commit while checkout stays at 414 and live HLS remains
-off. It pins the recorded image ID, verifies the eight 414 source blobs and
-requires unchanged native/capture/encoder sources. The same new unit/codec
+The [validate-hls-audio-anchor.sh](../deploy/validate-hls-audio-anchor.sh) gate
+was prepared for the reviewed repair while checkout stayed at 414 and live
+HLS remained off. It pins the recorded image ID, verifies the eight 414 source
+blobs and requires unchanged native/capture/encoder sources. The same new unit/codec
 fixtures are mounted on both sides. Prior behavior is packager.go from 53034495
 (414 admission plus fixed logging); the corrected side changes only the audio
 wait condition. The negative unit must show its wait failure, and the negative
@@ -764,7 +766,81 @@ prevent retry-until-pass; the 90 s package timeout does not relax HLS's 24 s
 readiness. The future full-image codec gate includes both new regressions.
 No service access, image build, checkout or marker mutation occurs in this A/B.
 
-Source/diffs are statically reviewed; **NOT EXECUTED IN CODEX; controlled A/B,
-full exact-repair preparation, new-image baseline and enabled live acceptance
-pending**. Even a passing controlled A/B does not prove the cause of the
+Source/diffs are statically reviewed; **NOT EXECUTED IN CODEX; supplied
+controlled A/B passed as recorded below. Full exact-repair preparation,
+new-image baseline and enabled live acceptance remain pending**.
+A passing controlled A/B does not prove the cause of the
 unobserved earlier worker restart, native low-source stall or all-stream outage.
+
+## Controlled audio-anchor A/B passed — 2026-10-05
+
+The supplied run ended with AUDIO ANCHOR A/B GATE PASSED and
+Audio-Anchor-Exitcode 0. Application checkout remained
+414639d2493ad1d2106399337c647d1b007f1e9d; repair was
+71a14d2174dafbc12b1880adde6dc68176bfe9af. Prior behavior was the observation-only
+packager from 5303449509b05aaeaabb6d6d5d2f7b6eb94fbc19. The helper verified eight
+baseline image-source blobs and unchanged native/capture/encoder sources in
+the repair. Both sides mounted the same repaired test fixtures; the production
+difference was the AAC wait condition.
+
+Provenance:
+
+- Codec image: sha256:d6e7e49a1423ec92994cf3c82559936ae6ff10bd0080be776cc391696355bc3a.
+- Helper blob: a9d9d7f55438776cb8021865f69070ee783996be.
+- Codec fixture blob: d7c6a130f779c0aa87fa8bc2695a0bc811488df0.
+- Startup unit blob: ae8c9d1945cbd4c5b112fad16bf920b53722b3dd.
+- Prior packager blob: 03f727e26284a717751131c3bf406667a22f2b6d.
+- Repaired packager blob: 3c3fec7bf4de96b606342d48b9953476170bf7fc.
+- Private evidence stamp: audio-anchor-20261005T124423579375451Z under
+  /opt/docker/nekoNew/neko-hls-results-414639d2493a.
+
+Both old-code negative controls failed as required with exit 1. The drainage
+unit failed at 1.00 s with "audio output waited for the high anchor". Under
+the controlled 256 ms high-input delay, the real-codec fixture logged
+audio/anchor/queue_full in generation 1, followed by worker_failure and
+generation 2; its generation-1 assertion failed at 18.39 s (package 18.948 s).
+The first audio worker read one output, accepted 11 inputs with zero rejected
+pushes and closed at 207 ms with no anchor. High had zero outputs before that
+restart. The replacement generation became ready with all four tracks'
+parents MSN 1/2/3. This directly reproduces the AAC hold/overflow mechanism
+under the injected schedule.
+
+The corrected side passed eight required checks once in each of three fresh
+containers/processes, plus scene cuts once in the first process: 25 top-level
+passes. All seven real-codec fixtures remained in generation 1 with zero
+rejected pushes and valid init/healthy readiness for all four tracks.
+
+| Corrected cold process | Normal readiness test | Delayed-high readiness test | Scene-cut test | mediahls package |
+| --- | --- | --- | --- | --- |
+| 1 | 18.10 s, generation 1 | 18.09 s, generation 1 | 30.09 s, generation 1 | 66.600 s |
+| 2 | 18.11 s, generation 1 | 18.09 s, generation 1 | Not selected | 36.480 s |
+| 3 | 18.11 s, generation 1 | 18.09 s, generation 1 | Not selected | 36.515 s |
+
+Every normal/delayed cold fixture retained parents MSN 1/2/3 in audio, high,
+medium and low; the scene-cut fixture advanced to MSN 3/4/5. High's observed
+first-output delays were 211/54/55 ms in normal starts and 286/283/286 ms in
+delayed starts. The first corrected normal start therefore tolerated a
+naturally later high output as well, without establishing what caused the
+earlier unobserved failure. The drainage/250 ms timestamp-offset unit, retained
+video IDR, cancellation/overflow, native registry independence and encoder
+mapping checks all passed in every process. The six medium/anchor warnings
+are intentional queue_full/drops_closed lifecycle cases, outside the codec
+fixtures. The fixed three attempts used -count=1 and a 90 s package timeout;
+the 24 s HLS readiness bound remained unchanged.
+
+No image build, live service access, checkout mutation or preparation-marker
+change occurred. The earlier full-414 marker remains PENDING and its failure
+is preserved; this isolated comparison does not turn it into a passing image
+gate. The live service remains the working default-off 97ba4ad9 deployment.
+The native low-source construction stall and reported live all-stream outage
+are still unconfirmed; controlled AAC overflow is not retrospective proof of
+their cause.
+
+NEXT the pinned full exact-71a14d21 test/image block in
+[validation section 1](HLS_LL_HLS_VALIDATION.md#1-prepare-exact-tests-and-images-without-replacing-the-service),
+using /opt/docker/nekoNew/neko-hls-results-71a14d2174da. Keep the working
+default-off 97 service running and HLS disabled. Only after that preparation
+passes should its output be reviewed for a separate default-off deployment
+and fresh normal-browser check; enabled HLS picture/audio, authorization,
+lifecycle/isolation and grouped device/resource acceptance remain pending.
+All execution above is supplied target evidence, **NOT EXECUTED IN CODEX**.
