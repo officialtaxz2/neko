@@ -112,12 +112,14 @@ The paired diagnosis at helper 88f2b25d then completed with exit 0: both
 constructors passed two starts and failed one. Each failure left only medium
 with two parents (MSN 2/3), after its first 30 s IDR was observed before the
 high anchor; the others had three parents. This supports the pre-anchor sample
-loss separately from registry isolation. A bounded first-output wait for high's
-anchor is prepared, preserving cancellation and overflow handling. NEXT isolated
-anchor A/B plus three repetitions of the codec/regression gates; keep HLS
-disabled and application HEAD at 97ba4ad9. The actual native blocker and role of
-the separate capabilities rejection remain unconfirmed; full repair checks,
-deployment and enabled isolation/device acceptance are pending.
+loss separately from registry isolation. The bounded first-output anchor wait
+then passed the isolated 414639d2 A/B gate: old initial-IDR loss reproduced;
+all seven corrected checks passed three times, including cancellation/overflow
+and all six real-codec fixtures in generation 1 (Anchor-Check-Exitcode 0).
+NEXT full exact-414639d2 tests/image preparation while retaining the working
+default-off 97ba4ad9 service. Keep HLS disabled. The actual native blocker and
+role of the separate capabilities rejection remain unconfirmed; full repair
+checks, deployment and enabled isolation/device acceptance are pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.
 

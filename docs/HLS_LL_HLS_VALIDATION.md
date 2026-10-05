@@ -26,9 +26,11 @@ low reached only its capture-create marker. The isolated 48f4acf2 gate failed
 on smooth cold readiness. Paired diagnosis from helper 88f2b25d then completed
 with exit 0: each constructor passed two starts and failed one; medium began
 before the high anchor and had only two parents at the failed deadline.
-A bounded initial-output anchor wait is prepared, not target-verified.
-NEXT isolated anchor A/B and repeated codec gate at unchanged 97ba4ad9;
-keep HLS disabled. Working HLS playback
+The isolated anchor A/B at repair 414639d2 then passed with
+Anchor-Check-Exitcode 0: the old initial-IDR failure reproduced and seven
+corrected checks each passed three repetitions; all six real-codec fixtures
+stayed in generation 1. NEXT full exact-414639d2 tests/image preparation,
+retaining the running default-off 97ba4ad9 service. Keep HLS disabled. Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -60,7 +62,7 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-### Failed attempt recovered; startup race localized; anchor repair gate next
+### Anchor startup gate passed; full exact-414639d2 preparation next
 
 The diagnosis/restoration block below completed with Diagnostic-Exitcode 0 and
 Recovery-Exitcode 0 at 97ba4ad9. The image returned healthy without HLS and both
@@ -94,19 +96,59 @@ restart was recorded. This supports the pre-anchor admission defect and does
 not attribute it to the registry correction. Diagnostic success is not HLS
 acceptance; no checkout/service/preparation-marker changes occurred.
 
-NEXT extract [validate-hls-anchor-startup.sh](../deploy/validate-hls-anchor-startup.sh)
-from the reviewed repair commit into the existing private output directory and
-invoke it with repository, output directory and that full commit, as in the
-operator block. It verifies seven baseline sources in the existing codec image
-and holds the registry correction constant on both sides. The old packager must
-fail the ordered initial-IDR test with its specific marker. The new packager
-must pass that test, cancellation/overflow checks, registry/timestamp checks and
-both real-codec fixtures in three repetitions. Positive exit 0 and all required
-pass counts are mandatory. The 24 s readiness limit, codec profiles and queue
-bounds are unchanged. No checkout, live service or prepared marker changes.
-The new repair/helper are **NOT EXECUTED IN CODEX**; target A/B, full application
-checks/image and native capture/browser acceptance remain pending. Keep HLS
-disabled until these blocks are separately reviewed.
+The supplied [anchor A/B gate](../deploy/validate-hls-anchor-startup.sh) at repair
+414639d2 verified the seven image-source blobs and held the registry correction
+constant on both sides. Old packager.go failed the ordered initial-IDR test with
+the expected marker; corrected packager.go passed all seven required checks in
+three repetitions. Smooth real-codec readiness passed at 18.11/18.10/18.09 s;
+scene cuts passed at 30.19/30.20/30.09 s, always in generation 1. Positive-control
+exit and Anchor-Check-Exitcode were 0. Cancellation, overflow and closed drop
+channels passed as well. The checkout, live service and prepared-image markers
+were unchanged. See [the exact record](HLS_STARTUP_REPAIR_2026-10-04.md).
+
+NEXT fast-forward the clean testing checkout from 97ba4ad9 to the exact reviewed
+application commit 414639d2493ad1d2106399337c647d1b007f1e9d and run full
+[validate-hls-phase4.sh](../deploy/validate-hls-phase4.sh) preparation. Keep the
+old private directory and images. Use a new private output directory for 414;
+documentation-only descendants do not move the application checkpoint.
+
+```bash
+set +e
+bash -e -o pipefail <<'NEKO_HLS_REPAIR_PREPARE'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git branch --show-current)" = testing
+test -z "$(git status --porcelain=v1)"
+
+repair_commit="414639d2493ad1d2106399337c647d1b007f1e9d"
+current_commit="$(git rev-parse HEAD)"
+case "$current_commit" in
+  97ba4ad9ab3e635da936a58c8a7ec795da05ba46|"$repair_commit") ;;
+  *) printf 'Unexpected application commit: %s\n' "$current_commit" >&2; exit 1 ;;
+esac
+git fetch origin testing
+git merge --ff-only "$repair_commit"
+test "$(git rev-parse HEAD)" = "$repair_commit"
+
+umask 077
+bash deploy/validate-hls-phase4.sh "../neko-hls-results-${repair_commit:0:12}"
+NEKO_HLS_REPAIR_PREPARE
+printf 'Repair-Prepare-Exitcode: %s\n' "$?"
+```
+
+This runs the full selected client/Go tests, type/build, both bounded fuzz jobs,
+same-commit codec checks and uniquely tagged base/Brave image builds. It never
+replaces the running default-off 97ba4ad9 service. The codec-validation tag moves
+to the newly built source; earlier A/B helpers deliberately reject that tag if
+its source is no longer 97ba4ad9. Private 97 evidence and the old image ID remain
+available; no image pruning is part of this block.
+
+Review final exit 0 and the complete output before deploying the new image
+without HLS. Then obtain a fresh normal-browser confirmation before another
+enablement. The earlier A/B pass is bounded fixture evidence, **NOT EXECUTED IN
+CODEX**; full preparation, new-image deployment, native capture, browser/media
+and grouped acceptance remain pending. Dependency-audit findings remain open;
+their nonzero report status is not a passing security audit. Keep HLS disabled.
 
 **Completed file-only analysis block:** extract [summarize-hls-startup.py](../deploy/summarize-hls-startup.py) from
 the reviewed helper commit into the existing private directory, recording that

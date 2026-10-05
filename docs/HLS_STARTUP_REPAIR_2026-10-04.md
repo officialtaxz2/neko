@@ -548,8 +548,8 @@ unrelated notification, cancellation without publication/restart, overflow and
 closed drop-channel termination. These exercise the production output pump,
 not only a helper's return value.
 
-NEXT run [validate-hls-anchor-startup.sh](../deploy/validate-hls-anchor-startup.sh)
-with unchanged application 97ba4ad9 and its existing private output directory.
+The completed [validate-hls-anchor-startup.sh](../deploy/validate-hls-anchor-startup.sh)
+run used unchanged application 97ba4ad9 and its existing private output directory.
 The pinned codec image's seven baseline blobs are rechecked. Both comparisons
 mount the same registry repair and observed fixtures. Old packager.go must fail
 the ordered test with its fixed initial-IDR-loss marker; corrected packager.go
@@ -561,6 +561,58 @@ three explicit passes. There is no image build or live service access.
 Keep HLS disabled. Passing this bounded gate would allow preparation of full
 exact-commit checks/images; it would not establish live capture, browser/media,
 authorization/lifecycle or mixed-backend isolation acceptance. The new repair,
-regressions and helper have been statically reviewed only:
-**NOT EXECUTED IN CODEX; target anchor A/B, full application checks/image and
-enabled capture/browser acceptance pending**.
+regressions and helper now have the supplied target fixture evidence below;
+**NOT EXECUTED IN CODEX; full application checks/image and enabled
+capture/browser acceptance pending**.
+
+## Anchor A/B and repeated codec gate passed — 2026-10-05
+
+The supplied target run selected repair/helper commit
+414639d2493ad1d2106399337c647d1b007f1e9d. Application HEAD stayed at 97ba4ad9;
+the pinned codec image was
+sha256:06df176c5da073548fb20b423335d10cd1ed92a1db1fb5989dd6dacf9d200d3f.
+Helper blob: 9fb174c398fec2589da9c6f711025b7896e38eef.
+Packager repair blob: 1d2d1afcd56602c0be5d58220f698b31b5575d12.
+Ordered/lifecycle regression blob: 5488d6cec696b6832f04e056c58abeb32e8865d1.
+The registry and observed real-codec fixture blobs were unchanged from the
+reviewed comparisons. Private evidence stamp:
+anchor-startup-20261005T112357362581762Z.
+
+The old packager reproduced the exact initial-IDR-loss marker and failed the
+ordered regression in 0.00 s (negative-control exit 1; package 0.196 s).
+The corrected comparison returned positive-control exit 0 and final
+Anchor-Check-Exitcode 0. All seven required top-level tests passed three times:
+registry independence, encoder timestamp mapping, initial-output retention,
+cancellation, overflow/closed drop channels, smooth codec readiness and
+sustained scene cuts. The gst package passed in 0.199 s; mediahls in 145.305 s.
+
+| Real-codec fixture | Repetition 1 | Repetition 2 | Repetition 3 |
+| --- | --- | --- | --- |
+| Smooth conventional readiness | 18.11 s | 18.10 s | 18.09 s |
+| Sustained scene cuts | 30.19 s | 30.20 s | 30.09 s |
+
+All six fixtures stayed in generation 1 with zero rejected pushes. Each smooth
+fixture retained parents MSN 1/2/3 for audio/high/medium/low; scene cuts advanced
+every rendition to retained parents 3/4/5 without a restart. In the first smooth
+fixture, medium's initial 30 s IDR was again observed before the anchor, but this
+time conventional readiness passed with all three parents. This verifies the
+ordered admission repair in the bounded fixture, including its first cold
+start, instead of relying on later warm repetitions alone. There is no sampled
+HLS timeline rejection or generation restart in the supplied fixture output.
+
+The live service, checkout and preparation markers were unchanged. This gate
+does not exercise native X11 capture, real credentials, the public proxy/player
+or mixed-backend room-event isolation. The native low-source blocker and the
+reported all-stream outage still require live acceptance of the new image.
+
+NEXT use the full preparation block in
+[HLS_LL_HLS_VALIDATION.md](HLS_LL_HLS_VALIDATION.md) to fast-forward the clean
+testing checkout to exact application 414639d2 and prepare its tests/images in
+../neko-hls-results-414639d2493a. Retain the current healthy default-off 97ba4ad9
+service and its private directory/images. Preparation runs full selected
+client/server tests, type/build, two fuzz jobs, exact-source real-codec checks
+and new uniquely tagged images; it does not replace that service. Review its
+output before default-off image deployment and a fresh normal-browser check.
+HLS remains disabled. These are supplied target results, **NOT EXECUTED IN
+CODEX; full exact-commit preparation, new-image deployment and enabled
+capture/browser/grouped acceptance pending**. Audit/package findings stay open.
