@@ -264,5 +264,22 @@ proof of complete mux/player fuzz coverage.
   recovery matrix remain pending. Use [the runbook](HLS_LL_HLS_VALIDATION.md)
   and commit only a sanitized result with explicit omissions.
 
+## First HLS playback and client deadline correction — 2026-10-05
+
+Exact-a7ffb8b1 activation passed healthy with Enable-Exitcode 0 and all nineteen
+denial probes. The operator reported first HLS picture/compact streaming, then
+a readiness-deadline error around 30 seconds; retry restored HLS and WebRTC
+continued working. This HLS-only failure differs from earlier all-stream reports.
+
+Static inspection found the initial player deadline stayed active after
+`canplay`/`playing` and could terminate established playback during buffering.
+Client-only repair 73d5ff6d cancels it on current-player readiness, arms it
+before attachment and preserves independent startup/stall bounds and lifecycle
+guards. Native/MSE regression checks and a pinned old/new client/type/build
+gate are prepared in [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+They are **NOT EXECUTED IN CODEX**; supplied target results and repaired-image
+deployment/sustained playback remain pending. The actual browser buffer state,
+prior all-stream outage causes, dependency/device and grouped gates remain open.
+
 WebRTC remains the default; WebCodecs remains explicit; HLS starts default-off
 without its overlay. No `master` promotion is authorized.

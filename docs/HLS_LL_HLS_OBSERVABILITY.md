@@ -100,13 +100,28 @@ default-off 71 service stayed unchanged. The new private snapshot/success marker
 is under `/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448`.
 Default-off exact-repair deployment then passed with Baseline-Exitcode 0,
 healthy service, a private baseline snapshot and 2/2 disabled-route probes;
-the operator reported the requested normal browser check works. NEXT same-image
-conventional-HLS activation/denial probes, then one bounded picture/audio
-attempt alongside WebRTC. The actual
+the operator reported the requested normal browser check works. Same-image
+activation then passed with Enable-Exitcode 0 and all nineteen denial probes.
+The operator reported first HLS picture and the compact streaming label, then
+the initial-readiness error around 30 seconds; retry restored HLS and WebRTC
+kept working. NEXT the [read-only diagnosis and isolated client readiness gate](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+The actual
 live IDR phases remain unmeasured. The repair owns one audio/high subscription
 and four workers; its three high-resolution decoders require a fresh CPU/RSS
 comparison. **NOT EXECUTED IN CODEX; supplied reproduction and isolated repair
-A/B, full preparation and default-off deployment/browser passed, enabled acceptance pending.**
+A/B, full preparation, default-off deployment/browser and enabled CLI/HTTP
+passed; sustained enabled playback acceptance pending.**
+
+`HLS playback did not become ready; retry manually` is the client player's
+30-second initial-readiness deadline, distinct from bootstrap rejection and
+the ongoing `HLS playback stalled; retry manually` progress watchdog. The old
+client failed to cancel its initial deadline after `canplay`/`playing`, so a
+briefly low readyState at the deadline could end already-started playback.
+Repair 73d5ff6d cancels that deadline on current-player readiness; its target
+checks/deployment remain pending. Live media counters alone cannot prove a
+browser buffer state. Capture the safe summary without restarting a working
+WebRTC service; raw logs stay private and cumulative retries are not correlated
+to one browser failure.
 
 | Metric family | Evidence |
 | --- | --- |

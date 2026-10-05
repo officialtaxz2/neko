@@ -390,6 +390,14 @@ The manual settings and passive playback selector expose only authenticated adve
 
 Bootstrap sends the one-time ticket only in the same-origin HTTPS POST body. The controller retains the opaque public lease URL only in memory and uses the path-scoped HttpOnly cookie. A serialized one-second nonblocking master watchdog surfaces native-loader authorization failures; HTTP deadlines, readiness/stall limits and same-request retries are bounded. Keepalive renews every 15 seconds. The MSE loader permits three active media requests and twelve waiting descriptors, leaving one lease slot for the watchdog/keepalive; playlist/object bodies and front/back buffers are bounded. Errors reaching UI/logs use fixed text and omit tickets, cookie values and lease URLs. Native initial master/child playlists are checked before assigning `src`; subsequent native requests remain owned by the browser and the strict server route.
 
+The initial player readiness deadline is 30 seconds and is disarmed on the
+first current-player `canplay` or `playing` event; later buffering cannot
+reactivate it. It is armed before attachment so immediate readiness is covered.
+The separate 20-second progress watchdog remains active when playback is
+requested and the element is not paused. This client-only correction follows
+the first-picture/premature-timeout report at a7ffb8b1; its target verification
+is pending in [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+
 The selected legacy event bridge now emits `media/hls/state` with `{version:1, backend:"hls", paused:boolean}` before `system/init` and on authoritative room settings updates. It derives private pause from `PrivateMode && !IsAdmin`, independently of control locks. Private pause, stop, detach, logout, replacement and terminal failure invalidate callbacks, destroy MSE, remove listeners, pause the element, remove `src`/`srcObject` and call `load()` to discard URL/MSE buffers. WebRTC recovery never uses this cleanup helper. Private resume reuses the still-valid lease and waits for fresh packaging; Safari autoplay still has one muted retry and the explicit Play gesture. Native fullscreen and supported standard/WebKit PiP remain available.
 
 Static integration also corrected cookie scope for `server.path_prefix`, ordered prefix stripping before log/CORS classification, and made fixed six-part LL-HLS parent rollover compatible with the pinned player's reload directives. Focused client tests cover shared server golden playlists, hostile URL/query/credential input, selection/fragment preservation, disabled/ineligible negotiation, private pause/resume, native revocation, stale bootstrap completion and autoplay fallback. Go checks cover exact selection, prefix/CORS/cookies and rollover bounds. The validation container now supplies HLS fixtures to client tests. No target build, playback, latency, TV-compatibility or resource claim follows from these source checks.

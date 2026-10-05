@@ -28,13 +28,17 @@ with Repair-Prepare-Exitcode 0: all thirteen selected native/startup checks
 passed in the rebuilt GStreamer 1.26.2 image, all four codec fixtures stayed in
 generation 1, and base/Brave images were built. Default-off exact-repair
 deployment then passed with Baseline-Exitcode 0, healthy service and 2/2 disabled
-probes; the operator reported the requested normal browser check works. NEXT
-same-image conventional-HLS activation/denial probes, then one bounded admin
-picture/audio attempt alongside WebRTC. HLS remains disabled until activation.
+probes; the operator reported the requested normal browser check works.
+Same-image activation then passed with Enable-Exitcode 0 and 19/19 denial
+probes. First HLS picture and the compact streaming label were reported,
+followed around 30 seconds by an initial-readiness timeout. Retry restored HLS
+and WebRTC kept working. Client-only repair 73d5ff6d disarms the obsolete start
+timer on readiness. NEXT [read-only diagnosis and isolated client A/B/type/build](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+The live application remains a7ffb8b1 with conventional HLS enabled.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
-HLS-playback or unique original-login-cause claim.
+sustained-HLS acceptance or unique original-login-cause claim.
 
 ## Supplied target evidence
 
@@ -1240,7 +1244,7 @@ normal login/picture/audio/control check without a media override. This closes
 the bounded reported default-off repair-image browser checkpoint. It is not
 an enabled HLS/device/resource or five-minute room-event result.
 
-NEXT [same-image conventional-HLS activation and denial probes](HLS_LL_HLS_VALIDATION.md#exact-a7ffb8b1-same-image-activation-and-denial-probes--next),
+The next step at that checkpoint was [same-image conventional-HLS activation and denial probes](HLS_LL_HLS_VALIDATION.md#exact-a7ffb8b1-same-image-activation-and-denial-probes-passed),
 without pulling documentation commits or rebuilding. Then perform one bounded
 admin HLS picture/audio attempt alongside a working WebRTC viewer. If bootstrap
 or playback fails, capture read-only diagnosis before restoring this confirmed
@@ -1248,3 +1252,33 @@ same-image default-off baseline; no repeated blind attempts. Valid playback,
 room-event isolation, passive authorization/lifecycle and grouped device/resource
 acceptance remain pending. **NOT EXECUTED IN CODEX; supplied healthy default-off
 deployment and reported browser checkpoint passed, enabled/live acceptance pending.**
+
+## Exact-a7ff activation/first picture and client deadline repair — 2026-10-05
+
+Same-image conventional-HLS activation subsequently passed with Enable-Exitcode
+0, healthy `my-neko/brave:hls-a7ffb8b13448`, a private enable snapshot and all
+17 public plus two cleartext-denial probes. The application remains exact
+`a7ffb8b13448a8329c6df24fdcb182ac32ca398c`, with the unchanged deployer blob
+`c6f52dc80fdf605ec908f3fe3856ce23e015e494` and reviewed Caddy configuration.
+
+The operator then reported first HLS picture and the compact healthy indicator.
+After approximately 30 seconds the client showed "HLS playback did not become
+ready; retry manually". Retry HLS restored playback, and the operator explicitly
+confirmed WebRTC continued working. This first-picture result differs from
+the previous bootstrap failures; it does not close sustained playback, A/V,
+event-triggered device failures or the earlier all-stream outage investigation.
+
+The new client message comes from a startup deadline that static inspection
+found was never cancelled after `canplay`/`playing`. A brief buffer underrun
+at that deadline could stop already-established playback. Client-only repair
+`73d5ff6d29110e3dd06999726a7e88718d09ea23` cancels it on current-player readiness,
+arms it before attachment and retains the separate never-ready/progress-stall
+bounds. Meaningful native/MSE/lifecycle regressions and a pinned isolated
+old/new client/type/build helper are prepared; no server/codec/dependency
+change is included. See [the client repair record and next exact block](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+
+NEXT capture the safe read-only live diagnosis and run that isolated client
+gate while retaining the a7ff checkout, preparation marker, enabled live image
+and working WebRTC service. No new image or recovery restart is required for
+that check. The client repair is **NOT EXECUTED IN CODEX**; target verification,
+new image preparation/deployment and sustained/grouped acceptance remain pending.
