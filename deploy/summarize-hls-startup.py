@@ -72,6 +72,7 @@ def main():
         ("HLS packager ready", "hls_packager_ready"),
         ("HLS lease opened", "hls_lease_opened"),
         ("HLS sample rejected", "hls_sample_rejected"),
+        ("HLS worker restart requested", "hls_worker_restart_requested"),
         ("HLS packager idle stop scheduled", "hls_idle_stop_scheduled"),
         ("HLS packager stopped after idle grace", "hls_idle_stopped"),
     )
@@ -108,6 +109,13 @@ def main():
                 event = field(line, record, "event")
                 item["reason"] = reason if reason in rejects else "unknown"
                 item["event"] = event if event in event_names else "unknown"
+            if stage == "hls_worker_restart_requested":
+                variant = field(line, record, "variant")
+                worker_stage = field(line, record, "stage")
+                reason = field(line, record, "reason")
+                item["variant"] = variant if variant in {"audio", "high", "medium", "low"} else "unknown"
+                item["worker_stage"] = worker_stage if worker_stage in {"input", "output", "anchor", "monitor"} else "unknown"
+                item["reason"] = reason if reason in {"push_failed", "queue_full", "drops_closed", "samples_closed", "output_stall"} else "unknown"
             counts[stage] += 1
             sequence.append(item)
 

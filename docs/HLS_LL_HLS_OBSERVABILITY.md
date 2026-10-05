@@ -30,6 +30,24 @@ real ticket/cookie/media URL into this directory or the conversation.
 
 ## Signals and interpretation
 
+`HLS worker restart requested` now records only fixed variant, generation,
+stage and reason fields before the existing worker_failure request. Input
+push failure, output overflow/closure, anchor-wait overflow/closure and audio
+output stall are distinguished without media bytes, credentials or new metric
+labels. Each requesting pump/monitor returns; the log is bounded by worker
+exits in each generation. The private playback diagnostic counts this marker;
+the saved-startup summary exports only allowlisted variant/stage/reason values.
+An absent marker is not proof that a worker never failed.
+
+The isolated [worker startup diagnostic](../deploy/diagnose-hls-worker-startup.sh)
+uses the rebuilt 414 codec image and retains up to three observations per track
+(the first two replaced workers and the latest). Three fresh processes include
+failed checks in their output; diagnostic exit 0 does not pass preparation.
+The deliberate anchor-overflow lifecycle test also produces restart markers:
+interpret them within the corresponding `=== RUN` / test-result interval.
+Keep live HLS disabled until the failed full-preparation gate is resolved.
+These observation changes are **NOT EXECUTED IN CODEX; target checks pending**.
+
 | Metric family | Evidence |
 | --- | --- |
 | `neko_media_hls_leases` | Mode and opening/active/paused lease counts; not proof that a frame is displayed |

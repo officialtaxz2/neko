@@ -29,8 +29,13 @@ before the high anchor and had only two parents at the failed deadline.
 The isolated anchor A/B at repair 414639d2 then passed with
 Anchor-Check-Exitcode 0: the old initial-IDR failure reproduced and seven
 corrected checks each passed three repetitions; all six real-codec fixtures
-stayed in generation 1. NEXT full exact-414639d2 tests/image preparation,
-retaining the running default-off 97ba4ad9 service. Keep HLS disabled. Working HLS playback
+stayed in generation 1. The subsequent full exact-414639d2 preparation FAILED
+with Repair-Prepare-Exitcode 1: smooth readiness restarted with worker_failure
+and failed its generation-1 assertion at 20.03 s; scene cuts passed at 30.19 s
+in generation 1. Earlier client/type/build, Go/fuzz and registry/mapping/anchor
+checks passed, but new base/Brave image steps were not reached. NEXT isolated
+worker-stage/cold-start diagnosis on the rebuilt 414 codec image, retaining
+the running default-off 97ba4ad9 service. Keep HLS disabled. Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -62,7 +67,48 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-### Anchor startup gate passed; full exact-414639d2 preparation next
+### Full exact-414639d2 preparation failed; worker startup diagnosis next
+
+The full preparation output ended with Repair-Prepare-Exitcode 1. All 47 client
+tests, TypeScript/build, 13 Go packages, both 30 s fuzz jobs, the server build,
+registry independence, encoder timestamp mapping and anchor lifecycle checks
+passed. Smooth real-codec readiness reached generation 2 after a worker_failure
+restart and failed its generation-1 assertion at 20.03 s; all four renditions
+were ready in the replacement generation. Scene cuts passed at 30.19 s in
+generation 1. The mediahls codec package failed at 50.553 s. No HLS sample
+rejection/timeline-gap marker appears in that supplied codec interval.
+
+The script stopped before dependency auditing and the new base/Brave image
+build steps. Its preparation marker remains PENDING; do not deploy or enable
+414, change that marker manually or repeat full preparation until the failure
+is understood. The service remains the previously confirmed default-off 97
+deployment; the checkout and mutable codec-validation tag now contain 414.
+Old helpers that expect the 97 image intentionally reject this new tag.
+
+NEXT [diagnose-hls-worker-startup.sh](../deploy/diagnose-hls-worker-startup.sh)
+with the exact 414 checkout and private output
+/opt/docker/nekoNew/neko-hls-results-414639d2493a. Fetch the reviewed helper
+commit without merging it. The helper pins the rebuilt codec image ID, checks
+eight original source blobs and mounts only fixed restart-stage logging and
+bounded fixture observations. The first two replaced workers plus the latest
+worker are retained per track; restarting cannot erase the first attempt.
+Input push failure, output overflow/closure, anchor-wait overflow/closure and
+audio output stall have distinct fixed stage/reason fields.
+
+Three fresh containers/processes each run six startup checks, including smooth
+readiness, registry/mapping and anchor lifecycle checks. They retain ordinary
+queue sizes, codecs, clocks, restart decisions and the 24 s readiness deadline.
+Each process uses -count=1 and the fixed three attempts include failures; no
+retry-until-pass is allowed. The already-passing 30 s scene-cut fixture is not
+repeated in this diagnosis. Exit 0 means all observations completed, even if a
+test failed; it is not a preparation/playback gate. Raw logs contain synthetic
+fixtures only and remain in a new private subdirectory. The helper never
+accesses the live service, changes HEAD or replaces preparation markers.
+The intentional overflow/closed-channel unit cases also emit worker restart
+markers; classify real-codec failures only within their own test interval.
+New observation code/helper: **NOT EXECUTED IN CODEX; target diagnosis pending**.
+
+### Earlier passing anchor A/B and failed preparation block (historical)
 
 The diagnosis/restoration block below completed with Diagnostic-Exitcode 0 and
 Recovery-Exitcode 0 at 97ba4ad9. The image returned healthy without HLS and both
@@ -106,11 +152,10 @@ exit and Anchor-Check-Exitcode were 0. Cancellation, overflow and closed drop
 channels passed as well. The checkout, live service and prepared-image markers
 were unchanged. See [the exact record](HLS_STARTUP_REPAIR_2026-10-04.md).
 
-NEXT fast-forward the clean testing checkout from 97ba4ad9 to the exact reviewed
-application commit 414639d2493ad1d2106399337c647d1b007f1e9d and run full
-[validate-hls-phase4.sh](../deploy/validate-hls-phase4.sh) preparation. Keep the
-old private directory and images. Use a new private output directory for 414;
-documentation-only descendants do not move the application checkpoint.
+The following block was run to fast-forward the clean testing checkout from
+97ba4ad9 to application 414639d2493ad1d2106399337c647d1b007f1e9d and attempt
+full preparation. It failed as recorded above. Preserve both private output
+directories and images; do not repeat it as the current NEXT step.
 
 ```bash
 set +e
@@ -143,7 +188,7 @@ to the newly built source; earlier A/B helpers deliberately reject that tag if
 its source is no longer 97ba4ad9. Private 97 evidence and the old image ID remain
 available; no image pruning is part of this block.
 
-Review final exit 0 and the complete output before deploying the new image
+Any future full preparation must pass with final exit 0 before deploying an image
 without HLS. Then obtain a fresh normal-browser confirmation before another
 enablement. The earlier A/B pass is bounded fixture evidence, **NOT EXECUTED IN
 CODEX**; full preparation, new-image deployment, native capture, browser/media

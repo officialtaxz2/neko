@@ -116,8 +116,14 @@ loss separately from registry isolation. The bounded first-output anchor wait
 then passed the isolated 414639d2 A/B gate: old initial-IDR loss reproduced;
 all seven corrected checks passed three times, including cancellation/overflow
 and all six real-codec fixtures in generation 1 (Anchor-Check-Exitcode 0).
-NEXT full exact-414639d2 tests/image preparation while retaining the working
-default-off 97ba4ad9 service. Keep HLS disabled. The actual native blocker and
+Full exact-414639d2 preparation then FAILED with Repair-Prepare-Exitcode 1:
+47 client tests, type/build, 13 Go packages, both fuzz jobs, registry/mapping
+and anchor lifecycle checks passed. Smooth readiness restarted with
+worker_failure and failed its generation-1 assertion at 20.03 s; scene cuts
+passed at 30.19 s in generation 1. New base/Brave image steps were not reached.
+NEXT bounded worker-stage/cold-start diagnosis on the rebuilt 414 codec image,
+retaining first-generation observations and the working default-off 97ba4ad9
+service. Keep HLS disabled. The actual native blocker and
 role of the separate capabilities rejection remain unconfirmed; full repair
 checks, deployment and enabled isolation/device acceptance are pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.

@@ -57,7 +57,7 @@ def read(name):
 messages = (
     "HLS negotiation rejected", "HLS bootstrap ticket creation failed",
     "HLS generation start failed", "HLS packager generation started",
-    "HLS packager ready", "HLS sample rejected",
+    "HLS packager ready", "HLS sample rejected", "HLS worker restart requested",
     "HLS rendition removed after output stall", "HLS rendition rejoined on fresh keyframe",
     "HLS lease opened", "HLS lease state changed", "HLS lease paused",
     "HLS lease resume warming", "HLS lease resume failed", "HLS lease resumed",

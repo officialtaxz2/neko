@@ -2,7 +2,9 @@
 
 Status: source changes statically reviewed on `testing`; the exact 80020d99
 target automated/image gate and both real-codec integration tests passed.
-Default-off deployment and normal browser smoke checks passed; enabled HLS
+Latest full preparation at 414639d2 FAILED with a worker_failure restart during
+smooth cold readiness; bounded stage/history diagnosis is now pending.
+Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
 HLS-playback or unique original-login-cause claim.
@@ -605,7 +607,7 @@ does not exercise native X11 capture, real credentials, the public proxy/player
 or mixed-backend room-event isolation. The native low-source blocker and the
 reported all-stream outage still require live acceptance of the new image.
 
-NEXT use the full preparation block in
+The next full preparation was attempted using the block in
 [HLS_LL_HLS_VALIDATION.md](HLS_LL_HLS_VALIDATION.md) to fast-forward the clean
 testing checkout to exact application 414639d2 and prepare its tests/images in
 ../neko-hls-results-414639d2493a. Retain the current healthy default-off 97ba4ad9
@@ -616,3 +618,72 @@ output before default-off image deployment and a fresh normal-browser check.
 HLS remains disabled. These are supplied target results, **NOT EXECUTED IN
 CODEX; full exact-commit preparation, new-image deployment and enabled
 capture/browser/grouped acceptance pending**. Audit/package findings stay open.
+
+## Full exact-414639d2 preparation failed — 2026-10-05
+
+The supplied full-preparation output ended with Repair-Prepare-Exitcode 1.
+Its earlier checks passed: all 47 client tests, TypeScript/build, all 13 Go
+packages, 30 s WebSocket fuzz with 1,066,192 executions, 30 s HLS request fuzz
+with 367,784 executions and the trailing server build. The rebuilt codec image
+reported GStreamer 1.26.2. Registry independence and encoder segment mapping
+passed in 0.00/0.01 s; the ordered initial-IDR regression, cancellation and
+overflow/closed-channel lifecycle checks also passed.
+
+The smooth fixture began generation 1 at 11:39:00 UTC, restarted with
+worker_failure into generation 2 at 11:39:02 and became conventionally ready
+at 11:39:20. It then FAILED in 20.03 s with `cold fixture caused 2 packager
+generations`. All four replacement tracks had three parents (MSN 2/3/4), valid
+init and zero rejected input pushes. Those observations describe generation 2:
+the original diagnostic factory replaced each trace at restart, so the output
+does not identify the failing generation-1 worker/stage. The single pipeline
+not-found warning around teardown is not proof of the restart's cause. There
+is no sampled HLS timeline-gap/sample-rejection marker in this codec interval.
+
+The scene-cut fixture passed in 30.19 s, stayed in generation 1 and advanced
+all four tracks to parents MSN 3/4/5. The codec mediahls package nevertheless
+failed in 50.553 s. The earlier passing anchor A/B remains valid bounded
+evidence for initial-IDR retention; it does not clear this later fresh-image
+worker failure. Do not remove the generation-1 assertion, increase queues or
+relax deadlines to turn this output into a pass.
+
+Full preparation stopped before its dependency-audit and new base/Brave image
+steps. Its new private validation marker remains PENDING. The application
+checkout and mutable codec-validation tag now contain 414, while the running
+service remains the previously confirmed default-off 97ba4ad9 deployment.
+No deployment/enablement follows from this failed gate. Preserve both output
+directories and image IDs; old 97-pinned A/B helpers are not applicable to the
+rebuilt mutable tag without their original image.
+
+### Bounded observation follow-up
+
+Worker_failure requests now have a fixed `HLS worker restart requested` marker
+with variant, generation, stage and reason. The six call sites distinguish
+input push failure, output handoff overflow/closure, anchor-wait overflow/
+closure and audio output stall; the request reason/metrics/exit decisions are
+unchanged. This adds no sample processing, queue capacity or codec/clock change.
+Private live-log summaries retain only fixed marker counts or allowlisted
+variant/stage/reason values; no new raw credential fields are exported.
+
+The real-codec fixture retains the first two replaced workers plus the latest
+for each track (at most 12 traces total). Each trace has its generation,
+closed state, first-output delay/lifetime, input/rejection/output counts,
+first/last PTS and at most four keyframe observations; no payload bytes are
+retained. Ordinary transcoder channels are still returned directly. These
+concurrent observations can perturb scheduling and do not form an atomic
+admission trace.
+
+NEXT run [diagnose-hls-worker-startup.sh](../deploy/diagnose-hls-worker-startup.sh)
+from the reviewed helper commit while keeping checkout 414 and live HLS off.
+It pins the rebuilt codec image ID and checks eight baseline source blobs.
+Only the fixed logging and bounded observed fixture are mounted. Three fresh
+containers each run six startup checks with -count=1 and a 60 s per-package
+timeout; every outcome is retained, including failures. This preserves the
+full preparation's two-package startup shape without repeating the already
+passing scene-cut fixture or rebuilding images. Intentional anchor overflow
+unit cases also produce restart markers, so read each real-codec interval
+separately. Diagnostic exit 0 means observations completed, not acceptance.
+No live access, checkout mutation or preparation-marker change is performed.
+
+Observation source/helper review is complete; **NOT EXECUTED IN CODEX; target
+diagnosis, a resolved full-preparation gate, new-image baseline, enabled live
+capture/browser and grouped acceptance remain pending**.

@@ -291,11 +291,14 @@ func TestRealSceneCutsPreservePackagerGeneration(t *testing.T) {
 
 // Test-only observations preserve the production channels, factory and clocks.
 // They retain counts/timestamps and the first four keyframes, never media bytes.
+// Keep the first two replaced workers plus the latest worker per track so an
+// automatic restart cannot erase the failed startup's observations.
 // Concurrent snapshots are diagnostic evidence, not an atomic admission trace.
 type codecFixtureDiagnostics struct {
 	mu       sync.Mutex
 	packager *Packager
 	tracks   map[string]*codecFixtureTrace
+	previous map[string][]*codecFixtureTrace
 }
 
 type codecFixtureOutput struct {
@@ -309,6 +312,10 @@ type codecFixtureOutput struct {
 
 type codecFixtureTrace struct {
 	mu                          sync.Mutex
+	generation                  uint64
+	createdAt                   time.Time
+	closed                      bool
+	firstOutputDelay, lifetime   time.Duration
 	inputs, rejected, outputs   uint64
 	firstInputPTS, lastInputPTS time.Duration
 	firstInputKeyframe          bool
@@ -330,8 +337,19 @@ func (diagnostics *codecFixtureDiagnostics) wrap(id string, inner transcoder, er
 	if err != nil {
 		return nil, err
 	}
-	trace := &codecFixtureTrace{}
+	diagnostics.packager.mu.Lock()
+	generation := diagnostics.packager.generation
+	diagnostics.packager.mu.Unlock()
+	trace := &codecFixtureTrace{generation: generation, createdAt: time.Now()}
 	diagnostics.mu.Lock()
+	if previous := diagnostics.tracks[id]; previous != nil {
+		if diagnostics.previous == nil {
+			diagnostics.previous = make(map[string][]*codecFixtureTrace)
+		}
+		if len(diagnostics.previous[id]) < 2 {
+			diagnostics.previous[id] = append(diagnostics.previous[id], previous)
+		}
+	}
 	diagnostics.tracks[id] = trace
 	diagnostics.mu.Unlock()
 	return &codecFixtureObservedTranscoder{transcoder: inner, packager: diagnostics.packager, trace: trace}, nil
@@ -372,6 +390,7 @@ func (observed *codecFixtureObservedTranscoder) CapturedAt(sample types.Sample) 
 	observed.trace.mu.Lock()
 	if observed.trace.outputs == 0 {
 		observed.trace.first = output
+		observed.trace.firstOutputDelay = time.Since(observed.trace.createdAt)
 	}
 	observed.trace.outputs++
 	observed.trace.last = output
@@ -380,6 +399,24 @@ func (observed *codecFixtureObservedTranscoder) CapturedAt(sample types.Sample) 
 	}
 	observed.trace.mu.Unlock()
 	return capturedAt
+}
+
+func (observed *codecFixtureObservedTranscoder) Close() {
+	observed.transcoder.Close()
+	observed.trace.mu.Lock()
+	observed.trace.closed = true
+	observed.trace.lifetime = time.Since(observed.trace.createdAt)
+	observed.trace.mu.Unlock()
+}
+
+func logCodecFixtureTrace(t *testing.T, id string, trace *codecFixtureTrace) {
+	trace.mu.Lock()
+	line := fmt.Sprintf("CODEC_DIAGNOSTIC output track=%s generation=%d closed=%t first_output_delay=%s lifetime=%s inputs=%d rejected=%d input_first_pts=%s input_first_keyframe=%t input_last_pts=%s outputs=%d first=%+v last=%+v keyframes=%+v",
+		id, trace.generation, trace.closed, trace.firstOutputDelay.Round(time.Millisecond), trace.lifetime.Round(time.Millisecond),
+		trace.inputs, trace.rejected, trace.firstInputPTS, trace.firstInputKeyframe, trace.lastInputPTS,
+		trace.outputs, trace.first, trace.last, trace.keyframes)
+	trace.mu.Unlock()
+	t.Log(line)
 }
 
 func (diagnostics *codecFixtureDiagnostics) log(t *testing.T) {
@@ -395,16 +432,15 @@ func (diagnostics *codecFixtureDiagnostics) log(t *testing.T) {
 	for _, id := range []string{"audio", "high", "medium", "low"} {
 		diagnostics.mu.Lock()
 		trace := diagnostics.tracks[id]
+		previous := append([]*codecFixtureTrace(nil), diagnostics.previous[id]...)
 		diagnostics.mu.Unlock()
+		for _, earlier := range previous {
+			logCodecFixtureTrace(t, id, earlier)
+		}
 		if trace == nil {
 			t.Logf("CODEC_DIAGNOSTIC output track=%s present=false", id)
 		} else {
-			trace.mu.Lock()
-			line := fmt.Sprintf("CODEC_DIAGNOSTIC output track=%s inputs=%d rejected=%d input_first_pts=%s input_first_keyframe=%t input_last_pts=%s outputs=%d first=%+v last=%+v keyframes=%+v",
-				id, trace.inputs, trace.rejected, trace.firstInputPTS, trace.firstInputKeyframe, trace.lastInputPTS,
-				trace.outputs, trace.first, trace.last, trace.keyframes)
-			trace.mu.Unlock()
-			t.Log(line)
+			logCodecFixtureTrace(t, id, trace)
 		}
 		track := tracks[id]
 		if track == nil {

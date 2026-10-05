@@ -491,7 +491,7 @@ func (packager *Packager) pumpInput(ctx context.Context, worker *packagerWorker)
 						kind = "audio"
 					}
 					hlsDrops.WithLabelValues(worker.track.id, "worker", kind, "queue_full").Inc()
-					packager.requestRestart("worker_failure")
+					packager.requestWorkerRestart(worker, "input", "push_failed")
 					return
 				}
 			case types.MediaEventTypeDiscontinuity:
@@ -547,7 +547,7 @@ func (packager *Packager) pumpOutput(ctx context.Context, worker *packagerWorker
 			}
 			if !ok {
 				if ctx.Err() == nil {
-					packager.requestRestart("worker_failure")
+					packager.requestWorkerRestart(worker, "output", "drops_closed")
 				}
 				return
 			}
@@ -556,7 +556,7 @@ func (packager *Packager) pumpOutput(ctx context.Context, worker *packagerWorker
 				kind = "audio"
 			}
 			hlsDrops.WithLabelValues(worker.track.id, "worker", kind, "queue_full").Inc()
-			packager.requestRestart("worker_failure")
+			packager.requestWorkerRestart(worker, "output", "queue_full")
 			return
 		case sample, ok := <-worker.transcoder.Samples():
 			if ctx.Err() != nil {
@@ -564,7 +564,7 @@ func (packager *Packager) pumpOutput(ctx context.Context, worker *packagerWorker
 			}
 			if !ok {
 				if ctx.Err() == nil {
-					packager.requestRestart("worker_failure")
+					packager.requestWorkerRestart(worker, "output", "samples_closed")
 				}
 				return
 			}
@@ -610,14 +610,16 @@ func (packager *Packager) waitForAnchor(ctx context.Context, worker *packagerWor
 		case <-notify:
 		case _, ok := <-worker.transcoder.Drops():
 			if ctx.Err() == nil {
+				reason := "drops_closed"
 				if ok {
+					reason = "queue_full"
 					kind := "video"
 					if worker.track.audio {
 						kind = "audio"
 					}
 					hlsDrops.WithLabelValues(worker.track.id, "worker", kind, "queue_full").Inc()
 				}
-				packager.requestRestart("worker_failure")
+				packager.requestWorkerRestart(worker, "anchor", reason)
 			}
 			return false
 		}
@@ -957,7 +959,7 @@ func (packager *Packager) monitorGeneration(ctx context.Context, workers []*pack
 				}
 				track.mu.Unlock()
 				if stalled && track.audio {
-					packager.requestRestart("worker_failure")
+					packager.requestWorkerRestart(worker, "monitor", "output_stall")
 					return
 				}
 			}
@@ -975,6 +977,15 @@ func (packager *Packager) requestRestart(reason string) {
 	case packager.restart <- normalizeGenerationReason(reason):
 	default:
 	}
+}
+
+// Fixed worker/stage/reason fields distinguish restart paths without logging
+// media bytes or credentials. Each caller exits its pump after requesting it.
+func (packager *Packager) requestWorkerRestart(worker *packagerWorker, stage, reason string) {
+	packager.logger.Warn().Uint64("generation", worker.track.generation).
+		Str("variant", worker.track.id).Str("stage", stage).Str("reason", reason).
+		Msg("HLS worker restart requested")
+	packager.requestRestart("worker_failure")
 }
 
 func (packager *Packager) drainRestarts() {
