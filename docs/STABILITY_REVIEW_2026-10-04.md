@@ -92,11 +92,14 @@ acceptance. Full exact 97ba4ad9 checks/image preparation subsequently passed:
 codec tests and server/base/Brave builds, with Repair-Check-Exitcode 0. Audit
 exit 1 remains open findings. Default-off deployment of hls-97ba4ad9ab3e then
 passed with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes.
-The operator reported normal login/picture/audio/control work. NEXT is same-image
-conventional HLS enablement and 19 denial probes; enabled isolation/device acceptance
-remains pending.
+The operator reported normal login/picture/audio/control work. The subsequent
+HLS attempt failed with `HLS bootstrap failed; retry manually`, and the operator
+confirmed that WebRTC also stopped working. Latest activation CLI/HTTP outcomes
+are not supplied. NEXT capture private diagnosis before restart and restore the
+confirmed same-image baseline without HLS, then confirm normal browser recovery.
+Fresh diagnosis, restoration and enabled isolation/device acceptance remain pending.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
-See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Live HLS stays disabled.
+See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.
 
 1. **Room events and stores:** traced member list/join/disconnect, room chat and
    control take/release/grant in `client/src/neko/index.ts` and the user/chat/

@@ -16,8 +16,11 @@ automated/image preparation then passed with Repair-Check-Exitcode 0: 47 client
 tests, TypeScript/build, 13 Go packages, both fuzz jobs, all three codec tests
 and server/base/Brave builds. Default-off repair-image deployment then passed
 with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. The
-operator reported the requested normal browser check works. NEXT is same-image
-conventional HLS activation and its 19 HTTP denial probes; working HLS playback
+operator reported the requested normal browser check works. The subsequent HLS
+attempt failed with bootstrap failure and an operator-confirmed WebRTC outage.
+Latest enablement CLI/HTTP outcomes are not supplied. NEXT capture private
+diagnosis before restart and restore the confirmed same-image baseline without
+HLS, then confirm normal browser recovery; working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -48,6 +51,43 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 `/opt/docker/nekoNew/neko`; keep the existing adaptive and WebCodecs overlays.
 
 ## 1. Prepare exact tests and images without replacing the service
+
+### Current failed attempt: diagnose first, then restore the confirmed baseline
+
+Do not rerun preparation or enablement while this incident remains open. The
+operator reported HLS bootstrap failure and WebRTC outage after the confirmed
+97ba4ad9 default-off browser checkpoint. The latest activation CLI/HTTP results
+are not supplied. Capture the failed state before restarting. The existing
+diagnostic stores raw logs privately and prints only its fixed safe summary.
+If it fails, retain its exit code and continue restoration. Baseline mode uses
+the previously confirmed prepared 97ba4ad9 image without HLS, preserving the
+adaptive/WebCodecs overlays; the saved rollback tag holds the prior image.
+
+```bash
+set +e
+bash -e -o pipefail <<'NEKO_HLS_DIAG_RESTORE'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "97ba4ad9ab3e635da936a58c8a7ec795da05ba46"
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-97ba4ad9ab3e
+test "$(stat -c %a "$output")" = 700
+diagnostic_status=0
+bash deploy/diagnose-hls-playback.sh "$PWD" "$output" || diagnostic_status=$?
+printf 'Diagnostic-Exitcode: %s\n' "$diagnostic_status"
+bash deploy/deploy-hls-media.sh baseline "$output"
+docker compose -f docker-compose.validation.yaml run --rm -T \
+  hls-http-checks disabled </dev/null
+NEKO_HLS_DIAG_RESTORE
+printf 'Recovery-Exitcode: %s\n' "$?"
+```
+
+Supply only this block's printed safe summary and deployment/probe output.
+Do not paste its private raw application/supervisor logs. Confirm normal
+login/picture/audio/control in a fresh browser window after recovery. Diagnosis,
+restoration and fresh browser recovery are pending. Review the incident evidence
+before any further HLS attempt. Keep checkout, evidence,
+Caddy and master unchanged. This block is **NOT EXECUTED IN CODEX**.
 
 This block passed at exact 97ba4ad9 with Repair-Check-Exitcode 0; keep the
 prepared images and private directory for the default-off deployment below.
@@ -128,8 +168,9 @@ Baseline-Exitcode 0 with helper blob c6f52dc80fdf605ec908f3fe3856ce23e015e494,
 healthy my-neko/brave:hls-97ba4ad9ab3e and 2/2 public disabled-route 404 probes.
 The operator then reported the requested normal login/picture/audio/control
 check works. This is bounded target evidence, **NOT EXECUTED IN CODEX**; wider
-role/recovery/device checks are not implied. NEXT use section 2's same-image
-conventional HLS enable/probe block. Caddy and old private evidence are retained.
+role/recovery/device checks are not implied. The subsequent HLS attempt failed
+and WebRTC also stopped working per operator report; use the diagnosis/recovery
+block above before any further enablement. Caddy and old private evidence are retained.
 Do not infer enabled HLS playback from this baseline.
 
 Check default-off public routes with the credential-free probe:
@@ -193,8 +234,9 @@ The subsequent section 2 activation passed, but the operator again reported HLS
 bootstrap failure followed by all streams stopping. The subsequent read-only
 diagnostic, default-off restoration and isolated GOP comparison passed, as
 recorded below; exact 97ba4ad9 preparation and default-off deployment then passed.
-The operator then reported normal browser checks work; NEXT is same-image HLS
-activation and its HTTP probes. The original activation used section 2's plain
+The operator then reported normal browser checks work. Its subsequent HLS
+attempt failed, and the operator confirmed WebRTC outage; diagnosis/recovery is
+now the next step. The original activation used section 2's plain
 image/probe helper, keeping this same application commit and evidence directory.
 Do not repeat the completed Caddy source merge. Public valid-lease playback,
 production capture skew and the full lifecycle/device/resource matrix remain
@@ -219,7 +261,9 @@ same-image activation also passed with Enable-Exitcode 0, healthy service and
 all streams stopping afterward. Diagnosis/default-off recovery and the isolated
 GOP A/B gate subsequently passed. Exact 97ba4ad9 preparation and default-off
 deployment also passed; the operator reported the requested normal browser
-check works. NEXT run the prepared 97ba4ad9 activation/probe block below.
+check works. Its subsequent live HLS attempt failed with bootstrap failure, and
+the operator confirmed WebRTC outage. The latest activation CLI/HTTP results
+are not supplied. Use section 1's diagnosis/recovery block before any retry.
 Do not reuse the old preparation
 marker or repeat the completed source-merging Caddy activation.
 
@@ -252,9 +296,11 @@ The helper recorded both tooling blobs and the application commit, passed the
 merge/activation/synthetic-error/invalid-input gates, and left valid playback
 pending. This was target execution, **NOT EXECUTED IN CODEX**. Do not repeat its
 bare-source merge on the already-modified Caddyfile. After incident recovery and
-a new exact repair-image gate, use the plain enable/probe block below if Caddy
+a new exact repair-image gate, the plain enable/probe block below was prepared if Caddy
 and its logging configuration remain as reviewed, after normal login/picture/
-audio/control have been confirmed on the new default-off image:
+audio/control have been confirmed on the new default-off image. The latest live
+attempt failed; do not repeat this block until diagnosis and recovery have been
+reviewed and a supported next change/checkpoint is prepared:
 
 ```bash
 set +e

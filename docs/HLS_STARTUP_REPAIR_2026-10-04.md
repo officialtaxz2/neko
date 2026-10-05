@@ -290,8 +290,29 @@ directory and recorded its snapshot. These are supplied target results,
 The operator answered the requested fresh normal login/picture/audio/control
 check with "ja klappt alles soweit ich denke". This is bounded reported browser
 evidence on the new image; no detailed role/recovery/device matrix or enabled
-HLS playback is implied. NEXT enable conventional HLS on this same image and
+HLS playback is implied. The next step was to enable conventional HLS on this same image and
 repeat its 17 public plus two direct cleartext-denial probes, then the bounded
 actual picture/audio/room-event checkpoint. Preserve evidence, Caddy and master. Full
 enabled HLS, isolation, authorization/lifecycle and device acceptance remain
 open; a healthy container and two disabled routes do not establish playback.
+
+## GOP-repair live attempt failed; diagnosis/recovery pending — 2026-10-05
+
+After the confirmed default-off browser checkpoint, the operator reported
+`HLS bootstrap failed; retry manually` during the requested HLS attempt. The
+operator then confirmed that normal WebRTC also stopped working. The latest
+enablement CLI output, HTTP probe outcomes and running image/configuration have
+not yet been supplied; do not infer a passed activation gate or a process crash.
+The fixed-GOP fixture repair remains verified only within its recorded tests.
+It has not resolved the live failure, whose cause remains unconfirmed.
+
+NEXT capture the existing read-only diagnosis before any restart, preserving
+private raw logs and sharing only the fixed safe summary. Then use baseline
+mode at unchanged application 97ba4ad9 with the existing private result directory
+to restore the prepared image without HLS. This is the previously confirmed
+same-image baseline; the saved rollback tag instead holds the prior image.
+Continue recovery even if diagnosis fails, reporting both exit codes. Review
+the disabled-route probes and fresh normal browser behavior before further
+HLS attempts. Diagnosis, restoration and browser recovery are pending.
+No new build, checkout change or Caddy modification is required for this block.
+The operator report is target evidence; runtime work is **NOT EXECUTED IN CODEX**.
