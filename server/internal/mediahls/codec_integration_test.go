@@ -18,8 +18,9 @@ import (
 // packager. The fixture supplies a shared, nonzero input clock; it does not
 // stand in for target capture skew, authorization, proxy or browser acceptance.
 type codecFixtureProvider struct {
-	origin time.Time
-	errors chan error
+	origin    time.Time
+	errors    chan error
+	sceneCuts bool
 }
 
 func (provider *codecFixtureProvider) Sources(kind types.MediaKind) []types.MediaSource {
@@ -35,12 +36,16 @@ func (provider *codecFixtureProvider) Subscribe(ctx context.Context, request typ
 	pipelineSource := "audiotestsrc is-live=true wave=sine samplesperbuffer=960 ! audio/x-raw,format=S16LE,rate=48000,channels=2 ! opusenc bitrate=128000 ! appsink name=appsink max-buffers=8 drop=true sync=false"
 	var rate uint32 = 50
 	if source.Kind == types.MediaKindVideo {
+		pattern := "ball"
+		if provider.sceneCuts {
+			pattern = "black"
+		}
 		for _, variant := range FixedVariants() {
 			if variant.SourceID == source.ID {
 				source.Width, source.Height = variant.Width, variant.Height
 				source.FrameRateNumerator, source.FrameRateDenominator = variant.FrameRate, 1
 				rate = variant.FrameRate
-				pipelineSource = fmt.Sprintf("videotestsrc is-live=true pattern=ball ! video/x-raw,format=I420,width=%d,height=%d,framerate=%d/1 ! vp8enc deadline=1 cpu-used=8 keyframe-max-dist=%d ! appsink name=appsink max-buffers=8 drop=true sync=false", variant.Width, variant.Height, rate, rate*2)
+				pipelineSource = fmt.Sprintf("videotestsrc name=fixture_video is-live=true pattern=%s ! video/x-raw,format=I420,width=%d,height=%d,framerate=%d/1 ! vp8enc deadline=1 cpu-used=8 keyframe-max-dist=%d ! appsink name=appsink max-buffers=8 drop=true sync=false", pattern, variant.Width, variant.Height, rate, rate*2)
 			}
 		}
 	}
@@ -70,6 +75,7 @@ func (provider *codecFixtureProvider) Subscribe(ctx context.Context, request typ
 		defer close(subscription.done)
 		defer close(subscription.events)
 		var sequence uint64
+		var scene int
 		for {
 			select {
 			case <-child.Done():
@@ -85,6 +91,21 @@ func (provider *codecFixtureProvider) Subscribe(ctx context.Context, request typ
 				// videorate's initial gap and encoder segment normalization.
 				pts := 30*time.Second + time.Duration(sequence)*time.Second/time.Duration(rate)
 				sequence++
+				if provider.sceneCuts && source.Kind == types.MediaKindVideo {
+					// Hard cuts at 1.3 s deliberately do not follow the 2 s GOP.
+					// videotestsrc's black/white enum values are 2/3.
+					nextScene := int((pts - 30*time.Second) / (1300 * time.Millisecond))
+					if nextScene != scene {
+						if !pipeline.SetPropInt("fixture_video", "pattern", 2+nextScene%2) {
+							select {
+								case provider.errors <- errors.New("fixture scene change failed"):
+								default:
+								}
+								return
+							}
+							scene = nextScene
+						}
+				}
 				unit := types.EncodedMediaUnit{
 					Generation: source.Generation, Sequence: sequence,
 					PTS: pts, DTS: pts, PTSValid: true, DTSValid: true,
@@ -177,5 +198,87 @@ func TestRealCodecsReachConventionalPackagerReadiness(t *testing.T) {
 	packager.mu.Unlock()
 	if generation != 1 {
 		t.Fatalf("cold fixture caused %d packager generations", generation)
+	}
+}
+
+// This test can also be mounted into the prior codec-validation image. Its
+// scene cuts expose GOP phase changes that the smooth startup fixture misses.
+func TestRealSceneCutsPreservePackagerGeneration(t *testing.T) {
+	if err := validateGSTTranscoderElements(); err != nil {
+		t.Fatal(err)
+	}
+	for _, element := range []string{"audiotestsrc", "videotestsrc", "opusenc", "vp8enc"} {
+		if err := gst.CheckElement(element); err != nil {
+			t.Fatal(err)
+		}
+	}
+	provider := &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4), sceneCuts: true}
+	packager := newPackager(provider, gstTranscoderFactory{})
+	defer packager.Shutdown()
+	ctx, cancel := context.WithTimeout(context.Background(), ConventionalReadyWindow+2*ParentDuration+4*time.Second)
+	defer cancel()
+	if err := packager.Acquire(ctx, ModeHLS); err != nil {
+		t.Fatalf("scene-cut packager did not become ready: %v", err)
+	}
+	defer packager.Release()
+	initial := make(map[string]uint64)
+	for _, id := range []string{"audio", "high", "medium", "low"} {
+		track := packager.track(id)
+		if track == nil {
+			t.Fatalf("scene cuts removed initial rendition %s", id)
+		}
+		track.mu.RLock()
+		if len(track.segments) != 3 {
+			track.mu.RUnlock()
+			t.Fatalf("scene-cut rendition %s lacks three initial parents", id)
+		}
+		initial[id] = track.segments[len(track.segments)-1].Sequence
+		track.mu.RUnlock()
+	}
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			t.Fatal("scene-cut packager stopped advancing complete parents")
+		case err := <-provider.errors:
+			t.Fatal(err)
+		case <-ticker.C:
+		}
+		packager.mu.Lock()
+		generation := packager.generation
+		packager.mu.Unlock()
+		if generation != 1 {
+			t.Fatalf("scene cuts restarted packaging: generation=%d", generation)
+		}
+		advanced := true
+		for _, id := range []string{"audio", "high", "medium", "low"} {
+			track := packager.track(id)
+			if track == nil {
+				t.Fatalf("scene cuts removed rendition %s", id)
+			}
+			track.mu.RLock()
+			ready := track.initReady && track.hlsReady && !track.failed && len(track.segments) == 3
+			var last Segment
+			if len(track.segments) > 0 {
+				last = track.segments[len(track.segments)-1]
+			}
+			track.mu.RUnlock()
+			if !ready {
+				t.Fatalf("scene cuts made rendition %s unplayable", id)
+			}
+			if _, ok := packager.Object(id, last.URI); !ok {
+				t.Fatalf("rendition %s lost its latest complete parent", id)
+			}
+			if last.Sequence < initial[id]+2 {
+				advanced = false
+			}
+		}
+		if advanced {
+			if _, err := packager.Master(); err != nil {
+				t.Fatal(err)
+			}
+			return
+		}
 	}
 }

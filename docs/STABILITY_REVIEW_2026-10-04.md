@@ -71,9 +71,21 @@ This is supplied target evidence, **NOT EXECUTED IN CODEX**. Same-image HLS
 activation then passed with Enable-Exitcode 0, healthy service and 19/19 HTTP
 denial probes. The operator again reported HLS bootstrap failure and all
 streams stopping afterward, tentatively recalling a brief initial picture.
-No actual process crash trace or cause is supplied. NEXT preserve read-only
-diagnostics before restoring this same known-working image without HLS;
-restoration and enabled HLS/device/resource acceptance remain open.
+No actual process crash trace or cause is supplied. The next step at that
+checkpoint was read-only diagnosis before restoring the same known-working
+image without HLS. Its subsequent results are recorded below; enabled
+HLS/device/resource acceptance remains open.
+
+The subsequent diagnostic/recovery passed (both exit 0): healthy 80020d99
+container, no Docker restart/OOM or sampled Neko exit, one successful HLS
+bootstrap/lease and 23 successful segment requests, followed by two fixed
+timeline-gap rejections. The same image returned healthy to default-off and
+passed 2/2 disabled-route probes; fresh browser confirmation is pending. The
+bounded HLS-only scenecut=0 correction and sustained scene-cut regression/A/B
+helper are statically reviewed, not executed. They address a maximum-GOP versus
+fixed-part-boundary contract defect; its role in the all-stream symptom is a
+hypothesis pending negative/positive controls and live isolation acceptance.
+See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Live HLS stays disabled.
 
 1. **Room events and stores:** traced member list/join/disconnect, room chat and
    control take/release/grant in `client/src/neko/index.ts` and the user/chat/

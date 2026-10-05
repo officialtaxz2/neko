@@ -7,7 +7,9 @@ Read-only diagnosis, rollback recovery and exact 80020d99 repair-image
 preparation passed. Default-off repair-image deployment and operator-confirmed
 normal login/picture/audio/control passed. Same-image HLS activation/19 denial
 probes passed, but HLS failed again with an operator-reported all-stream outage.
-Read-only diagnosis/default-off restoration, working HLS playback and grouped
+Read-only diagnosis/default-off restoration passed, showing two timeline-gap
+rejections and earlier valid server delivery without a sampled process crash.
+Isolated GOP repair comparison, working HLS playback and grouped
 acceptance remain PENDING.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
@@ -134,9 +136,9 @@ The operator confirmed normal login, picture, audio and control all work in the
 requested private browser window at https://neko.taxzvps.de/. No wider
 room-event/device matrix or enabled HLS playback was reported.
 The subsequent section 2 activation passed, but the operator again reported HLS
-bootstrap failure followed by all streams stopping. NEXT preserve the failed
-attempt's read-only diagnostic and restore the known-working default-off image
-as described below. The original activation sequence used section 2's plain
+bootstrap failure followed by all streams stopping. The subsequent read-only
+diagnostic and default-off restoration passed, as recorded below; NEXT is the
+isolated GOP comparison. The original activation sequence used section 2's plain
 image/probe helper, keeping this same application commit and evidence directory.
 Do not repeat the completed Caddy source merge. Public valid-lease playback,
 production capture skew and the full lifecycle/device/resource matrix remain
@@ -300,8 +302,36 @@ helper (blob c6f52dc80fdf605ec908f3fe3856ce23e015e494) in baseline mode with
 the explicit repository argument. This restores the same prepared image with
 HLS disabled; startup failure attempts the saved prior image. Do not delete
 evidence, rebuild, change Caddy or retry enabled playback before review.
-Both this incident's diagnostic and restoration are pending target execution,
-**NOT EXECUTED IN CODEX**. Confirm normal login/picture/audio again afterward.
+Both this incident's diagnostic and restoration passed with exit 0. The
+container was healthy with no restart/OOM or sampled Neko exit; the summary
+showed one successful bootstrap/lease, 23 successful segment requests and two
+timeline-gap sample rejections. Same-image default-off restoration started
+healthy and passed 2/2 disabled-route probes. Fresh browser confirmation remains
+pending. These are supplied results, **NOT EXECUTED IN CODEX**.
+
+### Isolated scene-cut GOP comparison (NEXT; live HLS remains disabled)
+
+The [repair record](HLS_STARTUP_REPAIR_2026-10-04.md) documents the exact evidence
+and bounded scenecut=0 correction. Keep application HEAD at 80020d99 and its
+existing private result directory. Fetch the reviewed repair commit and extract
+[validate-hls-gop-repair.sh](../deploy/validate-hls-gop-repair.sh) privately;
+record that full hash in gop-repair-commit.txt and check the script with bash -n.
+
+```bash
+output=/opt/docker/nekoNew/neko-hls-results-80020d99477a
+repair_commit="$(cat "$output/gop-repair-commit.txt")"
+bash "$output/validate-hls-gop-repair.sh" "$PWD" "$output" "$repair_commit"
+```
+
+The helper verifies baseline source blobs in the existing codec image and pins
+its ID. It requires the new hard-scene-cut test to fail with a timeline-gap
+marker on old code, then all three integration tests to pass with only the HLS
+transcoder correction mounted. Runs have no network, room credentials or
+running-service attachment. Unexpected controls fail closed; reports remain
+private. The helper and new regression are statically reviewed,
+**NOT EXECUTED IN CODEX**, pending target execution. Full repair tests/build,
+fresh images and default-off live verification follow only after this isolated
+gate. Preserve prior evidence; do not enable HLS or change Caddy in this block.
 
 ### First bounded picture/audio checkpoint (repeat after diagnosis/repair)
 

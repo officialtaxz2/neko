@@ -139,15 +139,66 @@ picture before the failure, then reported all streams stopped. Device/browser,
 actual process crash versus stalled media, timestamps and cause remain
 unconfirmed; this is not a verified successful HLS playback or crash trace.
 
-NEXT preserve a read-only failed-attempt diagnostic before restarting, using
+The next step at that checkpoint was to preserve a read-only diagnostic before restarting, using
 the existing helper whose blob is 5b4b064926f83eccc28fe8bd596db93ba9c19ff1.
 Its raw application/Supervisor logs stay in a new private report directory;
 only its safe summary may be shared. Then invoke the reviewed a7669dd1 helper's
 baseline action to restore this same previously working image without HLS.
-Diagnostic capture and this restoration are pending target execution.
-Review the supplied evidence before making further application changes. Later
+Diagnostic capture and restoration subsequently passed, as recorded below.
+Review that evidence before making further application changes. Later
 repeat the picture/audio/room-event smoke test, valid passive authorization/lifecycle,
 mixed-backend isolation, resources and grouped device checks in
 [`HLS_LL_HLS_VALIDATION.md`](HLS_LL_HLS_VALIDATION.md). No automatic fallback,
 encoder bitrate/profile change, new production dependency or `master` promotion
 is included. Existing dependency advisories remain open.
+
+## Second diagnosis/recovery and fixed-GOP follow-up
+
+The supplied 80020d99 diagnostic and recovery both ended with exit 0. The
+container was running/healthy with image ID
+sha256:63d7441365a8ec8628a0abeec8c11f5046ee86962769f9723bf12e276a75c299,
+zero Docker restarts and oom_killed=false; no Neko exit appeared in the bounded
+Supervisor sample. These are observations, not proof against every historical
+hang/crash. The 220-line application sample contains one ready marker, one
+opened/changed/closed lease, two sample rejections and two generation starts.
+The two rejected samples matched `HLS transcode timeline gap`. Cumulative
+metrics show one successful bootstrap, 23 successful segment requests and five
+not-ready bootstraps; synthetic denial probes are also included. Three video
+keyframe-admission counters were high=201, medium=318 and low=235. This proves
+valid server delivery occurred, not uninterrupted visual/audio playback.
+
+The same prepared image was restored healthy without HLS and passed both
+disabled-route probes, with Recovery-Exitcode 0. Fresh browser confirmation
+after this restoration is pending; earlier default-off browser evidence remains
+valid for its tested interval. Runtime gst-inspect remains unavailable, which
+does not establish missing codec libraries.
+
+The inspected HLS encoder sets a maximum two-second GOP but permits scene-cut
+keyframes. These can shift subsequent GOP boundaries while acceptSample still
+requires IDRs at every even one-second part boundary. It can drop delta frames
+through a whole part and then reject the later keyframe as a timeline gap. This
+is a source contract defect and a matching failure hypothesis, not proof that
+it explains the operator's all-stream outage. See the
+[GStreamer key-int-max/option-string contract](https://gstreamer.freedesktop.org/documentation/x264/index.html#x264enc:key-int-max)
+and [x264's fixed-GOP discussion](https://mailman.videolan.org/pipermail/x264-devel/2017-August/012296.html).
+
+The bounded correction adds scenecut=0 only to the HLS x264 option string. It
+preserves encoder rates, geometry, profiles, timestamp mapping, genuine gap
+rejection and WebRTC/WebCodecs capture. The target-only real-codec regression
+introduces hard black/white cuts every 1.3 input seconds and requires all four
+renditions to become ready and advance two more complete parents in generation
+1. The prior smooth-ball startup fixture remains separate. Pattern enum values
+are documented by [GStreamer](https://gstreamer.freedesktop.org/documentation/videotestsrc/index.html#GstVideoTestSrcPattern).
+
+NEXT run [validate-hls-gop-repair.sh](../deploy/validate-hls-gop-repair.sh) against
+the existing codec-validation image, with application checkout still 80020d99.
+The helper pins its image ID, verifies old transcoder/packager/GStreamer source
+blobs, mounts the new test into an isolated no-network container, and requires
+the old code to fail with the timeline-gap marker. An unrelated failure or
+unexpected pass stops the gate. It then mounts only the corrected transcoder
+and requires all three codec integration tests to pass. It keeps new timestamped
+private reports without changing the service, checkout or preparation marker.
+This A/B gate, full repair application checks/build, deployment and live/device
+acceptance are **PENDING; NOT EXECUTED IN CODEX**. No new live HLS retry is
+authorized by a synthetic test pass alone. The all-stream symptom and shared
+capture/room-event isolation still require explicit target verification.

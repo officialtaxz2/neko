@@ -64,8 +64,10 @@ func (gstTranscoderFactory) NewVideo(variant Variant, source types.MediaSource) 
 	bitrate := (variant.AverageBandwidth - AudioBitrate) / 1_000
 	peakBitrate := (variant.Bandwidth - AudioBitrate) / 1_000
 	keyframeInterval := variant.FrameRate * 2
+	// key-int-max alone permits scene-cut keyframes, which reset the GOP's
+	// phase. Packaging requires an IDR at each two-second boundary instead.
 	pipeline := fmt.Sprintf(
-		"appsrc name=appsrc is-live=true format=time block=false max-buffers=%d max-bytes=0 max-time=0 caps=video/x-vp8 ! queue max-size-buffers=%d max-size-bytes=0 max-size-time=0 leaky=downstream ! vp8dec ! videoconvert ! videoscale ! videorate skip-to-first=true ! video/x-raw,format=I420,width=%d,height=%d,framerate=%d/1 ! x264enc bitrate=%d key-int-max=%d bframes=0 byte-stream=false aud=true speed-preset=veryfast tune=zerolatency option-string=vbv-maxrate=%d:vbv-bufsize=%d ! h264parse config-interval=-1 ! video/x-h264,stream-format=avc,alignment=au,profile=high,level=(string)3.1 ! appsink name=appsink max-buffers=%d drop=true sync=false",
+		"appsrc name=appsrc is-live=true format=time block=false max-buffers=%d max-bytes=0 max-time=0 caps=video/x-vp8 ! queue max-size-buffers=%d max-size-bytes=0 max-size-time=0 leaky=downstream ! vp8dec ! videoconvert ! videoscale ! videorate skip-to-first=true ! video/x-raw,format=I420,width=%d,height=%d,framerate=%d/1 ! x264enc bitrate=%d key-int-max=%d bframes=0 byte-stream=false aud=true speed-preset=veryfast tune=zerolatency option-string=scenecut=0:vbv-maxrate=%d:vbv-bufsize=%d ! h264parse config-interval=-1 ! video/x-h264,stream-format=avc,alignment=au,profile=high,level=(string)3.1 ! appsink name=appsink max-buffers=%d drop=true sync=false",
 		WorkerHandoffCapacity,
 		WorkerHandoffCapacity,
 		variant.Width,
