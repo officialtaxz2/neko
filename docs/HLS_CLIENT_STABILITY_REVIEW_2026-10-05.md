@@ -1,7 +1,8 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **IMPLEMENTED / STATICALLY REVIEWED / NOT EXECUTED IN CODEX**.
-The new client changes and regression cases have no target-server result yet.
+Status: **TARGET CLIENT GATE PASSED / IMAGE AND LIVE ACCEPTANCE PENDING**.
+The supplied exact-68 target result passed all 60 tests, TypeScript and build.
+All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
 The latest supplied running deployment remains exact application
 `73d5ff6d29110e3dd06999726a7e88718d09ea23`, conventional HLS enabled, with
 WebRTC working. This review changes repository source only.
@@ -99,9 +100,15 @@ revocation tests remain. The never-ready case also checks a pending Play with
 `paused=false`, retaining the original 30-second startup cleanup bound.
 Static diff and surrounding-source review completed;
 no dependency, package script, backend or deployment configuration changed.
-All new tests, TypeScript checks, builds and browser acceptance are **PENDING**.
+The supplied target gate below passed the full client tests, TypeScript check
+and client build. Candidate image preparation and browser acceptance remain
+**PENDING**.
 
 ## One grouped target checkpoint later
+
+The isolated client-checks stage below has now passed. Continue with exact-68
+image preparation described at the end of this record; do not rerun the passed
+client stage without a changed source or a new failure.
 
 Keep the working exact-73 service and private evidence while this candidate is
 reviewed. Do not repeat completed activation/denial probes or ask the operator
@@ -136,3 +143,73 @@ uncorrelated; these source repairs are not a confirmed explanation of all
 observed failures. Device, authorization/lifecycle, latency/resource/isolation,
 dependency and final grouped promotion gates remain open. `master` stays
 pinned; WebRTC remains the default and fallback stays manual.
+
+## Supplied exact-68 isolated client gate passed
+
+The complete supplied output pins candidate
+`68dbdd4a8dd798886302b235c1f8f208452e0c6e` and private report
+`/opt/docker/nekoNew/neko-hls-client-check-68dbdd4a-lJbw35xa`. The command fetched
+Git objects, exported that candidate with `git archive` and used the existing
+disposable `client-checks` service. It did not move the application checkout or
+replace the running service.
+
+All 60 client tests passed, including the eight new regression cases and the
+expanded pending-Play startup bound: zero failures, cancellations or skips.
+`tsc --noEmit` then passed. Vite 6.4.3 built 673 modules and the fresh main bundle
+`index-urce48rY.js`; the build completed in 5.50 seconds. The output ended with
+`CLIENT-CHECK PASSED: 68dbdd4a8dd798886302b235c1f8f208452e0c6e` and
+`Client-Check-Exitcode: 0`. The command writes `candidate-commit.txt`,
+`client-check-commit.txt` and `client-check.log` into that private report.
+
+`npm ci` reported 20 affected package entries (11 low, 3 moderate, 5 high,
+1 critical), matching the earlier aggregate classification. This abbreviated
+output supplies no fresh advisory-by-advisory audit or security clearance.
+Keep [dependency maintenance](DEPENDENCY_AUDIT_2026-10-04.md) open; no package
+or lockfile changed and no automatic audit fix was applied. The chunk-size
+warning is distinct from a build failure.
+
+These are supplied target results, **NOT EXECUTED IN CODEX**. They validate the
+exact client candidate, not a fresh server/codec/fuzz run, image deployment or
+browser playback interval. The reported frozen picture and event-associated
+reconnects remain uncorrelated pending live candidate validation.
+
+## Next operator block: prepare exact-68 images while exact-73 stays running
+
+`deploy/prepare-hls-client-stability.sh` is a separate target-only helper,
+statically reviewed in the later tooling commit. Keep the application candidate
+at exact `68dbdd4a`; extract the helper from its supplied exact tooling commit
+into the existing private client report rather than checking out tooling as an
+untested application image.
+
+The helper consumes these five arguments:
+
+```text
+REPOSITORY  /opt/docker/nekoNew/neko
+BASE_OUTPUT /opt/docker/nekoNew/neko-hls-results-73d5ff6d2911
+CLIENT_REPORT /opt/docker/nekoNew/neko-hls-client-check-68dbdd4a-lJbw35xa
+OUTPUT_DIR  /opt/docker/nekoNew/neko-hls-results-68dbdd4a8dd7
+HELPER_COMMIT the full tooling commit provided in the operator block
+```
+
+Before moving the checkout, it checks the clean `testing` history, helper blob,
+private exact-73 preparation record, exact-68 client markers and every exported
+client/validation/fixture file against Git. It also requires unchanged
+server/runtime/apps/build/Compose sources and dependency manifests, and checks
+the live/tagged exact-73 image ID against the prior preparation record.
+
+It then fast-forwards the application checkout to exact-68, records private
+evidence, builds fresh `my-neko/base:hls-68dbdd4a8dd7` and
+`my-neko/brave:hls-68dbdd4a8dd7`, saves image IDs and checks that the original
+live container/image remain unchanged. The marker is written only after both
+builds and the snapshot succeed. No stop/up/recreate/reload action is included.
+Server/codec/fuzz evidence is explicitly inherited through the identical
+exact-73/a7ff backend; the passed 60-test result is not represented as an A/B
+reproduction of old code.
+
+The operator block first runs `bash -n` on the extracted helper, then invokes
+it once with these arguments. Syntax checking, image preparation and live
+candidate acceptance are **PENDING / NOT EXECUTED IN CODEX**. Only after the
+image block passes should the existing exact-image deployer activate it with
+rollback evidence and the grouped browser test. Keep old images/evidence and
+`master`; no renewed browser questionnaire or completed HTTP-denial gate is
+requested during this preparation block.

@@ -466,10 +466,12 @@ The requested follow-up static work is now recorded in
 [the client stability review](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 It corrects paused-time stall accounting, premature first-play monitoring and
 mixed HTTP/readiness failure counts, plus bounded attachment/event handling
-and fixed bootstrap availability detail. Eight regression cases are prepared;
-tests/type/build and live validation of this new candidate remain pending.
-The active target remains exact-73. Keep the later checks grouped; no new
-ad-hoc operator action is requested by the source-only review.
+and fixed bootstrap availability detail. The supplied exact-68 isolated target
+gate then passed all 60 tests, TypeScript and build with Client-Check-Exitcode 0.
+Image and live validation remain pending. NEXT prepare candidate images with
+the separately pinned stability helper and private passed client report while
+the active target remains exact-73. Keep later activation/browser checks grouped;
+do not repeat the passed client stage without a new reason.
 
 The operator could not reliably answer the follow-up about the exact five-minute
 interval and reports possible random reconnects/room actions, without enough

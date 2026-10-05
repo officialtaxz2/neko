@@ -398,8 +398,8 @@ when playback is requested and the element is not paused. The follow-up
 [client stability review](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md) gates that
 watchdog until readiness, resets its clock on deliberate resume, separates
 HTTP/readiness failure counts and prepares eight new regression cases. This
-new candidate is statically reviewed only; target automation/build/browser
-validation remain pending. The earlier client-only correction follows
+exact-68 candidate passed the supplied isolated 60-test/type/build gate;
+image preparation and browser validation remain pending. The earlier client-only correction follows
 the first-picture/premature-timeout report at a7ffb8b1. Its isolated target gate
 reproduced the old fault and passed all 52 repaired client tests/type/build;
 scoped image preparation passed with Client-Image-Exitcode 0, a fresh client

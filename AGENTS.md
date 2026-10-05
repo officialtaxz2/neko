@@ -1,15 +1,21 @@
 # AGENTS.md
 
-Latest source-only checkpoint (2026-10-05): the requested
+Latest client checkpoint (2026-10-05): the requested
 [HLS client stability review](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md)
 corrected pause/startup progress monitoring and independent HTTP/readiness
 failure budgets, with defensive player-event handling and fixed bootstrap
-availability detail. Eight regression cases are prepared. **NOT EXECUTED IN
-CODEX**; new target tests/type/build/image and live acceptance are pending.
+availability detail. The supplied exact-68 isolated target gate passed all
+60 client tests, TypeScript and build (Client-Check-Exitcode 0); report
+`/opt/docker/nekoNew/neko-hls-client-check-68dbdd4a-lJbw35xa`. These are supplied
+server results, **NOT EXECUTED IN CODEX**. Candidate image/live acceptance and
+dependency maintenance remain pending.
 The latest supplied running deployment stays exact `73d5ff6d`, conventional
-HLS enabled, with WebRTC working. NEXT validate this candidate with isolated
-client-checks, then group later image/browser checks; no extra ad-hoc operator
-action now. Prior results below apply only to their recorded commits. `master`
+HLS enabled, with WebRTC working. NEXT extract the separately pinned target-only
+`prepare-hls-client-stability.sh` helper and prepare exact-68 images using the
+passed client report and identical exact-73 backend evidence; retain the live
+service, then group later activation/browser checks. Do not rerun the passed
+client gate without a new reason. Prior results below apply only to their
+recorded commits. `master`
 remains pinned at `d9105ef8`.
 
 ## Purpose

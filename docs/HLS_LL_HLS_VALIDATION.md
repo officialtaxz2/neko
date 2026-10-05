@@ -1,13 +1,16 @@
 # HLS / LL-HLS Phase 4 target-server validation
 
-**Latest source-only follow-up — 2026-10-05:**
+**Latest exact-68 client follow-up — 2026-10-05:**
 [client stability repairs](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md) correct
 pause/startup progress monitoring and independent HTTP/readiness budgets, with
-eight new regression cases prepared. **NOT EXECUTED IN CODEX**; candidate
-tests/type/build/image and live acceptance are pending. Retain the working
-exact-73 service. The next validation is one grouped later checkpoint, beginning
-with isolated client-checks; historical 52-test and deployment results below do
-not validate this new candidate. No additional ad-hoc operator action now.
+eight new regression cases. The supplied exact-68 isolated gate passed all
+60 tests, TypeScript and build with Client-Check-Exitcode 0.
+**NOT EXECUTED IN CODEX**; candidate image/live acceptance are pending.
+NEXT prepare exact-68 images with the separately pinned
+`prepare-hls-client-stability.sh`, passed private client report and identical
+exact-73 backend evidence. Retain the working service; group activation/browser
+follow-up later. Historical 52-test/deployment results apply to their commits;
+no repeated client gate or extra browser questionnaire now.
 
 Repository assets prepared on 2026-10-04. **The automated/image preparation and
 activation/invalid-input gates passed at exact application `93f1fa63`;
