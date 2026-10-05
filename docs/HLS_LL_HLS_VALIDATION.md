@@ -41,8 +41,12 @@ worker failure was not reproduced. The controlled audio-anchor A/B at repair
 audio/anchor/queue_full restart reproduced under injected high delay; all eight
 corrected checks passed in three fresh processes and scene cuts passed once
 (25 top-level passes). All seven real-codec fixtures stayed in generation 1.
-NEXT full exact-71a14d21 tests/image preparation, retaining the running
-default-off 97ba4ad9 service. Keep HLS disabled. Working HLS playback
+Full exact-71a14d21 preparation then passed with Repair-Prepare-Exitcode 0:
+all nine selected startup checks passed in the rebuilt GStreamer 1.26.2 image,
+including normal/delayed-high readiness and scene cuts in generation 1;
+base/Brave images were built and the running service stayed unchanged.
+NEXT deploy the prepared 71 image default-off and obtain fresh normal-browser
+confirmation. Keep HLS disabled. Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -74,7 +78,62 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 
 ## 1. Prepare exact tests and images without replacing the service
 
-### Controlled audio-anchor A/B passed; prepare exact 71a14d21 tests/images
+### Exact-71a14d21 preparation passed; default-off deployment/browser next
+
+The supplied output ended with AUTOMATED/IMAGE GATE PASSED and
+Repair-Prepare-Exitcode 0. It begins inside the codec-image build, so earlier
+client/type/build, Go/fuzz and server-check output is not included in this
+excerpt; those preceding steps are covered by the unchanged fail-fast script's
+reported final success. Do not infer fresh per-check counts from this tail.
+
+The rebuilt GStreamer 1.26.2 codec image explicitly passed all nine selected
+startup checks. Normal readiness passed at 18.11 s, delayed-high readiness at
+18.09 s and scene cuts at 30.19 s, all in generation 1 with zero rejected pushes.
+The video-IDR, AAC-drainage/timestamp-offset, cancellation/overflow and native
+registry/mapping checks passed as well; the overflow/closure warnings belong
+to deliberate unit cases. mediahls package duration was 66.704 s.
+my-neko/base:hls-71a14d2174da and my-neko/brave:hls-71a14d2174da were built.
+The final snapshot and success marker are under
+/opt/docker/nekoNew/neko-hls-results-71a14d2174da. Dependency-audit report exit 1
+is an open classification/remediation item, not a passing security audit.
+The running default-off 97 service remained unchanged. Full 414 preparation
+remains a separate failed checkpoint; retain its PENDING marker and evidence.
+
+NEXT deploy only the prepared exact-71 image with HLS disabled. This block
+restarts Neko, retains the adaptive/WebCodecs overlays and saves the current
+image as the rollback tag before replacement. The deployer checks the exact
+preparation marker and image ID before touching the service, and restores the
+saved image if the new container fails to become healthy. No Caddy change or
+new build is needed. Keep application HEAD at 71; later documentation commits
+on origin/testing are not the prepared image checkpoint.
+
+```bash
+set +e
+bash -e -o pipefail <<'NEKO_HLS_BASELINE'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "71a14d2174dafbc12b1880adde6dc68176bfe9af"
+
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-71a14d2174da
+test "$(stat -c %a "$output")" = 700
+
+bash deploy/deploy-hls-media.sh baseline "$output"
+docker compose -f docker-compose.validation.yaml run --rm -T \
+  hls-http-checks disabled </dev/null
+NEKO_HLS_BASELINE
+printf 'Baseline-Exitcode: %s\n' "$?"
+```
+
+After this block passes, confirm normal login, picture, audio and control
+take/release in a fresh private browser window at https://neko.taxzvps.de/
+without a media override. Supply the deployment/probe output and browser
+result before any enabled HLS attempt. Preparation does not validate native
+live capture, browser playback or the earlier all-stream outage's cause.
+Default-off 71 deployment and its browser checkpoint, enabled HLS and grouped
+acceptance remain pending. **NOT EXECUTED IN CODEX; supplied preparation passed.**
+
+### Controlled audio-anchor A/B and completed full preparation block (historical)
 
 The supplied worker diagnostic from helper 53034495 completed with
 Worker-Diagnostic-Exitcode 0. All six checks passed in three fresh processes;
@@ -125,10 +184,12 @@ HLS readiness. See [provenance and exact results](HLS_STARTUP_REPAIR_2026-10-04.
 This passes the controlled AAC-overflow comparison, not full preparation or
 live playback. The earlier failed 414 preparation marker remains PENDING.
 **NOT EXECUTED IN CODEX; supplied target A/B passed.** Full exact-71a14d21
-tests/images, new-image baseline and enabled live acceptance remain pending.
+tests/images subsequently passed as recorded above; new-image baseline and
+enabled live acceptance remain pending.
 
-NEXT fast-forward only to the exact application repair below and prepare its
-tests/images in a separate directory. The newer documentation-only commit on
+The following block was run to fast-forward to the exact application repair
+and prepare its tests/images in a separate directory. It passed; do not repeat
+it as the current NEXT step. The newer documentation-only commit on
 origin/testing records this evidence; it is not the application checkpoint.
 This block never replaces the running default-off 97ba4ad9 service.
 

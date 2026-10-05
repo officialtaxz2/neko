@@ -60,10 +60,18 @@ drains AAC during startup instead of holding its first sample; only video waits
 for high. AAC admitted after the anchor keeps its actual presentation offset.
 The injected delay is a test condition, not a deployment setting; this
 controlled reproduction does not identify the earlier unobserved restart or
-live all-stream outage. No preparation marker or service changed. NEXT full
-exact-71a14d21 tests/image preparation while retaining the working default-off
-97 service and HLS disabled. **NOT EXECUTED IN CODEX; supplied target A/B passed,
-full preparation and live acceptance pending.**
+live all-stream outage. The A/B changed no preparation marker or service.
+Full exact-71a14d21 preparation then passed with Repair-Prepare-Exitcode 0:
+all nine selected startup checks passed in the rebuilt GStreamer 1.26.2 image,
+with normal/delayed-high/scene-cut fixtures in generation 1, and base/Brave
+images were built. The service stayed unchanged. Its supplied tail omits
+earlier client/Go/fuzz output; preceding stages are covered by the script's
+reported final success, not fresh per-check counts in this excerpt. The private
+snapshot/success marker is under /opt/docker/nekoNew/neko-hls-results-71a14d2174da.
+Dependency-audit exit 1 remains an open report item, not security acceptance.
+NEXT deploy the prepared 71 image default-off and obtain fresh normal-browser
+confirmation; keep HLS disabled. **NOT EXECUTED IN CODEX; supplied A/B and full
+preparation passed, new-image baseline and enabled live acceptance pending.**
 
 | Metric family | Evidence |
 | --- | --- |

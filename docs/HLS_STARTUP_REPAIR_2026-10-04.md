@@ -2,12 +2,15 @@
 
 Status: source changes statically reviewed on `testing`; the exact 80020d99
 target automated/image gate and both real-codec integration tests passed.
-Latest full preparation at 414639d2 FAILED with a worker_failure restart during
+Full preparation at 414639d2 FAILED with a worker_failure restart during
 smooth cold readiness; bounded stage/history diagnosis then passed three
 fresh starts without reproducing it. The narrower video-only anchor hold at
 71a14d21 passed the controlled AAC-overflow A/B: both old-code failures
 reproduced, all eight corrected checks passed three fresh processes and scene
-cuts passed once. NEXT full exact-71a14d21 tests/image preparation.
+cuts passed once. Full exact-71a14d21 preparation subsequently passed with
+Repair-Prepare-Exitcode 0: all nine selected startup checks passed in the rebuilt
+codec image and base/Brave images were built. The running service was unchanged.
+NEXT deploy the prepared 71 image default-off and confirm normal browser use.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -767,8 +770,8 @@ readiness. The future full-image codec gate includes both new regressions.
 No service access, image build, checkout or marker mutation occurs in this A/B.
 
 Source/diffs are statically reviewed; **NOT EXECUTED IN CODEX; supplied
-controlled A/B passed as recorded below. Full exact-repair preparation,
-new-image baseline and enabled live acceptance remain pending**.
+controlled A/B and subsequent full exact-repair preparation passed as recorded
+below. New-image baseline and enabled live acceptance remain pending**.
 A passing controlled A/B does not prove the cause of the
 unobserved earlier worker restart, native low-source stall or all-stream outage.
 
@@ -836,11 +839,60 @@ The native low-source construction stall and reported live all-stream outage
 are still unconfirmed; controlled AAC overflow is not retrospective proof of
 their cause.
 
-NEXT the pinned full exact-71a14d21 test/image block in
+The next step at that checkpoint was the pinned full exact-71a14d21 test/image block in
 [validation section 1](HLS_LL_HLS_VALIDATION.md#1-prepare-exact-tests-and-images-without-replacing-the-service),
-using /opt/docker/nekoNew/neko-hls-results-71a14d2174da. Keep the working
-default-off 97 service running and HLS disabled. Only after that preparation
-passes should its output be reviewed for a separate default-off deployment
+using /opt/docker/nekoNew/neko-hls-results-71a14d2174da. It subsequently passed
+while the working default-off 97 service remained running and HLS disabled.
+Its output is reviewed below for a separate default-off deployment
 and fresh normal-browser check; enabled HLS picture/audio, authorization,
 lifecycle/isolation and grouped device/resource acceptance remain pending.
 All execution above is supplied target evidence, **NOT EXECUTED IN CODEX**.
+
+## Full exact-71a14d21 preparation passed — 2026-10-05
+
+The supplied tail ends with AUTOMATED/IMAGE GATE PASSED, running service
+unchanged and Repair-Prepare-Exitcode 0. Image tags and the evidence path
+identify application 71a14d2174dafbc12b1880adde6dc68176bfe9af. The excerpt starts
+inside the codec-image dependency build; it omits earlier client/type/build,
+Go/fuzz and server-check output. The known fail-fast preparation script's final
+success covers those preceding stages, but this tail does not independently
+show their counts or fuzz execution totals. No missing output is invented and
+no repeat of passing preparation is required.
+
+The newly built GStreamer 1.26.2 image explicitly passed all nine selected
+startup checks once. Native registry independence and encoder running-time
+mapping passed; video initial-IDR retention, anchor cancellation/overflow and
+AAC drainage/common-clock offset passed. The real-codec fixtures passed:
+
+| Fixture | Test duration | Final generation | All-four-track parent window |
+| --- | --- | --- | --- |
+| Normal cold readiness | 18.11 s | 1 | MSN 1/2/3 |
+| Delayed-high cold readiness | 18.09 s | 1 | MSN 1/2/3 |
+| Sustained scene cuts | 30.19 s | 1 | MSN 3/4/5 |
+
+All four tracks had valid init, healthy state and zero rejected pushes.
+High first-output delays were 54 ms normal, 284 ms delayed and 53 ms scene-cut.
+No real-codec worker restart occurred. The medium/anchor queue_full and
+drops_closed warnings are inside the deliberate overflow/closure unit cases.
+gst package duration was 0.202 s; mediahls package duration was 66.704 s.
+
+Base and Brave builds completed with tags my-neko/base:hls-71a14d2174da and
+my-neko/brave:hls-71a14d2174da. The final private snapshot/success marker path
+is /opt/docker/nekoNew/neko-hls-results-71a14d2174da. The deployer will compare
+the image ID against that preparation record before replacing the service.
+Dependency-audit report exit 1 is recorded for classification/remediation;
+no fresh report contents or passing dependency-security claim are supplied.
+
+This closes full exact-71 preparation, without changing the earlier failed
+414 checkpoint or proving live playback. The running service remains the
+working default-off 97ba4ad9 image until the next operator block. Preserve its
+rollback capability and the private failure/A/B evidence. The native low-source
+stall and reported all-stream outage still lack a confirmed live cause.
+
+NEXT the exact-71 default-off deployment block in
+[validation section 1](HLS_LL_HLS_VALIDATION.md#1-prepare-exact-tests-and-images-without-replacing-the-service),
+then normal login/picture/audio/control in a fresh private browser window.
+No rebuild or Caddy change is needed. Keep HLS disabled until that baseline
+and browser checkpoint pass and are reviewed. Enabled HLS picture/audio,
+valid authorization/lifecycle, room-event/isolation and grouped device/resource
+acceptance remain pending. **NOT EXECUTED IN CODEX; supplied target preparation passed.**

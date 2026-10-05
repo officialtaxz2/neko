@@ -134,11 +134,18 @@ passed three fresh processes and scene cuts passed once (25 top-level passes).
 All seven real-codec fixtures stayed in generation 1, with no rejected pushes.
 This verifies that controlled AAC-overflow mechanism, not the earlier
 unobserved worker restart or live all-stream outage. No preparation marker or
-live service changed. NEXT full exact-71a14d21 tests/image preparation, retaining
-the working default-off 97ba4ad9 service. New repair/gates: NOT EXECUTED IN
-CODEX; supplied isolated A/B passed, full preparation pending. Keep HLS disabled.
-The actual native blocker and role of the separate capabilities rejection remain unconfirmed; full repair
-checks, deployment and enabled isolation/device acceptance are pending.
+live service changed in that A/B. Full exact-71a14d21 preparation then passed
+with Repair-Prepare-Exitcode 0: the rebuilt GStreamer 1.26.2 image passed all
+nine selected startup checks (normal 18.11 s, delayed-high 18.09 s and scene
+cuts 30.19 s, all generation 1), and base/Brave images were built. The supplied
+tail omits earlier client/Go/fuzz output; the script's reported final success
+covers those stages without separately shown counts. The service stayed
+unchanged. NEXT deploy the prepared 71 image default-off and confirm normal
+browser login/picture/audio/control. New repair/gates: NOT EXECUTED IN CODEX;
+supplied isolated A/B and full preparation passed. Keep HLS disabled.
+The actual native blocker and role of the separate capabilities rejection
+remain unconfirmed; new-image deployment and enabled isolation/device
+acceptance are pending. Dependency-audit report exit 1 is not a security pass.
 These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Keep HLS disabled after recovery.
 
