@@ -72,8 +72,11 @@ and 2/2 disabled-route probes; the operator reported the requested normal
 browser check works. Same-image activation then passed with Enable-Exitcode 0,
 healthy service and 19/19 denial probes. First HLS picture/compact streaming
 was reported, then the initial-readiness error after roughly 30 seconds.
-Retry restored HLS and WebRTC kept working. Client-only repair 73d5ff6d is
-statically reviewed; NEXT the [read-only diagnosis and isolated client A/B/type/build](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+Retry restored HLS and WebRTC kept working. The supplied read-only diagnosis
+then passed with two bootstrap successes and 486 delivered segments. The
+isolated client repair gate passed with old-fault reproduction and all 52
+repaired tests/type/build (Client-Check-Exitcode 0). NEXT [scoped exact-73d5ff6d image preparation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-client-only-image-preparation),
+recording the unchanged a7ff backend evidence separately.
 The application checkout/live image stays at a7ffb8b1 with HLS enabled.
 Sustained HLS playback
 and grouped acceptance remain
@@ -99,6 +102,12 @@ work are not a passing security audit. Nothing here was executed
 in Codex. Use one block at a time, review its output,
 then advance. Keep one exact `testing` implementation commit/image throughout
 the matrix. No `master` promotion or full acceptance follows from a smoke check.
+
+The current client-only preparation uses the passed isolated exact-73 client
+gate and inherited tests/codec/fuzz evidence from identical a7ff backend
+sources. It assembles fresh images, leaves a7ff running and records that scope
+explicitly; it does not repeat the full backend gate or claim fresh backend
+tests at 73. New image preparation/deployment/browser acceptance is pending.
 
 Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 [observability](HLS_LL_HLS_OBSERVABILITY.md) and
@@ -174,7 +183,8 @@ The prepared exact repair image was deployed default-off, followed by the
 operator's reported normal-browser confirmation. Same-image enablement then
 passed and first HLS picture was reported, followed by a client startup-deadline
 failure. Sustained HLS playback and the grouped authorization/lifecycle/device/
-resource matrix remain pending; the client-only readiness gate is next.
+resource matrix remain pending; the client-only gate has passed and scoped
+repair-image preparation is next.
 
 The following completed block restarted Neko, retained the adaptive/WebCodecs
 overlays and saved the working 71 image as the new repair's rollback tag before
@@ -212,12 +222,14 @@ their expected 404 (2/2), and Baseline-Exitcode was 0. The operator then replied
 control check on `https://neko.taxzvps.de/` without a media override. This is a
 bounded reported browser checkpoint, not a device/resource or room-event matrix.
 
-Do not repeat baseline or pull later commits for the current client gate.
+Do not repeat baseline or pull later documentation/tooling commits. The next
+preparation helper advances only to the exact tested client repair, 73d5ff6d.
 Section 2's separate exact-a7ffb8b1 activation/denial-probe block subsequently
 passed, and first HLS picture was reported with a later client deadline error.
 WebRTC kept working. Existing 71 evidence and rollback tags remain available.
 **NOT EXECUTED IN CODEX; supplied default-off/browser and enabled CLI/HTTP
-passed; sustained HLS playback and repaired-client validation pending.**
+passed; the subsequent repaired-client gate passed, sustained HLS playback
+and new image preparation/deployment pending.**
 
 ### Exact-71a14d21 preparation/default-off deployment/browser checkpoint passed
 
@@ -758,10 +770,12 @@ public plus both cleartext-denial probes passed with Enable-Exitcode 0. These
 probes did not use valid credentials. The subsequent operator attempt did
 display HLS picture/compact streaming, then failed around 30 seconds with
 the client readiness-deadline message. Retry restored HLS and WebRTC kept
-working. Do not repeat activation. NEXT the [pinned read-only diagnosis/client gate](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+working. The read-only diagnosis and isolated client gate then passed with
+old-fault reproduction and all 52 repaired tests/type/build. Do not repeat
+activation or those checks. NEXT the [pinned scoped image preparation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-client-only-image-preparation).
 Raw logs/credentials remain private. **NOT EXECUTED IN CODEX; supplied
 same-image activation/HTTP passed, sustained playback and client repair
-validation/deployment pending.**
+image preparation/deployment pending.**
 
 ### Exact-71a14d21 same-image activation and 19 denial probes passed
 
@@ -1034,7 +1048,9 @@ reported first HLS picture and the compact streaming label, followed after
 roughly 30 seconds by "HLS playback did not become ready; retry manually".
 Retry HLS restored playback and WebRTC kept working. Audio/device details and
 the five-minute room-event interval have not been separately demonstrated.
-Before another deployment, run the [read-only diagnosis and isolated client readiness gate](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+The read-only diagnosis and isolated client gate subsequently passed with
+old-fault reproduction and all 52 repaired tests/type/build. Before another
+deployment, prepare the [scoped client repair images](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-client-only-image-preparation).
 The procedure below remains the later sustained-playback gate after repair.
 Use the new `/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448` checkpoint and
 retain the 71 evidence and both rollback tags separately; do not reuse old paths.
@@ -1065,8 +1081,9 @@ cd /opt/docker/nekoNew/neko
 bash deploy/collect-hls-media.sh snapshot ../neko-hls-results-a7ffb8b13448 hls-first-playback
 ```
 
-For the current HLS-only client deadline failure with working WebRTC, use the
-linked read-only/client gate without a recovery restart. If ordinary WebRTC
+For the current HLS-only client deadline failure with working WebRTC, the
+read-only/client gate passed and the scoped image helper keeps a7ff running.
+If ordinary WebRTC
 also stops, preserve the failed state through the read-only diagnosis below
 before restoring the confirmed same-image default-off baseline. Capture before
 restart. The diagnostic prints only a fixed safe summary; raw logs stay private.
@@ -1199,7 +1216,9 @@ then passed with Repair-Prepare-Exitcode 0. Exact-repair default-off deployment
 and reported browser confirmation then passed with Baseline-Exitcode 0, healthy
 service and 2/2 disabled probes. Same-image enablement/denial probes subsequently
 passed; first HLS picture/streaming was reported, followed by a client readiness
-timeout. WebRTC kept working. The client-only repair gate is next;
+timeout. WebRTC kept working. The client-only repair gate then passed with
+all 52 tests/type/build and the old fault reproduced; scoped image preparation
+is next;
 HLS-enabled sustained/device/lifecycle acceptance follows separately. **NOT
 EXECUTED IN CODEX; supplied repair A/B, full preparation, default-off checkpoint
 and enabled CLI/HTTP passed; sustained playback/repair acceptance pending.**

@@ -1,9 +1,11 @@
 # HLS client startup deadline repair — 2026-10-05
 
 Status: client-only repair `73d5ff6d29110e3dd06999726a7e88718d09ea23` is
-implemented and statically reviewed on `testing`. Target A/B, client tests,
-type/build, new image preparation/deployment and sustained playback are
-**PENDING / NOT EXECUTED IN CODEX**. The running application remains exact
+implemented and statically reviewed on `testing`. Supplied target results
+passed the old-defect reproduction, all 52 client tests, type/build and the
+read-only live diagnosis, with Client-Check-Exitcode 0. New image preparation/
+deployment and sustained playback remain **PENDING**. All execution was on the
+target server, **NOT EXECUTED IN CODEX**. The running application remains exact
 `a7ffb8b13448a8329c6df24fdcb182ac32ca398c`, with conventional HLS enabled.
 
 ## Supplied live evidence
@@ -25,7 +27,8 @@ an earlier observed `playing` event, rather than a player that never started.
 Audio, browser/device version, exact elapsed time and sustained playback were
 not separately measured. This is first-picture progress, not acceptance of
 the five-minute checkpoint, role/device matrix or all-stream incident repair.
-No new live diagnostic output has yet been supplied.
+The subsequent safe live diagnosis and isolated client output were supplied
+and passed as recorded below.
 
 ## Static finding and bounded correction
 
@@ -55,7 +58,7 @@ callbacks after private resume. The existing blocked-autoplay case now waits
 beyond the old deadline before exercising manual Play. These are synthetic
 target tests, not native/MSE browser or device compatibility evidence.
 
-## Next target block: read-only diagnosis and isolated client A/B
+## Completed target block: read-only diagnosis and isolated client A/B
 
 Use this block while the checkout and live image remain at a7ffb8b1. It first
 saves a credential-safe live summary, then exports the exact repair helper
@@ -106,11 +109,98 @@ or qualify a new application image for deployment. Review output before
 preparing a new image and repeating normal-browser plus enabled HLS playback.
 The running service still serves the old client until that later deployment.
 
-WebRTC continues working per the operator, so no immediate recovery restart
-is required for this client gate. If normal playback also fails, capture the
-read-only diagnosis and restore the confirmed same-image default-off baseline
-using [the recovery block](HLS_LL_HLS_VALIDATION.md#first-bounded-pictureaudio-checkpoint-repeat-after-diagnosisrepair).
-Keep a7ff/71 evidence and rollback tags. Earlier all-stream outage causes,
-TV compatibility, sustained A/V, authorization/lifecycle, resource/isolation,
-dependency remediation and grouped acceptance remain open. `master` stays
-pinned; there is no automatic fallback or promotion.
+## Supplied diagnosis and exact-client gate passed
+
+The supplied diagnostic returned Diagnostic-Exitcode 0 at application a7ffb8b1.
+Its running image ID is
+`sha256:e3517c887622e04065a7fec5fae1902c03e2e4e5470946915b9b99457e2992b2`;
+the container was healthy with zero restarts, OOM false and no Neko process exit
+in the bounded supervisor sample. The diagnostic captured 977 application log
+lines with no sampled fixed codec/timeline/crash markers. The GStreamer CLI
+version was unavailable; this does not mean the running media library is absent.
+
+Two bootstrap successes, two lease-open/close markers, one packager-ready
+generation and one idle-grace stop were recorded. All four tracks have startup
+generation 1 and cumulative part/parent publication, including medium/low.
+Requests include 486 successful segments, 479 playlists, 1,408 masters, 92
+keepalives and seven init objects. At capture all leases/packagers/retained
+objects were zero, consistent with the logged stop after leases closed. One
+earlier not-ready bootstrap and six negotiation rejections are also present;
+these cumulative counts do not identify one attempt or the browser buffer state.
+Missing error markers are not proof that every earlier event was error-free.
+
+The isolated helper then reproduced the old readiness-deadline assertion as
+required. All 52 repaired client tests passed (zero failures/skips), including
+the five new native/MSE/readiness/lifecycle cases, and TypeScript `tsc --noEmit`
+plus the production Vite build passed. Final Client-Check-Exitcode was 0 with
+CLIENT READINESS A/B/TYPE/BUILD GATE PASSED. Evidence is private at:
+
+`/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448/client-readiness-20261005T171735141870202Z`.
+
+Checkout, images and running service remained at a7ffb8b1. This establishes the
+controlled timer correction; it is not a repaired-image browser check. npm
+reported 20 existing advisories (11 low, three moderate, five high, one critical)
+and Vite reported large chunks; neither prevented this gate. No dependency
+update or passing security-audit claim follows. **NOT EXECUTED IN CODEX;
+supplied read-only diagnosis and exact client A/B/tests/type/build passed.**
+
+## Next target block: client-only image preparation
+
+The helper is pinned independently at tooling commit
+`4a957f3e1f632896b3da3d4b816f5d4008bdbad4`. Application source remains pinned to
+the tested `73d5ff6d29110e3dd06999726a7e88718d09ea23` repair, not newer tooling/
+documentation commits. All guards run before the clean checkout advances from
+a7ffb8b1 to that repair. The running enabled a7ff image is retained during builds.
+
+The helper checks the successful client marker, exact helper/source blobs and
+baseline preparation/image record. It rejects changes outside the two client
+files, their readiness helper and documentation. Unchanged server/capture/
+runtime/codec/configuration/dependency sources inherit the successful a7ff
+backend gate; no repeat Go/fuzz/codec test run or fresh exact-73 backend-test
+claim is made. This scoped provenance is saved in `preparation-scope.txt` and
+`inherited-backend-commit.txt` beside the client evidence reference. Fresh base/
+Brave artifacts are built from the repair with `CLIENT_DIST` explicitly empty.
+
+```bash
+set +e
+bash -e -o pipefail <<'NEKO_HLS_CLIENT_IMAGE'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+
+umask 077
+base_output=/opt/docker/nekoNew/neko-hls-results-a7ffb8b13448
+client_report="$base_output/client-readiness-20261005T171735141870202Z"
+output=/opt/docker/nekoNew/neko-hls-results-73d5ff6d2911
+
+git fetch origin testing
+helper_commit="4a957f3e1f632896b3da3d4b816f5d4008bdbad4"
+git show "$helper_commit:deploy/prepare-hls-client-repair.sh" \
+  > "$base_output/prepare-hls-client-repair.sh"
+bash -n "$base_output/prepare-hls-client-repair.sh"
+bash "$base_output/prepare-hls-client-repair.sh" \
+  "$PWD" "$base_output" "$client_report" "$output" "$helper_commit"
+NEKO_HLS_CLIENT_IMAGE
+printf 'Client-Image-Exitcode: %s\n' "$?"
+```
+
+The new output directory must be absent; preserve any failed attempt. Its
+`validation-commit.txt` stays PENDING until both images, exact image-ID records
+and the private snapshot succeed, with the original live container/image still
+unchanged. Final success qualifies the scoped repair-image preparation, not
+the full enabled acceptance matrix. There is no service recreation, Caddy edit,
+test repetition or HLS enablement change in this block. This helper has only
+been statically reviewed in Codex; target syntax/build/preparation is pending.
+
+After reviewing success, deploy the new image default-off using the established
+helper/new evidence path, confirm normal login/picture/audio/control, then enable
+conventional HLS in that same image and repeat sustained picture/audio alongside
+WebRTC. A private/new browser window must load the new client bundle. The later
+deployer saves the working a7ff image under the repair's rollback tag. Keep both
+old evidence directories and images; no pruning or `master` promotion.
+
+WebRTC continues working per the operator. If normal playback also fails before
+new deployment, preserve diagnosis and restore the confirmed a7ff default-off
+baseline, keeping the application checkout and matching evidence aligned.
+Earlier all-stream outage causes, TV compatibility, sustained A/V, authorization/
+lifecycle, resource/isolation, dependency remediation and grouped acceptance
+remain open. There is no automatic fallback or full acceptance claim.

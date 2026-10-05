@@ -104,7 +104,9 @@ the operator reported the requested normal browser check works. Same-image
 activation then passed with Enable-Exitcode 0 and all nineteen denial probes.
 The operator reported first HLS picture and the compact streaming label, then
 the initial-readiness error around 30 seconds; retry restored HLS and WebRTC
-kept working. NEXT the [read-only diagnosis and isolated client readiness gate](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+kept working. The supplied read-only diagnosis and isolated client gate then
+passed: old deadline fault reproduced and all 52 repaired tests/type/build
+passed, with the live service unchanged. NEXT [scoped client-only image preparation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-client-only-image-preparation).
 The actual
 live IDR phases remain unmeasured. The repair owns one audio/high subscription
 and four workers; its three high-resolution decoders require a fresh CPU/RSS
@@ -118,10 +120,21 @@ the ongoing `HLS playback stalled; retry manually` progress watchdog. The old
 client failed to cancel its initial deadline after `canplay`/`playing`, so a
 briefly low readyState at the deadline could end already-started playback.
 Repair 73d5ff6d cancels that deadline on current-player readiness; its target
-checks/deployment remain pending. Live media counters alone cannot prove a
+client gate passed, while new images/deployment remain pending. Live media counters alone cannot prove a
 browser buffer state. Capture the safe summary without restarting a working
 WebRTC service; raw logs stay private and cumulative retries are not correlated
 to one browser failure.
+
+The latest supplied a7ff diagnosis returned exit 0: healthy image
+`sha256:e3517c887622e04065a7fec5fae1902c03e2e4e5470946915b9b99457e2992b2`, zero
+restarts, OOM false and no sampled Neko exits/fixed error markers in 977 log
+lines. Two HLS bootstraps succeeded; all four tracks published parts/parents
+in startup generation 1. Counts include 486 successful segments, 479 playlists,
+1,408 masters, 92 keepalives and seven init requests. Lease-close/idle-stop
+markers and zero current objects/leases/packagers are consistent with later
+idle cleanup, not evidence of a crash. Earlier not-ready/rejection counters
+remain cumulative. This proves server delivery within its scope, not sustained
+browser playback, latency or a failure-free device matrix.
 
 | Metric family | Evidence |
 | --- | --- |

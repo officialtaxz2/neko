@@ -276,9 +276,14 @@ Static inspection found the initial player deadline stayed active after
 Client-only repair 73d5ff6d cancels it on current-player readiness, arms it
 before attachment and preserves independent startup/stall bounds and lifecycle
 guards. Native/MSE regression checks and a pinned old/new client/type/build
-gate are prepared in [the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
-They are **NOT EXECUTED IN CODEX**; supplied target results and repaired-image
-deployment/sustained playback remain pending. The actual browser buffer state,
+gate passed in the supplied target output: old-fault reproduction, all 52
+repaired client tests, TypeScript and Vite build, with Client-Check-Exitcode 0.
+The safe live diagnosis passed with a healthy a7ff image, two bootstrap
+successes and 486 delivered segments; no sampled process exit/OOM was found.
+Execution is **NOT EXECUTED IN CODEX**; scoped image preparation and repaired-
+image deployment/sustained playback remain pending in
+[the readiness repair record](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+The actual browser buffer state,
 prior all-stream outage causes, dependency/device and grouped gates remain open.
 
 WebRTC remains the default; WebCodecs remains explicit; HLS starts default-off

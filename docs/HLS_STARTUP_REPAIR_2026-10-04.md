@@ -33,7 +33,9 @@ Same-image activation then passed with Enable-Exitcode 0 and 19/19 denial
 probes. First HLS picture and the compact streaming label were reported,
 followed around 30 seconds by an initial-readiness timeout. Retry restored HLS
 and WebRTC kept working. Client-only repair 73d5ff6d disarms the obsolete start
-timer on readiness. NEXT [read-only diagnosis and isolated client A/B/type/build](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
+timer on readiness. The supplied read-only diagnosis and isolated client gate
+then passed with old-fault reproduction and all 52 repaired tests/type/build
+(Client-Check-Exitcode 0). NEXT [scoped client-only image preparation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-client-only-image-preparation).
 The live application remains a7ffb8b1 with conventional HLS enabled.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
@@ -1277,8 +1279,31 @@ bounds. Meaningful native/MSE/lifecycle regressions and a pinned isolated
 old/new client/type/build helper are prepared; no server/codec/dependency
 change is included. See [the client repair record and next exact block](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md).
 
-NEXT capture the safe read-only live diagnosis and run that isolated client
-gate while retaining the a7ff checkout, preparation marker, enabled live image
-and working WebRTC service. No new image or recovery restart is required for
-that check. The client repair is **NOT EXECUTED IN CODEX**; target verification,
+That read-only/client gate subsequently passed, as recorded below. The live
+service stayed unchanged. The client repair is **NOT EXECUTED IN CODEX**;
 new image preparation/deployment and sustained/grouped acceptance remain pending.
+
+## Client-readiness A/B/type/build and live diagnosis passed — 2026-10-05
+
+The supplied read-only diagnosis at a7ff returned exit 0 with a healthy running
+image ID `sha256:e3517c887622e04065a7fec5fae1902c03e2e4e5470946915b9b99457e2992b2`,
+zero restarts, OOM false and no sampled Neko exits/fixed error markers in 977
+application log lines. Both HLS leases opened and later closed; one generation
+became ready, all four tracks published parts/parents, and 486 segment requests
+succeeded before the logged idle-grace stop. The capture showed no active
+leases/packagers/objects. These cumulative counters span participants/retries;
+they do not show a browser buffer state or establish sustained playback.
+
+The isolated client helper reproduced the old startup-deadline assertion and
+then passed all 52 repaired tests, TypeScript and the Vite build, with final
+Client-Check-Exitcode 0. Evidence is the private a7ff subdirectory
+`client-readiness-20261005T171735141870202Z`. The application checkout/images/live
+service were unchanged. Native/MSE/lifecycle regression coverage supports the
+controlled client correction; no repaired image is deployed yet.
+
+NEXT the [pinned client-only image preparation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-target-block-client-only-image-preparation)
+with application 73d5ff6d and independent tooling 4a957f3e. Exact client success
+and unchanged a7ff backend source evidence are recorded separately; no repeat
+Go/fuzz/codec result at 73 is claimed. The running enabled a7ff service remains
+during image assembly. New images/deployment and sustained/grouped acceptance
+remain pending. **NOT EXECUTED IN CODEX; supplied diagnosis/client gate passed.**
