@@ -9,8 +9,11 @@ normal login/picture/audio/control passed. Same-image HLS activation/19 denial
 probes passed, but HLS failed again with an operator-reported all-stream outage.
 Read-only diagnosis/default-off restoration passed, showing two timeline-gap
 rejections and earlier valid server delivery without a sampled process crash.
-Isolated GOP repair comparison, working HLS playback and grouped
-acceptance remain PENDING.**
+The isolated target GOP A/B gate passed at repair commit 97ba4ad9 on 2026-10-05:
+old code reproduced two timeline gaps; all three repaired codec tests passed,
+including 30.19 seconds of scene cuts in generation 1. Exact repair-commit
+automated/image preparation, working HLS playback and grouped acceptance remain
+PENDING.**
 The supplied output records 47 client tests (including the three new chat
 security/formatting regressions), type/build, 13 Go packages, both fuzz jobs
 and server/base/Brave builds, with final exit code 0; that preparation left the
@@ -41,8 +44,11 @@ Read [the fixed contract](HLS_LL_HLS.md), [Caddy review](HLS_LL_HLS_CADDY.md),
 ## 1. Prepare exact tests and images without replacing the service
 
 For this incident, fetch `origin/testing` and fast-forward to the exact reviewed
-repair application commit `80020d99477a58318f210b7e14d19cdd92991a6d` below.
-Later documentation-only commits need not move this application checkpoint.
+GOP-repair application commit `97ba4ad9ab3e635da936a58c8a7ec795da05ba46` below.
+The isolated comparison passed; the restored live service remains on the prior
+80020d99 image with HLS disabled during this new preparation. Preserve its
+private results and rollback image. Later documentation-only commits need not
+move the new application checkpoint.
 Verify the full hash, branch and clean worktree. The result directory
 below is private and outside Git; reuse it for all blocks of that exact commit.
 When changing the implementation commit, preserve the old directory and use
@@ -55,7 +61,7 @@ cd /opt/docker/nekoNew/neko
 test "$(git branch --show-current)" = testing
 test -z "$(git status --porcelain=v1)"
 git fetch origin testing
-repair_commit="80020d99477a58318f210b7e14d19cdd92991a6d"
+repair_commit="97ba4ad9ab3e635da936a58c8a7ec795da05ba46"
 git merge --ff-only "$repair_commit"
 test "$(git rev-parse HEAD)" = "$repair_commit"
 bash deploy/validate-hls-phase4.sh "../neko-hls-results-${repair_commit:0:12}"
@@ -67,7 +73,8 @@ The helper checks Compose quietly, shell syntax and the HTTP checker, runs
 client tests/type/build and the relevant Go suite with 30-second WebSocket and
 HLS request-boundary fuzz jobs. It builds the same-commit codec-validation image,
 reports its GStreamer version and runs required real-codec segment/packager
-integration tests before building exact uniquely tagged base/Brave images.
+integration tests, including sustained scene cuts, before building exact
+uniquely tagged base/Brave images.
 It never stops/recreates the running service. A success marker is written
 only after the final baseline snapshot. A failed rerun invalidates that marker.
 That snapshot describes the running rollback image. Passing preparation does
@@ -94,7 +101,7 @@ no credentials. Confirm existing WebRTC/WebCodecs playback, control/recovery,
 fullscreen and absent HLS choices before enabling. Complete the Caddy routing,
 trust, streaming and log review before creating valid HLS credentials.
 
-### Prepared repair image: default-off deployment/browser smoke passed
+### Prior 80020d99 image: default-off deployment/browser smoke passed
 
 The supplied preparation tail ended with Check-Exitcode 0 at exact 80020d99.
 All 13 Go packages, both fuzz jobs, the trailing server/plugin build, the visible
@@ -105,7 +112,10 @@ not included in the supplied tail. Audit exit 1 remains open findings. This is
 supplied target evidence, **NOT EXECUTED IN CODEX**; valid browser HLS playback
 has not passed.
 
-Keep application HEAD at 80020d99477a58318f210b7e14d19cdd92991a6d. Fetch the
+The following records the completed prior checkpoint; use the new 97ba4ad9
+result directory only after its preparation passes and is reviewed.
+For that prior checkpoint, application HEAD was kept at
+80020d99477a58318f210b7e14d19cdd92991a6d. Fetch the
 reviewed operator-tooling commit, record its full hash, and extract
 [deploy-hls-media.sh](../deploy/deploy-hls-media.sh) into the existing private
 ../neko-hls-results-80020d99477a directory. Check that script with bash -n.
@@ -137,8 +147,9 @@ requested private browser window at https://neko.taxzvps.de/. No wider
 room-event/device matrix or enabled HLS playback was reported.
 The subsequent section 2 activation passed, but the operator again reported HLS
 bootstrap failure followed by all streams stopping. The subsequent read-only
-diagnostic and default-off restoration passed, as recorded below; NEXT is the
-isolated GOP comparison. The original activation sequence used section 2's plain
+diagnostic, default-off restoration and isolated GOP comparison passed, as
+recorded below; NEXT is exact 97ba4ad9 automated/image preparation. The original
+activation sequence used section 2's plain
 image/probe helper, keeping this same application commit and evidence directory.
 Do not repeat the completed Caddy source merge. Public valid-lease playback,
 production capture skew and the full lifecycle/device/resource matrix remain
@@ -309,13 +320,15 @@ timeline-gap sample rejections. Same-image default-off restoration started
 healthy and passed 2/2 disabled-route probes. Fresh browser confirmation remains
 pending. These are supplied results, **NOT EXECUTED IN CODEX**.
 
-### Isolated scene-cut GOP comparison (NEXT; live HLS remains disabled)
+### Isolated scene-cut GOP comparison passed (live HLS remains disabled)
 
 The [repair record](HLS_STARTUP_REPAIR_2026-10-04.md) documents the exact evidence
 and bounded scenecut=0 correction. Keep application HEAD at 80020d99 and its
 existing private result directory. Fetch the reviewed repair commit and extract
 [validate-hls-gop-repair.sh](../deploy/validate-hls-gop-repair.sh) privately;
 record that full hash in gop-repair-commit.txt and check the script with bash -n.
+This procedure completed at 97ba4ad9 on 2026-10-05; it is retained as evidence,
+not the current NEXT block.
 
 ```bash
 output=/opt/docker/nekoNew/neko-hls-results-80020d99477a
@@ -328,10 +341,22 @@ its ID. It requires the new hard-scene-cut test to fail with a timeline-gap
 marker on old code, then all three integration tests to pass with only the HLS
 transcoder correction mounted. Runs have no network, room credentials or
 running-service attachment. Unexpected controls fail closed; reports remain
-private. The helper and new regression are statically reviewed,
-**NOT EXECUTED IN CODEX**, pending target execution. Full repair tests/build,
-fresh images and default-off live verification follow only after this isolated
-gate. Preserve prior evidence; do not enable HLS or change Caddy in this block.
+private. The supplied result has GOP-Check-Exitcode 0. The negative control
+returned the required exit 1 after two low-rendition timeline gaps, generations
+2/3 and failure to become ready in 24.01 seconds. The positive control returned
+0: segment timestamp mapping passed, smooth startup passed in 18.11 seconds and
+the scene-cut test passed in 30.19 seconds, remaining in generation 1 while all
+four renditions advanced two further complete parents. Its pinned codec image
+was sha256:ed572e4ef4cb4dbbf94b56027f4ac19ac47837a74aebe7a4b14860282a5b4a7f.
+The [repair record](HLS_STARTUP_REPAIR_2026-10-04.md) contains full provenance and
+limits. These are supplied target results, **NOT EXECUTED IN CODEX**; they do
+not establish the all-stream outage's unique cause or production playback.
+
+NEXT run section 1 at exact 97ba4ad9 with a new private result directory while
+live HLS remains disabled. Full checks/build and fresh-image preparation are
+pending. After their output is reviewed, deploy that image without HLS and
+confirm normal login/picture/audio/control before a separate enabled block.
+Preserve prior evidence and the existing Caddy configuration.
 
 ### First bounded picture/audio checkpoint (repeat after diagnosis/repair)
 

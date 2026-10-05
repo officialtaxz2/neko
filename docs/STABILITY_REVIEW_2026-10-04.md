@@ -81,10 +81,14 @@ container, no Docker restart/OOM or sampled Neko exit, one successful HLS
 bootstrap/lease and 23 successful segment requests, followed by two fixed
 timeline-gap rejections. The same image returned healthy to default-off and
 passed 2/2 disabled-route probes; fresh browser confirmation is pending. The
-bounded HLS-only scenecut=0 correction and sustained scene-cut regression/A/B
-helper are statically reviewed, not executed. They address a maximum-GOP versus
-fixed-part-boundary contract defect; its role in the all-stream symptom is a
-hypothesis pending negative/positive controls and live isolation acceptance.
+bounded HLS-only scenecut=0 correction subsequently passed the isolated target
+GOP A/B gate at 97ba4ad9 on 2026-10-05. Old code reproduced two timeline gaps
+and failed readiness (expected negative exit 1); all three repaired codec tests
+passed, including 30.19 seconds of scene cuts in generation 1, with overall exit
+0. This verifies the fixed-boundary defect/correction in the bounded fixture;
+its role in the all-stream symptom remains a hypothesis pending live isolation
+acceptance. Full exact-commit checks/build/images are NEXT and still pending.
+These are supplied target results, **NOT EXECUTED IN CODEX**.
 See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Live HLS stays disabled.
 
 1. **Room events and stores:** traced member list/join/disconnect, room chat and

@@ -190,7 +190,7 @@ renditions to become ready and advance two more complete parents in generation
 1. The prior smooth-ball startup fixture remains separate. Pattern enum values
 are documented by [GStreamer](https://gstreamer.freedesktop.org/documentation/videotestsrc/index.html#GstVideoTestSrcPattern).
 
-NEXT run [validate-hls-gop-repair.sh](../deploy/validate-hls-gop-repair.sh) against
+The next step was [validate-hls-gop-repair.sh](../deploy/validate-hls-gop-repair.sh) against
 the existing codec-validation image, with application checkout still 80020d99.
 The helper pins its image ID, verifies old transcoder/packager/GStreamer source
 blobs, mounts the new test into an isolated no-network container, and requires
@@ -198,7 +198,45 @@ the old code to fail with the timeline-gap marker. An unrelated failure or
 unexpected pass stops the gate. It then mounts only the corrected transcoder
 and requires all three codec integration tests to pass. It keeps new timestamped
 private reports without changing the service, checkout or preparation marker.
-This A/B gate, full repair application checks/build, deployment and live/device
-acceptance are **PENDING; NOT EXECUTED IN CODEX**. No new live HLS retry is
-authorized by a synthetic test pass alone. The all-stream symptom and shared
-capture/room-event isolation still require explicit target verification.
+Its supplied outcome is recorded below. Full repair application checks/build,
+deployment and live/device acceptance remain **PENDING; NOT EXECUTED IN CODEX**.
+The all-stream symptom and shared capture/room-event isolation still require
+explicit target verification before a full acceptance claim.
+
+## Isolated GOP A/B gate passed — 2026-10-05
+
+The supplied comparison ran at unchanged application checkout
+80020d99477a58318f210b7e14d19cdd92991a6d, with repair code
+97ba4ad9ab3e635da936a58c8a7ec795da05ba46 and helper blob
+712b491bd5f9900488555051a1fe9acd705f51dc. The existing codec image was pinned to
+sha256:ed572e4ef4cb4dbbf94b56027f4ac19ac47837a74aebe7a4b14860282a5b4a7f;
+its four inspected source blobs matched the prior application. Private evidence
+is in ../neko-hls-results-80020d99477a/gop-repair-20261005T080229723870874Z.
+
+The negative control returned the expected exit 1: the old encoder reproduced
+two low-rendition `HLS transcode timeline gap` rejections, restarted into
+generations 2 and 3 and failed conventional readiness after 24.01 seconds.
+This is the expected regression failure, not a failed overall gate.
+
+With only the corrected transcoder additionally mounted, the positive control
+returned 0. Encoder segment/running-time mapping passed in 0.01 seconds,
+smooth startup passed in 18.11 seconds and sustained scene cuts passed in
+30.19 seconds. The latter reached readiness in generation 1, retained all four
+renditions and advanced two additional complete parents without a generation
+restart. The mediahls package completed in 48.505 seconds. GOP-Check-Exitcode
+was 0. Cleanup sample-discard warnings followed pipeline removal in the test;
+they did not fail the gate or establish deployed capture loss.
+
+This confirms the scene-cut defect and correction in the bounded real-codec
+fixture. It does not establish real capture skew, room-event isolation,
+production browser playback or the unique cause of the reported all-stream
+outage. No new application image was built or deployed by this comparison;
+live HLS remains disabled and fresh post-restoration browser confirmation is
+still pending. These are supplied target results, **NOT EXECUTED IN CODEX**.
+
+NEXT fast-forward the clean target testing checkout to exact 97ba4ad9 and run
+validate-hls-phase4.sh with a new private ../neko-hls-results-97ba4ad9ab3e
+directory. Preserve the 80020d99 evidence and rollback image. Review the full
+checks/build, three fresh-image integration tests and uniquely tagged images
+before default-off deployment/browser confirmation and a separate enabled HLS
+checkpoint. Do not repeat the Caddy merge or promote master.
