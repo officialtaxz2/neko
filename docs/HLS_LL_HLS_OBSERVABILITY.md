@@ -76,12 +76,16 @@ requested normal-browser check works without HLS. Same-image conventional HLS
 activation then passed with Enable-Exitcode 0, healthy service, a private enable
 snapshot and 17/17 public plus 2/2 cleartext-denial probes. The subsequent live
 HLS attempt failed after connecting with "HLS bootstrap failed; retry manually";
-the operator reported only WebRTC streaming works. NEXT read-only diagnosis
-before same-image default-off restoration. The generic client detail does not
-identify a particular HTTP/result/readiness cause; inspect the fixed summary
-and saved evidence before another attempt. **NOT EXECUTED IN CODEX; supplied
-preparation/baseline/browser and activation/invalid-input gates passed; live
-HLS failed, diagnostic/recovery and acceptance pending.**
+the operator reported only WebRTC streaming works. Read-only diagnosis passed:
+950 log lines, one not-ready bootstrap and one started/idle-stopped generation,
+759/564 medium/low keyframe-admission drops, and cumulative part/segment bytes
+only for audio/high. Current zero object/running gauges follow idle teardown;
+they do not mean publication never occurred. No sampled exit/OOM was found.
+Same-image default-off restoration passed, with a healthy service and 2/2
+disabled-route probes; the operator confirmed normal login/picture/audio.
+NEXT the isolated source-clock-phase diagnostic with HLS disabled. The actual
+live IDR phases remain unmeasured. **NOT EXECUTED IN CODEX; supplied recovery
+passed, controlled reproduction and enabled acceptance pending.**
 
 | Metric family | Evidence |
 | --- | --- |

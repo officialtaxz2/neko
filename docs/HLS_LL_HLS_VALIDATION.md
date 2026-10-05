@@ -51,8 +51,12 @@ browser check works without HLS. Same-image 71a14d21 conventional-HLS activation
 then passed with Enable-Exitcode 0, healthy service, an enable snapshot and
 17/17 public plus 2/2 cleartext-denial probes. The subsequent HLS attempt failed
 with "HLS bootstrap failed; retry manually" after connecting; the operator
-reported only WebRTC streaming works. NEXT section 3's read-only diagnosis,
-then confirmed same-image default-off restoration. Working HLS playback
+reported only WebRTC streaming works. Read-only diagnosis and same-image
+default-off restoration passed; the operator confirmed normal login/picture/audio.
+The diagnosis found 759/564 medium/low keyframe-admission drops and cumulative
+part/segment publication only for audio/high. NEXT section 3's isolated
+source-clock-phase diagnostic against unchanged exact-71 production code.
+Working HLS playback
 and grouped acceptance remain
 PENDING.**
 The supplied output records 47 client tests (including the three new chat
@@ -850,8 +854,10 @@ default-off deployment/browser and same-image activation/19 denial probes
 passed, but the subsequent HLS attempt failed during bootstrap. The operator
 reported HLS connecting, then failed with "HLS bootstrap failed; retry manually",
 and only WebRTC streaming works. No successful HLS picture/audio or five-minute
-room-event interval is supplied. NEXT the read-only diagnosis/default-off
-restoration block below, before another playback attempt. Retain the 71 private
+room-event interval is supplied. The read-only diagnosis/default-off restoration
+below passed, and the operator confirmed normal login/picture/audio. NEXT the
+isolated source-clock-phase diagnostic below, before another playback attempt.
+Retain the 71 private
 evidence directory and existing rollback tag; do not reuse earlier 800/97 output paths.
 
 Keep one ordinary WebRTC viewer connected, with changing video/audio in the
@@ -907,9 +913,50 @@ printf 'Recovery-Exitcode: %s\n' "$?"
 ```
 
 Share the fixed diagnostic/deployment/probe output and confirm normal browser
-behavior after restoration. The reported exact-71 bootstrap failure makes this
-the current NEXT block. **NOT EXECUTED IN CODEX; target diagnostic/recovery
-outcomes not yet supplied.**
+behavior after restoration. This exact-71 block subsequently passed with
+Diagnostic-Exitcode 0 and Recovery-Exitcode 0, a healthy same-image default-off
+service and 2/2 disabled-route probes. The operator confirmed normal
+login/picture/audio. **NOT EXECUTED IN CODEX; supplied recovery passed.**
+
+### Isolated source-clock-phase diagnostic after exact-71 recovery
+
+Keep the running service HLS-disabled at application
+71a14d2174dafbc12b1880adde6dc68176bfe9af. The saved live diagnosis found one
+not-ready bootstrap, one started/idle-stopped packager generation and
+medium/low keyframe-admission drops of 759/564. Cumulative init publication
+exists for all tracks, but part/segment publication only for audio/high. The
+zero object/running gauges follow the idle teardown and do not show that no
+objects were ever produced. No sampled Neko exit/OOM was found.
+
+The existing native fixture starts all video sources at the same PTS. Static
+review identifies unequal source/GOP phases as a candidate omitted by that
+fixture: a first medium/low IDR before high's anchor is discarded, and later
+IDRs in odd one-second buckets cannot join the common six-second parent.
+The live summary does not measure those timestamp phases.
+
+[diagnose-hls-clock-skew.sh](../deploy/diagnose-hls-clock-skew.sh) mounts only
+diagnostic test files into the existing exact-71 codec-validation image,
+pins its immutable ID and verifies eight recorded source blobs plus unchanged
+production sources. It runs one aligned positive control and three predetermined
+cold processes with artificial high/medium/low PTS offsets of 800/50/100 ms.
+These are test conditions, not recommended settings or measured capture skew.
+The extra `hlsdiagnostic` tag excludes the expected-defect check from ordinary
+codec-image/full-preparation acceptance. Exit 0 requires generation 1, no
+rejected native pushes, flowing IDRs, audio/high ready and medium/low blocked
+with no parts/parents. An unexpected signature stops the diagnostic.
+
+Fetch the selected helper commit from `origin/testing`, export just its helper
+outside Git into the existing private exact-71 output, check it with `bash -n`,
+then invoke:
+
+```bash
+bash "$output/diagnose-hls-clock-skew.sh" "$PWD" "$output" "$helper_commit"
+```
+
+The operator block supplies the reviewed full helper commit. Do not merge/pull,
+rebuild, change Caddy, enable HLS or replace preparation markers for this step.
+Synthetic fixture output can be shared; live raw logs remain private.
+**NOT EXECUTED IN CODEX; target control/reproduction results pending.**
 
 ### Remaining valid-delivery matrix
 

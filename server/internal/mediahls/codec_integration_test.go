@@ -21,6 +21,8 @@ type codecFixtureProvider struct {
 	origin    time.Time
 	errors    chan error
 	sceneCuts bool
+	// Diagnostic-only source phases; nil retains the aligned acceptance fixture.
+	clockOffsets map[string]time.Duration
 }
 
 func (provider *codecFixtureProvider) Sources(kind types.MediaKind) []types.MediaSource {
@@ -89,7 +91,7 @@ func (provider *codecFixtureProvider) Subscribe(ctx context.Context, request typ
 			case sample := <-pipeline.Sample():
 				// A nonzero common provider clock exercises late-room startup,
 				// videorate's initial gap and encoder segment normalization.
-				pts := 30*time.Second + time.Duration(sequence)*time.Second/time.Duration(rate)
+				pts := 30*time.Second + provider.clockOffsets[source.ID] + time.Duration(sequence)*time.Second/time.Duration(rate)
 				sequence++
 				if provider.sceneCuts && source.Kind == types.MediaKindVideo {
 					// Hard cuts at 1.3 s deliberately do not follow the 2 s GOP.

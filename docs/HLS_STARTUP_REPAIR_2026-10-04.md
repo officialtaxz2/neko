@@ -15,7 +15,11 @@ and 2/2 disabled-route probes. The operator confirmed normal browser behavior
 without HLS. Same-image 71 conventional-HLS activation then passed with
 Enable-Exitcode 0, healthy service and 19/19 denial probes. The live HLS attempt
 then failed with bootstrap failure; the operator reported WebRTC streaming works.
-NEXT read-only diagnosis, then same-image default-off restoration.
+Read-only diagnosis and same-image default-off restoration subsequently passed;
+the operator confirmed normal login/picture/audio. The saved diagnosis found
+medium/low admission drops and cumulative part/segment publication only for
+audio/high. NEXT the isolated source-clock-phase diagnostic against unchanged
+exact-71 production code; keep HLS disabled.
 Default-off deployment at 97ba4ad9 and normal browser smoke checks passed; enabled HLS
 live acceptance remains pending. Tests/builds/codec
 execution are supplied target evidence, **NOT EXECUTED IN CODEX**. No live
@@ -993,4 +997,48 @@ no source fix, new image, checkout movement or Caddy change is required for
 this evidence/recovery step. The restart briefly interrupts existing viewers.
 Confirm normal behavior after restoration, then analyze the saved evidence
 before another HLS attempt or repair. **NOT EXECUTED IN CODEX; supplied live
-HLS failure, diagnostic/recovery results pending.**
+HLS failure, diagnostic/recovery results pending at that checkpoint.**
+
+## Exact-71 readiness diagnosis and recovery passed — 2026-10-05
+
+The supplied read-only diagnosis returned Diagnostic-Exitcode 0, at exact
+application 71a14d2174dafbc12b1880adde6dc68176bfe9af and unchanged helper blob
+ddfe001618f8733447f4bdd328a8519db9acef06. It captured 950 application log lines.
+The container was running/healthy, with zero restarts and OOM false; no Neko
+process exit was found in the bounded supervisor sample. Its inspected image
+ID was sha256:9194cbd8fb6b82180f087620fff5cd258db8e60c2a0ab64ee20be870816c60de.
+The unavailable `gst-inspect` version is not evidence that codecs are absent.
+
+The fixed summary records one not-ready bootstrap, two negotiation rejections,
+one started packager generation and one stop after idle grace. All four worker
+starts/generations were recorded once. Medium/low packager keyframe-admission
+drops were 759/564; cumulative init publication exists for all four tracks.
+Cumulative part/segment bytes exist only for audio/high, with no published
+medium/low parts or parents. Zero current object/running gauges are consistent
+with the already logged idle teardown. These are cumulative/bounded observations,
+not a correlated per-frame trace. No sampled fixed timestamp-gap or worker
+restart marker appears. No valid lease/readiness success is demonstrated.
+
+The same-image default-off baseline then passed with Recovery-Exitcode 0,
+healthy my-neko/brave:hls-71a14d2174da, a private baseline snapshot and 2/2
+disabled bootstrap/media probes returning 404. The operator subsequently
+confirmed normal login/picture/audio work again. Keep HLS disabled.
+
+Static inspection narrows a candidate: `acceptSample` discards video before
+high's timestamp anchor and requires the first IDR in a common parent bucket.
+The fixed-GOP workers start from their own first input timestamps. Every prior
+real-codec fixture used identical first PTS for all sources; it did not exercise
+independently phased warm/cold capture. The live summary does not contain actual
+per-track IDR phases, so the hypothesis is not yet the proven live cause.
+
+NEXT [isolated source-clock-phase diagnosis](HLS_LL_HLS_VALIDATION.md#isolated-source-clock-phase-diagnostic-after-exact-71-recovery).
+Its extra-tagged expected-defect check uses artificial high/medium/low phases
+of 800/50/100 ms while retaining the production packager, native wrapper,
+transcoders, queues, timestamps and 24-second readiness deadline. One aligned
+positive control and three fixed cold skew runs use the existing exact-71 codec
+image with read-only test mounts. A result of zero means the expected failure
+signature reproduced, not acceptance. No live restart, new image, application
+checkout movement, preparation-marker change or Caddy edit is involved.
+Production repair is deliberately pending target reproduction. **NOT EXECUTED
+IN CODEX; supplied diagnosis/recovery passed, controlled reproduction and
+enabled live acceptance pending.**

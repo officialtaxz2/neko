@@ -146,12 +146,17 @@ then confirmed the requested normal-browser check works without HLS. Same-image
 conventional-HLS activation then passed with Enable-Exitcode 0, healthy service
 and 17/17 public plus 2/2 cleartext-denial probes. The subsequent HLS attempt
 failed after connecting with "HLS bootstrap failed; retry manually"; the operator
-reported only WebRTC streaming works. NEXT read-only diagnosis before same-image
-default-off restoration; no successful HLS picture/audio or room-event interval
-is demonstrated. The generic client detail does not identify a cause.
+reported only WebRTC streaming works. Read-only diagnosis passed with 950 lines,
+one not-ready bootstrap, medium/low admission drops of 759/564 and cumulative
+part/segment publication only for audio/high; no sampled Neko exit/OOM was found.
+Same-image default-off restoration passed with a healthy service and 2/2
+disabled-route probes; the operator confirmed normal login/picture/audio.
+NEXT the isolated source-clock-phase diagnostic against unchanged exact-71
+production code. No successful HLS picture/audio or room-event interval is
+demonstrated, and live IDR phases remain unmeasured.
 New repair/gates: NOT EXECUTED IN CODEX; supplied isolated A/B, full preparation
 and default-off deployment/browser plus activation/invalid-input gates passed;
-enabled HLS failed and diagnostic/recovery evidence remains pending.
+enabled HLS failed, diagnosis/recovery passed and controlled reproduction remains pending.
 The actual native blocker and role of the separate capabilities rejection
 remain unconfirmed; enabled live playback and isolation/device
 acceptance are pending. Dependency-audit report exit 1 is not a security pass.
