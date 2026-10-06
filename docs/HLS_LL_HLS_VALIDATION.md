@@ -32,9 +32,13 @@ selected native checks passed, with the four real-codec fixtures in generation
 the startup constant changed in server sources and client/runtime/deployment
 sources matched. Earlier HLS package/server-image results precede the excerpt
 and are covered by final helper success; unchanged client build layers were
-cached. Target checkout is exact-8f, while live stays exact-68. These are supplied
-target results, NOT EXECUTED IN CODEX. NEXT activate the prepared exact-8f image
-and check cold start without Retry; activation/browser acceptance remain pending.
+cached. Target checkout is exact-8f; live was exact-68 at preparation. After the
+requested activation, the operator reports connecting then an apparently frozen
+first picture; reload produced moving HLS video/audio. Activation CLI/live image,
+initial player/error/timing state and concurrent WebRTC are not supplied.
+Reliable first start remains open. NEXT read-only playback diagnosis and
+prepared/live image comparison, retaining the service. Supplied target results,
+NOT EXECUTED IN CODEX; no repeated activation/build is requested for diagnosis.
 Preserve old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed
 client/image/HTTP-denial gates without a new reason.

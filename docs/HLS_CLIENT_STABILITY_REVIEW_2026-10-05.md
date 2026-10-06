@@ -1,6 +1,6 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-8F54970F PREPARATION PASSED / CANDIDATE ACTIVATION AND COLD START PENDING / WIDER LIVE ACCEPTANCE OPEN**.
+Status: **EXACT-8F54970F PREPARATION PASSED / FIRST PICTURE REPORTED, RELOAD NEEDED FOR VIDEO/AUDIO / DIAGNOSIS AND WIDER ACCEPTANCE OPEN**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -15,9 +15,11 @@ request approximately 24 seconds, one at most 1 ms. The server-only candidate
 now raises conventional readiness allowance from 24 to 28 seconds, preserving
 the outer 30-second limits. Exact-8f54970f focused preparation subsequently
 passed with Prepare-Exitcode 0, all 13 selected native checks and both candidate
-images. Target checkout is now exact-8f; live remains exact-68. NEXT activate
-the prepared image and check cold start without Retry. This is a bounded
-candidate, not a confirmed first-start fix; activation/browser acceptance stay open.
+images. Target checkout is exact-8f; live was exact-68 at preparation. After
+the requested activation, an apparently frozen first picture was reported;
+reload produced moving HLS video/audio. Activation CLI/live-image evidence
+has not been supplied. NEXT read-only diagnosis/image comparison while retaining
+the service; reliable first start and wider browser acceptance remain open.
 
 ## What the existing evidence establishes
 
@@ -562,3 +564,59 @@ failed; retain the failed state for bounded diagnosis. Keep this step distinct
 from the later sustained picture/audio/room-event and concurrent WebRTC check.
 Device, authorization/lifecycle, numeric latency/resource/isolation, dependency
 and final grouped acceptance remain open.
+
+## Operator first-picture/reload report; read-only diagnosis next
+
+After the requested exact-8f activation, the operator reports the connecting
+message, then a picture that apparently remained still. Page reload was needed
+for moving video and audio, with HLS still selected. Record this as successful
+playback after recovery, not a passed reliable first start. No fixed terminal
+error, exact duration, initial Play/paused/muted/buffer state, separately
+observed five-minute interval or concurrent WebRTC result was supplied.
+The activation CLI, Start-Exitcode and inspected live image were not supplied
+either; the report alone does not prove which image was active. No further
+activation/rebuild is requested before capturing existing evidence.
+
+Static follow-up reviewed controller initial canplay/playing handling, pending
+Play and muted fallback, manual Play overlay, progress watchdog, native/MSE
+attachment, scoped-loader queuing and the video-component HLS exclusions.
+Canplay establishes playable media but does not establish observed playback
+progress. Autoplay rejection has one muted attempt and the manual Play action;
+the progress watchdog requires desired, ready, unpaused playback. These paths
+do not establish whether the reported first picture was paused, buffering,
+stalled delivery or another player failure. No new confirmed source defect or
+attempt-correlated cause was identified; the implementation is unchanged.
+No timeout/buffering/codec or automatic fallback change is made on this report.
+
+The next target-only block prints the prepared image ID and invokes unchanged
+diagnostic blob `ddfe001618f8733447f4bdd328a8519db9acef06`. Its safe summary
+contains the actual container image ID, bootstrap/HTTP counters, generation/
+worker/publication metrics and bounded fixed error markers. Comparing the
+prepared and live IDs confirms whether the selected image is active, rather
+than substituting checkout state for runtime evidence. The helper saves raw
+evidence privately and prints only the allowlisted summary. It does not make
+credentialed playback requests, stop/recreate Neko or change configuration.
+
+```bash
+set +e
+bash -Ee -o pipefail <<'NEKO_HLS_DIAG'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "8f54970f025e3491a123540cc94870508b66f119"
+umask 077
+docker image inspect my-neko/brave:hls-8f54970f025e \
+  --format 'Prepared image ID: {{.Id}}'
+bash deploy/diagnose-hls-playback.sh "$PWD" \
+  /opt/docker/nekoNew/neko-hls-results-8f54970f025e
+NEKO_HLS_DIAG
+printf 'Diagnostic-Exitcode: %s\n' "$?"
+```
+
+The page has already been reloaded, so current browser state cannot reproduce
+the earlier frozen state and cumulative server counters may include both
+attempts. This limitation must accompany the diagnosis; successful segment
+requests cannot prove rendered/moving video or audible playback. The new
+diagnostic result remains pending. Further player-specific evidence may be
+needed if these saved/current server observations do not isolate the defect.
+Runtime checks were NOT EXECUTED IN CODEX. Keep the working service, previous
+images/evidence, default/manual backend choices and pinned `master`.

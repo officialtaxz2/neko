@@ -8,8 +8,11 @@ Retry without individual attempt correlation. The new server-only candidate
 raises conventional readiness allowance to 28 seconds inside the unchanged
 30-second HTTP/client limits. Exact-8f54970f focused target preparation then
 passed with Prepare-Exitcode 0, native checks and both candidate images. Target
-checkout is now exact-8f; live stays exact-68. NEXT activate the prepared image
-and check cold start without Retry; activation/browser acceptance remain pending.
+checkout is exact-8f; live was exact-68 at preparation. After the requested
+activation, the operator reports an apparently frozen first picture, then
+moving HLS video/audio after reload. Activation CLI/live-image evidence and
+reliable first start remain open. NEXT read-only playback diagnosis and image
+comparison, retaining the service.
 NOT EXECUTED IN CODEX; no verified first-start fix claimed.
 
 Status: client-only repair `73d5ff6d29110e3dd06999726a7e88718d09ea23` is

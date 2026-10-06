@@ -10,9 +10,11 @@ timing summary passed: one request approximately 24 seconds and one at most
 1 ms. A server-only candidate raises conventional startup allowance to 28
 seconds within the existing 30-second HTTP/client limits. Exact-8f54970f focused
 target preparation subsequently passed with Prepare-Exitcode 0, all 13 selected
-native checks and both candidate images. Target checkout is exact-8f; live
-service remains exact-68. NEXT activate the prepared image and check cold start
-without Retry; activation/browser acceptance stay pending. NOT EXECUTED IN CODEX.
+native checks and both candidate images. Target checkout is exact-8f; live was
+exact-68 at preparation. After the requested activation, the operator reports
+an apparently frozen first picture, then moving HLS video/audio after reload.
+Activation CLI/live-image evidence and reliable first start remain open. NEXT
+read-only diagnosis/image comparison, retaining the service. NOT EXECUTED IN CODEX.
 Authorization/lifecycle and grouped
 device/resource acceptance
 remain pending; no automatic selection or full HLS acceptance claim exists**.

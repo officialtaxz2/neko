@@ -36,10 +36,15 @@ validation marker were recorded. The supplied excerpt starts during the native
 image build; earlier HLS package/server-image checks are covered by final helper
 success, without separately visible results. Client build layers were cached
 from unchanged sources; no fresh client gate is claimed. Target checkout is
-now exact-8f54970f; the running service remains exact-68. These are supplied
-target results, NOT EXECUTED IN CODEX. NEXT activate the prepared exact-8f image
-and check one cold HLS start without Retry. Activation/browser acceptance stay
-pending. Preserve old images/evidence and keep dependency maintenance open.
+exact-8f54970f; the live image was still exact-68 at preparation. These are
+supplied target results, NOT EXECUTED IN CODEX. After the requested activation,
+the operator reports connecting, then an apparently frozen first picture;
+page reload produced moving video/audio while HLS remained selected. Activation
+CLI/image evidence, the initial player/error/timing state and concurrent WebRTC
+behavior are not supplied. Reliable first start remains open. NEXT the existing
+read-only playback diagnosis plus expected/live image-ID comparison; retain
+the current service, without another activation/rebuild to collect evidence.
+Preserve old images/evidence and keep dependency maintenance open.
 Do not repeat passed client/image/HTTP-denial
 gates without a new reason. Prior results below apply only to their commits.
 `master` remains pinned at `d9105ef8`.

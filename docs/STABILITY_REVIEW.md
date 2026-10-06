@@ -23,9 +23,12 @@ not yet a verified fix. Exact-8f54970f focused preparation subsequently passed
 with Prepare-Exitcode 0: all 13 selected native checks passed, including the four
 real-codec fixtures in generation 1; candidate base/Brave images and private
 evidence were recorded. Unchanged client build layers were cached. Target
-checkout is exact-8f; live service remains exact-68. Supplied target evidence,
-NOT EXECUTED IN CODEX. NEXT activation and one cold HLS start without Retry;
-activation/browser acceptance remain pending. Preserve prior images/evidence.
+checkout is exact-8f; live was exact-68 at preparation. After the requested
+activation, the operator reports an apparently frozen first picture, then
+moving HLS video/audio after page reload. Activation CLI/live-image and initial
+player/error/timing evidence are missing; reliable first start remains open.
+NEXT read-only diagnosis and prepared/live image comparison, retaining the
+service. Supplied target evidence, NOT EXECUTED IN CODEX. Preserve prior evidence.
 The initial fixed error, timed/event
 interval and concurrent WebRTC result are not separately supplied. The wider device,
 authorization/lifecycle and resource gates stay open.

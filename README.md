@@ -21,9 +21,12 @@ candidate raises conventional startup allowance from 24 to 28 seconds inside
 the existing 30-second HTTP/client limits. This is not yet a verified fix.
 Exact-8f54970f focused target preparation subsequently passed with
 `Prepare-Exitcode: 0`: native checks and base/Brave images passed. Server
-checkout is now exact-8f54970f; the running service remains exact-68. NEXT
-activate the prepared image and check cold start without Retry. Activation/
-browser acceptance remain pending. NOT EXECUTED IN CODEX.
+checkout is exact-8f54970f; the live image was still exact-68 at preparation.
+After the requested activation, the operator reports a first picture that
+appeared frozen; reload then produced moving HLS video/audio. Reliable first
+start remains open, and the activation CLI/live image have not been supplied.
+NEXT read-only playback diagnosis and prepared/live image comparison, retaining
+the working service. NOT EXECUTED IN CODEX.
 See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 

@@ -1210,10 +1210,14 @@ base/Brave images and private snapshot/validation marker were recorded in
 `/opt/docker/nekoNew/neko-hls-results-8f54970f025e`. Earlier HLS package/server-
 image checks precede the supplied excerpt and are covered by final helper
 success without separately shown results. Unchanged client build layers were
-cached; the exact-68 client gate is inherited. Target checkout is now exact-8f,
-while the live service stays exact-68. NOT EXECUTED IN CODEX. NEXT activate the
-prepared exact-8f image and check one cold HLS start without Retry; both remain
-pending. Do not claim the initial Retry defect is fixed before browser evidence.
+cached; the exact-68 client gate is inherited. Target checkout is exact-8f;
+the live image was exact-68 at preparation. After the requested activation,
+the operator reports connecting then an apparently frozen first picture;
+page reload produced moving video/audio while HLS stayed selected. Activation
+CLI/live-image evidence, initial player state/timing and concurrent WebRTC are
+not supplied. Reliable first start remains open. NOT EXECUTED IN CODEX. NEXT
+read-only playback diagnosis and prepared/live image comparison, retaining the
+working service; do not repeat activation/build/denial probes for diagnosis.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 Historical results below apply only to their recorded commits.
 
