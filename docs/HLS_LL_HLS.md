@@ -35,11 +35,12 @@ this sample without reload, then a later "HLS HTTP connection failed; retry
 manually". The freeze is captured despite server flow; the later HTTP failure
 was outside the measured interval. The supplied retained browser timings show
 one 1,001-ms master without response metadata, but a full 250-entry buffer omits
-later failures. Status zero with body data is not failure proof. NEXT the bounded
-browser trace before one manual Retry, preserving exact-7dcc; its execution is
-PENDING. The serial 1-second deadline fits one attempt, not the entire failure
-sequence or freeze cause. No speculative timeout/buffer change or repeated
-build/server gate. Supplied target results,
+later failures. Status zero with body data is not failure proof. The complete
+five-minute trace now captures a freeze near media time 24 seconds, audio loading
+stopped after four segments and repeated seeks while video delivery continues.
+NEXT [rolling-playlist/watchdog repair preparation](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md),
+preserving live exact-7dcc. New checks/images/live acceptance are PENDING;
+no additional old-image trace or speculative timeout/buffer change. Supplied target results,
 NOT EXECUTED IN CODEX; the corrected saved-startup helper has no fresh execution.
 Reliable first
 start and sustained playback remain open.

@@ -25,7 +25,7 @@ function harness({ eligible = true, autoplay = true, fetcher, mse = false, mseAt
   }
   if (mse) window.MediaSource = { isTypeSupported: () => true }
   const video = {
-    src: '', srcObject: null, paused: true, muted: false, volume: 1, currentTime: 0, readyState: 0,
+    src: '', srcObject: null, paused: true, seeking: false, muted: false, volume: 1, currentTime: 0, readyState: 0,
     videoWidth: 640, videoHeight: 360, handlers: new Map(), playCalls: 0, loads: 0,
     canPlayType: () => 'maybe',
     addEventListener(event, callback) { this.handlers.set(event, callback) },
@@ -372,6 +372,74 @@ test('HLS playback progress watchdog still bounds a stall after initial readines
     assert.equal(h.video.src, '')
     assert.equal(h.timers.size, 0)
   }
+})
+
+test('live-edge seeks without current data cannot hide an HLS playback stall', async () => {
+  for (const mse of [false, true]) {
+    const h = harness({ mse })
+    await h.negotiate()
+    h.video.readyState = 3
+    h.video.fire('playing')
+    // One second of real playback, then the captured failure: repeated six
+    // second jumps with no current frame while HTTP responses stay healthy.
+    h.video.currentTime = 1
+    await h.advance(1000)
+    h.video.readyState = 1
+    for (let second = 1; second <= 21; second++) {
+      if (second % 6 === 0) {
+        h.video.currentTime += 6
+        h.video.seeking = true
+      }
+      await h.advance(1000)
+    }
+    assert.deepEqual(h.status.at(-1), { state:'terminal', detail:'HLS playback stalled; retry manually' },
+      'live-edge seeks hid the frozen HLS playback')
+    assert.equal(h.video.src, '')
+    assert.equal(h.video.handlers.size, 0)
+    assert.equal(h.timers.size, 0)
+    assert.equal(h.requests.every(({init}) => init.signal.aborted), true)
+    assert.equal(h.events.filter(({event}) => event.endsWith('/create')).length, 1)
+  }
+})
+
+test('completed seeks between samples do not renew the HLS stall budget', async () => {
+  const h = harness()
+  await h.negotiate()
+  h.video.readyState = 3
+  h.video.fire('playing')
+  for (let second = 1; second <= 21; second++) {
+    if (second % 6 === 0) {
+      h.video.currentTime += 6
+      h.video.seeking = true
+      h.video.fire('seeking')
+      h.video.seeking = false
+      h.video.fire('seeked')
+    }
+    await h.advance(1000)
+  }
+  assert.deepEqual(h.status.at(-1), { state:'terminal', detail:'HLS playback stalled; retry manually' })
+  assert.equal(h.timers.size, 0)
+})
+
+test('natural playback after a completed seek still renews the HLS stall budget', async () => {
+  const h = harness()
+  await h.negotiate()
+  h.video.readyState = 3
+  h.video.fire('playing')
+  await h.advance(19000)
+  h.video.currentTime = 30
+  h.video.seeking = true
+  h.video.fire('seeking')
+  h.video.seeking = false
+  h.video.fire('seeked')
+  for (let second = 1; second <= 25; second++) {
+    h.video.currentTime = 30 + second
+    await h.advance(1000)
+  }
+  assert.equal(h.status.at(-1).state, 'streaming')
+  assert.ok(h.video.src)
+  h.controller.stop()
+  assert.equal(h.timers.size, 0)
 })
 
 test('an immediate native readiness event during attachment cancels the deadline', async () => {

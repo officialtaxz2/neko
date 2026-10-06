@@ -6,7 +6,15 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 
 ## Status
 
-Latest HLS source review (2026-10-05): fixes paused-time stall accounting,
+Latest HLS checkpoint (2026-10-07): the complete browser trace captures a freeze
+at about 24 seconds of media despite continued video delivery. Two source defects
+are repaired: rolling playlists now preserve segment discontinuity numbers;
+seek-only time jumps no longer hide a playback stall. NEXT the
+[focused old/new checks and candidate image preparation](docs/HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md),
+keeping the live exact-7dcc service running. New checks/build/live acceptance are
+**PENDING / NOT EXECUTED IN CODEX**; no new old-image browser test is requested.
+
+Historical HLS source review (2026-10-05): fixes paused-time stall accounting,
 monitoring before first readiness and mixed HTTP/readiness error budgets, plus
 player-event handling. The supplied exact-68 target gate passed **all 60 client
 tests, TypeScript and build**. Scoped exact-68 image preparation also passed
@@ -49,9 +57,9 @@ retry manually". The freeze is captured despite server flow; its cause and the
 later HTTP failure remain unresolved. The supplied browser timing summary shows
 one 1,001-ms master with no response metadata, but a full 250-entry buffer omits
 the later failure sequence. Status-zero entries with body data are not failures.
-NEXT the bounded browser trace before one manual Retry, preserving exact-7dcc;
-no repeated build/server gate or speculative timeout change. New trace execution
-is PENDING / NOT EXECUTED IN CODEX; prior results are supplied target evidence.
+The bounded browser trace was subsequently supplied in full; the current repair
+and focused verification scope are linked above. Prior results are supplied
+target evidence; no speculative timeout change is made.
 Reliable first start and sustained playback acceptance remain open.
 See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).

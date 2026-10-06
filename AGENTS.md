@@ -1,6 +1,23 @@
 # AGENTS.md
 
-Latest client checkpoint (2026-10-05): the requested
+Latest checkpoint (2026-10-07): the full supplied five-minute exact-7dcc browser
+trace captures moving video followed by a freeze at media time 23.948 seconds,
+513 frames and a fixed 12.008–24.019-second buffered range. Audio loads only four
+segments while medium video continues; repeated six-second seeks hide the stall
+from the old watchdog. No new terminal HTTP error was captured after Retry.
+The [rolling-playlist repair](docs/HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md)
+increments track-local discontinuity bases when an earlier tag is evicted and
+excludes seek-only/metadata-only time changes from playback progress. Both defects
+are confirmed by static inspection; attribution of the live audio stop to the
+uncaptured hls.js parser error remains an inference. NEXT focused isolated old/new
+client and wire-playlist checks plus image preparation using
+`deploy/prepare-hls-playlist-window.sh`, preserving live exact
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b` and all prior images/evidence.
+New tests/build/live acceptance are PENDING / NOT EXECUTED IN CODEX.
+No further old-image browser trace or speculative timeout/buffer tuning is needed.
+Keep cold-start/grouped/device/dependency acceptance open; master remains d9105ef8.
+
+Historical client checkpoint (2026-10-05): the requested
 [HLS client stability review](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md)
 corrected pause/startup progress monitoring and independent HTTP/readiness
 failure budgets, with defensive player-event handling and fixed bootstrap
@@ -100,13 +117,10 @@ without response metadata; other status-zero entries contain complete body-size
 metadata. The last retained request ended about nine minutes before the query,
 so subsequent failures are missing. Current video was already cleared by terminal
 cleanup. This supports one timeout-like attempt, not the entire failure sequence
-or freeze cause. NEXT preserve exact-7dcc and use `deploy/trace-hls-browser.js`
-before one manual Retry on the existing failed page. It observes new timings,
-media events/progress/buffers and fixed UI state, with bounded output and automatic
-cleanup on a new terminal error or after five minutes. No requests/player actions,
-URLs/cookies or server changes. New trace execution is PENDING / NOT EXECUTED
-IN CODEX. Do not repeat server/build/denial gates or change deadlines/buffers
-without correlated evidence. The WebRTC-join
+or freeze cause. The requested bounded trace has since been supplied in full;
+the current repair and focused target preparation are recorded at the top of
+this file. Do not repeat the old-image browser trace or unchanged native/fuzz/
+HTTP-denial gates. The WebRTC-join
 cause and reliable startup/sustained/grouped acceptance remain open.
 Reliable first-start
 and wider acceptance remain open; do not repeat passed preparation gates.

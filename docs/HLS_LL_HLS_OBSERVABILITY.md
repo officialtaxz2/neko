@@ -68,13 +68,14 @@ outside this interval; server flow does not prove successful browser decoding.
 The supplied `inspect-hls-browser-timing.js` result shows one 1,001-ms master
 without response metadata, but a full 250-entry buffer omits later failures.
 Status-zero entries can contain body data; terminal cleanup cleared the current
-video. NEXT preserve exact-7dcc and use `deploy/trace-hls-browser.js` before one
-manual Retry. It observes new timings outside the retained global buffer, media
-progress/buffers/events and fixed UI state, with bounded rows/automatic cleanup;
-no requests, player actions, performance-buffer changes, URLs or credentials.
-New trace execution is PENDING / NOT EXECUTED IN CODEX. The 1-second deadline fits
-one attempt, not three correlated failures or a freeze cause; no timeout/buffer
-tuning or routine repeat build/server check.
+video. The complete five-minute `trace-hls-browser.js` result is now supplied:
+392 observed HTTP completions, 180 retained/212 discarded; no lost media/event/
+slow rows. It captures a fixed 513-frame/24-second buffer after initial playback,
+continued medium-video loading, audio stopped after four segments and six-second
+seek jumps. Only bootstrap exceeded the 900-ms slow threshold; no new terminal
+HTTP error is captured. NEXT [focused playlist/watchdog repair preparation](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md),
+preserving live exact-7dcc. New repair checks/images/live acceptance are PENDING /
+NOT EXECUTED IN CODEX. No additional old-image browser trace or timeout tuning.
 
 The progress and saved-startup label parsers were statically corrected to admit
 digits before their unchanged fixed allowlists, retaining the `vp8` codec that

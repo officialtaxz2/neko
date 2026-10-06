@@ -841,7 +841,15 @@ func (packager *Packager) finishPartLocked(track *trackState, anchorWall time.Ti
 			Discontinuity: len(track.segments) == 0,
 		})
 		if len(track.segments) > 3 {
-			track.segments = slices.Clone(track.segments[len(track.segments)-3:])
+			removed := len(track.segments) - 3
+			// Removing a discontinuity tag must preserve the discontinuity
+			// number of every retained segment across playlist reloads.
+			for _, segment := range track.segments[:removed] {
+				if segment.Discontinuity {
+					track.discontinuitySequence++
+				}
+			}
+			track.segments = slices.Clone(track.segments[removed:])
 		}
 		track.parts = nil
 		track.segmentData = nil

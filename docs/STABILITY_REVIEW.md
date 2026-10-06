@@ -58,13 +58,15 @@ with "HLS HTTP connection failed; retry manually"; that later failure is outside
 the sampled server interval. The supplied retained browser timings show one
 1,001-ms master with no response metadata; the full 250-entry buffer omits later
 failures. Status-zero entries can have body data; terminal cleanup cleared the
-video. NEXT preserve exact-7dcc and arm the bounded browser trace before one
-manual Retry. It observes new timings/progress/buffers without sending requests
-or exposing URLs, and ends on a new terminal error or after five minutes.
-The current serial 1-second deadline fits one attempt, but three timed-out probes
-and the freeze cause are not proved; do not tune speculatively. New trace
-execution is PENDING / NOT EXECUTED IN CODEX; no repeat build/server gate or
-inferred fix.
+video. The full five-minute trace now captures a freeze at 23.948 seconds of
+media, fixed buffer/513 frames, audio loading stopped after four segments and
+repeated seek-only jumps while medium-video HTTP delivery continues. No new
+terminal HTTP error is captured. Static inspection confirms a rolling-playlist
+discontinuity defect and seek-only watchdog bypass; both are repaired on testing.
+NEXT [focused old/new checks and candidate image preparation](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md),
+preserving live exact-7dcc. New checks/build/live acceptance are PENDING /
+NOT EXECUTED IN CODEX. No new old-image browser trace or timeout tuning is needed;
+the uncaptured parser error as the live audio-stop cause remains an inference.
 Supplied target results, NOT EXECUTED IN CODEX; the corrected saved-startup
 helper has no fresh execution. Reliable first start/sustained/wider acceptance
 remain open.

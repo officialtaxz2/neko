@@ -1,6 +1,10 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-7DCC3C5E LIVE IMAGE CONFIRMED / SERVER FLOW DURING CONFIRMED BROWSER FREEZE / ONE TIMEOUT-LIKE BROWSER REQUEST / RETAINED BUFFER FULL / BOUNDED TRACE AND CAUSE OPEN**.
+Status: **EXACT-7DCC3C5E FIVE-MINUTE TRACE CAPTURED FREEZE / ROLLING-PLAYLIST AND SEEK-ONLY WATCHDOG DEFECTS REPAIRED / TARGET CHECKS PENDING**.
+The [2026-10-07 repair record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md)
+is the current next step: focused isolated old/new checks and image preparation,
+preserving the live exact-7dcc service. No additional old-image browser test is
+requested. New tests/build/live acceptance are **NOT EXECUTED IN CODEX**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -1072,7 +1076,7 @@ and cannot reveal the original paused/buffer/decoder state. Copied heartbeat
 messages do not establish uninterrupted WebSocket/event delivery or room-action
 causality. No timeout, buffering, lease or authorization policy is changed.
 
-## Next: one bounded browser trace
+## Completed investigation: one bounded browser trace
 
 Use [`deploy/trace-hls-browser.js`](../deploy/trace-hls-browser.js) in DevTools on
 the **existing Neko HLS page**, before one manual Retry if it is already failed.
@@ -1110,9 +1114,14 @@ direct a later focused player/timeline review, while repeated empty near-deadlin
 masters would support a separate HTTP-watch investigation. Neither result may
 be invented before supplied execution.
 
-New trace execution is **PENDING / NOT EXECUTED IN CODEX**. Verification here is
-static source/API/cleanup/output-bound review and Git whitespace checking only.
-No new client/server/runtime source change, dependency, build, image, service
-restart or passed-gate repetition is requested. Preserve exact-7dcc and old
-images/evidence; reliable startup, sustained playback, room-action/device/
-authorization/resource/isolation acceptance and dependency maintenance stay open.
+The complete five-minute report was subsequently supplied on 2026-10-07:
+moving video begins at 27.149 seconds, stalls at media time 23.948 seconds with
+513 frames, then seeks forward every six seconds while the buffered range and
+frame count remain fixed. Audio stops loading after four segments; medium
+video continues to load. No new terminal HTTP error appears before the time
+limit. This is a captured failure, not five-minute acceptance.
+See [the supplied trace and bounded repairs](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md)
+for the rolling discontinuity defect, seek-only watchdog correction and exact
+target preparation scope. The earlier trace instructions are historical;
+another trace on the old image is not requested. New repair checks/images/live
+acceptance are **PENDING / NOT EXECUTED IN CODEX**.

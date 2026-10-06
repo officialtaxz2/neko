@@ -1258,17 +1258,23 @@ response metadata, fitting the 1-second deadline. Its full 250-entry buffer ends
 about nine minutes before the query, omitting the later failure sequence. Other
 status-zero entries have body data; terminal cleanup already cleared the video.
 Neither three timed-out probes nor the freeze cause is proved.
-NEXT the [bounded browser trace](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#next-one-bounded-browser-trace)
-before one manual Retry on the existing failed page. Preserve exact-7dcc; no new
-server action, build or timeout/buffer change. The helper observes future HTTP
-timings, media progress/events/buffers and fixed UI state, with bounded rows and
-automatic cleanup on a new terminal error or after five minutes. It sends no
-requests or credentials and prints no URLs. New trace execution is PENDING /
-NOT EXECUTED IN CODEX. Do not repeat server/build/denial gates or infer a fix.
+The full bounded five-minute trace is now supplied: playback stops at media time
+23.948 seconds, frames remain 513 and the buffer stays at 12.008–24.019 seconds,
+despite continued medium-video loading. Audio loads four segments; later six-second
+seek jumps hide the stall from the old watchdog. No new terminal HTTP failure
+appears after Retry. This is captured failure, not successful five-minute playback.
+NEXT the [rolling-playlist/watchdog repair preparation](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md):
+isolated old/new client and wire-playlist assertions, fresh client tests/type/build,
+HLS package/server build and candidate base/Brave images. Preserve live exact-7dcc
+and prior images/evidence. No additional old-image browser trace or tuning is
+requested. New repair checks/images/live acceptance are PENDING / NOT EXECUTED
+IN CODEX. The playlist protocol defect is statically confirmed; the uncaptured
+hls.js parser error as the live audio-stop cause remains a strong inference.
 The earlier WebRTC-join hypothesis remains uncorrelated.
 Reliable first start and sustained playback remain open.
-No repeated backend/native/fuzz or HTTP-denial gate is needed for this client
-change, and the passed client/image preparation should not be repeated.
+No repeated unchanged native/fuzz or HTTP-denial gate is required for this
+bounded playlist/watchdog change. Prior client/image checks apply to their commits;
+the new production delta requires the focused candidate preparation above.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 Historical results below apply only to their recorded commits.
 

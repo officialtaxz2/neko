@@ -33,11 +33,13 @@ reload, then a later "HLS HTTP connection failed; retry manually". The freeze
 is captured despite server flow, but its cause and later HTTP failure remain
 unresolved. The supplied browser timing summary shows one 1,001-ms master without
 response metadata; the full 250-entry buffer omits later failures. Status-zero
-entries with body data are not failure proof. NEXT the
-[bounded browser trace](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#next-one-bounded-browser-trace)
-before one manual Retry, preserving exact-7dcc. New trace execution is PENDING /
-NOT EXECUTED IN CODEX; no speculative timeout/buffer change or repeat build/server
-gate. Supplied target
+entries with body data are not failure proof. The complete five-minute trace
+now captures a freeze at 23.948 seconds of media with fixed frames/buffer,
+continued video loading and audio stopped after four segments. Repeated seeks
+hide the stall from the old watchdog. NEXT the
+[rolling-playlist/watchdog repair preparation](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md),
+keeping live exact-7dcc. New repair checks/images/live acceptance are PENDING /
+NOT EXECUTED IN CODEX; no additional old-image trace or speculative tuning. Supplied target
 results, NOT EXECUTED IN CODEX; the corrected saved-startup helper has no fresh
 execution. Reliable first start and
 sustained playback remain open.

@@ -281,8 +281,11 @@ export class HLSMediaController {
         if (!this.current(generation)) return
         const video = this.video
         if (video && this.player && this.playbackReady && this.desiredPlaying && !video.paused) {
-          if (video.currentTime !== this.lastTime) { this.lastTime = video.currentTime; this.lastProgress = Date.now() }
-          else if (Date.now() - this.lastProgress > 20000) this.fail('HLS playback stalled; retry manually')
+          // A live-edge seek can advance currentTime while the buffer/frame
+          // remains frozen. Only forward playback with current data counts.
+          if (!video.seeking && video.readyState >= 2 && video.currentTime > this.lastTime) this.lastProgress = Date.now()
+          this.lastTime = video.currentTime
+          if (Date.now() - this.lastProgress > 20000) this.fail('HLS playback stalled; retry manually')
         }
       } catch (_) {
         if (this.current(generation) && ++this.statusFailures >= 3) this.fail('HLS HTTP connection failed; retry manually')
@@ -352,6 +355,8 @@ export class HLSMediaController {
         this.callbacks.setStatus('streaming')
       })
       listen('pause', () => this.callbacks.setPlaying(false))
+      // Also exclude a seek that completes between HTTP watchdog samples.
+      listen('seeking', () => { this.lastTime = video.currentTime })
       listen('error', () => this.fail('HLS media playback failed; retry manually'))
       listen('ended', () => this.fail('HLS playback ended; retry manually'))
       video.muted = this.muted
