@@ -2,15 +2,17 @@
 
 Status: **Phases 1–3 and Phase 4 assets implemented on testing. Exact-68 client
 tests/type/build, scoped image preparation and healthy activation passed.
-Checkout/live are now exact-68 with conventional HLS enabled. HLS playback
+Checkout/live were then exact-68 with conventional HLS enabled. HLS playback
 worked after Retry per operator report; reliable first start and wider live
 acceptance remain open. Read-only diagnosis passed with one not-ready and one
 successful bootstrap, generation-1 delivery and no sampled crash. The saved
 timing summary passed: one request approximately 24 seconds and one at most
 1 ms. A server-only candidate raises conventional startup allowance to 28
-seconds within the existing 30-second HTTP/client limits. Its focused target
-tests/image preparation and cold-start acceptance are pending; retain the
-working exact-68 service during preparation. NOT EXECUTED IN CODEX.
+seconds within the existing 30-second HTTP/client limits. Exact-8f54970f focused
+target preparation subsequently passed with Prepare-Exitcode 0, all 13 selected
+native checks and both candidate images. Target checkout is exact-8f; live
+service remains exact-68. NEXT activate the prepared image and check cold start
+without Retry; activation/browser acceptance stay pending. NOT EXECUTED IN CODEX.
 Authorization/lifecycle and grouped
 device/resource acceptance
 remain pending; no automatic selection or full HLS acceptance claim exists**.

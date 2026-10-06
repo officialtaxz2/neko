@@ -16,7 +16,7 @@ Start-Exitcode 0, a healthy `my-neko/brave:hls-68dbdd4a8dd7` and private enable
 snapshot. The operator reports HLS needed Retry, then worked without problems;
 the detailed initial error, uninterrupted interval and concurrent WebRTC
 result are not separately supplied. Reliable first-start acceptance stays open.
-The latest supplied checkout/live deployment is exact `68dbdd4a`, conventional
+At that checkpoint checkout/live deployment was exact `68dbdd4a`, conventional
 HLS enabled. Its read-only diagnostic subsequently passed with
 Diagnostic-Exitcode 0: healthy image, no sampled exit/OOM, one not-ready and one
 successful bootstrap, one startup generation per track and 17 successful
@@ -28,11 +28,18 @@ by an immediate warmed Retry, without exact attempt/readiness correlation.
 The new server-only candidate raises ConventionalReadyWindow from 24 to 28
 seconds within the unchanged 30-second HTTP/client limits; LL-HLS stays six
 seconds. This is a bounded candidate, not a confirmed first-start fix; the
-p95 24-second acceptance target remains unchanged. NEXT use the separate
-`deploy/prepare-hls-startup-window.sh` for focused HLS/native checks and image
-preparation while retaining the live exact-68 service. New candidate checks
-are PENDING / NOT EXECUTED IN CODEX. Preserve old images/evidence and keep
-dependency maintenance open. Cold-start acceptance follows preparation.
+p95 24-second acceptance target remains unchanged. Exact candidate
+`8f54970f025e3491a123540cc94870508b66f119` preparation subsequently passed with
+Prepare-Exitcode 0: all 13 selected native checks passed, including the four
+real-codec fixtures in generation 1; base/Brave images and private snapshot/
+validation marker were recorded. The supplied excerpt starts during the native
+image build; earlier HLS package/server-image checks are covered by final helper
+success, without separately visible results. Client build layers were cached
+from unchanged sources; no fresh client gate is claimed. Target checkout is
+now exact-8f54970f; the running service remains exact-68. These are supplied
+target results, NOT EXECUTED IN CODEX. NEXT activate the prepared exact-8f image
+and check one cold HLS start without Retry. Activation/browser acceptance stay
+pending. Preserve old images/evidence and keep dependency maintenance open.
 Do not repeat passed client/image/HTTP-denial
 gates without a new reason. Prior results below apply only to their commits.
 `master` remains pinned at `d9105ef8`.

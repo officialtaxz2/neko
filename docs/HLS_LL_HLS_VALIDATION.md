@@ -10,7 +10,7 @@ using helper `28d081a4`, fresh client build and base/Brave images, while the
 working exact-73 service stayed running. Backend evidence is inherited from
 identical sources, not freshly rerun. Activation subsequently passed with
 Start-Exitcode 0, healthy `my-neko/brave:hls-68dbdd4a8dd7` and a private enable
-snapshot. Checkout/live are now exact `68dbdd4a8dd798886302b235c1f8f208452e0c6e`.
+snapshot. Checkout/live were then exact `68dbdd4a8dd798886302b235c1f8f208452e0c6e`.
 HLS worked after Retry per operator report; the initial error, uninterrupted
 interval and concurrent WebRTC result are not separately supplied.
 **NOT EXECUTED IN CODEX**; reliable first start/wider live acceptance remain open.
@@ -23,12 +23,19 @@ seconds. This supports investigating the readiness deadline, without exact
 attempt/readiness correlation. The new server-only candidate raises
 conventional startup allowance from 24 to 28 seconds; LL-HLS stays six seconds
 and the client/server HTTP limits stay 30 seconds. The p95 first-picture/audio
-and latency targets remain 24 seconds. NEXT the focused HLS package/native
-checks and image preparation in `deploy/prepare-hls-startup-window.sh`, keeping
-the live exact-68 image running. The helper verifies that the only server delta
-is the startup constant and that client/runtime/deployment sources match.
-Fresh candidate checks are PENDING / NOT EXECUTED IN CODEX. Reliable cold start
-requires later activation/browser evidence. Preserve old images/evidence. Historical
+and latency targets remain 24 seconds. Exact candidate
+`8f54970f025e3491a123540cc94870508b66f119` focused preparation subsequently passed
+with Prepare-Exitcode 0 using `deploy/prepare-hls-startup-window.sh`: all 13
+selected native checks passed, with the four real-codec fixtures in generation
+1; base/Brave images and private snapshot/validation marker were recorded in
+`/opt/docker/nekoNew/neko-hls-results-8f54970f025e`. The helper checked that only
+the startup constant changed in server sources and client/runtime/deployment
+sources matched. Earlier HLS package/server-image results precede the excerpt
+and are covered by final helper success; unchanged client build layers were
+cached. Target checkout is exact-8f, while live stays exact-68. These are supplied
+target results, NOT EXECUTED IN CODEX. NEXT activate the prepared exact-8f image
+and check cold start without Retry; activation/browser acceptance remain pending.
+Preserve old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed
 client/image/HTTP-denial gates without a new reason.
 

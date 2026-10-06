@@ -1183,10 +1183,10 @@ Client-Check-Exitcode 0, fresh index-urce48rY.js and private report
 Scoped exact-68 image preparation subsequently passed with
 Image-Prepare-Exitcode 0 using helper `28d081a4`: fresh client build, base/Brave
 images and private snapshot/marker recorded, with identical backend evidence
-inherited. The checkout is now exact-68; the working exact-73 HLS/WebRTC
+inherited. The checkout was then exact-68; the working exact-73 HLS/WebRTC
 container remained unchanged during preparation. Activation subsequently
 passed with Start-Exitcode 0, healthy `my-neko/brave:hls-68dbdd4a8dd7` and a
-private enable snapshot. Checkout/live are now exact application
+private enable snapshot. Checkout/live were then exact application
 `68dbdd4a8dd798886302b235c1f8f208452e0c6e`. The operator reports HLS needed
 Retry, then worked without problems; the initial error, five-minute/event
 interval and concurrent WebRTC result are not separately confirmed.
@@ -1203,11 +1203,17 @@ per-attempt correlation or a measurement of first media readiness.
 The server-only candidate raises conventional startup allowance to 28 seconds
 within the existing 30-second HTTP/client limits; LL-HLS, codecs, playlists,
 client behavior and the p95 24-second acceptance target stay unchanged.
-NEXT focused HLS package/native checks and candidate image preparation through
-`deploy/prepare-hls-startup-window.sh`, preserving the running exact-68 service
-and old evidence. New checks are PENDING / NOT EXECUTED IN CODEX. Activation
-and one cold-start browser check follow only after preparation; do not claim
-the initial Retry defect is fixed before that evidence.
+Exact candidate `8f54970f025e3491a123540cc94870508b66f119` preparation subsequently
+passed with Prepare-Exitcode 0. All 13 selected native checks passed, with four
+real-codec fixtures in generation 1 (18.09/18.07/18.84/30.07 seconds); candidate
+base/Brave images and private snapshot/validation marker were recorded in
+`/opt/docker/nekoNew/neko-hls-results-8f54970f025e`. Earlier HLS package/server-
+image checks precede the supplied excerpt and are covered by final helper
+success without separately shown results. Unchanged client build layers were
+cached; the exact-68 client gate is inherited. Target checkout is now exact-8f,
+while the live service stays exact-68. NOT EXECUTED IN CODEX. NEXT activate the
+prepared exact-8f image and check one cold HLS start without Retry; both remain
+pending. Do not claim the initial Retry defect is fixed before browser evidence.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 Historical results below apply only to their recorded commits.
 

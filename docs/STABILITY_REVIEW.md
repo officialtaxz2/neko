@@ -19,9 +19,13 @@ one at most 1 ms, two requests totaling 24.001096458 seconds. The sequence fits
 a readiness deadline followed by a warmed Retry, without attempt correlation.
 The new bounded server-only candidate changes conventional startup allowance
 from 24 to 28 seconds inside the unchanged 30-second HTTP/client limits. It is
-not yet a verified fix. NEXT focused HLS/native tests and image preparation
-while retaining the running exact-68 service and prior evidence; candidate
-checks are PENDING / NOT EXECUTED IN CODEX. Cold-start acceptance follows.
+not yet a verified fix. Exact-8f54970f focused preparation subsequently passed
+with Prepare-Exitcode 0: all 13 selected native checks passed, including the four
+real-codec fixtures in generation 1; candidate base/Brave images and private
+evidence were recorded. Unchanged client build layers were cached. Target
+checkout is exact-8f; live service remains exact-68. Supplied target evidence,
+NOT EXECUTED IN CODEX. NEXT activation and one cold HLS start without Retry;
+activation/browser acceptance remain pending. Preserve prior images/evidence.
 The initial fixed error, timed/event
 interval and concurrent WebRTC result are not separately supplied. The wider device,
 authorization/lifecycle and resource gates stay open.

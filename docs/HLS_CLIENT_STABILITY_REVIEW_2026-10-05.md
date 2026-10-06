@@ -1,10 +1,10 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **TARGET CLIENT/IMAGE GATES AND HEALTHY ACTIVATION PASSED / FIRST START AND WIDER LIVE ACCEPTANCE OPEN**.
+Status: **EXACT-8F54970F PREPARATION PASSED / CANDIDATE ACTIVATION AND COLD START PENDING / WIDER LIVE ACCEPTANCE OPEN**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
-Checkout and running deployment are now exact application
+At that checkpoint checkout and running deployment were exact application
 `68dbdd4a8dd798886302b235c1f8f208452e0c6e`, conventional HLS enabled, with
 Start-Exitcode 0 and a healthy container. The operator reports HLS needed
 Retry, then worked without problems; reliable first-start acceptance remains open.
@@ -13,9 +13,11 @@ bootstrap, generation-1 server delivery and no sampled process exit/OOM.
 The saved timing summary subsequently passed with Timing-Exitcode 0: one
 request approximately 24 seconds, one at most 1 ms. The server-only candidate
 now raises conventional readiness allowance from 24 to 28 seconds, preserving
-the outer 30-second limits. NEXT focused target HLS/native checks and image
-preparation, with the running exact-68 service retained. This is a bounded
-candidate, not a confirmed first-start fix; new checks remain pending.
+the outer 30-second limits. Exact-8f54970f focused preparation subsequently
+passed with Prepare-Exitcode 0, all 13 selected native checks and both candidate
+images. Target checkout is now exact-8f; live remains exact-68. NEXT activate
+the prepared image and check cold start without Retry. This is a bounded
+candidate, not a confirmed first-start fix; activation/browser acceptance stay open.
 
 ## What the existing evidence establishes
 
@@ -441,8 +443,9 @@ idle grace, codec/GOP, capture subscriptions, client and HTTP security remain
 unchanged. The p95 24-second first-picture/audio and glass-to-glass acceptance
 targets remain open and are not relaxed by this allowance.
 
-The candidate is statically reviewed, **PENDING / NOT EXECUTED IN CODEX** for
-runtime verification. It may remove the observed boundary failure; a reliable
+At implementation the candidate was statically reviewed, with target runtime
+verification pending and NOT EXECUTED IN CODEX. Its subsequent preparation
+passed as recorded below. It may remove the observed boundary failure; a reliable
 first-start fix cannot be claimed until target cold-start playback succeeds.
 No new test merely asserting the constant is added. Existing full HLS package
 tests and selected native startup/anchor/shared-input/scene-cut checks are the
@@ -465,7 +468,7 @@ a new private 0700 directory outside Git and prior evidence. It builds
 `server-checks` first, ensuring the native validation image inherits candidate
 sources; runs `go test ./internal/mediahls -count=1`; builds and runs the
 existing native HLS validation image; and builds separate candidate base/Brave
-tags with a fresh client bundle. The server Dockerfile also compiles the
+tags with the bundle from unchanged client sources. The server Dockerfile also compiles the
 candidate. The native command uses `-count=1` and includes conventional
 readiness, delayed high anchor, skewed sources and sustained scene cuts.
 Unchanged client tests, unrelated Go packages, fuzz jobs and the 19 public
@@ -485,3 +488,77 @@ picture/audio/room-event comparison later. Frozen-picture, device, passive
 authorization/lifecycle, numeric latency, resource/isolation, dependency and
 final grouped acceptance remain open. Preserve all previous images/evidence
 and pinned `master`.
+
+## Supplied exact-8f54970f preparation passed; activation pending
+
+The supplied target excerpt ends with **Prepare-Exitcode: 0** and
+`STARTUP WINDOW PREPARATION PASSED; running service unchanged`. It records
+the private snapshot and completed preparation in
+`/opt/docker/nekoNew/neko-hls-results-8f54970f025e`, from the unchanged helper
+blob `40f9536ac204342bbf5b8070380cc05ece637a21` at exact application
+`8f54970f025e3491a123540cc94870508b66f119`. Native-test timestamps are
+2026-10-05; this supplied result was carried forward after the interruption
+on 2026-10-07. No verification was executed in Codex.
+
+All 13 selected top-level native tests visibly passed. The four real-codec
+fixtures remained in generation 1: normal conventional readiness at 18.09
+seconds, delayed high anchor at 18.07 seconds, skewed sources at 18.84 seconds
+and sustained scene cuts at 30.07 seconds. The package totals were 0.270
+seconds for `pkg/gst` and 85.451 seconds for `internal/mediahls`. Controlled
+negative tests emitted the expected missing-pipeline, queue-full, closed-drop
+and push-failed warnings and passed; these are not live crash evidence.
+
+The excerpt begins during the native image's dependency installation. Earlier
+server-validation build/compilation and full HLS package tests are covered by
+the strict helper's final success, without separately visible results or a
+fresh test count. The base/Brave candidate images were exported successfully
+as `my-neko/base:hls-8f54970f025e` and `my-neko/brave:hls-8f54970f025e`;
+the Brave package remained 1.96.61. Unchanged client dependency/source/build
+layers were cached, so no fresh client test/type/build run is claimed here.
+The image inspection record and validation marker were saved privately;
+BuildKit export hashes are not substituted for an inspected runtime image ID.
+
+The helper verified unchanged container ID/live image before final success.
+Target checkout is now exact-8f54970f, but the running image remains
+`my-neko/brave:hls-68dbdd4a8dd7`. Automated readiness in these controlled
+fixtures does not demonstrate the actual browser first-start correction.
+Activation and one cold target-browser start without Retry remain pending.
+Preserve previous images/evidence; `master` remains at `d9105ef8`.
+
+## Next: activate the prepared image and observe one cold first start
+
+Close existing HLS tabs before activation so an old viewer cannot reconnect
+and warm the new packager before the intended first attempt. The existing
+deployer blob `c6f52dc80fdf605ec908f3fe3856ce23e015e494` is unchanged. Keep the
+target checkout pinned at the prepared application; later documentation-only
+commits are not replacement deployment candidates.
+
+```bash
+set +e
+bash -Ee -o pipefail <<'NEKO_HLS_START'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "8f54970f025e3491a123540cc94870508b66f119"
+
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-8f54970f025e
+test "$(stat -c %a "$output")" = 700
+bash deploy/deploy-hls-media.sh enable "$output"
+NEKO_HLS_START
+printf 'Start-Exitcode: %s\n' "$?"
+```
+
+This briefly restarts Neko, checks the candidate preparation marker/image ID
+and retains the previous image for rollback. No second baseline restart,
+rebuild or repeat of unchanged denial probes is requested. If container startup
+fails, the existing deployer restores the saved prior image without the HLS
+overlay; a healthy-container result does not establish playback success.
+
+After Start-Exitcode 0, open one fresh private window at
+`https://neko.taxzvps.de/?media=hls`, log in as admin and let that first attempt
+reach moving picture/audio or its fixed failure detail without Retry/reload.
+Report whether it started on the first attempt and the fixed detail if it
+failed; retain the failed state for bounded diagnosis. Keep this step distinct
+from the later sustained picture/audio/room-event and concurrent WebRTC check.
+Device, authorization/lifecycle, numeric latency/resource/isolation, dependency
+and final grouped acceptance remain open.

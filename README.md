@@ -11,7 +11,7 @@ monitoring before first readiness and mixed HTTP/readiness error budgets, plus
 player-event handling. The supplied exact-68 target gate passed **all 60 client
 tests, TypeScript and build**. Scoped exact-68 image preparation also passed
 (`Image-Prepare-Exitcode: 0`). Exact-68 activation then passed healthy with
-`Start-Exitcode: 0`; checkout and running service are now exact `68dbdd4a`.
+`Start-Exitcode: 0`; checkout and running service were then exact `68dbdd4a`.
 The operator reports HLS works after Retry. Reliable first start and wider
 browser acceptance remain open. Read-only diagnosis then passed: one server
 not-ready bootstrap, one successful bootstrap and generation-1 delivery,
@@ -19,8 +19,11 @@ without a sampled crash. The saved timing summary then passed: one request
 took approximately 24 seconds, the other at most 1 ms. A bounded server-only
 candidate raises conventional startup allowance from 24 to 28 seconds inside
 the existing 30-second HTTP/client limits. This is not yet a verified fix.
-NEXT focused target HLS tests/image preparation, retaining the running exact-68
-service; cold-start acceptance follows separately. NOT EXECUTED IN CODEX.
+Exact-8f54970f focused target preparation subsequently passed with
+`Prepare-Exitcode: 0`: native checks and base/Brave images passed. Server
+checkout is now exact-8f54970f; the running service remains exact-68. NEXT
+activate the prepared image and check cold start without Retry. Activation/
+browser acceptance remain pending. NOT EXECUTED IN CODEX.
 See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 
