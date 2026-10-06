@@ -24,9 +24,15 @@ Exact-8f54970f focused target preparation subsequently passed with
 checkout is exact-8f54970f; the live image was still exact-68 at preparation.
 After the requested activation, the operator reports a first picture that
 appeared frozen; reload then produced moving HLS video/audio. Reliable first
-start remains open, and the activation CLI/live image have not been supplied.
-NEXT read-only playback diagnosis and prepared/live image comparison, retaining
-the working service. NOT EXECUTED IN CODEX.
+start remains open. The subsequent read-only diagnosis passed with
+`Diagnostic-Exitcode: 0`, matching prepared/live exact-8f image IDs, a healthy
+container, two successful bootstraps, all four workers in one generation and
+135 successful segment requests; no sampled exit/OOM or fixed error was found.
+Browser first-picture state remains unknown. A client-only candidate now
+requests autoplay after attachment rather than waiting for canplay; it is not
+a confirmed live fix. NEXT the separate `deploy/prepare-hls-client-start.sh`
+client/image gate, retaining the running exact-8f service. New checks are
+PENDING / NOT EXECUTED IN CODEX.
 See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 

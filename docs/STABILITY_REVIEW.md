@@ -25,10 +25,17 @@ real-codec fixtures in generation 1; candidate base/Brave images and private
 evidence were recorded. Unchanged client build layers were cached. Target
 checkout is exact-8f; live was exact-68 at preparation. After the requested
 activation, the operator reports an apparently frozen first picture, then
-moving HLS video/audio after page reload. Activation CLI/live-image and initial
+moving HLS video/audio after page reload. Activation CLI and initial
 player/error/timing evidence are missing; reliable first start remains open.
-NEXT read-only diagnosis and prepared/live image comparison, retaining the
-service. Supplied target evidence, NOT EXECUTED IN CODEX. Preserve prior evidence.
+Read-only diagnosis subsequently passed with Diagnostic-Exitcode 0 and matching
+prepared/live exact-8f image IDs: healthy container, two successful bootstraps,
+one startup generation per track, all four workers running, one active lease
+and 135 successful segment requests, without a sampled exit/OOM or fixed error.
+This does not identify the browser's frozen-picture cause. A client-only
+start-order candidate requests existing autoplay after attachment rather than
+waiting for canplay. NEXT the isolated client/image gate in
+`deploy/prepare-hls-client-start.sh`, keeping exact-8f running. New checks are
+PENDING / NOT EXECUTED IN CODEX. Preserve prior evidence.
 The initial fixed error, timed/event
 interval and concurrent WebRTC result are not separately supplied. The wider device,
 authorization/lifecycle and resource gates stay open.

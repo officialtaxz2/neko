@@ -167,22 +167,27 @@ test('late bootstrap completion after stop cannot reattach a source or start HTT
 })
 
 test('blocked autoplay retains a manual Play action after one muted attempt', async () => {
-  const h = harness()
-  await h.negotiate()
-  h.video.play = () => { h.video.playCalls++; return Promise.reject(new Error('NotAllowedError')) }
-  h.video.fire('canplay')
-  await flush()
-  assert.equal(h.video.playCalls, 2)
-  assert.equal(h.video.muted, true)
-  await h.advance(35000)
-  assert.notEqual(h.status.at(-1).state, 'terminal')
-  h.video.play = () => { h.video.playCalls++; h.video.paused = false; return Promise.resolve() }
-  assert.equal(await h.controller.play(), true)
-  h.controller.stop()
+  for (const mse of [false, true]) {
+    const h = harness({ mse })
+    h.video.play = () => { h.video.playCalls++; return Promise.reject(new Error('NotAllowedError')) }
+    await h.negotiate()
+    assert.equal(h.video.playCalls, 2)
+    assert.equal(h.video.muted, true)
+    h.video.readyState = 3
+    h.video.fire('canplay')
+    await flush()
+    assert.equal(h.video.playCalls, 2, 'readiness must not repeat blocked autoplay')
+    assert.equal(h.playable.at(-1), true)
+    await h.advance(35000)
+    assert.notEqual(h.status.at(-1).state, 'terminal')
+    h.video.play = () => { h.video.playCalls++; h.video.paused = false; return Promise.resolve() }
+    assert.equal(await h.controller.play(), true)
+    h.controller.stop()
+  }
 })
 
 test('a pending Play rejection cannot undo a later user Pause', async () => {
-  const h = harness()
+  const h = harness({ autoplay:false })
   await h.negotiate()
   let reject
   h.video.play = () => { h.video.playCalls++; return new Promise((_, denied) => { reject = denied }) }
@@ -194,6 +199,108 @@ test('a pending Play rejection cannot undo a later user Pause', async () => {
   assert.equal(h.video.muted, false)
   assert.equal(h.video.paused, true)
   h.controller.stop()
+})
+
+test('initial HLS autoplay is requested even without a canplay event', async () => {
+  for (const mse of [false, true]) {
+    for (const readyState of [2, 0]) {
+      const h = harness({ mse, mseAttach(video) { video.readyState = readyState } })
+      h.video.load = function () { this.loads++; if (this.src) this.readyState = readyState }
+      let complete
+      h.video.play = () => {
+        h.video.playCalls++; h.video.paused = false
+        return new Promise((resolve) => { complete = resolve })
+      }
+      await h.negotiate()
+      assert.equal(h.video.playCalls, 1, 'initial HLS autoplay waited for canplay')
+      assert.equal(h.video.paused, false)
+      assert.equal(h.playable.at(-1), false, 'a Play request is not proof of readiness')
+      assert.equal(h.status.at(-1).state, 'connecting')
+      // A pending early Play must get the whole readiness budget, rather than
+      // triggering the shorter progress watchdog before playback can start.
+      await h.advance(25000)
+      assert.equal(h.status.some(({state}) => state === 'terminal'), false)
+      h.video.readyState = 3
+      h.video.fire('canplay')
+      assert.equal(h.video.playCalls, 1)
+      complete()
+      await flush()
+      h.video.fire('playing')
+      for (let second = 1; second <= 10; second++) {
+        h.video.currentTime = second
+        await h.advance(1000)
+      }
+      assert.equal(h.status.at(-1).state, 'streaming')
+      assert.equal(h.requests.filter(({url}) => url.endsWith('/session')).length, 1)
+      h.controller.stop()
+      assert.equal(h.video.src, '')
+      assert.equal(h.timers.size, 0)
+    }
+  }
+})
+
+test('attachment autoplay preserves disabled autoplay and a pre-readiness Pause', async () => {
+  for (const mse of [false, true]) {
+    const manual = harness({ mse, autoplay:false })
+    await manual.negotiate()
+    assert.equal(manual.video.playCalls, 0)
+    manual.video.readyState = 3
+    manual.video.fire('canplay')
+    await flush()
+    assert.equal(manual.video.playCalls, 0)
+    assert.equal(await manual.controller.play(), true)
+    assert.equal(manual.video.playCalls, 1)
+    manual.controller.stop()
+
+    const h = harness({ mse })
+    let reject
+    h.video.play = () => {
+      h.video.playCalls++; h.video.paused = false
+      return new Promise((_, denied) => { reject = denied })
+    }
+    await h.negotiate()
+    assert.equal(h.video.playCalls, 1)
+    h.controller.pause()
+    reject(new Error('AbortError'))
+    await flush()
+    h.video.readyState = 3
+    h.video.fire('canplay')
+    await h.advance(35000)
+    assert.equal(h.video.playCalls, 1, 'a paused startup must not retry autoplay')
+    assert.equal(h.video.muted, false)
+    assert.equal(h.video.paused, true)
+    assert.equal(h.status.some(({state}) => state === 'terminal'), false)
+    h.controller.stop()
+    assert.equal(h.timers.size, 0)
+  }
+})
+
+test('an early autoplay rejection after private pause cannot affect the resumed player', async () => {
+  for (const mse of [false, true]) {
+    const h = harness({ mse })
+    let reject
+    h.video.play = () => {
+      h.video.playCalls++; h.video.paused = false
+      return new Promise((_, denied) => { reject = denied })
+    }
+    await h.negotiate()
+    h.controller.setPrivatePaused(true)
+    h.video.play = () => { h.video.playCalls++; h.video.paused = false; return Promise.resolve() }
+    h.controller.setPrivatePaused(false)
+    await h.advance(1000)
+    h.video.readyState = 3
+    h.video.fire('canplay')
+    h.video.fire('playing')
+    reject(new Error('AbortError'))
+    await flush()
+    assert.equal(h.video.playCalls, 2)
+    assert.equal(h.video.muted, false)
+    assert.equal(h.video.paused, false)
+    assert.equal(h.status.at(-1).state, 'streaming')
+    assert.equal(h.requests.filter(({url}) => url.endsWith('/session')).length, 1)
+    h.controller.stop()
+    assert.equal(h.timers.size, 0)
+  }
 })
 
 test('initial HLS readiness cannot later turn buffering into a startup timeout', async () => {
@@ -303,7 +410,7 @@ test('stale readiness events cannot cancel the new player deadline after private
 
 test('a pending first Play keeps the startup budget separate from the stall budget', async () => {
   for (const mse of [false, true]) {
-    const h = harness({ mse })
+    const h = harness({ mse, autoplay:false })
     await h.negotiate()
     let complete
     h.video.play = () => {

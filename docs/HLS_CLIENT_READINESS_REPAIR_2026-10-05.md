@@ -1,8 +1,8 @@
 # HLS client startup deadline repair — 2026-10-05
 
 Latest follow-up: [the client stability/timing record](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md)
-supersedes the historical exact-73 status below. The supplied live service is
-still exact-68. Its saved timing gate passed with one approximately 24-second
+supersedes the historical exact-73 status below. The exact-68 saved timing
+gate passed with one approximately 24-second
 request and one request at most 1 ms, fitting a readiness deadline then warmed
 Retry without individual attempt correlation. The new server-only candidate
 raises conventional readiness allowance to 28 seconds inside the unchanged
@@ -10,10 +10,15 @@ raises conventional readiness allowance to 28 seconds inside the unchanged
 passed with Prepare-Exitcode 0, native checks and both candidate images. Target
 checkout is exact-8f; live was exact-68 at preparation. After the requested
 activation, the operator reports an apparently frozen first picture, then
-moving HLS video/audio after reload. Activation CLI/live-image evidence and
-reliable first start remain open. NEXT read-only playback diagnosis and image
-comparison, retaining the service.
-NOT EXECUTED IN CODEX; no verified first-start fix claimed.
+moving HLS video/audio after reload. Read-only diagnosis subsequently passed
+with Diagnostic-Exitcode 0 and matching prepared/live exact-8f image IDs:
+healthy container, two successful bootstraps, all four workers in one startup
+generation and 135 successful segment requests; no sampled exit/OOM or fixed
+error. The initial browser state and reliable first start remain open.
+A client-only candidate now requests autoplay after attachment without waiting
+for canplay. NEXT the isolated client/image gate in
+`deploy/prepare-hls-client-start.sh`, retaining the live exact-8f service.
+New checks are PENDING / NOT EXECUTED IN CODEX; no verified live fix claimed.
 
 Status: client-only repair `73d5ff6d29110e3dd06999726a7e88718d09ea23` is
 implemented and statically reviewed on `testing`. Supplied target results

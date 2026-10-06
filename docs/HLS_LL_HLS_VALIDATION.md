@@ -34,11 +34,18 @@ sources matched. Earlier HLS package/server-image results precede the excerpt
 and are covered by final helper success; unchanged client build layers were
 cached. Target checkout is exact-8f; live was exact-68 at preparation. After the
 requested activation, the operator reports connecting then an apparently frozen
-first picture; reload produced moving HLS video/audio. Activation CLI/live image,
+first picture; reload produced moving HLS video/audio. Activation CLI,
 initial player/error/timing state and concurrent WebRTC are not supplied.
-Reliable first start remains open. NEXT read-only playback diagnosis and
-prepared/live image comparison, retaining the service. Supplied target results,
-NOT EXECUTED IN CODEX; no repeated activation/build is requested for diagnosis.
+The subsequent read-only diagnosis passed with Diagnostic-Exitcode 0: matching
+prepared/live exact-8f image IDs, healthy container, two successful bootstraps,
+one startup generation per track, all four workers running, one active lease
+and 135 successful segments; no sampled exit/OOM or fixed error. Cumulative
+server counters do not prove first rendered video/audio. A client-only
+start-order candidate now requests existing autoplay after player attachment
+without waiting for canplay. NEXT `deploy/prepare-hls-client-start.sh` checks
+the controlled old/new case, full client tests/type/build and candidate images,
+retaining the live exact-8f container. New checks are PENDING / NOT EXECUTED IN
+CODEX; no deployment or reliable-first-start acceptance is claimed.
 Preserve old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed
 client/image/HTTP-denial gates without a new reason.

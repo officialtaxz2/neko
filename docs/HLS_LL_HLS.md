@@ -13,8 +13,14 @@ target preparation subsequently passed with Prepare-Exitcode 0, all 13 selected
 native checks and both candidate images. Target checkout is exact-8f; live was
 exact-68 at preparation. After the requested activation, the operator reports
 an apparently frozen first picture, then moving HLS video/audio after reload.
-Activation CLI/live-image evidence and reliable first start remain open. NEXT
-read-only diagnosis/image comparison, retaining the service. NOT EXECUTED IN CODEX.
+Read-only diagnosis then passed with Diagnostic-Exitcode 0 and matching
+prepared/live exact-8f image IDs: healthy container, two successful bootstraps,
+all four workers in one startup generation and 135 successful segments,
+without a sampled exit/OOM or fixed error. Browser first-start state remains
+unknown. A client-only start-order candidate requests autoplay after attachment
+without waiting for canplay. NEXT the isolated client/image preparation in
+deploy/prepare-hls-client-start.sh, retaining the running exact-8f service.
+New checks are PENDING / NOT EXECUTED IN CODEX; reliable first start remains open.
 Authorization/lifecycle and grouped
 device/resource acceptance
 remain pending; no automatic selection or full HLS acceptance claim exists**.

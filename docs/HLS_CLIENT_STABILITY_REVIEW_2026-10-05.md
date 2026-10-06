@@ -1,6 +1,6 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-8F54970F PREPARATION PASSED / FIRST PICTURE REPORTED, RELOAD NEEDED FOR VIDEO/AUDIO / DIAGNOSIS AND WIDER ACCEPTANCE OPEN**.
+Status: **EXACT-8F54970F LIVE IMAGE/READ-ONLY DIAGNOSIS PASSED / RELOAD NEEDED FOR FIRST VIDEO/AUDIO / CLIENT START-ORDER CANDIDATE CHECKS AND WIDER ACCEPTANCE PENDING**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -17,9 +17,14 @@ the outer 30-second limits. Exact-8f54970f focused preparation subsequently
 passed with Prepare-Exitcode 0, all 13 selected native checks and both candidate
 images. Target checkout is exact-8f; live was exact-68 at preparation. After
 the requested activation, an apparently frozen first picture was reported;
-reload produced moving HLS video/audio. Activation CLI/live-image evidence
-has not been supplied. NEXT read-only diagnosis/image comparison while retaining
-the service; reliable first start and wider browser acceptance remain open.
+reload produced moving HLS video/audio. Read-only diagnosis subsequently passed
+with Diagnostic-Exitcode 0 and matching prepared/live exact-8f image IDs, two
+successful bootstraps, all four workers in one generation and 135 successful
+segments; no sampled process exit/OOM or fixed error. Initial browser state
+remains unknown. NEXT the client-only start-order candidate's isolated
+client/image gate in `deploy/prepare-hls-client-start.sh`, retaining the live
+exact-8f service. New checks are PENDING / NOT EXECUTED IN CODEX; reliable first
+start and wider browser acceptance remain open.
 
 ## What the existing evidence establishes
 
@@ -565,7 +570,7 @@ from the later sustained picture/audio/room-event and concurrent WebRTC check.
 Device, authorization/lifecycle, numeric latency/resource/isolation, dependency
 and final grouped acceptance remain open.
 
-## Operator first-picture/reload report; read-only diagnosis next
+## Operator first-picture/reload report and requested read-only diagnosis
 
 After the requested exact-8f activation, the operator reports the connecting
 message, then a picture that apparently remained still. Page reload was needed
@@ -616,7 +621,92 @@ The page has already been reloaded, so current browser state cannot reproduce
 the earlier frozen state and cumulative server counters may include both
 attempts. This limitation must accompany the diagnosis; successful segment
 requests cannot prove rendered/moving video or audible playback. The new
-diagnostic result remains pending. Further player-specific evidence may be
-needed if these saved/current server observations do not isolate the defect.
+diagnostic result was pending at this checkpoint and is supplied below.
+Further player-specific evidence may be needed if these server observations
+do not isolate the defect.
 Runtime checks were NOT EXECUTED IN CODEX. Keep the working service, previous
 images/evidence, default/manual backend choices and pinned `master`.
+
+## Supplied exact-8f diagnosis and client start-order candidate — 2026-10-07
+
+The supplied read-only block passed with **Diagnostic-Exitcode 0**. Both the
+prepared image and inspected running container report
+`sha256:8221f57d0ed227af9356a4190335d8cb1a9d3192521ef369ca5708f8c7ee2962`,
+confirming the exact-8f image is active. The container is healthy/running with
+zero Docker restarts and no OOM kill or sampled Neko process exit. The bounded
+390-line application sample contains no fixed error marker. The GStreamer
+version probe is unavailable; that does not establish missing codecs.
+
+The captured cumulative metrics show:
+
+- two successful conventional-HLS bootstraps and no recorded not-ready result
+  series in this snapshot;
+- one startup generation and one successful worker start per audio/high/medium/
+  low track, with all four workers still running;
+- one active lease, zero opening leases, one init, 42 parts and six segments
+  currently stored per track, with cumulative publication for all tracks;
+- six successful init, 28 keepalive, 422 master, 129 playlist and **135 segment**
+  requests. The fixed log sequence includes two lease opens and one close.
+
+These observations fit two browser connections around the reported reload in
+one shared generation. They do not correlate either bootstrap/lease to the
+initial frozen picture, prove rendering or audio at that time, or establish
+the cause of the browser issue. No server crash/restart mechanism is supported
+by this sample. The activation CLI/Start-Exitcode remains unsupplied, although
+the live image and healthy server delivery are now confirmed.
+
+Static client inspection identifies a narrower improvement: the existing
+automatic Play request waits for `canplay`, or for synchronous attachment that
+already set the readiness flag. A first frame can be available before that
+event. The [HTML play algorithm](https://html.spec.whatwg.org/multipage/media.html#dom-media-play)
+permits requesting Play before future data is available, with a pending promise
+until playback can start. The pinned
+[hls.js 1.7.3 buffer attachment source](https://github.com/video-dev/hls.js/blob/v1.7.3/src/controller/buffer-controller.ts)
+sets the media source during attachment; its
+[control API](https://github.com/video-dev/hls.js/blob/v1.7.3/docs/API.md#fourth-step-control-through-video-element)
+uses the video element's Play method.
+
+The client-only candidate therefore invokes the existing Play path once the
+current source/player has attached, when autoplay is desired and the element
+is paused. It no longer requires `playbackReady` for that request. A pending
+Play is still serialized; `canplay`/`playing` determine readiness and playing
+state independently. The 30-second initial readiness and 20-second progress
+budgets, manual Play, one muted attempt, disabled autoplay, user/private Pause,
+generation guards, server codecs/configuration and backend choice are unchanged.
+This removes an unnecessary readiness-event dependency; it does **not** prove
+that the reported first picture missed canplay or that the live issue is fixed.
+
+Three new target-only controller cases cover early Play with no data or only
+a first frame on native/MSE players, disabled autoplay and pre-readiness Pause,
+and a stale rejected Play after private resume. Existing blocked-autoplay
+coverage now exercises both player kinds with rejection at attachment and no
+unrequested repeat on readiness. The existing explicit pending-Play/Pause case
+disables automatic Play so it continues to isolate the manual operation.
+All new execution is **PENDING / NOT EXECUTED IN CODEX**.
+
+### Next: one preparation block, retaining the working service
+
+Use `deploy/prepare-hls-client-start.sh REPOSITORY BASE_OUTPUT OUTPUT_DIR CANDIDATE`
+from the exact reviewed candidate commit supplied with the operator command.
+The target helper requires a clean exact-8f testing checkout, private validated
+8f image evidence and a live image matching that evidence. It checks the
+candidate/helper provenance and limits the delta to controller/tests, this
+helper and documentation; backend, dependencies and deployment sources must
+match the validated baseline.
+
+It archives the candidate client/fixtures into a new private output directory,
+checks that the old controller fails the specific missing-early-Play assertion,
+then runs the complete candidate client tests, TypeScript and build in an
+isolated validation container. After that gate passes, it fast-forwards only
+the checkout, assembles candidate base/Brave images and records preparation
+markers. It verifies that the same live Neko container/image remains in place;
+it has no service activation or Caddy reload operation. Existing backend/native/
+fuzz evidence is inherited where previously supplied, not freshly rerun.
+Old image tags and evidence directories remain retained. If preparation fails,
+preserve its private output/log and the working service.
+
+No additional ad-hoc browser questionnaire or repeat denial probe is requested
+for preparation. Candidate activation and one fresh-window first-start attempt
+follow only after preparation success. Sustained moving video/audio, concurrent
+WebRTC, room events, authorization/lifecycle, device/resource/latency, dependency
+maintenance and final grouped acceptance remain open. `master` stays pinned.

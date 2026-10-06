@@ -1214,10 +1214,20 @@ cached; the exact-68 client gate is inherited. Target checkout is exact-8f;
 the live image was exact-68 at preparation. After the requested activation,
 the operator reports connecting then an apparently frozen first picture;
 page reload produced moving video/audio while HLS stayed selected. Activation
-CLI/live-image evidence, initial player state/timing and concurrent WebRTC are
-not supplied. Reliable first start remains open. NOT EXECUTED IN CODEX. NEXT
-read-only playback diagnosis and prepared/live image comparison, retaining the
-working service; do not repeat activation/build/denial probes for diagnosis.
+CLI, initial player state/timing and concurrent WebRTC are not supplied.
+Read-only diagnosis subsequently passed with Diagnostic-Exitcode 0: matching
+prepared/live exact-8f image IDs, healthy container, two successful bootstraps,
+one startup generation per track, all four workers running, one active lease
+and 135 successful segments; no sampled exit/OOM or fixed error. These counters
+do not isolate the first browser's frozen picture. A client-only start-order
+candidate requests existing autoplay immediately after player attachment,
+without waiting for canplay. It retains the independent readiness/progress
+deadlines and user/private Pause plus muted/manual Play. NEXT run
+`deploy/prepare-hls-client-start.sh` for the isolated old/new client case,
+full client tests/type/build and candidate images, keeping the working exact-8f
+container running. This new source change justifies focused client/image checks;
+no repeated backend/native/fuzz or HTTP-denial gate is needed. New checks are
+PENDING / NOT EXECUTED IN CODEX. Reliable first start remains open.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 Historical results below apply only to their recorded commits.
 

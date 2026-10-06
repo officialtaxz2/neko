@@ -373,9 +373,10 @@ export class HLSMediaController {
         if (!current()) { player.destroy(); return }
         this.player = player
       } else { this.player = { destroy() {} }; video.src = this.master; video.load() }
-      // Attachment can dispatch canplay synchronously before the MSE factory
-      // returns its player. Complete that deferred autoplay only for this player.
-      if (current() && this.playbackReady && this.desiredPlaying && video.paused) void this.play()
+      // Request autoplay once the source/player is attached, even before
+      // canplay. play() can wait for data; a first frame is not readiness.
+      // Synchronous attachment events and pending Play still share one attempt.
+      if (current() && this.desiredPlaying && video.paused) void this.play()
     } catch (_) { if (current()) this.fail('HLS player could not start; retry manually') }
     finally { if (this.playerGeneration === playerGeneration) this.attaching = false }
   }
