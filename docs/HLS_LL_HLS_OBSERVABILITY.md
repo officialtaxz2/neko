@@ -53,9 +53,19 @@ earlier browser state; if a freeze recurs, sample before Retry/reload when
 possible. Do not infer a join-caused freeze from cumulative event counts.
 
 The [exact-7dcc moving-picture/freeze record](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#moving-first-picture-then-freeze--2026-10-07)
-requests this step. New progress-mode execution/syntax verification remain
-**PENDING / NOT EXECUTED IN CODEX**; the original target diagnostic results
-apply to their previously supplied helper versions.
+requested this step. The supplied `02526dca` run passed syntax/diagnostic checks,
+confirmed the exact-7dcc live image and valid 12.012-second deltas, but captured
+idle HLS: no leases/subscriptions/workers or interval publication/HTTP events.
+The operator confirmed HLS was closed/logged out. This is expected idle cleanup,
+not evidence of an active freeze. NEXT one sample with the authenticated viewer
+left open; no repeat build or service restart.
+
+The progress and saved-startup label parsers were statically corrected to admit
+digits before their unchanged fixed allowlists, retaining the `vp8` codec that
+was previously dropped. Prior accepted HLS/lease/source rows remain valid;
+omitted VP8 values are unknown. Corrected-parser target execution is
+**PENDING / NOT EXECUTED IN CODEX**; the supplied passed gate applies to helper
+blob `64bd2ea7a6e3b63d7eafe7db0a5890cb53d27a1e`.
 
 ### Historical worker/startup signals
 

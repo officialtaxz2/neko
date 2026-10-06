@@ -1,6 +1,6 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-7DCC3C5E PREPARATION PASSED / MOVING FIRST PICTURE THEN FREEZE REPORTED / LIVE IMAGE CONFIRMATION AND READ-ONLY PROGRESS DIAGNOSIS PENDING**.
+Status: **EXACT-7DCC3C5E LIVE IMAGE CONFIRMED / IDLE PROGRESS DIAGNOSTIC PASSED / FREEZE CAUSE AND ACTIVE PROGRESS SAMPLE OPEN**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -28,11 +28,14 @@ retained. Earlier isolated old/new client tests/type/build are covered by final
 helper success, without separately visible counts in the copied build tail.
 Target checkout is now exact-7dcc. After the requested activation, the operator
 reports moving first picture after about 20 seconds, then a frozen picture
-requiring reload. Active image ID/activation CLI and the frozen player state
-are not yet supplied. The suggested WebRTC-join/video-start correlation is
-unconfirmed. NEXT the bounded read-only progress diagnostic below, preserving
-the running service. Its new mode is PENDING / NOT EXECUTED IN CODEX; prior
-preparation gates are supplied target results. Reliable first start and
+requiring reload. The subsequent progress diagnostic passed, confirming the
+prepared/live exact-7dcc image and healthy service. Its valid 12.012-second sample
+was idle; the operator confirmed HLS was closed/logged out. This does not capture
+the freeze or establish a WebRTC-join/video-start cause. NEXT one progress sample
+with HLS logged in and left open, using the corrected diagnostic label parser
+to retain allowlisted `vp8` capture rows. Corrected-parser execution is PENDING /
+NOT EXECUTED IN CODEX; prior diagnostic/preparation gates are supplied target
+results. Reliable first start and
 sustained/wider acceptance remain open.
 
 ## What the existing evidence establishes
@@ -866,3 +869,59 @@ no credentialed playback request. No repeated build/client/native/fuzz/HTTP-deni
 gate is needed for this helper-only change. Preserve previous images/evidence;
 reliable startup, sustained video/audio, room-event isolation and grouped
 authorization/device/resource acceptance remain open. `master` stays pinned.
+
+## Supplied progress diagnostic captured idle HLS — 2026-10-07
+
+The supplied `02526dca` helper run passed Bash syntax checking and completed with
+**Diagnostic-Exitcode 0**, using helper blob
+`64bd2ea7a6e3b63d7eafe7db0a5890cb53d27a1e`. Its precondition confirms the running
+image matches the prepared exact application
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b`:
+`sha256:c445e6541db2eb4ddf821874480a37be86542f749d5bb83e0cc67ce9640bac25`.
+The container was healthy/running, restart count zero, OOM false, with no sampled
+Neko exit or fixed error marker. These are supplied target results,
+**NOT EXECUTED IN CODEX**, independently confirming the new live image without
+claiming the original activation CLI was supplied.
+
+Both metric scrapes succeeded, process metadata agreed, no observed counter
+reset occurred, and the interval was 12.012 seconds (`delta_valid: true`).
+HLS active/opening leases, audio/high subscriptions and all four worker gauges
+were zero before and after. HLS source-unit/publication deltas were zero, with
+no new HTTP results, generations, discontinuities, drops, capture creations or
+WebRTC opens. Cumulative logs show two lease opens/closures, one packager start/
+ready/idle stop and seven negotiation rejections. The cumulative high-video
+source-restart discontinuity is one, with no interval increment; each HLS track
+has only one startup-labelled generation. None of these cumulative observations
+correlates the earlier freeze to a WebRTC participant or establishes a crash.
+
+Capability discovery in `client/src/neko/index.ts` also probes the other HLS
+mode; conventional-only configuration in `docker-compose.hls.yaml` rejects
+LL-HLS requests in `server/internal/mediahls/negotiator.go`. A negotiation
+rejection count alone therefore does not establish failed conventional playback.
+The seven sampled rejections lack mode/reason correlation in this summary;
+do not loosen authorization or enable LL-HLS based on that count.
+
+The operator confirmed **HLS was closed or logged out during sampling**.
+Idle leases and the packager stop are therefore consistent with expected cleanup;
+the zero deltas are not evidence of stalled active playback. A terminal client
+failure also stops its periodic requests, and eventual lease expiry can lead
+to idle cleanup while a failed page remains open. Distinguish that state from
+an active moving/frozen viewer before interpreting a later sample.
+
+Static inspection found why VP8 capture rows cannot appear in that summary:
+the diagnostic progress parser and saved-startup parser allowed `vp8` in their
+fixed codec allowlist but rejected digits in their preceding label-value regex.
+Both parsers now admit digits **before the unchanged allowlist checks**. This
+restores VP8 rows without admitting arbitrary codecs, identifiers or URLs. It
+changes only diagnostic helpers; application/media code and previous accepted
+HLS/lease/source metrics are unaffected. The omitted VP8 rows cannot be inferred
+from the supplied output. New helper execution is **PENDING / NOT EXECUTED IN
+CODEX**; static review and Git whitespace checks are the local verification.
+
+NEXT fetch the corrected helper outside Git, keep the application checkout at
+exact-7dcc and run the same bounded progress diagnostic with an authenticated
+HLS viewer left open. Start sampling while it is playing, or promptly during
+a recurrence before Retry/reload when possible. No build, activation, restart
+or induced room action is requested. A moving sample demonstrates only that
+interval; a sample after idle expiry cannot reconstruct the earlier player
+failure. Keep prior images/evidence and the remaining acceptance gates open.

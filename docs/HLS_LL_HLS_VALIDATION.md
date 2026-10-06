@@ -52,16 +52,19 @@ client tests/type/build are covered by final helper success, without separately
 visible counts. Unchanged exact-8f backend evidence is inherited, not rerun.
 After the requested exact-7dcc activation, the operator reports moving first
 picture after approximately 20 seconds, then a frozen picture requiring reload.
-Activation CLI/live image ID and the frozen player state are not yet supplied;
-the suggested WebRTC join/video-start correlation remains unconfirmed.
-NEXT one [bounded read-only progress diagnostic](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#moving-first-picture-then-freeze--2026-10-07),
-keeping the exact-7dcc application checkout and running service. Fetch only
-the reviewed helper outside Git; `--progress` checks the live prepared image ID
-and samples source/publication/HTTP/generation metrics 12 seconds apart.
-No repeat activation/build or induced room action. New diagnostic execution is
-PENDING / NOT EXECUTED IN CODEX. Prior preparation gates are supplied target
-results; exact activation, reliable-first-start and sustained playback acceptance
-remain pending.
+The subsequent progress diagnostic passed with Diagnostic-Exitcode 0,
+confirming the prepared/live exact-7dcc image ID and healthy service. Its valid
+12.012-second sample was idle: no HLS leases/subscriptions/workers or new
+publication/HTTP/generation events. The operator confirmed HLS was closed or
+logged out; this is not a captured freeze. The suggested WebRTC join/video-start
+correlation remains unconfirmed; the original activation CLI is unsupplied.
+NEXT one [progress sample with HLS logged in and open](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#supplied-progress-diagnostic-captured-idle-hls--2026-10-07),
+keeping the exact-7dcc application and live service. Fetch only the corrected
+helper outside Git; a diagnostic-only label-regex correction restores allowlisted
+`vp8` capture rows. The original idle diagnostic passed; corrected-parser target
+execution is PENDING / NOT EXECUTED IN CODEX. No repeated activation/build or
+induced room action. Reliable-first-start and sustained playback acceptance
+remain open.
 Preserve old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed
 client/image/HTTP-denial gates without a new reason.

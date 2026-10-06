@@ -36,12 +36,14 @@ with the live exact-8f service retained. Earlier client tests/type/build are
 covered by final helper success; their counts precede the copied tail.
 After the requested exact-7dcc activation, the operator reports moving first
 picture after about 20 seconds, followed by a frozen picture requiring reload.
-The active image ID/activation CLI are not yet supplied. A WebRTC join/video
-start is a possible correlation, not an established cause. NEXT one bounded
-read-only `--progress` diagnostic: confirm the prepared live image and compare
-media production, HTTP requests and source/packager generations 12 seconds
-apart, without restarting the service. New diagnostic execution is pending;
-NOT EXECUTED IN CODEX. Prior preparation results are supplied target evidence;
+The subsequent read-only progress diagnostic passed, confirming the prepared
+exact-7dcc live image and a healthy service. It captured an idle HLS backend:
+zero leases/workers/requests; the operator confirmed HLS was closed/logged out.
+This does not diagnose the earlier freeze or establish a WebRTC-join cause.
+NEXT one bounded progress sample with the HLS viewer logged in and left open,
+using the corrected diagnostic label parser (`vp8` was previously filtered out).
+No build or service restart. The parser correction's target result is pending;
+NOT EXECUTED IN CODEX. Prior diagnostic/preparation results are supplied evidence;
 reliable first start and sustained playback acceptance remain open.
 See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).

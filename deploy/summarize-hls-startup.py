@@ -185,7 +185,7 @@ def main():
             continue
         labels = {}
         for pair in match[2].split(","):
-            label = re.fullmatch(r'([a-z_]+)="([a-z_\-]+)"', pair)
+            label = re.fullmatch(r'([a-z_]+)="([a-z_0-9\-]+)"', pair)
             if not label or label[1] not in allowed or label[2] not in allowed[label[1]] or label[1] in labels:
                 break
             labels[label[1]] = label[2]

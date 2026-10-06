@@ -40,14 +40,19 @@ the supplied base-image-build tail and are covered by final helper success,
 without visible counts. Backend evidence is inherited from unchanged sources.
 After the requested exact-7dcc activation, the operator reports moving first
 picture after about 20 seconds, then another frozen picture requiring reload.
-Active image ID/activation CLI and the frozen browser state remain unsupplied.
+The subsequent progress diagnostic passed, confirming the prepared exact-7dcc
+live image and healthy service. HLS was idle in both valid 12.012-second samples,
+with zero leases/subscriptions/workers and no new publication/HTTP/generation
+events; the operator confirmed HLS was closed/logged out. This does not capture
+the earlier browser freeze. The original activation CLI remains unsupplied.
 A WebRTC participant joining/starting video is an uncorrelated hypothesis.
 Static review found a keyframe request for a new shared-capture listener, with
 HLS listeners retained; no direct join-triggered HLS teardown/source overwrite
-was found. NEXT one bounded read-only `--progress` diagnostic, verifying the
-prepared live image and comparing source/publication/HTTP/generation samples
-12 seconds apart without service changes. New diagnostic execution is
-PENDING / NOT EXECUTED IN CODEX. Prior preparation gates are supplied target
+was found. NEXT one bounded read-only `--progress` sample with HLS logged in
+and left open, without service changes. A diagnostic-only label-regex correction
+restores allowlisted `vp8` capture rows; the saved-startup helper is corrected too.
+The original idle gate passed; corrected-parser target execution is
+PENDING / NOT EXECUTED IN CODEX. Prior diagnostic/preparation gates are supplied target
 results; reliable first start and sustained/wider acceptance remain open.
 Preserve prior evidence.
 The initial fixed error, timed/event

@@ -61,16 +61,27 @@ success, without separately visible counts. Backend evidence is inherited
 from unchanged exact-8f sources, not freshly rerun. Target checkout is now
 exact-7dcc3c5e. After the requested activation, the operator reports moving
 first picture after approximately 20 seconds, then a later frozen picture
-requiring reload. Activation CLI/live image ID and the frozen player state
-are not yet supplied; exact-8f is the last independently confirmed live image.
+requiring reload. The subsequent exact-7dcc progress diagnostic passed with
+Diagnostic-Exitcode 0, confirming prepared/live image ID
+`sha256:c445e6541db2eb4ddf821874480a37be86542f749d5bb83e0cc67ce9640bac25`,
+a healthy container, no sampled exit/OOM and valid 12.012-second deltas.
+All HLS leases/subscriptions/workers were zero in both samples, with no new
+publication/requests/generations; two earlier lease closures and idle stop
+were recorded. The operator confirmed HLS was closed/logged out during sampling.
+This is expected idle cleanup, not a captured freeze. One cumulative high-source
+discontinuity and seven negotiation rejections are not correlated to the freeze.
 A WebRTC participant joining/starting video is an uncorrelated hypothesis.
 Static review found a shared-capture keyframe request on new listeners, with
 existing HLS listeners retained; no direct join-triggered HLS teardown or
-video-source overwrite was found. NEXT fetch the reviewed diagnostic helper
-outside Git and run its bounded read-only `--progress` mode against exact-7dcc.
-It checks the prepared/live image ID and compares two metric samples 12 seconds
-apart; no rebuild, deployment or service restart. New diagnostic execution is
-PENDING / NOT EXECUTED IN CODEX. Prior gates are supplied target results.
+video-source overwrite was found. Static inspection corrected a diagnostic-only
+label parser defect: `vp8` had been omitted because digits were rejected despite
+its allowlist entry. The progress and saved-startup helper now accept digits
+before checking the unchanged fixed allowlists. Prior accepted HLS/lease/source
+deltas are unaffected. NEXT one bounded `--progress` sample with HLS logged in
+and its viewer left open; fetch the corrected helper outside Git, keep the
+application exact-7dcc and preserve the service. No rebuild/deployment/restart.
+The supplied original helper gate passed; the corrected parser's target result
+is PENDING / NOT EXECUTED IN CODEX. Prior gates are supplied target results.
 Reliable first-start
 and wider acceptance remain open; do not repeat passed preparation gates.
 Preserve old images/evidence and keep dependency maintenance open.
