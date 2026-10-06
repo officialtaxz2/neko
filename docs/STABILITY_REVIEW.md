@@ -55,11 +55,16 @@ with no interval generation/discontinuity/drop/capture-creation/WebRTC-open
 increments. VP8 capture rows are visible. The operator confirms the sample was
 taken during frozen HLS picture/audio loss without reload. Later the page failed
 with "HLS HTTP connection failed; retry manually"; that later failure is outside
-the sampled server interval. NEXT preserve the page/service and take the
-read-only browser timing summary, without requests/Retry/reload or exposed URLs.
-The current serial 1-second full-body master/keepalive checks are an unconfirmed
-timeout hypothesis; do not tune them speculatively. New browser-helper execution
-is PENDING / NOT EXECUTED IN CODEX; no repeat build/server gate or inferred fix.
+the sampled server interval. The supplied retained browser timings show one
+1,001-ms master with no response metadata; the full 250-entry buffer omits later
+failures. Status-zero entries can have body data; terminal cleanup cleared the
+video. NEXT preserve exact-7dcc and arm the bounded browser trace before one
+manual Retry. It observes new timings/progress/buffers without sending requests
+or exposing URLs, and ends on a new terminal error or after five minutes.
+The current serial 1-second deadline fits one attempt, but three timed-out probes
+and the freeze cause are not proved; do not tune speculatively. New trace
+execution is PENDING / NOT EXECUTED IN CODEX; no repeat build/server gate or
+inferred fix.
 Supplied target results, NOT EXECUTED IN CODEX; the corrected saved-startup
 helper has no fresh execution. Reliable first start/sustained/wider acceptance
 remain open.

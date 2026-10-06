@@ -94,12 +94,19 @@ after initial moving picture/audio and without reload. Later the page reported
 despite interval server flow; the later HTTP failure was not sampled on the
 server. Inspection shows serial master/keepalive checks use a 1-second full-body
 deadline and fail after three HTTP/transport/body-validation errors; that is
-a hypothesis, not proof of timeout or the freeze cause. NEXT preserve the page/
-service and run the read-only `deploy/inspect-hls-browser-timing.js` in DevTools
-on the failed page. It exports fixed HLS request classes/numeric timings/status
-only, without URLs/cookies/traffic or Retry/reload. New browser helper execution
-is PENDING / NOT EXECUTED IN CODEX. Do not repeat server/build/denial gates or
-change deadlines/buffers without correlated evidence. The WebRTC-join
+a hypothesis, not proof of timeout or the freeze cause. The supplied browser
+timing summary now shows 250 retained entries and a last master lasting 1,001 ms
+without response metadata; other status-zero entries contain complete body-size
+metadata. The last retained request ended about nine minutes before the query,
+so subsequent failures are missing. Current video was already cleared by terminal
+cleanup. This supports one timeout-like attempt, not the entire failure sequence
+or freeze cause. NEXT preserve exact-7dcc and use `deploy/trace-hls-browser.js`
+before one manual Retry on the existing failed page. It observes new timings,
+media events/progress/buffers and fixed UI state, with bounded output and automatic
+cleanup on a new terminal error or after five minutes. No requests/player actions,
+URLs/cookies or server changes. New trace execution is PENDING / NOT EXECUTED
+IN CODEX. Do not repeat server/build/denial gates or change deadlines/buffers
+without correlated evidence. The WebRTC-join
 cause and reliable startup/sustained/grouped acceptance remain open.
 Reliable first-start
 and wider acceptance remain open; do not repeat passed preparation gates.

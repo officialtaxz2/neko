@@ -31,10 +31,13 @@ requests over 12.011 seconds, with no interval restart; VP8 rows are visible.
 The operator confirms frozen picture/audio loss during this sample without
 reload, then a later "HLS HTTP connection failed; retry manually". The freeze
 is captured despite server flow, but its cause and later HTTP failure remain
-unresolved. NEXT the [read-only browser timing summary](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#confirmed-browser-freeze-and-later-http-failure--2026-10-07)
-on the existing failed page, preserving the service. New browser-helper execution
-is PENDING / NOT EXECUTED IN CODEX; no speculative timeout/buffer change or
-repeat build/server gate. Supplied target
+unresolved. The supplied browser timing summary shows one 1,001-ms master without
+response metadata; the full 250-entry buffer omits later failures. Status-zero
+entries with body data are not failure proof. NEXT the
+[bounded browser trace](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#next-one-bounded-browser-trace)
+before one manual Retry, preserving exact-7dcc. New trace execution is PENDING /
+NOT EXECUTED IN CODEX; no speculative timeout/buffer change or repeat build/server
+gate. Supplied target
 results, NOT EXECUTED IN CODEX; the corrected saved-startup helper has no fresh
 execution. Reliable first start and
 sustained playback remain open.

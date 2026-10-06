@@ -65,12 +65,16 @@ discontinuity/drop/capture-creation/WebRTC-open increment. The operator confirms
 this sample was taken during frozen picture/audio loss without reload, then a
 later "HLS HTTP connection failed; retry manually". The later HTTP failure was
 outside this interval; server flow does not prove successful browser decoding.
-NEXT preserve the page/service and read its retained browser request timings
-with `deploy/inspect-hls-browser-timing.js`, without traffic, Retry/reload or
-exposed URLs. New browser-helper execution is PENDING / NOT EXECUTED IN CODEX;
-the current serial 1-second full-body polling deadline is an unconfirmed
-hypothesis, not a reason to tune timeouts/buffers. No routine repeat build/server
-check.
+The supplied `inspect-hls-browser-timing.js` result shows one 1,001-ms master
+without response metadata, but a full 250-entry buffer omits later failures.
+Status-zero entries can contain body data; terminal cleanup cleared the current
+video. NEXT preserve exact-7dcc and use `deploy/trace-hls-browser.js` before one
+manual Retry. It observes new timings outside the retained global buffer, media
+progress/buffers/events and fixed UI state, with bounded rows/automatic cleanup;
+no requests, player actions, performance-buffer changes, URLs or credentials.
+New trace execution is PENDING / NOT EXECUTED IN CODEX. The 1-second deadline fits
+one attempt, not three correlated failures or a freeze cause; no timeout/buffer
+tuning or routine repeat build/server check.
 
 The progress and saved-startup label parsers were statically corrected to admit
 digits before their unchanged fixed allowlists, retaining the `vp8` codec that

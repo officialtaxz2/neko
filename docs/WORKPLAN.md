@@ -1253,11 +1253,17 @@ saved-startup helper has no fresh execution. The operator confirmed this sample
 was taken during frozen picture/audio loss without reload; the page later failed
 with "HLS HTTP connection failed; retry manually". Server flow during the freeze
 does not identify its cause, and the later HTTP failure was outside this sample.
-NEXT the [read-only browser request-timing summary](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#confirmed-browser-freeze-and-later-http-failure--2026-10-07)
-on the existing failed page. Preserve the service and inspect the current serial
-1-second full-body master/keepalive deadline before changing it. Timeout is an
-unconfirmed hypothesis, not a demonstrated fix. The new helper exports no URLs/
-cookies and performs no requests/retries/reload. Browser execution is PENDING /
+The supplied retained browser timing summary shows one 1,001-ms master without
+response metadata, fitting the 1-second deadline. Its full 250-entry buffer ends
+about nine minutes before the query, omitting the later failure sequence. Other
+status-zero entries have body data; terminal cleanup already cleared the video.
+Neither three timed-out probes nor the freeze cause is proved.
+NEXT the [bounded browser trace](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#next-one-bounded-browser-trace)
+before one manual Retry on the existing failed page. Preserve exact-7dcc; no new
+server action, build or timeout/buffer change. The helper observes future HTTP
+timings, media progress/events/buffers and fixed UI state, with bounded rows and
+automatic cleanup on a new terminal error or after five minutes. It sends no
+requests or credentials and prints no URLs. New trace execution is PENDING /
 NOT EXECUTED IN CODEX. Do not repeat server/build/denial gates or infer a fix.
 The earlier WebRTC-join hypothesis remains uncorrelated.
 Reliable first start and sustained playback remain open.

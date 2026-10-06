@@ -66,11 +66,15 @@ generation/discontinuity/drop/capture-creation/WebRTC-open increments. VP8 rows
 are now retained. The operator confirms the sample was taken during frozen HLS
 picture/audio loss without reload; later the page reported "HLS HTTP connection
 failed; retry manually". This captures a browser failure despite server flow;
-the later HTTP failure was outside the measured interval. NEXT the
-[read-only browser timing summary](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#confirmed-browser-freeze-and-later-http-failure--2026-10-07)
-on the existing failed page, preserving the service. Its execution is PENDING /
+the later HTTP failure was outside the measured interval. The supplied browser
+timing summary shows one 1,001-ms master with no response metadata, but a full
+250-entry buffer omits subsequent failures. Status zero with body data is not
+failure proof; current video was already cleared. NEXT the
+[bounded browser trace](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#next-one-bounded-browser-trace)
+before one manual Retry, preserving exact-7dcc. New trace execution is PENDING /
 NOT EXECUTED IN CODEX; no new build/activation or routine server check. The
-1-second full-body polling deadline is a hypothesis, not a confirmed cause/fix.
+1-second deadline is consistent with one attempt, not a confirmed freeze cause
+or justification for tuning it.
 Supplied target result, NOT EXECUTED IN CODEX; the corrected saved-startup helper
 has no fresh target execution. Reliable-first-start and sustained playback acceptance
 remain open.

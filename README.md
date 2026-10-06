@@ -46,11 +46,13 @@ successful HTTP media requests over 12.011 seconds, with no interval restart.
 VP8 rows are retained. The operator confirms this sample was taken during frozen
 picture/audio loss without reload, followed later by "HLS HTTP connection failed;
 retry manually". The freeze is captured despite server flow; its cause and the
-later HTTP failure remain unresolved. NEXT a read-only browser timing summary
-on the existing failed page, preserving the service; no repeated build/server
-gate or speculative timeout change. New browser helper execution is PENDING /
-NOT EXECUTED IN CODEX; prior server results are supplied target evidence.
-reliable first start and sustained playback acceptance remain open.
+later HTTP failure remain unresolved. The supplied browser timing summary shows
+one 1,001-ms master with no response metadata, but a full 250-entry buffer omits
+the later failure sequence. Status-zero entries with body data are not failures.
+NEXT the bounded browser trace before one manual Retry, preserving exact-7dcc;
+no repeated build/server gate or speculative timeout change. New trace execution
+is PENDING / NOT EXECUTED IN CODEX; prior results are supplied target evidence.
+Reliable first start and sustained playback acceptance remain open.
 See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 

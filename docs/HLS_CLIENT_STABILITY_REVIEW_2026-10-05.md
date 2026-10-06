@@ -1,6 +1,6 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-7DCC3C5E LIVE IMAGE CONFIRMED / SERVER FLOW DURING CONFIRMED BROWSER FREEZE / LATER CLIENT HTTP FAILURE / CAUSE AND BROWSER TIMING DIAGNOSIS OPEN**.
+Status: **EXACT-7DCC3C5E LIVE IMAGE CONFIRMED / SERVER FLOW DURING CONFIRMED BROWSER FREEZE / ONE TIMEOUT-LIKE BROWSER REQUEST / RETAINED BUFFER FULL / BOUNDED TRACE AND CAUSE OPEN**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -1007,18 +1007,18 @@ successful master poll. Freeze and later generic HTTP failure must therefore
 remain separate observations; no timeout/buffer/lease policy change is justified
 from the generic message alone.
 
-### Next: read the failed page's retained request timings
+### Completed step: read the failed page's retained request timings
 
-Paste `deploy/inspect-hls-browser-timing.js` into DevTools **on the existing Neko
-HLS page**, without Retry/reload. The helper performs a single synchronous read
+That checkpoint requested `deploy/inspect-hls-browser-timing.js` in DevTools
+**on the existing Neko HLS page**, without Retry/reload. The helper performs a single synchronous read
 of retained same-origin HLS Resource Timing entries and selected current video
 numeric/boolean fields. It sends no requests, reads no cookies/storage/headers
 and changes no player, timer, fetch implementation or performance buffer. It
 prints only fixed resource/rendition classes and numeric timing/status/body-size
 fields; URL, lease ID and query strings are never printed. The operator message
 supplies the complete snippet; no script download or server action is required.
-New helper execution is **PENDING / NOT EXECUTED IN CODEX**; static inspection
-and Git whitespace checks are the local verification.
+The supplied result is now recorded below; it was **NOT EXECUTED IN CODEX**.
+Static inspection and Git whitespace checks are the local verification.
 
 The [W3C Resource Timing specification](https://www.w3.org/TR/resource-timing/)
 includes completed/aborted fetch timings, while blocked preconditions can lack
@@ -1036,3 +1036,83 @@ entries are insufficient, a later bounded browser trace must be designed before
 another reproduction. Do not request raw HAR, full WebSocket URLs or all console
 logs. The WebRTC-join hypothesis, reliable start, sustained playback and grouped
 authorization/device/resource/isolation acceptance remain open; no promotion.
+
+## Supplied retained browser timings — 2026-10-07
+
+The PC/Helium console attachment supplies the `hls-browser-timing-v1` JSON.
+The operator pasted the previously supplied equivalent formatted snippet;
+no separate file/blob execution claim is made. This is supplied browser evidence,
+**NOT EXECUTED IN CODEX**. The application remains exact-7dcc; no new server
+change or preparation result is supplied.
+
+| Field | Supplied observation |
+| --- | --- |
+| Query time since navigation | 732,848 ms |
+| Retained Resource Timing entries | 250; 236 matched HLS in the preceding summary |
+| Last retained master | Started 181,362 ms; duration 1,001 ms; no first byte/body/transfer metadata; status zero |
+| Most preceding master requests | 16–30 ms with 637 decoded-body bytes; some later requests 58–152 ms |
+| Retained medium segment requests | 68–93 ms with roughly 800–852 kB decoded-body data; statuses include both 200 and zero |
+| Current video after failure | Paused, ready/network states zero, time zero, no current media error |
+
+The last retained request ended at approximately 182,363 ms, about 550,485 ms
+(9.17 minutes) before the query. The full buffer and old entries cannot provide
+the later consecutive-failure sequence. A repeated snapshot of this buffer
+cannot recover omitted timings. There is no proof that all requests after the
+retained boundary succeeded or failed, or when the freeze began relative to it.
+
+The 1,001-ms empty master is consistent with the controller's 1,000-ms deadline
+and supports a timeout-like attempt. Resource Timing does not identify who
+canceled it; this alone does not prove the three errors required for the later
+terminal HTTP detail or explain the preceding frozen picture/audio loss.
+In particular, **status zero is not failure proof**: several preceding fast
+master/segment entries have substantial body/transfer metadata despite that
+status. These fields do not prove playlist validity or browser decoding.
+Current video fields fit the inspected terminal cleanup (`clearHLSVideo`)
+and cannot reveal the original paused/buffer/decoder state. Copied heartbeat
+messages do not establish uninterrupted WebSocket/event delivery or room-action
+causality. No timeout, buffering, lease or authorization policy is changed.
+
+## Next: one bounded browser trace
+
+Use [`deploy/trace-hls-browser.js`](../deploy/trace-hls-browser.js) in DevTools on
+the **existing Neko HLS page**, before one manual Retry if it is already failed.
+Leave that tab open/foreground; do not reload or induce additional room actions.
+The helper does not Retry itself. An initial old terminal state does not finish
+the trace until new HLS activity is observed. It prints one JSON report two
+seconds after a new terminal error, or after a **five-minute maximum**, then
+removes its observers/listeners/timers and temporary stop function. For an
+earlier finish use `window.__nekoHLSBrowserTraceStop()`; pasting it again ends
+the previous trace before arming a new one. Closing/reloading the page ends the
+context and can lose the report. Foreground timers may still be delayed by a
+busy browser; duration and visibility samples expose that limitation.
+
+It uses an unbuffered Resource `PerformanceObserver` for new completions,
+samples selected numeric/boolean video buffer/time/frame/UI fields every two
+seconds and records fixed media events. Request start times are relative to
+installation and can be negative for a request already in flight. Output has
+fixed resource/rendition/error classifications and bounded rows: 180 recent
+HTTP entries, 40 requests lasting at least 900 ms (not classified as timeouts),
+155 media samples, 80 events and fixed request counts. Discard counts expose
+truncation. Only the first four buffered ranges are sampled; the full range
+count is recorded. Neither bodies nor decoder internals are inspected. The
+helper sends no traffic, touches no player/fetch/performance-buffer policy and
+reads/prints no cookies, storage, headers, URLs, lease identifiers or raw errors.
+
+The [W3C Performance Timeline queue algorithm](https://www.w3.org/TR/performance-timeline/#queue-a-performanceentry)
+queues matching observer entries before checking the retained global buffer.
+This avoids relying on the already full 250-entry snapshot, subject to the
+browser's implementation and omitted/precondition-blocked requests. It cannot
+recover the old failure; installing it before Retry is necessary to capture a
+new failure alongside media state before terminal cleanup. Zero/missing status
+still does not prove an error; frame counts/media time do not prove audible
+sound or valid timestamps. Successful requests with frozen buffers/time would
+direct a later focused player/timeline review, while repeated empty near-deadline
+masters would support a separate HTTP-watch investigation. Neither result may
+be invented before supplied execution.
+
+New trace execution is **PENDING / NOT EXECUTED IN CODEX**. Verification here is
+static source/API/cleanup/output-bound review and Git whitespace checking only.
+No new client/server/runtime source change, dependency, build, image, service
+restart or passed-gate repetition is requested. Preserve exact-7dcc and old
+images/evidence; reliable startup, sustained playback, room-action/device/
+authorization/resource/isolation acceptance and dependency maintenance stay open.
