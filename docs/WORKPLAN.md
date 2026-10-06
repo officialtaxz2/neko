@@ -1222,12 +1222,20 @@ and 135 successful segments; no sampled exit/OOM or fixed error. These counters
 do not isolate the first browser's frozen picture. A client-only start-order
 candidate requests existing autoplay immediately after player attachment,
 without waiting for canplay. It retains the independent readiness/progress
-deadlines and user/private Pause plus muted/manual Play. NEXT run
-`deploy/prepare-hls-client-start.sh` for the isolated old/new client case,
-full client tests/type/build and candidate images, keeping the working exact-8f
-container running. This new source change justifies focused client/image checks;
-no repeated backend/native/fuzz or HTTP-denial gate is needed. New checks are
-PENDING / NOT EXECUTED IN CODEX. Reliable first start remains open.
+deadlines and user/private Pause plus muted/manual Play. Exact candidate
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b` preparation subsequently passed with
+Prepare-Exitcode 0 using `deploy/prepare-hls-client-start.sh`: both images,
+private snapshot and validation marker recorded in
+`/opt/docker/nekoNew/neko-hls-results-7dcc3c5e4ba0`, with the live exact-8f
+container retained. The supplied tail starts inside the base-image build;
+earlier isolated old/new client tests/type/build are covered by final helper
+success, without separately visible counts. Backend evidence is inherited
+from unchanged exact-8f sources, not freshly rerun. Target checkout is now
+exact-7dcc3c5e; live remains exact-8f. NEXT activate only the prepared exact-7dcc
+image with the existing deployer, then one fresh-window first-start attempt.
+Supplied target results, NOT EXECUTED IN CODEX; reliable first start remains open.
+No repeated backend/native/fuzz or HTTP-denial gate is needed for this client
+change, and the passed client/image preparation should not be repeated.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 Historical results below apply only to their recorded commits.
 

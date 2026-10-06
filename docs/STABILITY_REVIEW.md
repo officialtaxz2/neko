@@ -33,9 +33,15 @@ one startup generation per track, all four workers running, one active lease
 and 135 successful segment requests, without a sampled exit/OOM or fixed error.
 This does not identify the browser's frozen-picture cause. A client-only
 start-order candidate requests existing autoplay after attachment rather than
-waiting for canplay. NEXT the isolated client/image gate in
-`deploy/prepare-hls-client-start.sh`, keeping exact-8f running. New checks are
-PENDING / NOT EXECUTED IN CODEX. Preserve prior evidence.
+waiting for canplay. Exact-7dcc3c5e preparation subsequently passed with
+Prepare-Exitcode 0: both images and private snapshot/marker recorded, live
+exact-8f retained. Earlier isolated old/new client tests/type/build precede
+the supplied base-image-build tail and are covered by final helper success,
+without visible counts. Backend evidence is inherited from unchanged sources.
+Target checkout is now exact-7dcc3c5e, live remains exact-8f. NEXT activate only
+the prepared candidate and observe one fresh-window first-start attempt.
+Supplied target results, NOT EXECUTED IN CODEX; reliable first start and wider
+acceptance remain open. Preserve prior evidence.
 The initial fixed error, timed/event
 interval and concurrent WebRTC result are not separately supplied. The wider device,
 authorization/lifecycle and resource gates stay open.

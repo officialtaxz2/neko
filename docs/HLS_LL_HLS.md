@@ -18,9 +18,13 @@ prepared/live exact-8f image IDs: healthy container, two successful bootstraps,
 all four workers in one startup generation and 135 successful segments,
 without a sampled exit/OOM or fixed error. Browser first-start state remains
 unknown. A client-only start-order candidate requests autoplay after attachment
-without waiting for canplay. NEXT the isolated client/image preparation in
-deploy/prepare-hls-client-start.sh, retaining the running exact-8f service.
-New checks are PENDING / NOT EXECUTED IN CODEX; reliable first start remains open.
+without waiting for canplay. Exact-7dcc3c5e preparation subsequently passed
+with Prepare-Exitcode 0, both candidate images and private evidence recorded,
+live exact-8f retained. Earlier client tests/type/build are covered by final
+helper success; their counts are outside the supplied build tail. Checkout
+is now exact-7dcc3c5e, live remains exact-8f. NEXT activate the prepared exact-7dcc
+candidate and observe one fresh-window first start. Supplied target results,
+NOT EXECUTED IN CODEX; reliable first start remains open.
 Authorization/lifecycle and grouped
 device/resource acceptance
 remain pending; no automatic selection or full HLS acceptance claim exists**.

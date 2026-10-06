@@ -1,6 +1,6 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-8F54970F LIVE IMAGE/READ-ONLY DIAGNOSIS PASSED / RELOAD NEEDED FOR FIRST VIDEO/AUDIO / CLIENT START-ORDER CANDIDATE CHECKS AND WIDER ACCEPTANCE PENDING**.
+Status: **EXACT-7DCC3C5E CLIENT/IMAGE PREPARATION PASSED / LIVE EXACT-8F RETAINED / CANDIDATE ACTIVATION, FIRST START AND WIDER ACCEPTANCE PENDING**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -21,10 +21,14 @@ reload produced moving HLS video/audio. Read-only diagnosis subsequently passed
 with Diagnostic-Exitcode 0 and matching prepared/live exact-8f image IDs, two
 successful bootstraps, all four workers in one generation and 135 successful
 segments; no sampled process exit/OOM or fixed error. Initial browser state
-remains unknown. NEXT the client-only start-order candidate's isolated
-client/image gate in `deploy/prepare-hls-client-start.sh`, retaining the live
-exact-8f service. New checks are PENDING / NOT EXECUTED IN CODEX; reliable first
-start and wider browser acceptance remain open.
+remains unknown. The client-only start-order candidate's preparation at exact
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b` subsequently passed with
+Prepare-Exitcode 0: both images and private evidence recorded, live exact-8f
+retained. Earlier isolated old/new client tests/type/build are covered by final
+helper success, without separately visible counts in the copied build tail.
+Target checkout is now exact-7dcc, live remains exact-8f. NEXT activate the
+prepared candidate and observe one fresh-window first start. Supplied target
+results, NOT EXECUTED IN CODEX; reliable first start and wider acceptance remain open.
 
 ## What the existing evidence establishes
 
@@ -682,9 +686,10 @@ and a stale rejected Play after private resume. Existing blocked-autoplay
 coverage now exercises both player kinds with rejection at attachment and no
 unrequested repeat on readiness. The existing explicit pending-Play/Pause case
 disables automatic Play so it continues to isolate the manual operation.
-All new execution is **PENDING / NOT EXECUTED IN CODEX**.
+At candidate creation, execution was **PENDING / NOT EXECUTED IN CODEX**.
+The supplied preparation result below subsequently closes that target gate.
 
-### Next: one preparation block, retaining the working service
+### Prepared client/image gate, retaining the working service
 
 Use `deploy/prepare-hls-client-start.sh REPOSITORY BASE_OUTPUT OUTPUT_DIR CANDIDATE`
 from the exact reviewed candidate commit supplied with the operator command.
@@ -710,3 +715,68 @@ for preparation. Candidate activation and one fresh-window first-start attempt
 follow only after preparation success. Sustained moving video/audio, concurrent
 WebRTC, room events, authorization/lifecycle, device/resource/latency, dependency
 maintenance and final grouped acceptance remain open. `master` stays pinned.
+
+## Supplied exact-7dcc3c5e preparation passed — 2026-10-07
+
+The supplied output ends with **CLIENT START PREPARATION PASSED** and
+**Prepare-Exitcode 0** from helper
+`83b5924d39b3840875b8cf1a1b687a09fc54de31`, selected at application
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b`. The copied tail begins inside the
+base-image dependency installation; the earlier isolated old/new assertion,
+full client tests, TypeScript and client build are covered by the strict
+helper's final success, but no fresh test count or client bundle hash is
+separately visible in this excerpt. Do not invent those values or treat this
+as live first-start acceptance. These are supplied target results,
+**NOT EXECUTED IN CODEX**.
+
+The excerpt explicitly shows completed base and Brave image exports as
+`my-neko/base:hls-7dcc3c5e4ba0` and `my-neko/brave:hls-7dcc3c5e4ba0`.
+The Brave build uses the candidate base and installs Brave 1.96.61. Private
+image records, preparation markers and the final live-service snapshot were
+recorded in `/opt/docker/nekoNew/neko-hls-results-7dcc3c5e4ba0`. The helper
+guards show the exact-8f container/image remained unchanged through preparation.
+Target checkout is now exact-7dcc3c5e; the live service remains exact-8f with
+conventional HLS enabled. Identical backend/configuration/dependency sources
+inherit previously supplied exact-8f evidence; no new server/native/fuzz or
+HTTP-denial execution is claimed.
+
+### Next: activate the prepared image once, then observe its first start
+
+Keep the server checkout pinned at the prepared application. Later
+documentation-only commits are not a replacement deployment candidate. Use
+the unchanged deployer blob `c6f52dc80fdf605ec908f3fe3856ce23e015e494`:
+
+```bash
+set +e
+bash -Ee -o pipefail <<'NEKO_HLS_START'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b"
+
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-7dcc3c5e4ba0
+test "$(stat -c %a "$output")" = 700
+bash deploy/deploy-hls-media.sh enable "$output"
+NEKO_HLS_START
+printf 'Start-Exitcode: %s\n' "$?"
+```
+
+This briefly restarts Neko with the prepared candidate, checks the preparation
+marker/image record and saves the prior image for rollback. No baseline
+restart, rebuild or repeat of passed denial probes is requested. If candidate
+container startup fails, the existing deployer restores the saved prior image
+without the HLS overlay; healthy startup alone does not prove browser playback.
+
+After Start-Exitcode 0, open a new private browser window at
+`https://neko.taxzvps.de/?media=hls`, log in as admin, and let the first attempt
+reach moving video or its fixed failure message without Retry/page reload.
+If playback is deliberately blocked or muted by browser policy, the normal
+Play/unmute action remains valid and must not be mistaken for a transport
+failure. Report whether the first attempt reached moving video/audio, or the
+fixed detail if it failed. Leave a failed state in place for bounded diagnosis.
+Do not request another unrelated questionnaire at this checkpoint.
+
+Candidate activation and first-start evidence are **PENDING**. Sustained
+video/audio, concurrent WebRTC, room events, authorization/lifecycle, device,
+resource/latency/isolation, dependency maintenance and grouped acceptance stay
+open; no promotion to `master` is authorized.

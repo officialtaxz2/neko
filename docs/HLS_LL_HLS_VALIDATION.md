@@ -42,10 +42,18 @@ one startup generation per track, all four workers running, one active lease
 and 135 successful segments; no sampled exit/OOM or fixed error. Cumulative
 server counters do not prove first rendered video/audio. A client-only
 start-order candidate now requests existing autoplay after player attachment
-without waiting for canplay. NEXT `deploy/prepare-hls-client-start.sh` checks
-the controlled old/new case, full client tests/type/build and candidate images,
-retaining the live exact-8f container. New checks are PENDING / NOT EXECUTED IN
-CODEX; no deployment or reliable-first-start acceptance is claimed.
+without waiting for canplay. Exact candidate
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b` preparation subsequently passed with
+Prepare-Exitcode 0 using `deploy/prepare-hls-client-start.sh`: both images,
+private snapshot and validation marker recorded in
+`/opt/docker/nekoNew/neko-hls-results-7dcc3c5e4ba0`; live exact-8f retained.
+The excerpt starts inside the base-image build; earlier isolated old/new
+client tests/type/build are covered by final helper success, without separately
+visible counts. Unchanged exact-8f backend evidence is inherited, not rerun.
+Target checkout is exact-7dcc3c5e, live remains exact-8f. NEXT activate the
+prepared exact-7dcc image through the existing deployer, then one fresh-window
+first-start attempt. Supplied target results, NOT EXECUTED IN CODEX;
+deployment and reliable-first-start acceptance remain pending.
 Preserve old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed
 client/image/HTTP-denial gates without a new reason.

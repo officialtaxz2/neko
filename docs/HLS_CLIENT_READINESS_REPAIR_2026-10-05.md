@@ -16,9 +16,13 @@ healthy container, two successful bootstraps, all four workers in one startup
 generation and 135 successful segment requests; no sampled exit/OOM or fixed
 error. The initial browser state and reliable first start remain open.
 A client-only candidate now requests autoplay after attachment without waiting
-for canplay. NEXT the isolated client/image gate in
-`deploy/prepare-hls-client-start.sh`, retaining the live exact-8f service.
-New checks are PENDING / NOT EXECUTED IN CODEX; no verified live fix claimed.
+for canplay. Exact-7dcc3c5e preparation subsequently passed with
+Prepare-Exitcode 0, both images and private snapshot/marker, live exact-8f
+retained. Earlier client tests/type/build are covered by final helper success,
+with their counts outside the supplied base-image-build tail. Checkout is now
+exact-7dcc3c5e, live remains exact-8f. NEXT activate only the prepared candidate
+and observe one fresh-window first start. Supplied target results,
+NOT EXECUTED IN CODEX; no verified live first-start fix claimed.
 
 Status: client-only repair `73d5ff6d29110e3dd06999726a7e88718d09ea23` is
 implemented and statically reviewed on `testing`. Supplied target results

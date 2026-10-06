@@ -30,9 +30,13 @@ container, two successful bootstraps, all four workers in one generation and
 135 successful segment requests; no sampled exit/OOM or fixed error was found.
 Browser first-picture state remains unknown. A client-only candidate now
 requests autoplay after attachment rather than waiting for canplay; it is not
-a confirmed live fix. NEXT the separate `deploy/prepare-hls-client-start.sh`
-client/image gate, retaining the running exact-8f service. New checks are
-PENDING / NOT EXECUTED IN CODEX.
+a confirmed live fix. Exact-7dcc3c5e client/image preparation subsequently
+passed with `Prepare-Exitcode: 0`: both images and private evidence recorded,
+with the live exact-8f service retained. Earlier client tests/type/build are
+covered by final helper success; their counts precede the copied tail.
+Server checkout is now exact-7dcc3c5e, live remains exact-8f. NEXT activate the
+prepared exact-7dcc image and observe one fresh-window first start.
+Supplied target results, NOT EXECUTED IN CODEX; live acceptance remains open.
 See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).
 
