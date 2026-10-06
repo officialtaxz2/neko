@@ -30,6 +30,35 @@ real ticket/cookie/media URL into this directory or the conversation.
 
 ## Signals and interpretation
 
+### Bounded progress sampling
+
+`deploy/diagnose-hls-playback.sh REPOSITORY OUTPUT_DIR --progress` adds an
+optional read-only live-progress sample to the existing two-argument helper.
+Use the reviewed helper extracted outside Git while retaining the exact
+prepared application checkout. It checks the preparation marker and running
+image ID against the private prepared image record before sampling. No service
+restart, build, proxy change or credentialed media request is made.
+
+Two loopback metrics scrapes 12 seconds apart distinguish capture bytes/HLS
+source units, published media bytes, HTTP results, source generations, new
+capture pipelines and HLS generations/discontinuities. Only fixed enumerated
+labels, numeric values and fixed log markers are printed; raw logs/metrics
+remain private. The selected WebRTC-open counts are aggregate, without peer IDs.
+Counter deltas require `delta_valid: true`: successful scrapes, matching process
+start/container metadata and no observed counter regression. Missing series
+alone are not zero production; counter reset or missing process metadata
+invalidates deltas. Multiple viewers can contribute HTTP counts, and server
+publication/fetching does not demonstrate browser decoding. A reload loses the
+earlier browser state; if a freeze recurs, sample before Retry/reload when
+possible. Do not infer a join-caused freeze from cumulative event counts.
+
+The [exact-7dcc moving-picture/freeze record](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#moving-first-picture-then-freeze--2026-10-07)
+requests this step. New progress-mode execution/syntax verification remain
+**PENDING / NOT EXECUTED IN CODEX**; the original target diagnostic results
+apply to their previously supplied helper versions.
+
+### Historical worker/startup signals
+
 `HLS worker restart requested` now records only fixed variant, generation,
 stage and reason fields before the existing worker_failure request. Input
 push failure, output overflow/closure, anchor-wait overflow/closure and audio

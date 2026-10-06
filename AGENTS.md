@@ -59,9 +59,19 @@ container retained. The supplied tail starts inside the base-image build;
 earlier isolated old/new client tests/type/build are covered by final helper
 success, without separately visible counts. Backend evidence is inherited
 from unchanged exact-8f sources, not freshly rerun. Target checkout is now
-exact-7dcc3c5e; live remains exact-8f. NEXT activate only the prepared exact-7dcc
-image with the existing deployer, then one fresh-window first-start attempt.
-These are supplied target results, NOT EXECUTED IN CODEX. Reliable first-start
+exact-7dcc3c5e. After the requested activation, the operator reports moving
+first picture after approximately 20 seconds, then a later frozen picture
+requiring reload. Activation CLI/live image ID and the frozen player state
+are not yet supplied; exact-8f is the last independently confirmed live image.
+A WebRTC participant joining/starting video is an uncorrelated hypothesis.
+Static review found a shared-capture keyframe request on new listeners, with
+existing HLS listeners retained; no direct join-triggered HLS teardown or
+video-source overwrite was found. NEXT fetch the reviewed diagnostic helper
+outside Git and run its bounded read-only `--progress` mode against exact-7dcc.
+It checks the prepared/live image ID and compares two metric samples 12 seconds
+apart; no rebuild, deployment or service restart. New diagnostic execution is
+PENDING / NOT EXECUTED IN CODEX. Prior gates are supplied target results.
+Reliable first-start
 and wider acceptance remain open; do not repeat passed preparation gates.
 Preserve old images/evidence and keep dependency maintenance open.
 Do not repeat passed client/image/HTTP-denial

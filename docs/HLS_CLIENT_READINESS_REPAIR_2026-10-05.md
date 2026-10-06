@@ -20,9 +20,14 @@ for canplay. Exact-7dcc3c5e preparation subsequently passed with
 Prepare-Exitcode 0, both images and private snapshot/marker, live exact-8f
 retained. Earlier client tests/type/build are covered by final helper success,
 with their counts outside the supplied base-image-build tail. Checkout is now
-exact-7dcc3c5e, live remains exact-8f. NEXT activate only the prepared candidate
-and observe one fresh-window first start. Supplied target results,
-NOT EXECUTED IN CODEX; no verified live first-start fix claimed.
+exact-7dcc3c5e. After the requested activation, the operator reports moving
+first picture after about 20 seconds, then a frozen picture requiring reload.
+Active image ID/activation CLI and the suggested WebRTC-join correlation are
+not yet confirmed. NEXT the [bounded read-only progress diagnostic](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#moving-first-picture-then-freeze--2026-10-07),
+keeping the application and live service unchanged; no repeated activation or
+build. New diagnostic execution is PENDING / NOT EXECUTED IN CODEX; prior
+preparation results are supplied target evidence. Reliable first start and
+sustained playback remain open.
 
 Status: client-only repair `73d5ff6d29110e3dd06999726a7e88718d09ea23` is
 implemented and statically reviewed on `testing`. Supplied target results

@@ -50,10 +50,18 @@ private snapshot and validation marker recorded in
 The excerpt starts inside the base-image build; earlier isolated old/new
 client tests/type/build are covered by final helper success, without separately
 visible counts. Unchanged exact-8f backend evidence is inherited, not rerun.
-Target checkout is exact-7dcc3c5e, live remains exact-8f. NEXT activate the
-prepared exact-7dcc image through the existing deployer, then one fresh-window
-first-start attempt. Supplied target results, NOT EXECUTED IN CODEX;
-deployment and reliable-first-start acceptance remain pending.
+After the requested exact-7dcc activation, the operator reports moving first
+picture after approximately 20 seconds, then a frozen picture requiring reload.
+Activation CLI/live image ID and the frozen player state are not yet supplied;
+the suggested WebRTC join/video-start correlation remains unconfirmed.
+NEXT one [bounded read-only progress diagnostic](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#moving-first-picture-then-freeze--2026-10-07),
+keeping the exact-7dcc application checkout and running service. Fetch only
+the reviewed helper outside Git; `--progress` checks the live prepared image ID
+and samples source/publication/HTTP/generation metrics 12 seconds apart.
+No repeat activation/build or induced room action. New diagnostic execution is
+PENDING / NOT EXECUTED IN CODEX. Prior preparation gates are supplied target
+results; exact activation, reliable-first-start and sustained playback acceptance
+remain pending.
 Preserve old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed
 client/image/HTTP-denial gates without a new reason.

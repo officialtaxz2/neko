@@ -1,6 +1,6 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-7DCC3C5E CLIENT/IMAGE PREPARATION PASSED / LIVE EXACT-8F RETAINED / CANDIDATE ACTIVATION, FIRST START AND WIDER ACCEPTANCE PENDING**.
+Status: **EXACT-7DCC3C5E PREPARATION PASSED / MOVING FIRST PICTURE THEN FREEZE REPORTED / LIVE IMAGE CONFIRMATION AND READ-ONLY PROGRESS DIAGNOSIS PENDING**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -26,9 +26,14 @@ remains unknown. The client-only start-order candidate's preparation at exact
 Prepare-Exitcode 0: both images and private evidence recorded, live exact-8f
 retained. Earlier isolated old/new client tests/type/build are covered by final
 helper success, without separately visible counts in the copied build tail.
-Target checkout is now exact-7dcc, live remains exact-8f. NEXT activate the
-prepared candidate and observe one fresh-window first start. Supplied target
-results, NOT EXECUTED IN CODEX; reliable first start and wider acceptance remain open.
+Target checkout is now exact-7dcc. After the requested activation, the operator
+reports moving first picture after about 20 seconds, then a frozen picture
+requiring reload. Active image ID/activation CLI and the frozen player state
+are not yet supplied. The suggested WebRTC-join/video-start correlation is
+unconfirmed. NEXT the bounded read-only progress diagnostic below, preserving
+the running service. Its new mode is PENDING / NOT EXECUTED IN CODEX; prior
+preparation gates are supplied target results. Reliable first start and
+sustained/wider acceptance remain open.
 
 ## What the existing evidence establishes
 
@@ -776,7 +781,88 @@ failure. Report whether the first attempt reached moving video/audio, or the
 fixed detail if it failed. Leave a failed state in place for bounded diagnosis.
 Do not request another unrelated questionnaire at this checkpoint.
 
-Candidate activation and first-start evidence are **PENDING**. Sustained
+At the time of that activation request, candidate activation and first-start
+evidence were **PENDING**. The subsequent operator report is recorded below. Sustained
 video/audio, concurrent WebRTC, room events, authorization/lifecycle, device,
 resource/latency/isolation, dependency maintenance and grouped acceptance stay
 open; no promotion to `master` is authorized.
+
+## Moving first picture then freeze — 2026-10-07
+
+After the requested exact-7dcc activation, the operator reports moving HLS
+picture after approximately 20 seconds, followed later by another frozen
+picture requiring page reload. This is partial first-picture evidence, not
+sustained playback acceptance or a measured latency percentile. The activation
+CLI/Start-Exitcode and active image ID are not separately supplied. Exact-8f
+remains the last independently confirmed live image until the new diagnostic
+checks the prepared/live exact-7dcc image ID. The operator suggests a WebRTC
+participant joining and starting a video as a possible trigger; its timing
+and the frozen player's state/error/audio are uncorrelated.
+
+### Static interaction review
+
+- `server/internal/capture/streamsink.go`: a new video listener requests a
+  keyframe when the keyframe-wait lobby was empty. Its listener start/stop paths
+  create/destroy capture only when there are zero listeners, so an existing HLS
+  subscription retains that shared pipeline during an ordinary new listener
+  attachment. The keyframe event in
+  `server/pkg/gst/gst.c` does not itself rebuild the capture pipeline.
+- `server/internal/capture/media.go`: capture-generation, backwards DTS and
+  actual format changes can advance a source generation; a keyframe alone does
+  not. HLS consumes its independent audio/high subscriptions and fans the high
+  source out to its three encoders in `server/internal/mediahls/packager.go`.
+  Provider/worker failures and source discontinuities remain possible and have
+  fixed metrics; no runtime absence of those failures is claimed.
+- An actual desktop resolution change rebuilds video capture in
+  `server/internal/capture/manager.go`. This is distinct from a new viewer or
+  normal browser video playback; no resolution change was reported here.
+- `client/src/neko/index.ts` handles member connection by adding member/chat
+  state, without stopping the HLS controller. The receive-only guards in
+  `client/src/components/video.vue` prevent the normal WebRTC stream watcher
+  from overwriting the HLS element's media source. No direct join-triggered
+  teardown/source overwrite was found in these inspected paths.
+
+These findings constrain the hypothesis; they do not prove that a keyframe,
+changing video content, resource pressure, browser buffering or audio focus
+could not contribute. No speculative playback/capture/buffer change is made.
+
+### Next: one bounded read-only progress diagnostic
+
+The optional `--progress` mode in `deploy/diagnose-hls-playback.sh` retains the
+original two-argument diagnostic. In progress mode it requires the application
+checkout/preparation marker to agree and the running container image ID to
+match the prepared exact-commit image record before sampling. Fetch the helper
+from the reviewed helper commit into the existing private exact-7dcc results
+directory, keeping the application checkout at
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b`; do not pull/merge the helper history
+into the application or redeploy. The operator command supplies its full
+helper commit. Run `bash -n` on the extracted helper, then:
+
+```bash
+bash "$output/diagnose-hls-progress.sh" "$PWD" "$output" --progress
+```
+
+Two credential-free loopback `/metrics` samples are taken 12 seconds apart.
+The helper collects bounded private logs and selected container metadata, then
+prints only fixed allowlisted labels/markers and numeric values. Its summary
+separates capture bytes, HLS source units, published media bytes, HTTP results,
+leases/workers, source generations, capture creation and packager-generation/
+discontinuity counters. Successful WebRTC opens are aggregate counts; there
+are no participant IDs or media URLs. New helper execution and Bash syntax
+verification are **PENDING / NOT EXECUTED IN CODEX**; only static review and
+Git whitespace checks are claimed here.
+
+Keep the viewer open during sampling. If a freeze happens again, sample before
+Retry/reload when possible; no induced join/stress test is requested. Reload
+has erased the earlier browser state, so a normal sample after reload cannot
+reconstruct that failure. Counter deltas are valid only if both scrapes succeed,
+process-start metadata agrees and no observed counter regresses. Missing series
+are not proof of zero production. Logs/cumulative counters may span several
+viewers and attempts; production/request progress does not prove successful
+browser decoding or establish which viewer requested a segment.
+
+The diagnostic makes no service, image, proxy or media-session change and sends
+no credentialed playback request. No repeated build/client/native/fuzz/HTTP-denial
+gate is needed for this helper-only change. Preserve previous images/evidence;
+reliable startup, sustained video/audio, room-event isolation and grouped
+authorization/device/resource acceptance remain open. `master` stays pinned.

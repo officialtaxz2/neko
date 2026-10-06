@@ -1231,9 +1231,19 @@ container retained. The supplied tail starts inside the base-image build;
 earlier isolated old/new client tests/type/build are covered by final helper
 success, without separately visible counts. Backend evidence is inherited
 from unchanged exact-8f sources, not freshly rerun. Target checkout is now
-exact-7dcc3c5e; live remains exact-8f. NEXT activate only the prepared exact-7dcc
-image with the existing deployer, then one fresh-window first-start attempt.
-Supplied target results, NOT EXECUTED IN CODEX; reliable first start remains open.
+exact-7dcc3c5e. After the requested activation, the operator reports moving
+first picture after approximately 20 seconds, then a frozen picture requiring
+reload. Activation CLI/live image ID and the initial frozen player state are
+not separately supplied. A WebRTC join/video start is an uncorrelated hypothesis.
+Static review found no direct join-triggered capture rebuild/HLS teardown while
+the HLS listeners remain attached, or client join-triggered source overwrite.
+NEXT the [bounded read-only progress diagnostic](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#moving-first-picture-then-freeze--2026-10-07),
+with the reviewed helper fetched outside Git and the application kept at
+exact-7dcc. Its `--progress` mode first verifies the prepared/live image ID,
+then compares two source/publication/HTTP samples 12 seconds apart. No rebuild,
+activation, restart or induced room action is required. The new helper mode
+is PENDING / NOT EXECUTED IN CODEX; prior gates are supplied target results.
+Reliable first start and sustained playback remain open.
 No repeated backend/native/fuzz or HTTP-denial gate is needed for this client
 change, and the passed client/image preparation should not be repeated.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.

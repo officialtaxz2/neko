@@ -38,10 +38,18 @@ Prepare-Exitcode 0: both images and private snapshot/marker recorded, live
 exact-8f retained. Earlier isolated old/new client tests/type/build precede
 the supplied base-image-build tail and are covered by final helper success,
 without visible counts. Backend evidence is inherited from unchanged sources.
-Target checkout is now exact-7dcc3c5e, live remains exact-8f. NEXT activate only
-the prepared candidate and observe one fresh-window first-start attempt.
-Supplied target results, NOT EXECUTED IN CODEX; reliable first start and wider
-acceptance remain open. Preserve prior evidence.
+After the requested exact-7dcc activation, the operator reports moving first
+picture after about 20 seconds, then another frozen picture requiring reload.
+Active image ID/activation CLI and the frozen browser state remain unsupplied.
+A WebRTC participant joining/starting video is an uncorrelated hypothesis.
+Static review found a keyframe request for a new shared-capture listener, with
+HLS listeners retained; no direct join-triggered HLS teardown/source overwrite
+was found. NEXT one bounded read-only `--progress` diagnostic, verifying the
+prepared live image and comparing source/publication/HTTP/generation samples
+12 seconds apart without service changes. New diagnostic execution is
+PENDING / NOT EXECUTED IN CODEX. Prior preparation gates are supplied target
+results; reliable first start and sustained/wider acceptance remain open.
+Preserve prior evidence.
 The initial fixed error, timed/event
 interval and concurrent WebRTC result are not separately supplied. The wider device,
 authorization/lifecycle and resource gates stay open.

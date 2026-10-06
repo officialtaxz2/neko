@@ -22,9 +22,14 @@ without waiting for canplay. Exact-7dcc3c5e preparation subsequently passed
 with Prepare-Exitcode 0, both candidate images and private evidence recorded,
 live exact-8f retained. Earlier client tests/type/build are covered by final
 helper success; their counts are outside the supplied build tail. Checkout
-is now exact-7dcc3c5e, live remains exact-8f. NEXT activate the prepared exact-7dcc
-candidate and observe one fresh-window first start. Supplied target results,
-NOT EXECUTED IN CODEX; reliable first start remains open.
+is now exact-7dcc3c5e. After the requested activation, moving first picture after
+about 20 seconds then a frozen picture/reload are operator-reported; active
+image ID/activation CLI and a WebRTC-join correlation remain unconfirmed.
+NEXT the bounded read-only `--progress` diagnostic: prepared/live image check,
+then two source/publication/HTTP/generation samples 12 seconds apart, keeping
+the service unchanged. New diagnostic execution is PENDING / NOT EXECUTED IN
+CODEX. Prior preparation results are supplied target evidence; reliable first
+start and sustained playback remain open.
 Authorization/lifecycle and grouped
 device/resource acceptance
 remain pending; no automatic selection or full HLS acceptance claim exists**.
