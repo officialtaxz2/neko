@@ -58,12 +58,21 @@ confirming the prepared/live exact-7dcc image ID and healthy service. Its valid
 publication/HTTP/generation events. The operator confirmed HLS was closed or
 logged out; this is not a captured freeze. The suggested WebRTC join/video-start
 correlation remains unconfirmed; the original activation CLI is unsupplied.
-NEXT one [progress sample with HLS logged in and open](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#supplied-progress-diagnostic-captured-idle-hls--2026-10-07),
-keeping the exact-7dcc application and live service. Fetch only the corrected
-helper outside Git; a diagnostic-only label-regex correction restores allowlisted
-`vp8` capture rows. The original idle diagnostic passed; corrected-parser target
-execution is PENDING / NOT EXECUTED IN CODEX. No repeated activation/build or
-induced room action. Reliable-first-start and sustained playback acceptance
+The corrected `4593a6f9` progress diagnostic subsequently passed with Diagnostic-
+Exitcode 0 at the same healthy exact-7dcc image. Its valid 12.011-second interval
+had one active lease, both subscriptions, all four workers, continuing audio/
+video input/publication and successful HTTP media requests, without interval
+generation/discontinuity/drop/capture-creation/WebRTC-open increments. VP8 rows
+are now retained. The operator confirms the sample was taken during frozen HLS
+picture/audio loss without reload; later the page reported "HLS HTTP connection
+failed; retry manually". This captures a browser failure despite server flow;
+the later HTTP failure was outside the measured interval. NEXT the
+[read-only browser timing summary](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#confirmed-browser-freeze-and-later-http-failure--2026-10-07)
+on the existing failed page, preserving the service. Its execution is PENDING /
+NOT EXECUTED IN CODEX; no new build/activation or routine server check. The
+1-second full-body polling deadline is a hypothesis, not a confirmed cause/fix.
+Supplied target result, NOT EXECUTED IN CODEX; the corrected saved-startup helper
+has no fresh target execution. Reliable-first-start and sustained playback acceptance
 remain open.
 Preserve old images/evidence. Historical
 52-test/deployment results apply only to their commits; no repeat of completed

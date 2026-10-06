@@ -77,11 +77,30 @@ video-source overwrite was found. Static inspection corrected a diagnostic-only
 label parser defect: `vp8` had been omitted because digits were rejected despite
 its allowlist entry. The progress and saved-startup helper now accept digits
 before checking the unchanged fixed allowlists. Prior accepted HLS/lease/source
-deltas are unaffected. NEXT one bounded `--progress` sample with HLS logged in
-and its viewer left open; fetch the corrected helper outside Git, keep the
-application exact-7dcc and preserve the service. No rebuild/deployment/restart.
-The supplied original helper gate passed; the corrected parser's target result
-is PENDING / NOT EXECUTED IN CODEX. Prior gates are supplied target results.
+deltas are unaffected. The corrected progress helper `4593a6f9` subsequently
+passed on the target with Diagnostic-Exitcode 0, blob
+`60cf47ddf8489c2397a5770a4c9523ae09a50b56`, valid 12.011-second deltas and the
+same healthy exact-7dcc image. One active lease, both HLS source subscriptions
+and all four workers persisted. 601 audio/300 video units were consumed; all
+four tracks published parts/segments and HTTP returned success (12 masters,
+2 playlists, 2 segments, 1 keepalive). No interval generation/discontinuity/drop/
+capture-creation/WebRTC-open increment or sampled exit/OOM/fixed error.
+VP8 rows are now visible; idle low/medium capture counters are expected because
+HLS fans out the high source. Supplied target results, NOT EXECUTED IN CODEX;
+the corrected saved-startup helper has no fresh target result. The operator then
+confirmed this sample was taken during a frozen HLS picture with audio stopped,
+after initial moving picture/audio and without reload. Later the page reported
+"HLS HTTP connection failed; retry manually". This captures a browser failure
+despite interval server flow; the later HTTP failure was not sampled on the
+server. Inspection shows serial master/keepalive checks use a 1-second full-body
+deadline and fail after three HTTP/transport/body-validation errors; that is
+a hypothesis, not proof of timeout or the freeze cause. NEXT preserve the page/
+service and run the read-only `deploy/inspect-hls-browser-timing.js` in DevTools
+on the failed page. It exports fixed HLS request classes/numeric timings/status
+only, without URLs/cookies/traffic or Retry/reload. New browser helper execution
+is PENDING / NOT EXECUTED IN CODEX. Do not repeat server/build/denial gates or
+change deadlines/buffers without correlated evidence. The WebRTC-join
+cause and reliable startup/sustained/grouped acceptance remain open.
 Reliable first-start
 and wider acceptance remain open; do not repeat passed preparation gates.
 Preserve old images/evidence and keep dependency maintenance open.

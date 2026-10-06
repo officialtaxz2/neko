@@ -40,10 +40,16 @@ The subsequent read-only progress diagnostic passed, confirming the prepared
 exact-7dcc live image and a healthy service. It captured an idle HLS backend:
 zero leases/workers/requests; the operator confirmed HLS was closed/logged out.
 This does not diagnose the earlier freeze or establish a WebRTC-join cause.
-NEXT one bounded progress sample with the HLS viewer logged in and left open,
-using the corrected diagnostic label parser (`vp8` was previously filtered out).
-No build or service restart. The parser correction's target result is pending;
-NOT EXECUTED IN CODEX. Prior diagnostic/preparation results are supplied evidence;
+The corrected `4593a6f9` progress helper subsequently passed on the target:
+one active lease, all four workers and continuing audio/video publication and
+successful HTTP media requests over 12.011 seconds, with no interval restart.
+VP8 rows are retained. The operator confirms this sample was taken during frozen
+picture/audio loss without reload, followed later by "HLS HTTP connection failed;
+retry manually". The freeze is captured despite server flow; its cause and the
+later HTTP failure remain unresolved. NEXT a read-only browser timing summary
+on the existing failed page, preserving the service; no repeated build/server
+gate or speculative timeout change. New browser helper execution is PENDING /
+NOT EXECUTED IN CODEX; prior server results are supplied target evidence.
 reliable first start and sustained playback acceptance remain open.
 See the
 [focused review and grouped next checkpoint](docs/HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md).

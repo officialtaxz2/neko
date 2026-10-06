@@ -48,12 +48,21 @@ the earlier browser freeze. The original activation CLI remains unsupplied.
 A WebRTC participant joining/starting video is an uncorrelated hypothesis.
 Static review found a keyframe request for a new shared-capture listener, with
 HLS listeners retained; no direct join-triggered HLS teardown/source overwrite
-was found. NEXT one bounded read-only `--progress` sample with HLS logged in
-and left open, without service changes. A diagnostic-only label-regex correction
-restores allowlisted `vp8` capture rows; the saved-startup helper is corrected too.
-The original idle gate passed; corrected-parser target execution is
-PENDING / NOT EXECUTED IN CODEX. Prior diagnostic/preparation gates are supplied target
-results; reliable first start and sustained/wider acceptance remain open.
+was found. The corrected `4593a6f9` progress helper subsequently passed with
+Diagnostic-Exitcode 0 and valid 12.011-second deltas: one active lease, all four
+workers, continuing audio/video publication and successful HTTP media requests,
+with no interval generation/discontinuity/drop/capture-creation/WebRTC-open
+increments. VP8 capture rows are visible. The operator confirms the sample was
+taken during frozen HLS picture/audio loss without reload. Later the page failed
+with "HLS HTTP connection failed; retry manually"; that later failure is outside
+the sampled server interval. NEXT preserve the page/service and take the
+read-only browser timing summary, without requests/Retry/reload or exposed URLs.
+The current serial 1-second full-body master/keepalive checks are an unconfirmed
+timeout hypothesis; do not tune them speculatively. New browser-helper execution
+is PENDING / NOT EXECUTED IN CODEX; no repeat build/server gate or inferred fix.
+Supplied target results, NOT EXECUTED IN CODEX; the corrected saved-startup
+helper has no fresh execution. Reliable first start/sustained/wider acceptance
+remain open.
 Preserve prior evidence.
 The initial fixed error, timed/event
 interval and concurrent WebRTC result are not separately supplied. The wider device,

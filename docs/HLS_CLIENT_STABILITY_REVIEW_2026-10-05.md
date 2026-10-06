@@ -1,6 +1,6 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-7DCC3C5E LIVE IMAGE CONFIRMED / IDLE PROGRESS DIAGNOSTIC PASSED / FREEZE CAUSE AND ACTIVE PROGRESS SAMPLE OPEN**.
+Status: **EXACT-7DCC3C5E LIVE IMAGE CONFIRMED / SERVER FLOW DURING CONFIRMED BROWSER FREEZE / LATER CLIENT HTTP FAILURE / CAUSE AND BROWSER TIMING DIAGNOSIS OPEN**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -31,11 +31,18 @@ reports moving first picture after about 20 seconds, then a frozen picture
 requiring reload. The subsequent progress diagnostic passed, confirming the
 prepared/live exact-7dcc image and healthy service. Its valid 12.012-second sample
 was idle; the operator confirmed HLS was closed/logged out. This does not capture
-the freeze or establish a WebRTC-join/video-start cause. NEXT one progress sample
-with HLS logged in and left open, using the corrected diagnostic label parser
-to retain allowlisted `vp8` capture rows. Corrected-parser execution is PENDING /
-NOT EXECUTED IN CODEX; prior diagnostic/preparation gates are supplied target
-results. Reliable first start and
+the freeze or establish a WebRTC-join/video-start cause. The corrected `4593a6f9`
+progress helper subsequently passed: one active lease, all four workers and
+continuing audio/video publication and successful HTTP media requests over
+12.011 seconds, with no interval restart; VP8 rows are retained. The operator
+confirms frozen picture/audio loss during this sample without reload, then later
+"HLS HTTP connection failed; retry manually". The freeze is captured despite
+server flow; the later HTTP failure was outside the sampled interval. NEXT the
+read-only browser timing summary on the existing failed page, preserving the
+service; no speculative timeout/buffer changes or repeated build/server gates.
+Browser-helper execution is PENDING / NOT EXECUTED IN CODEX. Prior server
+results are supplied evidence; the corrected saved-startup
+helper has no fresh target execution. Reliable first start and
 sustained/wider acceptance remain open.
 
 ## What the existing evidence establishes
@@ -925,3 +932,107 @@ a recurrence before Retry/reload when possible. No build, activation, restart
 or induced room action is requested. A moving sample demonstrates only that
 interval; a sample after idle expiry cannot reconstruct the earlier player
 failure. Keep prior images/evidence and the remaining acceptance gates open.
+
+## Supplied active progress sample passed — 2026-10-07
+
+The supplied `4593a6f9` progress helper run passed Bash syntax checking and ended
+with **Diagnostic-Exitcode 0**, using corrected helper blob
+`60cf47ddf8489c2397a5770a4c9523ae09a50b56`. The application remains exact
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b`; prepared/live image ID remains
+`sha256:c445e6541db2eb4ddf821874480a37be86542f749d5bb83e0cc67ce9640bac25`.
+The container was healthy/running, restart count zero and OOM false, with no
+sampled Neko exit or fixed error marker. Both scrapes succeeded, process
+metadata agreed and no observed counter reset occurred. The interval was
+12.011 seconds with `delta_valid: true`. These are supplied target results,
+**NOT EXECUTED IN CODEX**.
+
+| Signal | Observation over the interval |
+| --- | --- |
+| HLS sessions | One active lease persisted; no opening lease |
+| Source subscriptions | One audio and one high-video subscription persisted |
+| Source units delivered to HLS | 601 audio and 300 high-video units |
+| Capture bytes | +192,921 Opus and +3,039,667 high VP8 bytes |
+| Packagers | All four workers running before and after |
+| Publication | Every audio/high/medium/low track published new parts and segments |
+| HTTP results | Success: 12 masters, 2 playlists, 2 segments, 1 keepalive; no observed failure increment |
+| Pipeline/generation changes | No capture-creation, HLS-generation or source-discontinuity increment |
+| Drops and WebRTC opens | No observed HLS drop or successful WebRTC-open increment |
+
+The restored VP8 capture rows confirm the diagnostic parser correction is
+exercised. Low/medium capture bytes remained zero, while their HLS renditions
+published positive bytes: this fits the intended one-high-source fan-out and
+does not show stalled HLS lower renditions. The separately corrected
+`summarize-hls-startup.py` is statically reviewed but has no fresh target result.
+
+Cumulative startup-labelled HLS generations are now two per track; source
+audio/high generation gauges stayed at two throughout the interval. The
+previously recorded idle stop and a second cold start fit those observations;
+they do not establish a process crash or restart loop. The high-video
+source-restart discontinuity remains one without interval increment. Six
+cumulative WebRTC opens and nine negotiation rejections cannot correlate a
+join with the earlier browser freeze; no new successful WebRTC open was
+observed during this sample.
+
+This gate confirms active server production and successful media HTTP requests
+for one bounded interval. It does not establish the browser's media-time,
+buffer/paused/decoder state, audible audio, uninterrupted five-minute playback,
+reliable cold start or room-event isolation. The operator then clarified that
+initial moving picture/audio stopped, and this diagnostic was run during the
+frozen picture/audio loss without reload. The page later reported the fixed
+HTTP-connection failure below. Do not label the freeze fixed or infer the later
+HTTP response status from this earlier sample. No new build, deployment or
+routine repetition of the passed diagnostic is requested.
+
+## Confirmed browser freeze and later HTTP failure — 2026-10-07
+
+The operator's browser report correlates frozen picture and lost audio with
+the supplied active 12.011-second server interval: capture inputs, every HLS
+rendition's publication, one lease/all workers and successful HTTP requests
+continued. This narrows the failure to playback/delivery beyond the observed
+server production; it does not prove complete/valid decoding of the responses
+or exclude an earlier media/timeline problem. The page was not reloaded, and
+later showed **HLS HTTP connection failed; retry manually**. The later HTTP
+failure was not captured by the supplied server interval.
+
+In `client/src/neko/hls/controller.ts`, that detail is emitted after three
+consecutive failures in the serial lease-watch loop. Master and keepalive
+requests use the default **1,000 ms for headers and the complete body**;
+bootstrap uses 30 seconds, native child validation five seconds, and the MSE
+loader has its separate maximum 12-second request budget. The generic HTTP
+detail also covers nonterminal HTTP status, network/abort/body-read errors and
+invalid master validation. It does **not** identify which of these occurred.
+Valid 503 not-ready responses have a separate readiness budget. The 20-second
+player progress watchdog checks only a ready, desired, unpaused player after a
+successful master poll. Freeze and later generic HTTP failure must therefore
+remain separate observations; no timeout/buffer/lease policy change is justified
+from the generic message alone.
+
+### Next: read the failed page's retained request timings
+
+Paste `deploy/inspect-hls-browser-timing.js` into DevTools **on the existing Neko
+HLS page**, without Retry/reload. The helper performs a single synchronous read
+of retained same-origin HLS Resource Timing entries and selected current video
+numeric/boolean fields. It sends no requests, reads no cookies/storage/headers
+and changes no player, timer, fetch implementation or performance buffer. It
+prints only fixed resource/rendition classes and numeric timing/status/body-size
+fields; URL, lease ID and query strings are never printed. The operator message
+supplies the complete snippet; no script download or server action is required.
+New helper execution is **PENDING / NOT EXECUTED IN CODEX**; static inspection
+and Git whitespace checks are the local verification.
+
+The [W3C Resource Timing specification](https://www.w3.org/TR/resource-timing/)
+includes completed/aborted fetch timings, while blocked preconditions can lack
+entries; its buffer may be full and `responseStatus` is not available in every
+engine. The helper retains zero versus missing status but neither proves a
+timeout. Compare the numeric request order/duration/status and freshness; no
+recorded recent failure is not proof that all later probes succeeded. It cannot
+read response bodies or identify master-validation errors, full client decoder
+state or why an aborted request was canceled. Terminal cleanup already clears
+the video's original buffer/source, so current video fields after the failure
+cannot reconstruct the original freeze.
+
+Preserve the exact-7dcc service and old images/evidence. If retained timing
+entries are insufficient, a later bounded browser trace must be designed before
+another reproduction. Do not request raw HAR, full WebSocket URLs or all console
+logs. The WebRTC-join hypothesis, reliable start, sustained playback and grouped
+authorization/device/resource/isolation acceptance remain open; no promotion.

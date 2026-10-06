@@ -25,11 +25,18 @@ first picture after about 20 seconds, then a frozen picture requiring reload.
 The subsequent progress diagnostic passed, confirming the exact-7dcc prepared/live
 image and healthy service. Both valid 12.012-second samples were idle; the operator
 confirmed HLS was closed/logged out. A WebRTC-join cause remains unconfirmed.
-NEXT one [bounded progress sample with HLS open](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#supplied-progress-diagnostic-captured-idle-hls--2026-10-07),
-keeping the application/live service unchanged and using the corrected diagnostic
-label parser to retain allowlisted `vp8` capture rows. Corrected-parser target
-execution is PENDING / NOT EXECUTED IN CODEX; prior diagnostic/preparation results
-are supplied target evidence. Reliable first start and
+The corrected `4593a6f9` progress helper subsequently passed: one active lease,
+all four workers, continuing audio/video publication and successful HTTP media
+requests over 12.011 seconds, with no interval restart; VP8 rows are visible.
+The operator confirms frozen picture/audio loss during this sample without
+reload, then a later "HLS HTTP connection failed; retry manually". The freeze
+is captured despite server flow, but its cause and later HTTP failure remain
+unresolved. NEXT the [read-only browser timing summary](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#confirmed-browser-freeze-and-later-http-failure--2026-10-07)
+on the existing failed page, preserving the service. New browser-helper execution
+is PENDING / NOT EXECUTED IN CODEX; no speculative timeout/buffer change or
+repeat build/server gate. Supplied target
+results, NOT EXECUTED IN CODEX; the corrected saved-startup helper has no fresh
+execution. Reliable first start and
 sustained playback remain open.
 
 Status: client-only repair `73d5ff6d29110e3dd06999726a7e88718d09ea23` is

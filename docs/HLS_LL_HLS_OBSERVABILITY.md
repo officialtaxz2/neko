@@ -57,15 +57,28 @@ requested this step. The supplied `02526dca` run passed syntax/diagnostic checks
 confirmed the exact-7dcc live image and valid 12.012-second deltas, but captured
 idle HLS: no leases/subscriptions/workers or interval publication/HTTP events.
 The operator confirmed HLS was closed/logged out. This is expected idle cleanup,
-not evidence of an active freeze. NEXT one sample with the authenticated viewer
-left open; no repeat build or service restart.
+not evidence of an active freeze. The subsequent corrected `4593a6f9` progress
+sample passed with valid 12.011-second deltas at the same exact-7dcc image:
+one active lease, both subscriptions/all workers, positive source-unit/media
+publication and successful HTTP requests, with no interval generation/
+discontinuity/drop/capture-creation/WebRTC-open increment. The operator confirms
+this sample was taken during frozen picture/audio loss without reload, then a
+later "HLS HTTP connection failed; retry manually". The later HTTP failure was
+outside this interval; server flow does not prove successful browser decoding.
+NEXT preserve the page/service and read its retained browser request timings
+with `deploy/inspect-hls-browser-timing.js`, without traffic, Retry/reload or
+exposed URLs. New browser-helper execution is PENDING / NOT EXECUTED IN CODEX;
+the current serial 1-second full-body polling deadline is an unconfirmed
+hypothesis, not a reason to tune timeouts/buffers. No routine repeat build/server
+check.
 
 The progress and saved-startup label parsers were statically corrected to admit
 digits before their unchanged fixed allowlists, retaining the `vp8` codec that
 was previously dropped. Prior accepted HLS/lease/source rows remain valid;
-omitted VP8 values are unknown. Corrected-parser target execution is
-**PENDING / NOT EXECUTED IN CODEX**; the supplied passed gate applies to helper
-blob `64bd2ea7a6e3b63d7eafe7db0a5890cb53d27a1e`.
+omitted VP8 values in the earlier summary are unknown. The corrected progress
+parser's target gate passed and now includes VP8 rows, with helper blob
+`60cf47ddf8489c2397a5770a4c9523ae09a50b56`. The corrected saved-startup parser
+has no fresh target execution. Supplied target results, **NOT EXECUTED IN CODEX**.
 
 ### Historical worker/startup signals
 

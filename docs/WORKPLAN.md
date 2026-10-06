@@ -1242,13 +1242,24 @@ lease closures/idle stop fit cleanup. A WebRTC join/video start remains an
 uncorrelated hypothesis.
 Static review found no direct join-triggered capture rebuild/HLS teardown while
 the HLS listeners remain attached, or client join-triggered source overwrite.
-NEXT one [bounded read-only progress sample with HLS open](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#supplied-progress-diagnostic-captured-idle-hls--2026-10-07),
-with the corrected helper fetched outside Git and application kept at exact-7dcc.
-A diagnostic-only regex correction admits digits in fixed allowlisted labels
-so `vp8` capture rows are included; the saved-startup helper is corrected too.
-The prior idle gate passed but active playback was absent; the corrected parser's
-target result is PENDING / NOT EXECUTED IN CODEX. No rebuild, activation,
-restart or induced room action; prior gates are supplied target results.
+The corrected `4593a6f9` progress helper subsequently passed with Diagnostic-
+Exitcode 0 and valid 12.011-second deltas at the same healthy exact-7dcc image.
+One active lease, audio/high subscriptions and all four workers persisted;
+601 audio/300 video units flowed, with parts/segments published for every track
+and successful HTTP media requests. No interval generation/discontinuity/drop/
+capture-creation/WebRTC-open increment; VP8 capture rows are now retained.
+These are supplied target results, NOT EXECUTED IN CODEX; the corrected
+saved-startup helper has no fresh execution. The operator confirmed this sample
+was taken during frozen picture/audio loss without reload; the page later failed
+with "HLS HTTP connection failed; retry manually". Server flow during the freeze
+does not identify its cause, and the later HTTP failure was outside this sample.
+NEXT the [read-only browser request-timing summary](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md#confirmed-browser-freeze-and-later-http-failure--2026-10-07)
+on the existing failed page. Preserve the service and inspect the current serial
+1-second full-body master/keepalive deadline before changing it. Timeout is an
+unconfirmed hypothesis, not a demonstrated fix. The new helper exports no URLs/
+cookies and performs no requests/retries/reload. Browser execution is PENDING /
+NOT EXECUTED IN CODEX. Do not repeat server/build/denial gates or infer a fix.
+The earlier WebRTC-join hypothesis remains uncorrelated.
 Reliable first start and sustained playback remain open.
 No repeated backend/native/fuzz or HTTP-denial gate is needed for this client
 change, and the passed client/image preparation should not be repeated.
