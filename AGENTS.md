@@ -21,11 +21,16 @@ checkout pinned at exact-8d; no documentation pull, rebuild or preparation repea
 is needed. Subsequent same-image conventional-HLS activation PASSED with
 Enable-Exitcode 0: healthy exact-8d image, private enable snapshot, 17/17 public
 and 2/2 direct-cleartext denial probes (including required headers). HLS is now
-enabled in conventional-only mode. The operator reports HLS appears to run on
-PC; continuous moving picture/audio, duration, Retry/reload and parallel WebRTC
-are not separately confirmed. NEXT obtain the missing ten-minute PC coexistence
-result, without repeating passed deployment/HTTP gates or the old-image five-
-minute check. Do not issue another server command at this playback checkpoint.
+enabled in conventional-only mode. The operator explicitly confirmed the
+requested at-least-ten-minute PC interval: one HLS tab with moving picture/audio
+and one concurrent working WebRTC tab, no observed freeze, Retry or reload.
+This bounded sustained-playback/coexistence gate PASSED; it is operator browser
+evidence, not an automated trace, a scripted event/outage matrix, numerical
+latency/resource comparison, iPhone or TV acceptance. Do not repeat it or the
+passed deployment/HTTP gates. NEXT B4 read-only resource baseline and comparable
+per-path intervals using the existing collector; first no-viewer phase after
+closing viewer tabs and settling. Keep exact-8d and all overlays unchanged;
+measurements remain pending. iPhone/grouped checks and unavailable-TV gate stay open.
 Preserve accepted exact-8741 images/
 configuration/evidence. These are supplied target results, NOT EXECUTED IN CODEX.
 VIDAA causality, grouped acceptance, comparative costs and B5/B7/B8 decisions

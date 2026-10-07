@@ -30,6 +30,13 @@ before comparing with a whole-host percentage. Derive process CPU/egress rates
 from counter deltas over actual UTC intervals. The browser/VIDAA comparison
 trace and result sheet are in [Workplan NEXT](WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07).
 
+After the supplied exact-8d ten-minute PC coexistence pass, the next staged
+measurement is [the resource baseline](WORKPLAN.md#next-b4-step-resource-baseline):
+six idle samples on the unchanged warmed service, then comparable per-path
+intervals. This is an initial resource/cleanup screen, not a full cost comparison
+or evidence that a disabled/cold backend consumes the same memory. Its target
+execution and results remain pending.
+
 For a changed bind port or path prefix, set `NEKO_METRICS_URL` to the actual
 credential-free loopback HTTP `/metrics` URL. No public metrics exposure is
 required. HLS metric labels contain no session, lease ID or credential; existing

@@ -42,10 +42,14 @@ it. Subsequent conventional-HLS activation passed with Enable-Exitcode 0,
 healthy exact-8d service/private enable snapshot and all 17 public plus 2 direct-
 cleartext denial probes, including required headers. Valid-credential leases,
 packaging and rendered A/V are separate from these synthetic boundary checks.
-The operator reports HLS appears to run on PC; duration, continuous audio/video,
-Retry/reload and parallel WebRTC are not confirmed. NEXT obtain that missing
-ten-minute PC coexistence result, without a new server command or repeated
-deployment/build/HTTP gate. New device/resource/full grouped acceptance is open.
+The operator subsequently explicitly confirmed the requested at-least-ten-minute
+PC HLS moving-picture/audio interval with a concurrent working WebRTC tab,
+without observed freeze, Retry or reload. This closes that bounded sustained-
+playback/coexistence gate at exact-8d. It is supplied browser observation, not a
+captured trace, scripted event/outage/role matrix, numerical resource/latency
+comparison or iPhone/TV acceptance. Do not repeat the passed interval or server
+gates. NEXT is the read-only B4 resource baseline/comparison and remaining
+available-device/grouped coverage; unavailable VIDAA stays explicitly open.
 This is no demonstrated cause of VIDAA failure or
 of the earlier HLS freeze, and no performance advantage is claimed.
 

@@ -109,29 +109,31 @@ image using deployer blob `c6f52dc80fdf605ec908f3fe3856ce23e015e494`; healthy
 service and private enable snapshot in the same evidence directory. All 17
 public and 2 direct-cleartext denial probes passed, including required headers.
 These synthetic unknown-ticket/cookie probes do not exercise valid-credential
-leases, packaging or rendered picture/audio. The operator reports HLS appears
-to run on PC, without a separate timed continuous A/V, Retry/reload or concurrent
-WebRTC result. Record this as an initial positive indication, not the ten-minute
-coexistence/device acceptance gate.
+leases, packaging or rendered picture/audio. The operator initially reported
+HLS appears to run on PC, then explicitly confirmed the requested at-least-ten-
+minute interval with moving HLS picture/audio and concurrent working WebRTC in
+two tabs, without observed freeze, Retry or reload. The exact-8d **bounded PC
+sustained-playback/coexistence gate PASSED**. This is supplied browser observation,
+not a new trace, timing/CPU/RAM measurement or scripted event/device acceptance.
 
 **NEXT:** keep the target pinned at exact-8d with conventional HLS enabled.
-Obtain the missing PC ten-minute moving-picture/audio interval alongside WebRTC;
-if already observed, accept its explicit result rather than repeat it. Note
-Retry/reload/freeze and any room-action correlation. No new server command, pull,
-build, preparation, baseline/enable activation or HTTP-probe repeat is needed
-at this playback checkpoint. Preserve passed evidence and prior images/config.
-TV waits for device access; iPhone, full event/role/recovery/resource comparison
-and VIDAA causality remain open. No general stability/performance claim follows
-from the first PC HLS indication.
+Continue **B4 resource baseline/comparison** with the existing read-only collector,
+starting with no viewers, then one WebRTC, one HLS, one WebCodecs and mixed/scaled
+cases with comparable content and source quality. Use the staged baseline below;
+its measurements are pending. Preserve passed evidence and prior images/config.
+No pull, rebuild, preparation, activation, HTTP-probe or PC-ten-minute repeat
+is needed. TV waits for device access; iPhone, full event/role/recovery/slow-peer
+matrix, numerical latency and comparative costs remain open. The PC pass permits
+continued validation, not optional-path removal or a master promotion.
 
 | Item | Implemented behavior | New verification status |
 |---|---|---|
 | B1 / correctness | PLI exit on track/peer closure; missing IDs with deterministic nominal-rate ordering only when all rates are known; empty selection before creation; partial-peer teardown; pipeline shorthand; native URI/GFile/CString release | Exact-f03 config/handler Go and race checks passed; server-validation image compiled native drop. Repeated real incoming tracks/native URI drops: NOT RUN |
 | B2 / common event plane | One FIFO writer per socket (including both bridge legs), 128 records/16 MiB including in-flight, 5 s write/terminal-flush bound; overflow closes offender; revocation before flush; canceled reader handoffs; bridge API/Dial 15 s, independent cleanup 5 s; streaming bodies retain request cancellation | Exact-f03 utils/legacy/event/handler Go and race checks passed. Real slow event reader with two healthy peers, terminal/revoke/logout and transfers: NOT RUN |
-| B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race checks passed. Desktop/iPhone/VIDAA playback/outage/revocation and fresh-login owner: NOT RUN |
+| B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race passed; exact-8d general PC/ten-minute coexistence passed. Scripted outage/revocation/fresh-login owner and iPhone/VIDAA: NOT RUN |
 | Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture passed, capture race failed on order. Exact-8d helper reports old defect and 100 repaired race repetitions passed; full subscription/native-copy refactor remains conditional |
 | B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Exact-f03 client/type/Vite and relevant Go checks passed. Actual development launcher, ICE configurations/Safari/role browser matrix: NOT RUN; package maintenance separately open |
-| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation, HLS-off activation/2 disabled and same-image enablement/19 denial probes passed; sustained PC A/V/coexistence, browser trace/resource comparison pending |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation/deployment/HTTP and operator-confirmed ten-minute PC A/V/coexistence passed; browser trace/resource comparison and full grouped/device acceptance pending |
 
 The numerical bounds above are safety/recovery limits, not measured performance
 improvements or a promised first-picture latency. JSON serialization remains
@@ -282,6 +284,72 @@ removal requires the explicit keep/restrict/retire decision plus migration.
 B6 dependency disposition and B9 full exact-image grouped acceptance stay open.
 The implementation work above is complete; missing measurements are not silently
 converted into passes, removal approval or new performance claims.
+
+### Next B4 step: resource baseline
+
+The ten-minute PC coexistence check is closed. Resource evidence is still absent;
+the first staged measurement is a short no-viewer baseline on the current warmed
+exact-8d service, with conventional HLS, adaptive and WebCodecs still enabled.
+Close all viewer tabs, ensure no other viewer is active, keep the shared-browser
+content the same and wait 60 seconds before sampling. This permits the existing
+15-second HLS idle grace to settle; actual subscription/worker gauges determine
+whether the interval qualifies as idle. Do not change image, overlay, source
+quality, browser content or configuration during these stages.
+
+Use `deploy/collect-hls-media.sh init` then `sample NEW_PRIVATE_DIR idle 6` on the
+target. Six points ten seconds apart are an initial resource/cleanup screen,
+not a full statistical B4 comparison or evidence for B5/B7/B8 decisions. Archive
+the raw fixed metrics privately and share only CPU/RAM rows, CPU/limit metadata
+and summed subscription/worker/capture gauges with explicit metric-presence flags;
+never print per-peer metrics or credentials. Missing gauge families are unknown,
+not a demonstrated zero. The collector does not restart or deploy the service.
+Target sampling remains **PENDING / NOT EXECUTED IN CODEX**. The first operator
+block below requires closed viewer tabs and unchanged shared-browser content;
+its 60-second settling period is included. No target pull is needed:
+
+```bash
+(
+set -Eeuo pipefail
+trap 'printf "\nResource-Exitcode: %s\n" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "8d8126c92903dab58056fa316b626b38dcffb376"
+results="/opt/docker/nekoNew/neko-costs-8d8126c92903-$(date -u +%Y%m%dT%H%M%SZ)"
+test ! -e "$results"
+bash deploy/collect-hls-media.sh init "$results"
+sleep 60
+bash deploy/collect-hls-media.sh sample "$results" idle 6
+
+printf '\nRessourcen-Ergebnis\nErgebnisordner: %s\n' "$results"
+for resource_file in "$results"/*-idle.resources.txt; do
+  printf '\n%s\n' "${resource_file##*/}"
+  cat -- "$resource_file"
+  awk '
+    /^neko_media_subscriptions_active[{ ]/ { st += $NF; ss = 1 }
+    /^neko_media_hls_packagers[{ ]/ { ws = 1; if ($0 ~ /state="running"/) wt += $NF }
+    /^neko_capture_pipelines_active[{ ]/ { pt += $NF; ps = 1 }
+    END { printf "subscriptions=%.0f metric=%d hls_running_workers=%.0f metric=%d capture_pipelines=%.0f metric=%d\n", st, ss, wt, ws, pt, ps }
+  ' "${resource_file%.resources.txt}.metrics.prom"
+done
+for environment_file in "$results"/*-environment.txt; do
+  last_environment="$environment_file"
+done
+grep -E '^(configured_image=|host_logical_cpus=|nano_cpus=)' "$last_environment"
+printf '\nResource-Exitcode: 0\n'
+)
+```
+
+`metric=1` means that gauge family was present; `metric=0` means unobserved.
+Nonzero subscription/running-worker/capture totals require checking other viewers,
+legitimate background demand and cleanup before treating the phase as zero-media
+idle. Retain and label the actual workload; a nonzero gauge alone is not proof
+of a leak. No idle or resource acceptance is assumed in advance.
+
+After reviewing idle evidence, use the same source/workload and comparable
+steady intervals for each path, then mixed viewers and post-cleanup. A warmed
+enabled-service baseline is not the cost of a cold or disabled optional backend;
+separate startup peaks and later scaling/long-session trends. Derive throughput
+from raw counter deltas over actual time; formatted cumulative Docker network
+totals alone are not precise bandwidth rates. See the full B4 procedure below.
 
 ### Prioritized implementation and decision blocks
 

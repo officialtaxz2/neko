@@ -1,5 +1,17 @@
 # HLS / LL-HLS Phase 4 target-server validation
 
+**Current bounded PC checkpoint — 2026-10-07:** exact
+`8d8126c92903dab58056fa316b626b38dcffb376` preparation, healthy HLS-off baseline
+and same-image conventional-HLS activation passed with their supplied CLI/HTTP
+evidence. The operator explicitly confirmed at least ten minutes of moving HLS
+picture/audio alongside working WebRTC in two PC tabs without freeze, Retry or
+reload. Do not repeat that gate. This is bounded supplied browser observation,
+**NOT EXECUTED IN CODEX**, not full Phase 4/device/resource acceptance. VIDAA is
+unavailable; iPhone, event/recovery/role/scaling/resource and numerical startup/
+latency evidence remain open. Follow [current Workplan NEXT](WORKPLAN.md#next)
+for read-only comparisons; keep the target pinned at exact-8d and preserve
+earlier images/evidence. Historical records below apply to their named commits.
+
 **Latest exact-68 client follow-up — 2026-10-05:**
 [client stability repairs](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md) correct
 pause/startup progress monitoring and independent HTTP/readiness budgets, with

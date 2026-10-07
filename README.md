@@ -33,12 +33,13 @@ activation then passed with **Enable-Exitcode 0**, healthy service/private
 snapshot and all 19 HTTP denial probes. The live service is exact-8d with HLS
 enabled; preserve the previously accepted exact-8741 image/evidence. The
 [next handoff](docs/WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07)
-is the missing ten-minute PC HLS picture/audio interval alongside WebRTC.
+is the resource comparison, then remaining device/event/recovery coverage.
 The operator reports general PC operation works; the affected VIDAA/Odin TV is
-unavailable, so its device/event gate remains unverified. HLS appears to run on
-PC per operator report; continuous A/V, duration and concurrent WebRTC are not
-confirmed. New sustained HLS/resource and
-full grouped device acceptance remain open. Keep the target
+unavailable, so its device/event gate remains unverified. The operator explicitly
+confirmed at least ten minutes of moving HLS picture/audio alongside working
+WebRTC in two PC tabs, without freeze, Retry or reload. This bounded PC gate
+passed; resource/latency comparisons and full grouped device acceptance remain
+open. Keep the target
 at its prepared exact-8d commit; no pull, rebuild or repeated preparation is
 needed. No local project execution took place in Codex.
 
