@@ -1,6 +1,26 @@
 # AGENTS.md
 
-Latest implementation checkpoint (2026-10-07): authorized block
+Latest implementation checkpoint (2026-10-07): supplied exact
+`8d8126c92903dab58056fa316b626b38dcffb376` preparation PASSED with
+Prepare-Exitcode 0. The helper reports the old deterministic ordering defect,
+100 repaired subscription race repetitions and backend/race/server/Base/Brave
+checks passed. The supplied excerpt starts inside the base-image build; earlier
+gate details are covered by helper success, not separately visible test output.
+Client evidence is inherited only from unchanged exact-f03 (80 tests/type/build).
+Private evidence: `/opt/docker/nekoNew/neko-stability-8d8126c92903-20261007T171646Z`.
+Images `my-neko/base:hls-8d8126c92903` and `my-neko/brave:hls-8d8126c92903`
+were built; the retained-live assertion and private snapshot passed. No candidate
+activation or browser/device/resource acceptance has occurred. Keep the target
+checkout pinned at exact-8d; no documentation pull, rebuild or preparation repeat
+is needed. NEXT is operator-controlled baseline activation using that result
+directory, with HLS omitted and adaptive/WebCodecs retained, then disabled-route
+and normal WebRTC browser checks before same-image conventional-HLS enablement.
+The service will restart for activation; preserve accepted exact-8741 images/
+configuration/evidence. These are supplied target results, NOT EXECUTED IN CODEX.
+VIDAA causality, grouped acceptance, comparative costs and B5/B7/B8 decisions
+remain open; do not remove paths or promote master.
+
+Historical failed implementation preparation (2026-10-07): authorized block
 `f03bc4bcf68be81a76e65f9195580daad76df7b2` was published on origin/testing and
 transferred to the target. Supplied preparation FAILED with Prepare-Exitcode 1
 in capture `TestMediaSubscriptionTimingGenerationAndFormatOrdering`: a format
@@ -17,7 +37,8 @@ Do not attribute this finding to VIDAA or the earlier HLS freeze. Follow current
 `deploy/validate-media-stability.sh OUTPUT --capture-ordering-repair`; require
 the old deterministic failure and 100 repaired subscription race repetitions
 plus repeated backend/race/server/image gates. Only unchanged exact-f03 client
-evidence is inherited. Repair gates are pending, NOT EXECUTED IN CODEX. Do not
+evidence is inherited. At this earlier checkpoint repair gates were pending,
+NOT EXECUTED IN CODEX. Do not
 activate failed f03, repeat its failing preparation unchanged, remove paths,
 or promote master. Preserve failed evidence and accepted images/configuration.
 

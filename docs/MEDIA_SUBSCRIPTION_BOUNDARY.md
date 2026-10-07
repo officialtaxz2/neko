@@ -342,8 +342,13 @@ handoff ordering defect in the capture race invocation (format instead of the
 generation-2 discontinuity), without a `DATA RACE` report. Publication had been
 marked after the unbuffered send, letting immediate consumer actions precede
 that barrier. The corrected selection-time barrier and deterministic handoff/
-pre-selection-coalescing fixtures are statically reviewed, with old/new and
-100-repeat race target gates pending. No source-payload ownership, timestamp,
+pre-selection-coalescing fixtures are statically reviewed. Supplied exact-8d
+preparation subsequently returned Prepare-Exitcode 0: the helper reports the old
+defect, 100 repaired subscription race repetitions and backend/server/image gates
+passed. The excerpt begins inside the base build; earlier details are covered by
+helper success, not separately visible test output. Client evidence is inherited
+only from unchanged exact-f03; the accepted live service was retained and new
+device acceptance remains open. No source-payload ownership, timestamp,
 queue capacity, provider topology or backend contract is redesigned. This does
 not explain the reported VIDAA/HLS incidents without correlated live evidence.
 See [the current exact-commit handoff](WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07);

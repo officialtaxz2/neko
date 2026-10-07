@@ -25,7 +25,9 @@ and [the upstream triage](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--
   The authorized improvement block was published on `origin/testing` as
   `f03bc4bcf68be81a76e65f9195580daad76df7b2` and transferred to the target.
   Its preparation FAILED; the last accepted application/live target remains
-  `8741f7880d9a709e6dc17924d2af0564a949ccd9`. `master` stays `d9105ef8`;
+  `8741f7880d9a709e6dc17924d2af0564a949ccd9`. The ordering repair
+  `8d8126c92903dab58056fa316b626b38dcffb376` subsequently PASSED preparation
+  and has candidate images, without activation yet. `master` stays `d9105ef8`;
   no upstream integration or promotion was performed.
 - Supplied healthy `my-neko/brave:hls-8741f7880d9a` activation and at least five
   minutes of moving PC/Helium conventional-HLS A/V without Retry/reload while
@@ -73,19 +75,35 @@ Formats that have not been selected remain coalescible. HLS already accepts the
 same-generation first-caps discontinuity while awaiting initial format.
 
 The new target-only fixtures deterministically force the handoff window and
-also retain pre-publication coalescing. The repair and scoped A/B helper are
-**STATICALLY REVIEWED; their target execution remains pending**. Do not deploy
-f03 or retry its failing gate unchanged. Preserve its evidence and the accepted
-exact-8741 images/configuration; prepare the reviewed repair with the mode below.
+also retain pre-publication coalescing. The repair and scoped A/B helper at
+**exact-8d have supplied preparation PASS, not live/device acceptance**.
+Private evidence: `/opt/docker/nekoNew/neko-stability-8d8126c92903-20261007T171646Z`.
+The supplied excerpt starts during the base-image build and shows both
+`my-neko/base:hls-8d8126c92903` and `my-neko/brave:hls-8d8126c92903` exported,
+the retained-live snapshot, ORDERING GATE PASSED, PREPARATION PASSED and
+**Prepare-Exitcode 0**. Final helper success covers the old deterministic defect,
+100 repaired subscription race repetitions and repeated backend/race/server
+gates; their earlier individual output is not separately supplied. The unchanged
+client inherits f03's 80 tests/type/build. No fresh native/fuzz or device/resource
+comparison is claimed. The retained-live assertion passed; no activation was
+issued. Preserve both failed f03 evidence and accepted exact-8741 images/config.
+
+**NEXT:** keep the target checkout pinned at exact-8d and use the successful
+result directory for controlled **step 2 baseline activation**. No documentation
+pull, rebuild or preparation repeat is needed. This restarts Neko with HLS
+omitted and adaptive/WebCodecs retained; require healthy service, 2/2 disabled
+HTTP-route probes and normal WebRTC browser behavior before enabling conventional
+HLS on the same candidate image. Candidate activation, VIDAA causality, grouped
+device/event/security acceptance and cost comparisons remain open.
 
 | Item | Implemented behavior | New verification status |
 |---|---|---|
 | B1 / correctness | PLI exit on track/peer closure; missing IDs with deterministic nominal-rate ordering only when all rates are known; empty selection before creation; partial-peer teardown; pipeline shorthand; native URI/GFile/CString release | Exact-f03 config/handler Go and race checks passed; server-validation image compiled native drop. Repeated real incoming tracks/native URI drops: NOT RUN |
 | B2 / common event plane | One FIFO writer per socket (including both bridge legs), 128 records/16 MiB including in-flight, 5 s write/terminal-flush bound; overflow closes offender; revocation before flush; canceled reader handoffs; bridge API/Dial 15 s, independent cleanup 5 s; streaming bodies retain request cancellation | Exact-f03 utils/legacy/event/handler Go and race checks passed. Real slow event reader with two healthy peers, terminal/revoke/logout and transfers: NOT RUN |
 | B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race checks passed. Desktop/iPhone/VIDAA playback/outage/revocation and fresh-login owner: NOT RUN |
-| Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture tests passed, capture race invocation FAILED on event order. Deterministic old/new and repaired 100-repeat race gate pending; full subscription/native-copy refactor remains conditional |
+| Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture passed, capture race failed on order. Exact-8d helper reports old defect and 100 repaired race repetitions passed; full subscription/native-copy refactor remains conditional |
 | B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Exact-f03 client/type/Vite and relevant Go checks passed. Actual development launcher, ICE configurations/Safari/role browser matrix: NOT RUN; package maintenance separately open |
-| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-f03 preparation reached its failure; no new live image, browser trace or resource comparison. Scoped ordering A/B prepared, not yet run |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation passed, candidate images and retained-live snapshot recorded; activation/browser trace/resource comparison pending |
 
 The numerical bounds above are safety/recovery limits, not measured performance
 improvements or a promised first-picture latency. JSON serialization remains
@@ -94,9 +112,10 @@ three server writers. Frame counters/time are browser progress proxies, not
 proof of visible video or audible audio. Large clipboard/file compatibility and
 native PiP Pause are explicit regression cases.
 
-**Operator step 1 — prepare the ordering repair, retain live exact-8741.** On
-the target, first transfer the reviewed repair's exact Git identity with a
-fast-forward to clean `testing`. Use a new evidence directory:
+**Completed operator step 1 — exact-8d preparation, retained live exact-8741.**
+The recorded procedure below passed; it is not a new rerun instruction. The
+target checkout and selected marker are exact-8d; continue directly to step 2.
+For any future justified preparation use a new evidence directory:
 
 ```bash
 NEKO_STABILITY_COMMIT="$(git rev-parse HEAD)"
@@ -133,13 +152,23 @@ automatic dependency fix is part of the ordering repair.
 
 **Operator step 2 — controlled activation and regression.** Preserve private
 accepted image/config/overlay snapshots. Only after preparation succeeds, use
-the existing deployment runbook with its matching marker/images:
+the existing deployment runbook with its matching marker/images. The next
+activation is exact-8d from the successful private directory; later documentation
+commits must not replace this image identity:
 
 ```bash
+test "$(git rev-parse HEAD)" = "8d8126c92903dab58056fa316b626b38dcffb376"
+NEKO_STABILITY_RESULTS=/opt/docker/nekoNew/neko-stability-8d8126c92903-20261007T171646Z
 bash deploy/deploy-hls-media.sh baseline "$NEKO_STABILITY_RESULTS"
-# This baseline retains adaptive/WebCodecs overlays, but omits HLS.
-# First verify ordinary login, moving WebRTC A/V, input and deliberate Pause/Play.
-# After that succeeds, enable conventional HLS for the mixed-viewer phases:
+docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks disabled </dev/null
+```
+
+This baseline retains adaptive/WebCodecs overlays and omits HLS. First require
+the operator's normal login, moving WebRTC A/V, input and deliberate Pause/Play
+confirmation. Only after that checkpoint succeeds, enable conventional HLS for
+the mixed-viewer phases in a separate operator step:
+
+```bash
 bash deploy/deploy-hls-media.sh enable "$NEKO_STABILITY_RESULTS"
 ```
 

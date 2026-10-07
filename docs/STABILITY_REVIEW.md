@@ -26,8 +26,16 @@ changes no payload, media clocks, encoder topology or queue limits. HLS already
 handles the cold same-generation first-caps transition. Deterministic fixtures
 cover both publication boundaries; the scoped target gate requires the old
 failure and 100 repaired subscription repetitions under race, then repeats
-backend/race/server/images. Its results are pending; unchanged client evidence
-alone is inherited from f03. This is no demonstrated cause of VIDAA failure or
+backend/race/server/images. Supplied exact-8d preparation subsequently passed
+with Prepare-Exitcode 0: the helper reports all those gates passed and live
+service retained; Base/Brave exports and the private snapshot are visible.
+The excerpt starts inside the base build, so earlier individual assertions/counts
+are not separately visible. Unchanged client evidence alone is inherited from
+f03. Evidence: `/opt/docker/nekoNew/neko-stability-8d8126c92903-20261007T171646Z`.
+No candidate activation, device matrix or comparison measurement is supplied.
+NEXT is exact-8d HLS-off activation and WebRTC browser regression, then separately
+same-image conventional HLS. No pull/rebuild/preparation repeat is required.
+This is no demonstrated cause of VIDAA failure or
 of the earlier HLS freeze, and no performance advantage is claimed.
 
 - **F1 / B2:** a bounded FIFO writer now owns each normal event socket, including
