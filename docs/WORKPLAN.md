@@ -28,7 +28,9 @@ and [the upstream triage](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--
   `8741f7880d9a709e6dc17924d2af0564a949ccd9`. The ordering repair
   `8d8126c92903dab58056fa316b626b38dcffb376` subsequently PASSED preparation
   and subsequently activated healthy with HLS disabled (Baseline-Exitcode 0,
-  2/2 disabled HTTP probes). The live candidate is exact-8d; new browser/device
+  2/2 disabled HTTP probes), then conventional HLS enabled (Enable-Exitcode 0,
+  17/17 public and 2/2 cleartext-denial probes). The live candidate is exact-8d
+  with conventional HLS enabled; new sustained browser/device
   acceptance is pending. `master` stays `d9105ef8`;
   no upstream integration or promotion was performed.
 - Supplied healthy `my-neko/brave:hls-8741f7880d9a` activation and at least five
@@ -102,15 +104,25 @@ baseline, without a timed interval or individual action/outage/Pause results.
 The reported problematic Hisense VIDAA/Odin TV belongs to a friend and is not
 available now; record its focused gate as DEFERRED/UNVERIFIED, not pass or failure.
 
-**NEXT:** keep the target pinned at exact-8d and enable conventional HLS on that
-same prepared image using the existing successful evidence directory. Run the
-existing 17 public and 2 direct-cleartext denial probes, then check PC HLS moving
-picture/audio for ten minutes alongside WebRTC, noting any Retry/reload/freeze
-and room-action correlation. No pull, rebuild, preparation or HLS-off baseline
-repeat is needed. Enablement/new HLS playback are not yet supplied. TV evidence
-waits for device access; continue independent PC/iPhone/grouped checks. VIDAA
-causality, the full device/event/security matrix and comparative costs remain
-open; general PC operation is not a full stability or performance claim.
+**Supplied conventional-HLS activation:** Enable-Exitcode 0 at the same exact-8d
+image using deployer blob `c6f52dc80fdf605ec908f3fe3856ce23e015e494`; healthy
+service and private enable snapshot in the same evidence directory. All 17
+public and 2 direct-cleartext denial probes passed, including required headers.
+These synthetic unknown-ticket/cookie probes do not exercise valid-credential
+leases, packaging or rendered picture/audio. The operator reports HLS appears
+to run on PC, without a separate timed continuous A/V, Retry/reload or concurrent
+WebRTC result. Record this as an initial positive indication, not the ten-minute
+coexistence/device acceptance gate.
+
+**NEXT:** keep the target pinned at exact-8d with conventional HLS enabled.
+Obtain the missing PC ten-minute moving-picture/audio interval alongside WebRTC;
+if already observed, accept its explicit result rather than repeat it. Note
+Retry/reload/freeze and any room-action correlation. No new server command, pull,
+build, preparation, baseline/enable activation or HTTP-probe repeat is needed
+at this playback checkpoint. Preserve passed evidence and prior images/config.
+TV waits for device access; iPhone, full event/role/recovery/resource comparison
+and VIDAA causality remain open. No general stability/performance claim follows
+from the first PC HLS indication.
 
 | Item | Implemented behavior | New verification status |
 |---|---|---|
@@ -119,7 +131,7 @@ open; general PC operation is not a full stability or performance claim.
 | B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race checks passed. Desktop/iPhone/VIDAA playback/outage/revocation and fresh-login owner: NOT RUN |
 | Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture passed, capture race failed on order. Exact-8d helper reports old defect and 100 repaired race repetitions passed; full subscription/native-copy refactor remains conditional |
 | B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Exact-f03 client/type/Vite and relevant Go checks passed. Actual development launcher, ICE configurations/Safari/role browser matrix: NOT RUN; package maintenance separately open |
-| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation and HLS-off activation/2 disabled probes passed; browser trace/resource comparison and HLS enablement pending |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation, HLS-off activation/2 disabled and same-image enablement/19 denial probes passed; sustained PC A/V/coexistence, browser trace/resource comparison pending |
 
 The numerical bounds above are safety/recovery limits, not measured performance
 improvements or a promised first-picture latency. JSON serialization remains
@@ -183,8 +195,8 @@ docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks dis
 This baseline retains adaptive/WebCodecs overlays and omits HLS. General PC
 operation is now operator-confirmed within the evidence limits above. Full
 Pause/Play and event/outage device checks remain in grouped acceptance. The
-next separate operator step enables conventional HLS for the mixed-viewer phases;
-it is prepared but not executed yet:
+subsequent conventional-HLS activation below also PASSED; it is a record, not a
+rerun instruction:
 
 ```bash
 test "$(git rev-parse HEAD)" = "8d8126c92903dab58056fa316b626b38dcffb376"
@@ -195,8 +207,8 @@ docker compose -f docker-compose.validation.yaml run --rm -T \
   -e NEKO_PUBLIC_BASE_URL=http://127.0.0.1:8082 hls-http-checks insecure-denied </dev/null
 ```
 
-These commands are operator actions, not already performed or a directive to
-skip preparation/browser checks. Respect the existing Origin/proxy/log boundary.
+These recorded deployment/HTTP commands were performed by the operator; do not
+repeat them or skip the remaining browser checks. Respect the Origin/proxy/log boundary.
 Check normal/view-only/admin behavior, Pause/Play, iPhone muted/unmuted autoplay,
 fullscreen/PiP, clipboard and file transfers; exercise admitted incoming
 microphone/camera create/close and native URI drops. Short interruption (<8 s),

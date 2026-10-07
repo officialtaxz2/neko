@@ -5,7 +5,7 @@
 The operator subsequently authorized the comparative plan. Independent B1–B3
 and B6 source corrections and B4/B9 handoff assets are implemented and statically
 reviewed. **Tests, builds and device/runtime checks: NOT EXECUTED IN CODEX.**
-The target is now the healthy exact-8d HLS-off candidate; preserve the earlier
+The target is now the healthy exact-8d conventional-HLS-enabled candidate; preserve the earlier
 accepted exact-8741 HLS image/evidence. Historical passes below do not validate these
 new common-event/WebRTC changes.
 
@@ -38,9 +38,14 @@ bootstrap/media 404 probes. The operator reports general PC operation works;
 duration and individual action/outage/Pause results are not supplied. Hisense
 VIDAA/Odin is unavailable because the TV belongs to a friend. Its device and
 event-cause gate remains deferred/unverified; general PC success does not close
-it. NEXT is same-image conventional-HLS enablement/19 denial probes and a bounded
-PC HLS A/V interval alongside WebRTC. No pull/rebuild/preparation or HLS-off
-baseline repeat is required. New HLS/device/resource acceptance remains open.
+it. Subsequent conventional-HLS activation passed with Enable-Exitcode 0,
+healthy exact-8d service/private enable snapshot and all 17 public plus 2 direct-
+cleartext denial probes, including required headers. Valid-credential leases,
+packaging and rendered A/V are separate from these synthetic boundary checks.
+The operator reports HLS appears to run on PC; duration, continuous audio/video,
+Retry/reload and parallel WebRTC are not confirmed. NEXT obtain that missing
+ten-minute PC coexistence result, without a new server command or repeated
+deployment/build/HTTP gate. New device/resource/full grouped acceptance is open.
 This is no demonstrated cause of VIDAA failure or
 of the earlier HLS freeze, and no performance advantage is claimed.
 

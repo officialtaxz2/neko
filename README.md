@@ -28,12 +28,16 @@ exact-f03 capture event-order failure. The helper confirms the old defect,
 100 repaired subscription race repetitions and backend/server/image gates;
 80 client tests/type/build are inherited from unchanged exact-f03. Subsequent
 baseline activation **passed with Baseline-Exitcode 0**: healthy exact-8d image,
-private snapshot and 2/2 disabled-HLS HTTP probes. The live service is exact-8d
-with HLS off; preserve the previously accepted exact-8741 image/evidence. The
+private snapshot and 2/2 disabled-HLS HTTP probes. Same-image conventional-HLS
+activation then passed with **Enable-Exitcode 0**, healthy service/private
+snapshot and all 19 HTTP denial probes. The live service is exact-8d with HLS
+enabled; preserve the previously accepted exact-8741 image/evidence. The
 [next handoff](docs/WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07)
-is same-image HLS enablement/denial probes and parallel PC HLS/WebRTC playback.
+is the missing ten-minute PC HLS picture/audio interval alongside WebRTC.
 The operator reports general PC operation works; the affected VIDAA/Odin TV is
-unavailable, so its device/event gate remains unverified. New HLS/resource and
+unavailable, so its device/event gate remains unverified. HLS appears to run on
+PC per operator report; continuous A/V, duration and concurrent WebRTC are not
+confirmed. New sustained HLS/resource and
 full grouped device acceptance remain open. Keep the target
 at its prepared exact-8d commit; no pull, rebuild or repeated preparation is
 needed. No local project execution took place in Codex.

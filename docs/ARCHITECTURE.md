@@ -2,15 +2,17 @@
 
 Current source assessment: 2026-10-07, initial `testing` HEAD `a91d9388`,
 last accepted HLS/browser baseline `8741f788`, current healthy live candidate
-`8d8126c9` with HLS disabled, `master` unchanged at `d9105ef8`.
+`8d8126c9` with conventional HLS enabled, `master` unchanged at `d9105ef8`.
 The authorized independent B1–B3/B6 improvements were published at exact-f03.
 Its supplied client/normal Go and six race-package gates passed, but capture
 event-ordering failed preparation before Base/Brave images. The bounded format
 handoff correction at exact-8d subsequently passed supplied preparation: old
 defect/100 race repetitions/backend/server/images by final helper success.
 Client evidence is inherited from unchanged f03. Subsequent exact-8d baseline
-activation passed healthy with 2/2 disabled-HLS probes; all new browser/device
-acceptance remains pending. No new-source gate inherits an 8741 pass.
+activation passed healthy with 2/2 disabled-HLS probes; same-image HLS enablement
+then passed healthy with 19/19 denial probes. General PC operation and apparent
+HLS playback are reported, without a confirmed sustained A/V/coexistence interval.
+Full browser/device acceptance remains pending. No new-source gate inherits an 8741 pass.
 The [comparative review](STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07)
 and [current Workplan](WORKPLAN.md#next) distinguish implemented mechanisms,
 supplied target results and unmeasured benefit. Historical checkpoints below
