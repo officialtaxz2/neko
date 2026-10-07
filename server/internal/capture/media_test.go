@@ -2,6 +2,7 @@ package capture
 
 import (
 	"context"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -217,26 +218,126 @@ func TestMediaSubscriptionPublishesFormatBeforeRacingFirstUnit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Subscribe() error: %v", err)
 	}
+	defer closeAndDrainMediaSubscription(t, subscription)
 	high.emit(types.Sample{
 		Generation: 1, Sequence: 1, Timestamp: time.Now(), DeltaUnit: false,
 		Width: 1280, Height: 720, FrameRateNumerator: 25, FrameRateDenominator: 1,
 		Data: []byte{1},
 	})
 
-	if event := nextMediaEvent(t, subscription); event.Type != types.MediaEventTypeFormat {
-		t.Fatalf("first racing event = %#v, want format", event)
+	format := nextMediaEvent(t, subscription)
+	if format.Type != types.MediaEventTypeFormat {
+		t.Fatalf("first racing event = %#v, want format", format)
 	}
-	for attempts := 0; attempts < 2; attempts++ {
+	// Before initial selection the first caps can be coalesced into one
+	// complete format. After selection, its replacement must be announced.
+	needsFormat := false
+	updated := false
+	for attempts := 0; attempts < 3; attempts++ {
 		event := nextMediaEvent(t, subscription)
-		if event.Type == types.MediaEventTypeUnit {
-			closeAndDrainMediaSubscription(t, subscription)
+		switch event.Type {
+		case types.MediaEventTypeDiscontinuity:
+			if needsFormat || updated || event.Discontinuity.Reason != "format_change" || event.Discontinuity.Generation != 1 {
+				t.Fatalf("unexpected first-caps transition = %#v", event)
+			}
+			needsFormat = true
+		case types.MediaEventTypeFormat:
+			if updated || !needsFormat {
+				t.Fatalf("first-caps replacement without one discontinuity = %#v", event)
+			}
+			format, needsFormat, updated = event, false, true
+		case types.MediaEventTypeUnit:
+			if needsFormat || format.Source.Width != 1280 || format.Source.Height != 720 ||
+				event.Unit.Generation != 1 || event.Unit.Sequence != 1 || !event.Unit.Keyframe {
+				t.Fatalf("first unit without its complete format = %#v / %#v", format, event)
+			}
 			return
-		}
-		if event.Type != types.MediaEventTypeFormat {
+		default:
 			t.Fatalf("event before first unit = %#v, want updated format", event)
 		}
 	}
 	t.Fatal("first encoded unit was not published after its format")
+}
+
+func TestMediaSubscriptionGenerationTransitionAfterFormatHandoff(t *testing.T) {
+	provider, _, high, _ := newTestMediaProvider()
+	subscription, err := provider.Subscribe(context.Background(), types.SourceSubscriptionRequest{
+		Kind: types.MediaKindVideo, Selector: types.MediaSelector{ID: "high"}, QueueCapacity: 2,
+		OverflowPolicy: types.MediaOverflowDropNewest, Backend: "test",
+	})
+	if err != nil {
+		t.Fatalf("Subscribe() error: %v", err)
+	}
+	defer closeAndDrainMediaSubscription(t, subscription)
+	concrete := subscription.(*captureMediaSubscription)
+
+	// Do not consume Events yet. Once the sole initial format leaves pending,
+	// run must be blocked handing that immutable format to the consumer.
+	deadline := time.Now().Add(time.Second)
+	for {
+		concrete.mu.Lock()
+		selected := len(concrete.pending) == 0
+		concrete.mu.Unlock()
+		if selected {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("initial format was not selected for handoff")
+		}
+		runtime.Gosched()
+	}
+	high.generation = 2
+	high.emit(types.Sample{
+		Generation: 2, Sequence: 1, Timestamp: time.Now(), DeltaUnit: false,
+		Width: 1280, Height: 720, FrameRateNumerator: 25, FrameRateDenominator: 1,
+		Data: []byte{1},
+	})
+	if event := nextMediaEvent(t, subscription); event.Type != types.MediaEventTypeFormat || event.Source.Generation != 1 {
+		t.Fatalf("selected format = %#v, want original generation 1", event)
+	}
+	if event := nextMediaEvent(t, subscription); event.Type != types.MediaEventTypeDiscontinuity ||
+		event.Discontinuity.Generation != 2 || event.Discontinuity.Reason != "source_restart" {
+		t.Fatalf("handoff transition = %#v, want generation 2 source_restart discontinuity", event)
+	}
+	if event := nextMediaEvent(t, subscription); event.Type != types.MediaEventTypeFormat || event.Source.Generation != 2 || event.Source.Width != 1280 {
+		t.Fatalf("replacement format = %#v, want generation 2 format", event)
+	}
+	if event := nextMediaEvent(t, subscription); event.Type != types.MediaEventTypeUnit || event.Unit.Generation != 2 || !event.Unit.Keyframe {
+		t.Fatalf("replacement unit = %#v, want generation 2 keyframe", event)
+	}
+}
+
+func TestMediaSubscriptionCoalescesFormatBeforePublication(t *testing.T) {
+	provider, _, high, _ := newTestMediaProvider()
+	source := provider.describe(types.MediaKindVideo, high)
+	subscription := &captureMediaSubscription{
+		provider: provider, stream: high, source: source, backend: "test", queueCapacity: 2,
+		ready: true, awaitKeyframe: true, signal: make(chan struct{}, 1),
+		events: make(chan types.MediaEvent), done: make(chan struct{}), abort: make(chan struct{}),
+	}
+	subscription.replacePendingLocked(types.MediaEvent{Type: types.MediaEventTypeFormat, Source: types.CloneMediaSource(source)})
+	high.generation = 2
+	subscription.WriteSample(types.Sample{
+		Generation: 2, Sequence: 1, Timestamp: time.Now(), DeltaUnit: false,
+		Width: 1280, Height: 720, FrameRateNumerator: 25, FrameRateDenominator: 1,
+		Data: []byte{1},
+	})
+	// No delivery has started: superseded bootstrap metadata stays coalesced.
+	go subscription.run()
+	t.Cleanup(func() {
+		close(subscription.abort)
+		select {
+		case <-subscription.done:
+		case <-time.After(time.Second):
+			t.Fatal("isolated publication did not close")
+		}
+	})
+	if event := nextMediaEvent(t, subscription); event.Type != types.MediaEventTypeFormat || event.Source.Generation != 2 || event.Source.Width != 1280 {
+		t.Fatalf("coalesced format = %#v, want current generation 2", event)
+	}
+	if event := nextMediaEvent(t, subscription); event.Type != types.MediaEventTypeUnit || event.Unit.Generation != 2 || !event.Unit.Keyframe {
+		t.Fatalf("coalesced first unit = %#v, want generation 2 keyframe", event)
+	}
 }
 
 func TestMediaSubscriptionSwitchPauseResumeAndDiscontinuity(t *testing.T) {

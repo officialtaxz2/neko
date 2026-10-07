@@ -1,5 +1,26 @@
 # AGENTS.md
 
+Latest implementation checkpoint (2026-10-07): authorized block
+`f03bc4bcf68be81a76e65f9195580daad76df7b2` was published on origin/testing and
+transferred to the target. Supplied preparation FAILED with Prepare-Exitcode 1
+in capture `TestMediaSubscriptionTimingGenerationAndFormatOrdering`: a format
+arrived instead of generation-2 discontinuity. All 80 client tests/type/build,
+the selected normal Go suite and six other race packages passed; no DATA RACE
+report was supplied. Base/Brave builds and final live-retention verification
+were not reached. Evidence: `/opt/docker/nekoNew/neko-stability-f03bc4bcf68b-20261007T164845Z`.
+No activation was requested; exact-8741 remains the last accepted live image.
+An older capture format-publication ordering defect is now corrected and
+statically reviewed: commit the immutable in-flight format barrier under the
+dequeue mutex before its unbuffered handoff, retaining pre-selection coalescing.
+Do not attribute this finding to VIDAA or the earlier HLS freeze. Follow current
+`docs/WORKPLAN.md` NEXT: prepare the narrow repair with the scope-guarded
+`deploy/validate-media-stability.sh OUTPUT --capture-ordering-repair`; require
+the old deterministic failure and 100 repaired subscription race repetitions
+plus repeated backend/race/server/image gates. Only unchanged exact-f03 client
+evidence is inherited. Repair gates are pending, NOT EXECUTED IN CODEX. Do not
+activate failed f03, repeat its failing preparation unchanged, remove paths,
+or promote master. Preserve failed evidence and accepted images/configuration.
+
 Current authorized implementation checkpoint (2026-10-07): the comparative
 assessment was approved for implementation. Independent B1–B3/B6 corrections
 and B4/B9 target handoff assets are now implemented and statically reviewed in

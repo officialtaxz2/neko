@@ -21,9 +21,12 @@ and [the upstream triage](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--
 
 ### Current baseline and recommendation
 
-- Initial clean `testing` HEAD: `a91d9388d75f3d042f212398a1dcff1af198992d`;
-  last accepted application/live target: `8741f7880d9a709e6dc17924d2af0564a949ccd9`.
-  `master` stays `d9105ef8`; no merge/fetch/ref update was performed in this audit.
+- Initial audit HEAD: `a91d9388d75f3d042f212398a1dcff1af198992d`.
+  The authorized improvement block was published on `origin/testing` as
+  `f03bc4bcf68be81a76e65f9195580daad76df7b2` and transferred to the target.
+  Its preparation FAILED; the last accepted application/live target remains
+  `8741f7880d9a709e6dc17924d2af0564a949ccd9`. `master` stays `d9105ef8`;
+  no upstream integration or promotion was performed.
 - Supplied healthy `my-neko/brave:hls-8741f7880d9a` activation and at least five
   minutes of moving PC/Helium conventional-HLS A/V without Retry/reload while
   WebRTC continued working close that bounded coexistence gate. They do not
@@ -42,26 +45,47 @@ and [the upstream triage](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--
 
 ### Implemented block and target handoff — 2026-10-07
 
-Source status: B1–B3 and independent B6 complete, statically reviewed; no new
-target result. Package this block as one reviewed `testing` commit and transfer
-that exact Git identity before using the clean-checkout helper. The helper
-records the selected HEAD rather than a hardcoded self-referential commit hash.
-No new live image or target acceptance is claimed here.
+Source status: B1–B3 and independent B6 are implemented and statically reviewed.
+The supplied exact-f03 target run reached **Prepare-Exitcode 1**, not acceptance.
+Private evidence: `/opt/docker/nekoNew/neko-stability-f03bc4bcf68b-20261007T164845Z`.
+All **80 client tests, TypeScript and Vite build passed**. The normal Go suite
+passed its 16 selected package checks (15 test-bearing packages; `pkg/drop`
+compiled without tests). Race checks passed for utils, config, legacy HTTP,
+event WebSocket, its handler and WebRTC. The capture race invocation failed
+`TestMediaSubscriptionTimingGenerationAndFormatOrdering`: it received a new
+format instead of the required generation-2 discontinuity. The supplied output
+contains no `DATA RACE` report. Base/Brave preparation and the trailing server
+build were not reached; the validation marker remains PENDING. No activation
+command was issued. The final retained-container assertion was also not reached,
+so do not call this a fresh live-service verification.
 
-The operator's supplied read-only server check confirms a clean `testing`
-checkout at `8741f788`, also its local `origin/testing`, in
-`/opt/docker/nekoNew/neko`; `deploy/validate-media-stability.sh` is absent there.
-This is the old accepted source, not a failed preparation. Complete the Git
-transfer first; no old-source build or live activation is needed to remedy it.
+**Confirmed source defect and bounded repair:** the capture subscription marked
+its format published only after sending on its unbuffered event channel. A
+consumer can receive that format and immediately trigger a generation change
+before the sender records publication; the transition then drops the required
+discontinuity as if no format had been handed off. This source was unchanged
+by f03; the new gate exposed an older ordering defect, not a proven cause of
+VIDAA failure or the previous HLS incident. The repair commits the publication
+barrier while selecting the immutable in-flight format under the queue mutex,
+before handing it to the consumer. It does not hold the mutex across sending,
+change encoded payloads/clocks/queue limits, or alter encoder/capture topology.
+Formats that have not been selected remain coalescible. HLS already accepts the
+same-generation first-caps discontinuity while awaiting initial format.
+
+The new target-only fixtures deterministically force the handoff window and
+also retain pre-publication coalescing. The repair and scoped A/B helper are
+**STATICALLY REVIEWED; their target execution remains pending**. Do not deploy
+f03 or retry its failing gate unchanged. Preserve its evidence and the accepted
+exact-8741 images/configuration; prepare the reviewed repair with the mode below.
 
 | Item | Implemented behavior | New verification status |
 |---|---|---|
-| B1 / correctness | PLI exit on track/peer closure; missing IDs with deterministic nominal-rate ordering only when all rates are known; empty selection before creation; partial-peer teardown; pipeline shorthand; native URI/GFile/CString release | New configuration/handler fixtures; repeated admitted incoming tracks and native URI drops on target: NOT RUN |
-| B2 / common event plane | One FIFO writer per socket (including both bridge legs), 128 records/16 MiB including in-flight, 5 s write/terminal-flush bound; overflow closes offender; revocation before flush; canceled reader handoffs; bridge API/Dial 15 s, independent cleanup 5 s; streaming bodies retain request cancellation | FIFO/ownership/overflow/blocked-peer/cancellation fixtures authored; real slow event reader with two healthy peers, terminal/revoke/logout and transfers: NOT RUN |
-| B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Actual Vue class mount/binding and BaseClient timer fixtures authored; desktop/iPhone/VIDAA playback, short/expired outage, failed/revoked peer and one fresh-login owner: NOT RUN |
-| Independent B5 subset | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics | Target race/lifecycle checks: NOT RUN; full subscription/native-copy refactor remains conditional |
-| B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Caller inventory static; Vite/development-launcher/ICE/Safari/role target checks: NOT RUN; package maintenance separately open |
-| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Tools authored/reviewed only; no new results or automatic deployment |
+| B1 / correctness | PLI exit on track/peer closure; missing IDs with deterministic nominal-rate ordering only when all rates are known; empty selection before creation; partial-peer teardown; pipeline shorthand; native URI/GFile/CString release | Exact-f03 config/handler Go and race checks passed; server-validation image compiled native drop. Repeated real incoming tracks/native URI drops: NOT RUN |
+| B2 / common event plane | One FIFO writer per socket (including both bridge legs), 128 records/16 MiB including in-flight, 5 s write/terminal-flush bound; overflow closes offender; revocation before flush; canceled reader handoffs; bridge API/Dial 15 s, independent cleanup 5 s; streaming bodies retain request cancellation | Exact-f03 utils/legacy/event/handler Go and race checks passed. Real slow event reader with two healthy peers, terminal/revoke/logout and transfers: NOT RUN |
+| B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race checks passed. Desktop/iPhone/VIDAA playback/outage/revocation and fresh-login owner: NOT RUN |
+| Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture tests passed, capture race invocation FAILED on event order. Deterministic old/new and repaired 100-repeat race gate pending; full subscription/native-copy refactor remains conditional |
+| B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Exact-f03 client/type/Vite and relevant Go checks passed. Actual development launcher, ICE configurations/Safari/role browser matrix: NOT RUN; package maintenance separately open |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-f03 preparation reached its failure; no new live image, browser trace or resource comparison. Scoped ordering A/B prepared, not yet run |
 
 The numerical bounds above are safety/recovery limits, not measured performance
 improvements or a promised first-picture latency. JSON serialization remains
@@ -70,20 +94,27 @@ three server writers. Frame counters/time are browser progress proxies, not
 proof of visible video or audible audio. Large clipboard/file compatibility and
 native PiP Pause are explicit regression cases.
 
-**Operator step 1 — prepare, retain live exact-8741.** On the target, from a clean
-reviewed `testing` checkout containing this block (do not point an old pinned
-preparer at it):
+**Operator step 1 — prepare the ordering repair, retain live exact-8741.** On
+the target, first transfer the reviewed repair's exact Git identity with a
+fast-forward to clean `testing`. Use a new evidence directory:
 
 ```bash
 NEKO_STABILITY_COMMIT="$(git rev-parse HEAD)"
 NEKO_STABILITY_RESULTS="../neko-stability-${NEKO_STABILITY_COMMIT:0:12}-$(date -u +%Y%m%dT%H%M%SZ)"
-bash deploy/validate-media-stability.sh "$NEKO_STABILITY_RESULTS"
+bash deploy/validate-media-stability.sh "$NEKO_STABILITY_RESULTS" --capture-ordering-repair
 ```
 
-The helper requires a new private directory outside Git. It runs the existing
-isolated client tests/type/build, relevant Go/role/delivery tests plus race checks,
-server and Base/Brave builds; it records exact images and the still-running
-baseline. It does **not** restart, activate HLS or change proxy configuration.
+The scoped mode requires f03 as ancestor and refuses any delta beyond the
+provider, its tests, this helper and documentation. It inherits the supplied
+80 passing client tests/type/build only because client sources remain identical;
+it does not claim a fresh client gate. In an isolated container it must reproduce
+the exact missing-discontinuity assertion with the old provider, then pass all
+repaired subscription tests **100 times under `-race`**. It repeats the relevant
+Go/role/delivery suite and race packages, server and Base/Brave builds, and records
+exact images and the retained baseline. A source change outside the scope
+requires the default full mode (omit `--capture-ordering-repair`) and fresh client
+checks. The helper requires a new private directory outside Git. It does **not**
+restart, activate HLS or change proxy configuration.
 It builds from a private Git archive of the selected commit, rechecks the
 original checkout and retained live container/image, and clears inherited root
 build publishing/prebuilt-client/flavor/platform options. Builds use the target's
@@ -92,6 +123,13 @@ New native drag/drop sources compile with the server image. Unchanged codec/fuzz
 checks are deliberately not freshly claimed. Failure leaves the marker PENDING;
 stop there and preserve the output. No overall acceptance follows from a
 preparation PASS.
+
+The f03 `npm ci` summary reports 21 affected package entries (11 low, 3 moderate,
+6 high, 1 critical), versus 20 in the older exact-e55 report. No new audit JSON
+or advisory attribution was supplied; the extra high entry and its applicability
+remain open in [the existing dependency audit](DEPENDENCY_AUDIT_2026-10-04.md).
+This is separate from the captured Go assertion failure; no lockfile change or
+automatic dependency fix is part of the ordering repair.
 
 **Operator step 2 — controlled activation and regression.** Preserve private
 accepted image/config/overlay snapshots. Only after preparation succeeds, use

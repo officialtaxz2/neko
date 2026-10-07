@@ -13,6 +13,16 @@ tests, installation, bundle inspection, requests or exploitation. No packages
 or lockfile versions are changed by this review, so the audit count is expected
 to remain unchanged. Applicability is not a dependency-security clearance.
 
+Later supplied summary (2026-10-07, exact `f03bc4bc`): the target `npm ci`
+reported **21 affected package entries: 11 low, 3 moderate, 6 high, 1 critical**.
+No new audit JSON or package/advisory attribution was supplied. The extra high
+entry and current reachability therefore remain unclassified; the older
+20-entry inventory below is not an exact-f03 clearance. No dependencies were
+changed in the improvement block or its bounded capture-ordering repair.
+The client tests/type/build passed at f03; preparation later failed a Go capture
+event-order assertion, which is separate from this npm summary. Preserve that
+private evidence and keep reviewed dependency maintenance open.
+
 ## Package inventory
 
 | Package / locked version | Audit severity | Inspected use and disposition |

@@ -23,6 +23,15 @@ includes a preparation-only helper and a bounded private browser trace for the
 reported Hisense VIDAA/Odin event-correlated WebRTC failures; their cause remains
 open. Desktop, Smart-TV and iPhone support are required.
 
+The supplied exact-f03 server preparation **failed** on capture event ordering;
+all 80 client tests/type/build and the other selected Go/race checks passed.
+An older format-handoff defect is corrected with a deterministic old/new gate
+and repeated race checks prepared for the operator. This repair is statically
+reviewed, with target verification pending; **do not deploy the failed candidate**.
+The [current handoff](docs/WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07)
+inherits only the unchanged exact-f03 client evidence. Exact-8741 remains the
+last accepted live image. No local project execution took place in Codex.
+
 Latest HLS checkpoint (2026-10-07): the complete browser trace captures a freeze
 at about 24 seconds of media despite continued video delivery. Two source defects
 are repaired: rolling playlists now preserve segment discontinuity numbers;

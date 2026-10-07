@@ -463,6 +463,12 @@ func (subscription *captureMediaSubscription) run() {
 
 		event := subscription.pending[0]
 		subscription.pending = subscription.pending[1:]
+		if event.Type == types.MediaEventTypeFormat {
+			// This selected format is now immutable and in flight. A consumer
+			// can act immediately after receiving it, before run resumes;
+			// commit the transition barrier under the same dequeue mutex.
+			subscription.formatPublished = true
+		}
 		if event.Type == types.MediaEventTypeUnit {
 			subscription.pendingUnits--
 			mediaSubscriptionQueueDepth.WithLabelValues(subscription.backend, event.Source.ID, string(event.Source.Kind)).Observe(float64(subscription.pendingUnits))
@@ -473,11 +479,6 @@ func (subscription *captureMediaSubscription) run() {
 		case subscription.events <- event:
 		case <-subscription.abort:
 			return
-		}
-		if event.Type == types.MediaEventTypeFormat {
-			subscription.mu.Lock()
-			subscription.formatPublished = true
-			subscription.mu.Unlock()
 		}
 		if event.Type == types.MediaEventTypeUnit {
 			mediaSubscriptionDeliveredUnits.WithLabelValues(subscription.backend, event.Source.ID, string(event.Source.Kind)).Inc()

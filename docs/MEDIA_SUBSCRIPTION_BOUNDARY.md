@@ -327,7 +327,7 @@ Repository implementation record:
 
 - `server/pkg/types/media.go` defines Pion-free codecs, sources, encoded units, lifecycle events, selectors, bounded source-subscription contracts, backend descriptors, delivery requests and credential-free leases.
 - `server/pkg/gst/` exports buffer PTS/DTS validity, duration and caps-derived resolution/frame rate while retaining the existing encoded sample data path.
-- `server/internal/capture/media.go` adapts ordered audio/video stream sinks into demand-driven subscriptions, assigns pipeline generation/sequence, enforces provider-side keyframe admission and publishes explicit format/discontinuity/end events.
+- `server/internal/capture/media.go` adapts ordered audio/video stream sinks into demand-driven subscriptions, assigns pipeline generation/sequence, enforces provider-side keyframe admission and publishes explicit format/discontinuity/end events. Selecting an immutable format for channel handoff commits the publication barrier under the dequeue mutex; subsequent transitions must follow it with discontinuity/format even before the consumer receives it. Only unselected bootstrap formats may be coalesced.
 - Subscription dispatch uses a manager-owned bounded encoded-unit queue. Consumer slowness never waits in capture fan-out; `drop_newest` remains the WebRTC policy, and lifecycle transitions replace stale queued units rather than being silently dropped.
 - `server/internal/media/manager.go` validates the current session and `CanWatch`, intersects requested receive media with registered backend capabilities, issues an opaque backend/session lease, keeps one primary delivery, revokes on profile/session lifecycle and closes deliveries before capture shutdown.
 - `server/internal/session/` owns generic media attachment/watching state and private-mode pause; WebRTC-named accessors remain compatibility shims for existing signaling handlers.
@@ -336,6 +336,18 @@ Repository implementation record:
 - Focused tests cover the required selector, demand, keyframe, switch/pause/resume/close, timing/generation/format/discontinuity, overflow/isolation, two-unit WebRTC queue, authorization, replacement, revocation and shutdown cases.
 
 Static status: **implementation and diff review complete in Codex; project code, tests, builds, containers and runtime checks NOT EXECUTED IN CODEX**.
+
+The supplied 2026-10-07 exact-f03 target preparation exposed an older format
+handoff ordering defect in the capture race invocation (format instead of the
+generation-2 discontinuity), without a `DATA RACE` report. Publication had been
+marked after the unbuffered send, letting immediate consumer actions precede
+that barrier. The corrected selection-time barrier and deterministic handoff/
+pre-selection-coalescing fixtures are statically reviewed, with old/new and
+100-repeat race target gates pending. No source-payload ownership, timestamp,
+queue capacity, provider topology or backend contract is redesigned. This does
+not explain the reported VIDAA/HLS incidents without correlated live evidence.
+See [the current exact-commit handoff](WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07);
+older passes below apply only to their named source states.
 
 Target-server evidence through `a32027d`: the complete expanded Go package set and trailing server/plugin build passed; local base/Brave images built; the adaptive service started healthy; a current-protocol media lifecycle probe passed; and `neko_media_*` showed consistent delivery/subscription lifecycle, capacity-two queues, delivery traffic and discontinuities without credential labels. A candidate/rollback A/B reproduced the same immediate startup `high -> medium` transition on both images, excluding the media-subscription refactor as its introduction.
 

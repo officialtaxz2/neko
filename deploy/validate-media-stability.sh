@@ -3,7 +3,9 @@
 # Target server only. Prepare one exact reviewed commit; never deploy/restart it.
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-[[ $# -eq 1 ]] || { printf 'Usage: bash deploy/validate-media-stability.sh NEW_OUTPUT_DIR\n' >&2; exit 2; }
+[[ $# -eq 1 || ( $# -eq 2 && "${2:-}" == --capture-ordering-repair ) ]] || {
+  printf 'Usage: bash deploy/validate-media-stability.sh NEW_OUTPUT_DIR [--capture-ordering-repair]\n' >&2; exit 2;
+}
 [[ "$(git branch --show-current)" == testing && -z "$(git status --porcelain=v1)" ]] || {
   printf 'A clean, reviewed testing commit is required.\n' >&2; exit 1;
 }
@@ -12,6 +14,21 @@ export NEKO_VALIDATION_COMMIT="$(git rev-parse HEAD)"
 readonly selected_commit="$NEKO_VALIDATION_COMMIT"
 readonly image_tag="hls-${NEKO_VALIDATION_COMMIT:0:12}"
 readonly repository="$(pwd -P)"
+readonly ordering_mode="${2:-}"
+readonly ordering_base=f03bc4bcf68be81a76e65f9195580daad76df7b2
+if [[ -n "$ordering_mode" ]]; then
+  # The operator supplied 80 passing client tests/type/build at this exact base.
+  # Reuse them only for the bounded provider/test/helper/docs repair scope.
+  git merge-base --is-ancestor "$ordering_base" "$selected_commit"
+  ordering_paths="$(git diff --no-renames --name-only "$ordering_base" "$selected_commit")"
+  while IFS= read -r changed_path; do
+    case "$changed_path" in
+      '') ;;
+      server/internal/capture/media.go|server/internal/capture/media_test.go|deploy/validate-media-stability.sh|AGENTS.md|README.md|docs/*) ;;
+      *) printf 'Ordering-only gate cannot inherit client evidence after changing %s.\n' "$changed_path" >&2; exit 1 ;;
+    esac
+  done <<<"$ordering_paths"
+fi
 assert_source() {
   [[ "$(git -C "$repository" rev-parse HEAD)" == "$selected_commit" &&
      "$(git -C "$repository" branch --show-current)" == testing &&
@@ -25,6 +42,10 @@ umask 077
 printf 'PENDING\n' >"$output/validation-commit.txt"
 exec > >(tee "$output/validation.log") 2>&1
 printf 'validation_commit=%s\nimage_tag=%s\n' "$NEKO_VALIDATION_COMMIT" "$image_tag"
+if [[ -n "$ordering_mode" ]]; then
+  git show "$ordering_base:server/internal/capture/media.go" >"$output/ordering-baseline.go"
+  printf 'client_evidence=inherited exact-f03; 80 tests/type/build; unchanged client source\n'
+fi
 readonly live_container="$(docker compose -f docker-compose.yaml ps -q neko)"
 [[ "$live_container" =~ ^[0-9a-f]{12,64}$ ]] || { printf 'Exactly one retained live Neko container is required.\n' >&2; exit 1; }
 readonly live_image="$(docker inspect --format '{{.Image}}' "$live_container")"
@@ -39,8 +60,31 @@ git archive "$selected_commit" | tar -x -C "$output/source"
 (
   cd -- "$output/source"
   unset COMPOSE_FILE COMPOSE_PROJECT_NAME COMPOSE_PROFILES
-  docker compose -f docker-compose.validation.yaml run --rm -T client-checks </dev/null
+  if [[ -z "$ordering_mode" ]]; then
+    docker compose -f docker-compose.validation.yaml run --rm -T client-checks </dev/null
+  fi
   docker compose -f docker-compose.validation.yaml build server-checks </dev/null
+  if [[ -n "$ordering_mode" ]]; then
+    docker compose -f docker-compose.validation.yaml run --rm -T \
+      -v "$output/ordering-baseline.go:/baseline-media.go:ro" server-checks sh -ec '
+      cp internal/capture/media.go /tmp/repaired-media.go
+      cp /baseline-media.go internal/capture/media.go
+      old_status=0
+      go test ./internal/capture -run "^TestMediaSubscriptionGenerationTransitionAfterFormatHandoff$" -count=1 \
+        >/tmp/old-ordering.txt 2>&1 || old_status=$?
+      if [ "$old_status" -ne 1 ] ||
+         ! grep -Fq -- "--- FAIL: TestMediaSubscriptionGenerationTransitionAfterFormatHandoff" /tmp/old-ordering.txt ||
+         ! grep -Fq "want generation 2 source_restart discontinuity" /tmp/old-ordering.txt; then
+        cat /tmp/old-ordering.txt
+        printf "Expected old format-handoff ordering failure was not reproduced.\n" >&2
+        exit 1
+      fi
+      printf "PASS old provider: selected format loses its generation discontinuity\n"
+      cp /tmp/repaired-media.go internal/capture/media.go
+      go test -race ./internal/capture -run "^TestMediaSubscription" -count=100
+      printf "PASS repaired subscription ordering/lifecycle: 100 repetitions under race\n"
+    ' </dev/null
+  fi
   # Shared-plane lifecycle changed. Recheck authorization/delivery packages too,
   # but do not repeat unchanged codec/fuzz fixtures or claim their fresh acceptance.
   docker compose -f docker-compose.validation.yaml run --rm -T server-checks sh -ec '
@@ -66,4 +110,7 @@ assert_source
 }
 bash deploy/collect-hls-media.sh snapshot "$output" preparation-live-retained
 printf '%s\n' "$NEKO_VALIDATION_COMMIT" >"$output/validation-commit.txt"
+if [[ -n "$ordering_mode" ]]; then
+  printf 'ORDERING GATE PASSED: old defect reproduced; repaired subscriptions passed 100 race repetitions; backend/race/server/Base/Brave checks passed; client evidence inherited from exact-f03.\n'
+fi
 printf 'PREPARATION PASSED; live service retained; device/comparison acceptance pending. Evidence: %s\n' "$output"

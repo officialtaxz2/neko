@@ -9,6 +9,27 @@ The target remains the accepted exact-8741 image until the operator prepares
 and validates a new exact commit. Historical passes below do not validate these
 new common-event/WebRTC changes.
 
+**Supplied exact-f03 preparation:** Prepare-Exitcode 1, private evidence
+`/opt/docker/nekoNew/neko-stability-f03bc4bcf68b-20261007T164845Z`. All 80 client
+tests/type/build and the selected normal Go suite passed; race checks passed
+for utils/config/legacy/event/handler/WebRTC. The capture race invocation failed
+an event-order assertion, not a supplied data-race diagnostic. Base/Brave builds
+and the final retained-live check were not reached; no activation was issued.
+The candidate is not deployable on that evidence.
+
+Static inspection confirms an older publication-window defect in the unchanged
+capture provider: a received initial format was not yet marked handed off when
+a consumer triggered the next generation, allowing its discontinuity to be
+coalesced away. The narrow repair marks the selected immutable format under the
+dequeue mutex before sending. It preserves unselected-format coalescing and
+changes no payload, media clocks, encoder topology or queue limits. HLS already
+handles the cold same-generation first-caps transition. Deterministic fixtures
+cover both publication boundaries; the scoped target gate requires the old
+failure and 100 repaired subscription repetitions under race, then repeats
+backend/race/server/images. Its results are pending; unchanged client evidence
+alone is inherited from f03. This is no demonstrated cause of VIDAA failure or
+of the earlier HLS freeze, and no performance advantage is claimed.
+
 - **F1 / B2:** a bounded FIFO writer now owns each normal event socket, including
   both legacy bridge legs; 128 records/16 MiB including in-flight writes, 5 s
   operation/terminal-flush ceilings. Overflow closes its connection; no room or
@@ -47,7 +68,8 @@ New target-only regressions cover real Vue class binding/lifecycle, actual
 BaseClient timers and stale peers, seek/Pause/autoplay/progress, writer FIFO,
 buffer ownership/overflow/blocked-peer isolation, legacy cancellation and
 configuration/partial-peer cleanup. See [the exact target handoff](WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07).
-Runtime outcomes and performance improvement are **unmeasured**.
+New live/device outcomes and performance improvement are **unmeasured**; supplied
+f03 automated results and their capture failure are recorded above.
 
 Required devices are desktop, Smart-TV and iPhone. The user specifically reports
 Hisense **VIDAA / Odin** WebRTC abort/blackscreen during control request/release,
