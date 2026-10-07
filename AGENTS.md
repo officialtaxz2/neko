@@ -12,12 +12,16 @@ Images `my-neko/base:hls-8d8126c92903` and `my-neko/brave:hls-8d8126c92903`
 were built; the retained-live assertion and private snapshot passed. Subsequent
 baseline activation PASSED with Baseline-Exitcode 0: healthy exact-8d Brave image,
 private baseline snapshot and 2/2 disabled bootstrap/media 404 probes. HLS is
-disabled; adaptive/WebCodecs overlays are retained. Browser/device/resource
-acceptance is not supplied. Keep the target
+disabled; adaptive/WebCodecs overlays are retained. The operator subsequently
+reports general PC operation works. This is bounded desktop evidence; no exact
+event/outage/Pause matrix, duration or separate per-action result is supplied.
+The affected Hisense VIDAA/Odin TV is currently unavailable (belongs to a friend),
+so TV causality/acceptance is deferred, not failed or passed. Keep the target
 checkout pinned at exact-8d; no documentation pull, rebuild or preparation repeat
-is needed. Do not repeat baseline activation or the passed HTTP probes. NEXT is
-the operator's desktop WebRTC picture/audio/input/chat confirmation before
-same-image conventional-HLS enablement. Preserve accepted exact-8741 images/
+is needed. Do not repeat baseline activation or its passed HTTP probes. NEXT is
+same-image conventional-HLS enablement and its 17 public/2 cleartext denial
+probes, followed by bounded PC HLS A/V alongside WebRTC. Enablement and new HLS
+playback are not yet supplied. Preserve accepted exact-8741 images/
 configuration/evidence. These are supplied target results, NOT EXECUTED IN CODEX.
 VIDAA causality, grouped acceptance, comparative costs and B5/B7/B8 decisions
 remain open; do not remove paths or promote master.

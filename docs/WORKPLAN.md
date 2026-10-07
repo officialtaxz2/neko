@@ -96,14 +96,21 @@ blob `c6f52dc80fdf605ec908f3fe3856ce23e015e494`; healthy
 `my-neko/brave:hls-8d8126c92903`, private baseline snapshot in the same successful
 directory, and 2/2 disabled bootstrap/media 404 probes. HLS is omitted;
 adaptive/WebCodecs overlays are retained. This verifies deployment/HTTP route
-state, not moving WebRTC picture/audio or room-action stability.
+state, not moving WebRTC picture/audio or room-action stability. The operator
+then reports general PC operation works. This supports the bounded desktop
+baseline, without a timed interval or individual action/outage/Pause results.
+The reported problematic Hisense VIDAA/Odin TV belongs to a friend and is not
+available now; record its focused gate as DEFERRED/UNVERIFIED, not pass or failure.
 
-**NEXT:** keep the target pinned at exact-8d. Ask for the desktop WebRTC
-picture/audio/input/chat confirmation before conventional-HLS enablement on that
-same image. No documentation pull, rebuild, preparation, activation or HTTP-probe
-repeat is needed now. VIDAA causality, new browser/device/event/security grouped
-acceptance and comparative costs remain open. No HLS-enabled candidate or
-performance/device claim is inferred from the healthy baseline.
+**NEXT:** keep the target pinned at exact-8d and enable conventional HLS on that
+same prepared image using the existing successful evidence directory. Run the
+existing 17 public and 2 direct-cleartext denial probes, then check PC HLS moving
+picture/audio for ten minutes alongside WebRTC, noting any Retry/reload/freeze
+and room-action correlation. No pull, rebuild, preparation or HLS-off baseline
+repeat is needed. Enablement/new HLS playback are not yet supplied. TV evidence
+waits for device access; continue independent PC/iPhone/grouped checks. VIDAA
+causality, the full device/event/security matrix and comparative costs remain
+open; general PC operation is not a full stability or performance claim.
 
 | Item | Implemented behavior | New verification status |
 |---|---|---|
@@ -173,13 +180,19 @@ bash deploy/deploy-hls-media.sh baseline "$NEKO_STABILITY_RESULTS"
 docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks disabled </dev/null
 ```
 
-This baseline retains adaptive/WebCodecs overlays and omits HLS. First require
-the operator's normal login, moving WebRTC A/V, input and deliberate Pause/Play
-confirmation. Only after that checkpoint succeeds, enable conventional HLS for
-the mixed-viewer phases in a separate operator step:
+This baseline retains adaptive/WebCodecs overlays and omits HLS. General PC
+operation is now operator-confirmed within the evidence limits above. Full
+Pause/Play and event/outage device checks remain in grouped acceptance. The
+next separate operator step enables conventional HLS for the mixed-viewer phases;
+it is prepared but not executed yet:
 
 ```bash
-bash deploy/deploy-hls-media.sh enable "$NEKO_STABILITY_RESULTS"
+test "$(git rev-parse HEAD)" = "8d8126c92903dab58056fa316b626b38dcffb376"
+NEKO_STABILITY_RESULTS=/opt/docker/nekoNew/neko-stability-8d8126c92903-20261007T171646Z
+NEKO_MEDIA_HLS_MODES=hls bash deploy/deploy-hls-media.sh enable "$NEKO_STABILITY_RESULTS"
+docker compose -f docker-compose.validation.yaml run --rm -T hls-http-checks enabled </dev/null
+docker compose -f docker-compose.validation.yaml run --rm -T \
+  -e NEKO_PUBLIC_BASE_URL=http://127.0.0.1:8082 hls-http-checks insecure-denied </dev/null
 ```
 
 These commands are operator actions, not already performed or a directive to

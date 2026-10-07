@@ -5,8 +5,8 @@
 The operator subsequently authorized the comparative plan. Independent B1–B3
 and B6 source corrections and B4/B9 handoff assets are implemented and statically
 reviewed. **Tests, builds and device/runtime checks: NOT EXECUTED IN CODEX.**
-The target remains the accepted exact-8741 image until the operator prepares
-and validates a new exact commit. Historical passes below do not validate these
+The target is now the healthy exact-8d HLS-off candidate; preserve the earlier
+accepted exact-8741 HLS image/evidence. Historical passes below do not validate these
 new common-event/WebRTC changes.
 
 **Supplied exact-f03 preparation:** Prepare-Exitcode 1, private evidence
@@ -34,10 +34,13 @@ are not separately visible. Unchanged client evidence alone is inherited from
 f03. Evidence: `/opt/docker/nekoNew/neko-stability-8d8126c92903-20261007T171646Z`.
 Subsequent exact-8d HLS-off activation passed with Baseline-Exitcode 0: healthy
 `my-neko/brave:hls-8d8126c92903`, private baseline snapshot and 2/2 disabled
-bootstrap/media 404 probes. New browser/device and comparison measurements are
-not supplied. NEXT is desktop WebRTC picture/audio/input/chat confirmation,
-then separately same-image conventional HLS. No pull/rebuild/preparation,
-activation or HTTP-probe repeat is required at this checkpoint.
+bootstrap/media 404 probes. The operator reports general PC operation works;
+duration and individual action/outage/Pause results are not supplied. Hisense
+VIDAA/Odin is unavailable because the TV belongs to a friend. Its device and
+event-cause gate remains deferred/unverified; general PC success does not close
+it. NEXT is same-image conventional-HLS enablement/19 denial probes and a bounded
+PC HLS A/V interval alongside WebRTC. No pull/rebuild/preparation or HLS-off
+baseline repeat is required. New HLS/device/resource acceptance remains open.
 This is no demonstrated cause of VIDAA failure or
 of the earlier HLS freeze, and no performance advantage is claimed.
 

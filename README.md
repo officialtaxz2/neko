@@ -31,8 +31,10 @@ baseline activation **passed with Baseline-Exitcode 0**: healthy exact-8d image,
 private snapshot and 2/2 disabled-HLS HTTP probes. The live service is exact-8d
 with HLS off; preserve the previously accepted exact-8741 image/evidence. The
 [next handoff](docs/WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07)
-is desktop WebRTC picture/audio/input/chat confirmation before HLS enablement.
-New browser/device/resource acceptance is not supplied. Keep the target
+is same-image HLS enablement/denial probes and parallel PC HLS/WebRTC playback.
+The operator reports general PC operation works; the affected VIDAA/Odin TV is
+unavailable, so its device/event gate remains unverified. New HLS/resource and
+full grouped device acceptance remain open. Keep the target
 at its prepared exact-8d commit; no pull, rebuild or repeated preparation is
 needed. No local project execution took place in Codex.
 
