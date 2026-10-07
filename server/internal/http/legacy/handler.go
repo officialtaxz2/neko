@@ -11,6 +11,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/m1k1o/neko/server/internal/api"
@@ -45,6 +46,7 @@ var (
 )
 
 type LegacyHandler struct {
+	mu         sync.RWMutex
 	logger     zerolog.Logger
 	serverAddr string
 	pathPrefix string
@@ -64,7 +66,7 @@ func New(serverAddr, pathPrefix string) *LegacyHandler {
 		sessionIPs: make(map[string]string),
 		wsDialer: &websocket.Dialer{
 			Proxy:            nil, // disable proxy for local requests
-			HandshakeTimeout: 45 * time.Second,
+			HandshakeTimeout: 15 * time.Second,
 		},
 	}
 }
@@ -72,6 +74,7 @@ func New(serverAddr, pathPrefix string) *LegacyHandler {
 func (h *LegacyHandler) Route(r types.Router) {
 	r.Get("/ws", func(w http.ResponseWriter, r *http.Request) error {
 		s := h.newSession(r)
+		defer s.cancel()
 		viewOnlyToken, selectedSubprotocol, err := viewOnlyTokenFromRequest(r)
 		if err != nil {
 			return utils.HttpBadRequest("invalid view-only websocket subprotocol").WithInternalErr(err)
@@ -89,8 +92,12 @@ func (h *LegacyHandler) Route(r types.Router) {
 				WithInternalErr(err).
 				Msg("couldn't upgrade connection to websocket")
 		}
-		defer connClient.Close()
 		s.connClient = connClient
+		s.clientWriter = utils.NewWebSocketWriter(connClient)
+		defer func() {
+			s.clientWriter.CloseGracefully()
+			<-s.clientWriter.Done()
+		}()
 
 		if h.isBanned(r) {
 			s.toClient(&oldMessage.SystemMessage{
@@ -98,6 +105,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 				Title:   "banned ip",
 				Message: "you are banned",
 			})
+			return nil
 		}
 
 		// create a new session
@@ -122,7 +130,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		defer s.destroy()
 
 		// dial to the remote backend
-		connBackend, _, err := h.wsDialer.Dial("ws://"+h.serverAddr+path.Join(s.pathPrefix, "/api/ws")+"?token="+url.QueryEscape(s.token), nil)
+		connBackend, _, err := h.wsDialer.DialContext(s.ctx, "ws://"+h.serverAddr+path.Join(s.pathPrefix, "/api/ws")+"?token="+url.QueryEscape(s.token), nil)
 		if err != nil {
 			h.logger.Error().Err(err).Msg("couldn't dial to the remote backend")
 
@@ -137,6 +145,8 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 		defer connBackend.Close()
 		s.connBackend = connBackend
+		s.backendWriter = utils.NewWebSocketWriter(connBackend)
+		defer s.backendWriter.Close()
 
 		// Explicit receive-only media keeps this authenticated event
 		// socket but must not start the normal WebRTC signaling path. With no
@@ -163,18 +173,20 @@ func (h *LegacyHandler) Route(r types.Router) {
 		// copy messages between the client and the backend
 		errClient := make(chan error, 1)
 		errBackend := make(chan error, 1)
-		replicateWebsocketConn := func(dst, src *websocket.Conn, errc chan error, rewriteTextMessage func([]byte) error) {
+		var bridgeWorkers sync.WaitGroup
+		defer func() {
+			s.cancel()
+			s.backendWriter.Close()
+			s.clientWriter.CloseGracefully()
+			<-s.clientWriter.Done()
+			bridgeWorkers.Wait()
+		}()
+		replicateWebsocketConn := func(dst *utils.WebSocketWriter, src *websocket.Conn, errc chan error, rewriteTextMessage func([]byte) error) {
+			defer bridgeWorkers.Done()
 			for {
 				msgType, msg, err := src.ReadMessage()
 				if err != nil {
-					m := websocket.FormatCloseMessage(websocket.CloseNormalClosure, fmt.Sprintf("%v", err))
-					if e, ok := err.(*websocket.CloseError); ok {
-						if e.Code != websocket.CloseNoStatusReceived {
-							m = websocket.FormatCloseMessage(e.Code, e.Text)
-						}
-					}
 					errc <- fmt.Errorf("src read message error: %w", err)
-					dst.WriteMessage(websocket.CloseMessage, m)
 					break
 				}
 
@@ -209,7 +221,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 				// forward ping pong messages
 				if msgType == websocket.PingMessage ||
 					msgType == websocket.PongMessage {
-					err = dst.WriteMessage(msgType, msg)
+					err = dst.Send(msgType, msg)
 					if err != nil {
 						errc <- err
 						break
@@ -220,10 +232,11 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		// backend -> client
-		go replicateWebsocketConn(connClient, connBackend, errClient, s.wsToClient)
+		bridgeWorkers.Add(2)
+		go replicateWebsocketConn(s.clientWriter, connBackend, errClient, s.wsToClient)
 
 		// client -> backend
-		go replicateWebsocketConn(connBackend, connClient, errBackend, s.wsToBackend)
+		go replicateWebsocketConn(s.backendWriter, connClient, errBackend, s.wsToBackend)
 
 		var message string
 		select {
@@ -246,6 +259,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -323,6 +337,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -344,6 +359,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		if err != nil {
 			return utils.HttpInternalServerError().WithInternalErr(err)
 		}
+		defer body.Close()
 
 		// copy headers
 		w.Header().Set("Content-Length", headers.Get("Content-Length"))
@@ -361,6 +377,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -377,6 +394,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		if err != nil {
 			return utils.HttpInternalServerError().WithInternalErr(err)
 		}
+		defer body.Close()
 
 		// copy headers
 		w.Header().Set("Content-Length", headers.Get("Content-Length"))
@@ -393,6 +411,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -407,6 +426,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		if err != nil {
 			return utils.HttpInternalServerError().WithInternalErr(err)
 		}
+		defer body.Close()
 
 		// copy the body to the response writer
 		_, err = io.Copy(w, body)
@@ -419,6 +439,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -435,6 +456,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		if err != nil {
 			return utils.HttpInternalServerError().WithInternalErr(err)
 		}
+		defer body.Close()
 
 		// copy the body to the response writer
 		_, err = io.Copy(w, body)
@@ -467,6 +489,8 @@ func viewOnlyTokenFromRequest(r *http.Request) (token, selectedSubprotocol strin
 }
 
 func (h *LegacyHandler) ban(sessionId string) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	// find session by id
 	ip, ok := h.sessionIPs[sessionId]
 	if !ok {
@@ -478,6 +502,8 @@ func (h *LegacyHandler) ban(sessionId string) error {
 }
 
 func (h *LegacyHandler) isBanned(r *http.Request) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	ip := getIp(r)
 	_, ok := h.bannedIPs[ip]
 	return ok

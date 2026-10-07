@@ -70,7 +70,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   get peerConnected() {
-    return typeof this._peer !== 'undefined' && ['connected', 'checking', 'completed'].includes(this._state)
+    return typeof this._peer !== 'undefined' && ['connected', 'completed'].includes(this._state)
   }
 
   get connected() {
@@ -101,8 +101,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   }
 
   private connectSocket(url: string, displayname: string, protocols?: string[]) {
-    if (this.socketOpen) {
-      this.emit('warn', `attempting to create websocket while connection open`)
+    if (this._ws) {
+      this.emit('warn', `attempting to create websocket while a socket already exists`)
       return
     }
 
@@ -139,21 +139,10 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       socket.onclose = () => {
         if (this._ws === socket) this.onDisconnected(new Error('websocket closed'))
       }
-      let timeoutMs = 15000
-      try {
-        if (
-          typeof window !== 'undefined' &&
-          window.location &&
-          (window.location.hostname.includes('ais-dev-') ||
-            window.location.hostname.includes('ais-pre-') ||
-            window.location.hostname.includes('localhost') ||
-            window.location.hostname.includes('127.0.0.1') ||
-            window.location.hostname.includes('0.0.0.0'))
-        ) {
-          timeoutMs = 4000
-        }
-      } catch (err) {}
-      this._timeout = window.setTimeout(this.onTimeout.bind(this), timeoutMs)
+      // One connection-stage deadline on every host; checking is not success.
+      this._timeout = window.setTimeout(() => {
+        if (this._ws === socket) this.onTimeout()
+      }, 15000)
     } catch (err: any) {
       this.onDisconnected(err)
     }
@@ -401,8 +390,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       return
     }
 
-    if (this.peerConnected) {
-      this.emit('warn', `attempting to create peer while connected`)
+    if (this._peer) {
+      this.emit('warn', `attempting to create peer while a peer already exists`)
       return
     }
 
@@ -410,12 +399,9 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
       try {
         const cleanServers = (servers || []).filter((s) => s && s.urls)
         
-        // Append Google's public STUN servers as a fallback so that ICE candidate
-        // NAT traversal succeeds on production servers even if NEKO_ICESERVERS is empty/misconfigured
-        const hasStun = cleanServers.some((s) =>
-          (Array.isArray(s.urls) ? s.urls : [s.urls]).some((u) => u.startsWith('stun:'))
-        )
-        if (!hasStun) {
+        // Preserve an explicit TURN/STUN/STUNS policy. Only an empty server
+        // list retains the existing public-STUN fallback.
+        if (cleanServers.length === 0) {
           cleanServers.push({
             urls: [
               'stun:stun.l.google.com:19302',
@@ -431,8 +417,9 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
           iceServers: cleanServers,
         })
       } catch (err) {
-        this.emit('warn', `failed to create peer connection with iceServers, falling back to clean connection`, err)
-        this._peer = new RTCPeerConnection()
+        // Silently discarding configured ICE servers can bypass an operator's
+        // network policy and cannot repair an invalid configuration.
+        throw err
       }
     } else {
       this._peer = new RTCPeerConnection()
@@ -466,18 +453,14 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
 
       this.emit('debug', `peer ice connection state changed: ${peer.iceConnectionState}`)
 
-      // Clear any pending ICE recovery timer when state changes
-      if (this._iceRecoveryTimeout) {
+      // Keep the original recovery deadline through disconnected -> checking.
+      if (this._iceRecoveryTimeout && ['connected', 'completed', 'failed', 'closed'].includes(this._state)) {
         clearTimeout(this._iceRecoveryTimeout)
         this._iceRecoveryTimeout = undefined
       }
 
       switch (this._state) {
         case 'checking':
-          if (this._timeout) {
-            clearTimeout(this._timeout)
-            this._timeout = undefined
-          }
           break
         case 'connected':
         case 'completed':
@@ -485,15 +468,15 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
           break
         case 'disconnected':
           this[EVENT.RECONNECTING]()
-          // Start a recovery timer. On stable networks the ICE layer will
-          // self-recover, but on weak/TV browsers (Hisense VIDAA Odin) it
-          // may stay in 'disconnected' indefinitely → blackscreen.
+          if (this._iceRecoveryTimeout) break
+          // The server uses the same eight-second transient grace. Rechecking
+          // does not extend it; no device-specific cause is assumed here.
           this._iceRecoveryTimeout = window.setTimeout(() => {
-            this._iceRecoveryTimeout = undefined
             if (!isCurrentPeer()) return
+            this._iceRecoveryTimeout = undefined
             const currentState = peer.iceConnectionState
             this.emit('warn', `ICE recovery timeout — current state: ${currentState}`)
-            if (currentState === 'disconnected' || currentState === 'failed') {
+            if (currentState !== 'connected' && currentState !== 'completed') {
               this.onDisconnected(new Error(`peer ICE recovery timeout (state: ${currentState})`))
             }
           }, 8000)

@@ -36,6 +36,7 @@ type StreamSinkManagerCtx struct {
 	generation atomic.Uint64
 	sequence   atomic.Uint64
 	brBuckets  map[int]float64
+	bitrateMu  sync.Mutex
 
 	logger zerolog.Logger
 	mu     sync.Mutex
@@ -384,6 +385,8 @@ func (manager *StreamSinkManagerCtx) CreatePipeline() error {
 }
 
 func (manager *StreamSinkManagerCtx) saveSampleBitrate(timestamp time.Time, sampleBytes float64) {
+	manager.bitrateMu.Lock()
+	defer manager.bitrateMu.Unlock()
 	// get unix timestamp in seconds
 	sec := timestamp.Unix()
 	// last bucket is timestamp rounded to 3 seconds - 1 second
@@ -452,6 +455,8 @@ func (manager *StreamSinkManagerCtx) DestroyPipeline() {
 
 	manager.pipelinesActive.Set(0)
 
+	manager.bitrateMu.Lock()
+	defer manager.bitrateMu.Unlock()
 	manager.brBuckets = make(map[int]float64)
 	manager.bitrate.Store(0)
 	manager.currentBitrate.Set(0)

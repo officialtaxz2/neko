@@ -1,6 +1,320 @@
 # Work Plan / Handoff State
 
-Last consolidated: 2026-09-23.
+Current assessment and NEXT consolidated: 2026-10-07.
+
+## NEXT
+
+**Implementation authorized on 2026-10-07:** the operator requested the complete
+recommended plan after the comparative review. B1–B3 and the evidence-independent
+part of B6 are IMPLEMENTED/STATICALLY REVIEWED; B4/B9 tools/procedures are ready,
+but target checks/builds/runtime remain **NOT EXECUTED IN CODEX**. The operator
+will execute them. B0 required devices are desktop, Smart-TV and iPhone; small
+passive delay is acceptable without an agreed number. VIDAA/Odin on Hisense is
+the reported affected WebRTC platform. Recurring per-backend use, precise device
+versions and comparative resource/latency evidence remain open. B5/B7/B8
+retain their measurement/usage conditions: no unmeasured topology change or
+optional-path removal is implied. No promotion to `master` is authorized.
+This section supersedes the older HLS handoff and historical product
+sequence below as an instruction for future work; those records remain evidence.
+Read [the comparative review](STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07)
+and [the upstream triage](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--2026-10-07).
+
+### Current baseline and recommendation
+
+- Initial clean `testing` HEAD: `a91d9388d75f3d042f212398a1dcff1af198992d`;
+  last accepted application/live target: `8741f7880d9a709e6dc17924d2af0564a949ccd9`.
+  `master` stays `d9105ef8`; no merge/fetch/ref update was performed in this audit.
+- Supplied healthy `my-neko/brave:hls-8741f7880d9a` activation and at least five
+  minutes of moving PC/Helium conventional-HLS A/V without Retry/reload while
+  WebRTC continued working close that bounded coexistence gate. They do not
+  close cold-start, scripted event, native/TV/LL-HLS, resource or full Phase 4
+  acceptance. Preserve old images and private exact-8741 evidence.
+- Keep WebRTC as the interactive/default core and improve it. Retain conventional
+  HLS as explicitly selected passive compatibility work. Freeze additional
+  WebCodecs features pending a real device/network niche and comparative gates;
+  keep its current implementation/manual selection. Keep LL-HLS unadvertised
+  in the conventional-only deployment pending a latency need. Both optional
+  server features remain default-off when their overlays are omitted.
+- The old exact-8741 checkpoint requires no repeated five-minute/old-image trace
+  or unchanged codec/fuzz gate. Newly changed common-event/WebRTC source needs
+  the focused preparation and device/event checks below. No test, build,
+  deployment or network/device runtime check is executed in Codex.
+
+### Implemented block and target handoff — 2026-10-07
+
+Source status: B1–B3 and independent B6 complete, statically reviewed; no new
+target result. Package this block as one reviewed `testing` commit and transfer
+that exact Git identity before using the clean-checkout helper. The helper
+records the selected HEAD rather than a hardcoded self-referential commit hash.
+No new live image or target acceptance is claimed here.
+
+The operator's supplied read-only server check confirms a clean `testing`
+checkout at `8741f788`, also its local `origin/testing`, in
+`/opt/docker/nekoNew/neko`; `deploy/validate-media-stability.sh` is absent there.
+This is the old accepted source, not a failed preparation. Complete the Git
+transfer first; no old-source build or live activation is needed to remedy it.
+
+| Item | Implemented behavior | New verification status |
+|---|---|---|
+| B1 / correctness | PLI exit on track/peer closure; missing IDs with deterministic nominal-rate ordering only when all rates are known; empty selection before creation; partial-peer teardown; pipeline shorthand; native URI/GFile/CString release | New configuration/handler fixtures; repeated admitted incoming tracks and native URI drops on target: NOT RUN |
+| B2 / common event plane | One FIFO writer per socket (including both bridge legs), 128 records/16 MiB including in-flight, 5 s write/terminal-flush bound; overflow closes offender; revocation before flush; canceled reader handoffs; bridge API/Dial 15 s, independent cleanup 5 s; streaming bodies retain request cancellation | FIFO/ownership/overflow/blocked-peer/cancellation fixtures authored; real slow event reader with two healthy peers, terminal/revoke/logout and transfers: NOT RUN |
+| B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Actual Vue class mount/binding and BaseClient timer fixtures authored; desktop/iPhone/VIDAA playback, short/expired outage, failed/revoked peer and one fresh-login owner: NOT RUN |
+| Independent B5 subset | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics | Target race/lifecycle checks: NOT RUN; full subscription/native-copy refactor remains conditional |
+| B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Caller inventory static; Vite/development-launcher/ICE/Safari/role target checks: NOT RUN; package maintenance separately open |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Tools authored/reviewed only; no new results or automatic deployment |
+
+The numerical bounds above are safety/recovery limits, not measured performance
+improvements or a promised first-picture latency. JSON serialization remains
+synchronous and queue limits are per server socket; one legacy connection owns
+three server writers. Frame counters/time are browser progress proxies, not
+proof of visible video or audible audio. Large clipboard/file compatibility and
+native PiP Pause are explicit regression cases.
+
+**Operator step 1 — prepare, retain live exact-8741.** On the target, from a clean
+reviewed `testing` checkout containing this block (do not point an old pinned
+preparer at it):
+
+```bash
+NEKO_STABILITY_COMMIT="$(git rev-parse HEAD)"
+NEKO_STABILITY_RESULTS="../neko-stability-${NEKO_STABILITY_COMMIT:0:12}-$(date -u +%Y%m%dT%H%M%SZ)"
+bash deploy/validate-media-stability.sh "$NEKO_STABILITY_RESULTS"
+```
+
+The helper requires a new private directory outside Git. It runs the existing
+isolated client tests/type/build, relevant Go/role/delivery tests plus race checks,
+server and Base/Brave builds; it records exact images and the still-running
+baseline. It does **not** restart, activate HLS or change proxy configuration.
+It builds from a private Git archive of the selected commit, rechecks the
+original checkout and retained live container/image, and clears inherited root
+build publishing/prebuilt-client/flavor/platform options. Builds use the target's
+native architecture and local `my-neko` tags; no registry push is requested.
+New native drag/drop sources compile with the server image. Unchanged codec/fuzz
+checks are deliberately not freshly claimed. Failure leaves the marker PENDING;
+stop there and preserve the output. No overall acceptance follows from a
+preparation PASS.
+
+**Operator step 2 — controlled activation and regression.** Preserve private
+accepted image/config/overlay snapshots. Only after preparation succeeds, use
+the existing deployment runbook with its matching marker/images:
+
+```bash
+bash deploy/deploy-hls-media.sh baseline "$NEKO_STABILITY_RESULTS"
+# This baseline retains adaptive/WebCodecs overlays, but omits HLS.
+# First verify ordinary login, moving WebRTC A/V, input and deliberate Pause/Play.
+# After that succeeds, enable conventional HLS for the mixed-viewer phases:
+bash deploy/deploy-hls-media.sh enable "$NEKO_STABILITY_RESULTS"
+```
+
+These commands are operator actions, not already performed or a directive to
+skip preparation/browser checks. Respect the existing Origin/proxy/log boundary.
+Check normal/view-only/admin behavior, Pause/Play, iPhone muted/unmuted autoplay,
+fullscreen/PiP, clipboard and file transfers; exercise admitted incoming
+microphone/camera create/close and native URI drops. Short interruption (<8 s),
+expired interruption (>8 s), failed peer and logout/kick/revoke must leave one
+bounded recovery sequence and no stale task reopening the delivery. Independent
+gathering/IP/API bounds are safety ceilings, not tuning defaults for arbitrary
+network conditions. Recheck actual non-trickle/TURN-only configurations if used.
+
+**Operator step 3 — VIDAA event correlation, one variable at a time.** Record
+Hisense model, firmware, VIDAA/Odin build, source/codec and network/foreground
+state. Paste `deploy/trace-media-browser.js` into the affected browser console
+if inspection is available; it observes the live Vue client, fixed event names,
+element and optional RTC counters for at most ten minutes. It captures no URLs,
+SDP, candidates/addresses, user IDs, credentials or chat text. Optional marks:
+`nekoMediaTraceMark('first_picture')`, `nekoMediaTraceMark('audio')`,
+`nekoMediaTraceMark('black')`, `nekoMediaTraceMark('recovered')`;
+stop/save with `nekoMediaTraceStop()` **before reload**. Without TV inspection,
+record the visible symptom/action timeline and mark deeper trace evidence open.
+The trace is useful for WebRTC/event/media-element correlation; for HLS-specific
+request/playlist issues reuse the existing HLS trace instead of adding URL logs.
+
+Use two healthy reference viewers and the affected TV: 60 s quiet baseline;
+join/leave; chat; control request/grant/release, separated by 20 s of observation;
+then private pause/resume and permission revocation. Repeat the same sequence
+with chat sound disabled as the only changed variable. Log whether the event
+socket, ICE/data channel, inbound RTP, decoding/media progress, audio or only UI
+fails. Compare large control highlight/emote/rendering load only in a subsequent
+single-variable block if the trace suggests a local UI/decoder stall. No style,
+sound, bitrate, codec or timeout workaround is hardcoded for VIDAA/Odin.
+
+Run the resource collector in another target terminal during each fixed phase:
+
+```bash
+bash deploy/collect-hls-media.sh sample "$NEKO_STABILITY_RESULTS" webrtc-one 30
+# Repeat with distinct labels: idle, webcodecs-one, hls-one, three-same,
+# mixed-viewers, slow-event-peer and after-cleanup; change only the planned case.
+```
+
+Use B4 definitions below: compare like source/quality, ten cold/ten warm starts,
+30 glass-to-glass samples, CPU/RAM/egress deltas and healthy-viewer behavior.
+Start measurement phases after preparation/build/test jobs have ended, so their
+host load is not attributed to a media path.
+One-core Docker CPU percentages and whole-host budgets need different
+denominators. Capability probes/counters are not real-device acceptance. Include
+a truly slow/nonreading **event** client separately from media/HTTP slowdown;
+the writer fixture alone does not prove real TCP/proxy/frontend behavior.
+Conventional-HLS full acceptance still needs ten-minute/device/startup/role
+coverage; the supplied five-minute pass remains preserved rather than re-run as
+an old-image gate. Never interpret 24-second technical HLS targets as the user's
+accepted small-delay budget; use measured outcomes for the product decision.
+
+**Rollback/stop condition.** On preparation failure leave the service untouched.
+On new live login/A/V/control, unauthorized delivery, unbounded queues/recovery,
+or healthy-peer regression restore the saved accepted image and matching config
+before further experiments. The existing fallback command is:
+
+```bash
+bash deploy/deploy-hls-media.sh rollback "$NEKO_STABILITY_RESULTS"
+```
+
+That helper restores the saved image **with HLS disabled**, an emergency WebRTC
+recovery state, not the whole accepted enabled-8741 setup. Use the preserved
+exact-8741 enable snapshot/runbook if full conventional-HLS baseline restoration
+is intended; do not reconstruct or weaken Origin/proxy/token settings. Do not
+prune images/evidence or promote `master` from these commands.
+
+**Decision after results.** B5 full capture convergence and B7 HLS topology need
+measured lifecycle/resource benefit and fresh relevant gates. B8 retains all
+paths while recurring use/niche and acceptable passive delay are unknown; source
+removal requires the explicit keep/restrict/retire decision plus migration.
+B6 dependency disposition and B9 full exact-image grouped acceptance stay open.
+The implementation work above is complete; missing measurements are not silently
+converted into passes, removal approval or new performance claims.
+
+### Prioritized implementation and decision blocks
+
+Each approved code block stays on `testing`, has one exact commit/image identity,
+a focused review and the relevant real-target checks before the next dependent
+block. Do not mix dependency upgrades, capture refactoring and recovery tuning.
+Findings F1–F9 are defined in `STABILITY_REVIEW.md`.
+
+| Block / priority | Concrete result and dependency | Principal risk | Target acceptance before retaining the change | Return path |
+|---|---|---|---|---|
+| B0 / first | Record required devices/roles, actual recurring use of each backend, permitted latency and production network/proxy constraints. Reuse current evidence; baseline and decision sheet below. No new transport work. | Treating checkpoint experimentation as production use or an unavailable TV as a failure/pass | Exact current application/image/config and device/network inventory; classify existing passes and omissions. Unknowns stay marked open. | Documentation only; current service unchanged |
+| B1 / high | Small correctness fixes: inbound PLI worker exit (#697); configuration ID derivation/empty selection (#711) with explicit ladder order and failed-peer cleanup; review native URI-drop ownership (#700) separately. F4; no broad upstream merge. | Permission/lifecycle regression; accidental alphabetical quality order | Focused target Go/config tests: repeated admitted inbound-track create/close, no retained PLI worker; missing/empty/explicit IDs; invalid selection releases resources; normal and view-only receive/input denial unchanged. Exercise native drops only if that patch is included. | Previous exact image/config and revert the individual patch |
+| B2 / high | Bound normal event-socket/legacy-bridge writes, close and local HTTP cancellation (F1). First add explicit operation deadlines/close ownership; then a bounded per-connection writer queue where synchronous fan-out still needs isolation. Keep one writer and event order; close an overloaded peer instead of silently losing security/control events. Depends on B0 baseline, not on an optional transport. | New deadlocks, reordered lifecycle/control messages, spurious disconnects | Slow/nonreading **event** client while two healthy clients receive join/chat/grant/release/revocation; bounded offender closure and logout/kick/permission cleanup; loopback timeout/cancellation; no growing goroutines/queues or delay in healthy participants | Previous exact image; do not weaken auth or add unlimited queues to recover |
+| B3 / high | Repair WebRTC player callback ownership/progress/startup stages (F2/F3), then align client/server transient-disconnect grace in a distinct patch. One element-repair owner, one fresh-login owner; connected is distinct from first picture/audio. Preserve Play, Pause, touch/fullscreen, stale-peer guards and retry ceilings. Consider Safari clipboard #709 as a separate small compatibility patch. | Breaking Vue binding or autoplay; retaining dead peers; recovery after revoke | Actual mounted-component behavior in target client checks, metadata/seek-only timeupdate/deliberate Pause, playing/track replacement/stale callbacks. Target short outage versus expired grace/failed peer, one replacement sequence, logout/kick/revoke cancellation; Safari Play fallback and controller clipboard; healthy WebRTC remains working during room actions | Revert the individual player/grace patch and redeploy preceding exact image |
+| B4 / evidence gate | Controlled same-host/device comparison described below. Can run on the retained baseline before B1–B3 if separately approved; revised common/WebRTC source requires a new exact comparison. No timeout/bitrate/buffer changes during a block. | Unequal codecs/quality or a browser/background difference masquerading as transport benefit | Startup/latency/quality/resource/event/slow-client results plus support probes, actual source demand and cleanup. Existing numerical targets remain targets until measured. | Return to the saved exact image/overlay; bounded experiments never replace the baseline by default |
+| B5 / medium | Converge upstream #699 low-level capture subscriptions/lifetime behind the existing provider (F4), if the source review and B4 identify a maintainable net reduction. Retain bit/s units, PTS/DTS validity, generations/caps, keyframe admission, bounded queues and central `CanWatch` delivery. One migration seam, no second parallel fan-out. | Native/sample ownership races; timestamp/anchor or adaptive regressions across all backends | Fresh target capture lifecycle/race checks, repeated start/stop/resize with supported formats, WebRTC queue/drop semantics and adaptive negative controls; provider fixtures and relevant real-codec HLS anchor/scene-cut/rolling checks. Native/fuzz repetition is justified here by changed executable sources | Revert capture block; saved pre-block exact image/provider behavior |
+| B6 / medium | Remove confirmed obsolete Vue CLI scaffolding after checking external build callers; consolidate documented environment/ICE policy and misleading event-cause comments (F8/F9). Inventory before retiring legacy variables or special-host behavior. Separate scoped dependency maintenance from this cleanup. | Breaking an actual custom deployment or changing TURN/STUN policy unintentionally | Target Vite build/package scripts and deployment variables, caller inventory; ICE setup honors intended configured servers; no passive-role/input regression. Scoped dependency changes get an exact advisory/reachability re-audit and their relevant checks | Individual reversions and matching lockfile/image; no blanket `audit fix --force` |
+| B7 / conditional | If B4 shows HLS exceeds accepted CPU/RAM/quality budgets, first consider a reduced negotiated ladder or shared-decode design. Resolve fixed-input format/resolution behavior (F6/F7) explicitly before implementation; preserve current generation/anchor admission. Defer LL-HLS unless required latency and device/path gates justify it. | Cross-backend capture contention; loss of ABR; cold-start/anchor failures; incompatible codec/source changes | New codec/lifecycle/startup/scene-cut/clock tests for changed topology, plus repeated mixed-viewer resource and quality gates; unsupported formats fail only the requesting optional delivery and preserve WebRTC | Exact-8741 or later accepted unchanged-topology image/overlay; preserve all old artifacts |
+| B8 / product decision | Keep, restrict or retire optional paths using actual use and B4 outcomes. First reversible disablement; source removal only after an explicit operator decision and preference/link/overlay/runbook migration plan. No added automatic fallback. | Loss of a working foreground iPhone/HTTPS receive path or native passive compatibility; stranded saved selections | Users/devices served by retained paths; disabled routes and explicit terminal/manual WebRTC selection; compact view-only fragment preserved; no stale backend capability or forgotten security surface | Restore the old enabled overlay/image and saved choice; removal can be reverted without restoring secrets/runtime data |
+| B9 / final grouped gate | Validate the selected architecture and accumulated repairs at one exact final commit/image; review final diff and dependency disposition. Promote to `master` only after a separate explicit operator authorization. | Combining incomparable historical passes into a false full acceptance | Common role/view-only/revoke/private-mode/room-event matrix, required device and startup/recovery gates, resource/slow-consumer isolation and cleanup. Unavailable-device or intentionally omitted phases stay explicitly open | Retain `master` d9105ef8 and the last accepted target image/config until promotion is approved |
+
+B1–B3 can improve WebRTC without first deleting any optional path. B5 is larger
+than B1 and belongs after baseline/correctness checks. B7 depends on resource
+evidence and a separate topology decision. B8 may choose a smaller architecture
+without B5/B7; it must not treat code size alone as proof that removal is useful.
+Splitting `video.vue` or a Vue 3 migration is not a prerequisite for these repairs.
+
+### B4 comparison design and decision evidence
+
+**Use existing tooling and acceptance contracts.** The exact procedures remain
+in [adaptive quality](ADAPTIVE_QUALITY.md),
+[iOS recovery](IOS_RECOVERY.md), [view-only sharing](VIEW_ONLY_SHARING.md),
+[WebCodecs validation](WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md),
+[HLS validation](HLS_LL_HLS_VALIDATION.md) and
+[HLS observability](HLS_LL_HLS_OBSERVABILITY.md). Existing
+`docker-compose.validation.yaml`, `deploy/collect-hls-media.sh` and
+`deploy/collect-webcodecs-media.sh` are target-side assets; do not execute them in
+Codex or run an old image-preparation helper against a different application
+commit without reviewing its pinned assumptions.
+
+1. **Freeze comparison variables.** Record commit/image digest, relevant overlays,
+   GStreamer/player/browser versions, exact device/firmware, codec/size/fps, role,
+   foreground/background state, content, host cores/RAM and proxy/network path.
+   Measure WebRTC single-pipeline separately from opt-in adaptive multi-pipeline.
+   For a transport comparison use the same supported high VP8/Opus source for
+   WebRTC and WebCodecs; HLS additionally transcodes it, so report resulting
+   H.264/AAC quality/bitrate. Report intended ABR/default usage as a separate
+   product scenario. Do not silently compare a low-tier viewer with high HLS.
+2. **Startup and latency.** At least ten cold starts and ten warm starts per
+   eligible path/device, with definitions: cold = packager/source stopped;
+   warm = the required source/packager already active. Record event login,
+   negotiation/bootstrap, ICE or media-socket readiness, first rendered moving
+   frame, audible A/V and user activation separately. Never equate a 503 response,
+   server fixture readiness or ICE `checking` with first picture. Use a visible
+   synchronized clock/QR for at least 30 glass-to-glass samples; report
+   median/p95/max, A/V skew, frame pacing/drop and Retry/reload counts. Existing
+   gates: conventional HLS p95 first moving A/V and latency ≤24 s; LL-HLS ≤6 s,
+   path p95 RTT ≤333 ms; WebCodecs first video ≤2 s and A/V ≤3 s **after media
+   socket open**, latency ≤500 ms and ≤250 ms above comparable WebRTC. These
+   are unproven targets and have different time origins; also report whole login
+   time for every path. Do not loosen them because a 28 s readiness limit exists.
+3. **Resources and viewer scaling.** Repeat comparable steady intervals with no
+   viewer, one WebRTC, one WebCodecs, one HLS, three viewers sharing a path, then
+   mixed paths. Use the same moving/static content; separate sustained means
+   from startup peaks. Capture process/container CPU, CPU normalization, RSS,
+   native workers/capture demand, retained HLS bytes, subscription/queue/drop
+   counts, browser decode/render load where measurable and actual network bytes.
+   Report bytes per viewer and server total including relay/TCP/HTTP overhead;
+   configured bitrate and playlist `BANDWIDTH` are not measurements. Existing
+   HLS limits: retained objects ≤64 MiB, all outputs below 80% sustained total
+   host CPU, adding two same-rendition viewers ≤10 process-CPU percentage points
+   and ≤32 MiB RSS above one viewer. Existing WebCodecs limits: average extra
+   CPU ≤10 percentage points of **one core** per viewer and RSS ≤128 MiB per
+   viewer, returning within 32 MiB of baseline after 60 s. Keep these different
+   CPU denominators explicit. Check HLS worker/subscription/object cleanup after
+   the 15 s idle grace; compare longer-session memory trend, not only a peak.
+4. **Recovery, events and isolation.** Use a fixed timeline of join/leave, chat,
+   control request/grant/take/release, private pause/resume, manual backend
+   replacement and logout/revocation. Distinguish normal event-socket closure,
+   ICE/data-channel state, decoder/player progress, audio stop and UI-only change.
+   Test a slow event reader separately from a slow media socket or HTTP reader,
+   with two healthy mixed viewers. Short and longer controlled network outages
+   must show bounded recovery/explicit failure and no stale cleanup closing the
+   new delivery. Add supported same-format source restart versus unsupported
+   resolution/codec change as separate cases. Reuse the passed exact-8741
+   five-minute evidence; a longer or scripted comparison is new coverage, not a
+   request to repeat the old gate. Full HLS acceptance still requires the existing
+   ten-minute unshaped no-stall gate and role/security/device conditions.
+5. **Compatibility and safety.** Compare desktop, required iOS/Safari and the
+   actual affected television when available. Record native/MSE/worker/codec
+   support before playback. First test the TV event sequence with WebRTC chat
+   sound on/off as the only changed variable. An unavailable device stays open;
+   a codec probe does not establish that the full modern app runs there. For LL,
+   do not enable it unless its HTTP/2, RTT, player and latency requirements apply.
+   Preserve credential redaction and route/Origin/proxy/role/token checks; repeat
+   passed denial or fuzz gates only when affected code/configuration changes or
+   the final grouped acceptance needs exact new-commit evidence.
+
+The decision record for each optional path must state: recurring users/devices;
+cases where WebRTC actually fails or is unsuitable; whether the alternative
+passes on that same setup; latency/quality/resource tradeoff; unresolved failures;
+and maintenance ownership. **Keep** a path with a required, demonstrated niche
+and accepted costs. **Restrict/freeze** it when evidence is incomplete or costs
+are acceptable only for a subset. **Disable then consider removal** when there
+is no retained need/unique benefit or it fails an essential gate that another
+retained path meets. A tie or missing measurements is not permission to delete.
+
+### Rollback and release constraints
+
+Always retain a private deployment snapshot, exact previous image/digest and its
+matching overlay/environment before an approved target change. Do not overwrite
+or prune prior accepted images/evidence. A source revert alone does not roll
+back an already running container; restore the corresponding accepted image and
+configuration through the existing deployment runbook.
+
+- HLS disablement means omitting `docker-compose.hls.yaml` or an explicit reviewed
+  `NEKO_MEDIA_HLS_ENABLED=false`; verify disabled routes and normal WebRTC
+  login/picture/audio/control. HLS reads dedicated Origin/proxy settings or falls
+  back to WebCodecs-named deployment variables; do not delete those variables
+  merely because the WebCodecs backend is disabled.
+- WebCodecs disablement means omitting `docker-compose.webcodecs-ws.yaml` or an
+  explicit reviewed `NEKO_MEDIA_WEBCODECS_WS_ENABLED=false`. A saved experimental
+  selection must fail explicitly and allow manual WebRTC selection; do not insert
+  automatic transport fallback. Keep the event socket and view-only fragment.
+- LL restriction is `NEKO_MEDIA_HLS_MODES='hls'`; it preserves conventional HLS
+  and shared encoders. A later LL source removal needs separate advertisement,
+  protocol/fixture and runbook cleanup, not a promise of large native CPU savings.
+- An interactive WebRTC-only baseline can omit optional overlays; the adaptive
+  overlay is a separate default-off choice. Do not remove its source geometry
+  while HLS still needs the fixed high input.
+
+The recommended code-improvement/comparison sequence is now authorized. Local
+Codex execution remains forbidden. A decision to remove an optional path still
+requires its stated evidence/usage condition; missing measurements are not an
+answer. `master` remains unchanged until explicitly approved final promotion.
 
 ## Environment boundary
 
@@ -43,7 +357,7 @@ integration/upstream-20260909
 upstream merge commit: 4e99b8d3ca720d1f184544306820e388716ba23a
 relation at merge commit: 37 commits ahead, 0 behind
 master: fast-forwarded to the reviewed integration history
-testing: deployment reconciliation, accepted opt-in adaptive quality plus validated recovery probe, bounded iOS recovery, server-enforced view-only sharing, implemented media-subscription/WebRTC compatibility, WebCodecs/media-WebSocket receive path and separate Phase 4 assets, and HLS/LL-HLS Phases 1–2 server foundations/shared packaging/authenticated HTTP delivery
+testing: deployment reconciliation, accepted opt-in adaptive quality plus validated recovery probe, bounded iOS recovery, server-enforced view-only sharing, implemented media-subscription/WebRTC compatibility, WebCodecs/media-WebSocket receive path and separate Phase 4 assets, and HLS/LL-HLS Phases 1–3 plus separate Phase 4 assets and repairs; supplied exact-8741 conventional-HLS/WebRTC five-minute coexistence passed, broader acceptance remains open
 master: pinned at d9105ef8 until explicit grouped-promotion authorization
 ```
 
@@ -1168,8 +1482,10 @@ probes, followed by actual picture/audio and room-event isolation. Enabled HLS
 and grouped isolation/lifecycle/device acceptance remain pending. Keep exact
 97ba4ad9, the existing Caddy configuration and master.
 
-## NEXT
+## Historical HLS handoff — superseded by current NEXT
 
+The following accumulated HLS record is historical evidence, not a request for
+new execution. The [current NEXT](#next) supersedes its old next-action wording.
 Continue exclusively on `testing`; do not merge, fast-forward or push changes to `master`. The stable branch remains pinned at `d9105ef8` until the operator explicitly authorizes a later grouped promotion.
 
 **Latest exact-68 client checkpoint — 2026-10-05:** the requested
@@ -1288,7 +1604,11 @@ Historical results below apply only to their recorded commits.
 
 Continue **Phase 4 target-server validation** by [consolidating the remaining startup/frozen-picture/room-event investigation](HLS_CLIENT_READINESS_REPAIR_2026-10-05.md#next-consolidate-startup-frozen-picture-and-room-event-investigation). The exact-73 read-only diagnosis passed with Diagnostic-Exitcode 0, a healthy active HLS service, six bootstrap successes, 394 successful segments and one not-ready bootstrap; the browser failure cause remains uncorrelated. The operator could not confirm the requested interval and reports possible random reconnects/room actions. No additional ad-hoc operator check is requested now. The isolated client gate passed with old timer-fault reproduction and all 52 tests/type/build. Scoped exact-73d5ff6d image preparation then passed with Client-Image-Exitcode 0: the client rebuilt as index-CrHQRMnq.js, unchanged server/runtime layers were cached, and both images/private snapshot/marker were recorded using separately inherited a7ff backend evidence. Exact-73 default-off deployment then passed with Baseline-Exitcode 0, a healthy service, private baseline snapshot and 2/2 disabled-route probes; the operator confirmed the requested normal browser check works. Same-image activation then passed healthy with Enable-Exitcode 0, a private enable snapshot and 19/19 denial probes. On PC/Helium the operator reports an initial Retry, one frozen picture requiring reload, then working HLS with WebRTC unaffected; a HLS failed message was confirmed without its detail. Checkout/live image is now 73d5ff6d with conventional HLS enabled. Preserve the working service and supplied diagnostic evidence; first-start/recovery, a documented uninterrupted room-event interval and grouped acceptance remain open. Consolidate further checks into one bounded later step with a clear action/result rather than additional ad-hoc operator requests. Preserve the working a7ff/71 images and old evidence directories. Exact repair-image preparation and subsequent helper `2484a022` activation passed at application `93f1fa63`: all 11 Caddy hosts preserved, merged validation/reload and synthetic runtime-error redaction passed, HLS image healthy, 17 public plus two cleartext-denial probes passed. The first actual playback attempt failed, followed by normal-login timeouts (tentative /ws 101). Read-only diagnosis from helper d191b8ea passed: prepared image healthy, no sampled process exit/OOM, HLS startup/source-restart but no demonstrated readiness. [Startup/generation/timestamp/log-bound repairs](HLS_STARTUP_REPAIR_2026-10-04.md) and a mandatory real-codec integration gate are implemented; their target automated/image gate passed at 80020d99, including both real-codec tests and all-four-rendition conventional readiness in one generation (test duration 18.11 seconds); the original login blocker remains unconfirmed. The saved pre-HLS image was restored healthy with Restore-Exitcode 0 and operator-confirmed normal login/picture/audio. Preserve evidence. Default-off deployment passed with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes; the operator confirmed normal login/picture/audio/control. Same-image HLS activation passed with Enable-Exitcode 0, healthy service and 19/19 HTTP denial probes, but HLS failed and the operator reported all streams stopped afterward. Read-only diagnosis found one ready packager/lease, 23 successful segment requests and two timeline-gap rejections, with no sampled Neko exit/OOM. Same-image default-off restoration passed with Recovery-Exitcode 0 and 2/2 disabled-route probes; fresh browser confirmation is pending. The HLS-only fixed-GOP correction passed the isolated target GOP A/B gate at 97ba4ad9: old code reproduced two timeline gaps and all three repaired codec tests passed, including 30.19 seconds of scene cuts in generation 1. Exact 97ba4ad9 automated/image preparation passed with Repair-Check-Exitcode 0 (47 client tests, 13 Go packages, both fuzz jobs, all three codec tests and base/Brave builds). Default-off deployment of my-neko/brave:hls-97ba4ad9ab3e passed with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. The operator reported the requested normal browser check works. The subsequent HLS attempt at the prepared 97ba4ad9 checkpoint failed with "HLS bootstrap failed; retry manually", and the operator confirmed WebRTC also stopped working. The latest enablement CLI/HTTP results have not been supplied. Read-only diagnosis passed with 84 log lines, one not-ready bootstrap, one negotiation rejection and no sampled exit/OOM or generation/lease-open markers. Same-image default-off restoration passed with Recovery-Exitcode 0, healthy service and 2/2 disabled-route probes; the operator confirmed normal login/picture/audio work again. The saved-startup summary passed with Saved-Check-Exitcode 0: audio/high/medium subscriptions persisted, low capture reached only its create marker, and the saved matching environment had HLS enabled. Paired startup diagnosis at helper 88f2b25d completed with exit 0: both constructors passed two starts and failed one, with medium losing its initial pre-anchor IDR and reaching only two parents. This narrows the smooth readiness defect independently of registry isolation. The 414639d2 isolated anchor A/B gate passed with Anchor-Check-Exitcode 0: old code reproduced the fixed initial-IDR failure; seven corrected checks each passed three times, with every real-codec fixture staying in generation 1. Full exact-414639d2 preparation FAILED with Repair-Prepare-Exitcode 1: 47 client tests, type/build, 13 Go packages, both fuzz jobs, registry/mapping and anchor lifecycle checks passed, but smooth readiness restarted with worker_failure and failed its generation-1 assertion at 20.03 seconds; scene cuts passed at 30.19 seconds in generation 1. Base/Brave image steps were not reached. Worker diagnosis at helper 53034495 then completed with exit 0: all six checks passed in three fresh processes, each smooth fixture ready in 18.11 seconds in generation 1 with no rejected pushes; the earlier worker failure was not reproduced. The controlled audio-anchor A/B at repair 71a14d21 passed with Audio-Anchor-Exitcode 0: the old AAC hold reproduced both the blocked-drainage unit failure and an audio/anchor/queue_full restart under 256 ms high-input delay; all eight corrected startup checks passed in three fresh processes and scene cuts passed once (25 top-level passes). All seven real-codec fixtures stayed in generation 1; normal readiness was 18.10/18.11/18.11 seconds and delayed-high readiness 18.09 seconds each. This verifies the controlled AAC-overflow mechanism, not the cause of the earlier unobserved worker failure or live all-stream outage. Full exact-71a14d21 preparation then passed with Repair-Prepare-Exitcode 0: the rebuilt GStreamer 1.26.2 image passed all nine selected startup checks, including normal readiness at 18.11 seconds, delayed-high readiness at 18.09 seconds and scene cuts at 30.19 seconds, all in generation 1; base/Brave images were built and the service remained unchanged. The supplied tail starts inside the codec-image build; earlier client/Go/fuzz steps are covered by the script's reported final success, not separately shown in this excerpt. Default-off deployment of my-neko/brave:hls-71a14d2174da then passed with Baseline-Exitcode 0, a healthy service and 2/2 disabled-route probes. The operator confirmed the requested normal browser check works without HLS at 71a14d21. Same-image conventional-HLS activation at 71a14d21 then passed with Enable-Exitcode 0, healthy service, a private enable snapshot and 17/17 public plus 2/2 cleartext-denial probes. The subsequent operator-reported HLS attempt at 71a14d21 went from connecting to failed with "HLS bootstrap failed; retry manually"; the operator reported only WebRTC streaming works. No successful HLS picture/audio or room-event interval is demonstrated. Read-only diagnosis passed with 950 captured lines, one not-ready bootstrap, one started/idle-stopped packager generation, medium/low keyframe-admission drops of 759/564 and cumulative part/segment publication only for audio/high. No sampled Neko exit/OOM was found. Same-image default-off restoration passed with Recovery-Exitcode 0, healthy service and 2/2 disabled-route probes; the operator confirmed normal login/picture/audio work again. The isolated source-clock-phase diagnosis at helper 409482b4 passed with Clock-Skew-Exitcode 0: aligned control ready in 18.11 seconds; all three skew runs reproduced not-ready at 24.02 seconds in generation 1 with audio/high ready, medium/low blocked, flowing IDRs and no rejected native pushes. This proves the controlled phase-admission defect, not the exact unmeasured live phases. A common high-source fan-out repair is implemented and statically reviewed: one shared video provider subscription feeds the existing three scaled encoders, plus one audio subscription; provider PTS/DTS are preserved. The isolated common-source repair A/B passed at a7ffb8b1 with Shared-Clock-Exitcode 0: the old defect reproduced once; 46 positive top-level checks passed across three cold processes including one scene-cut check, with all ten real-codec fixtures in generation 1. Full exact-a7ffb8b1 preparation then passed with Repair-Prepare-Exitcode 0: all thirteen selected native/startup checks passed in the rebuilt GStreamer 1.26.2 image, including the four real-codec fixtures in generation 1, and base/Brave images were built without changing the running service. The supplied excerpt starts inside the codec-image build; earlier client/Go/fuzz stages are covered by final script success without separately shown fresh counts. Default-off deployment of my-neko/brave:hls-a7ffb8b13448 then passed with Baseline-Exitcode 0, healthy service, a private baseline snapshot and 2/2 disabled-route probes; the operator reported the requested normal browser check works. Same-image a7ffb8b1 HLS activation passed with Enable-Exitcode 0, healthy service and 19/19 HTTP denial probes. The operator then reported first HLS picture and the compact streaming label, followed after roughly 30 seconds by "HLS playback did not become ready; retry manually"; Retry HLS restored playback and WebRTC continued working. Static inspection found the initial client readiness deadline was never disarmed on canplay/playing. Client-only repair 73d5ff6d cancels it on those current-player events, arms it before attachment and retains the independent startup/stall bounds; Read-only target diagnosis then passed with a healthy a7ff image, two successful HLS bootstraps and 486 successful segment requests, with no sampled process exit/OOM; the packager stopped after idle grace. The isolated target client gate passed with Client-Check-Exitcode 0: the old timer defect reproduced, all 52 repaired client tests plus type/build passed, and checkout/live service remained at a7ff. These are supplied target results, NOT EXECUTED IN CODEX. Scoped exact-73d5ff6d image preparation then passed with Client-Image-Exitcode 0: fresh client bundle index-CrHQRMnq.js, cached unchanged server/runtime layers, both base/Brave images and private snapshot/marker recorded while enabled a7ff stayed running. Exact-73d5ff6d default-off deployment then passed with Baseline-Exitcode 0, healthy my-neko/brave:hls-73d5ff6d2911, a private baseline snapshot and 2/2 disabled-route probes; the operator confirmed the requested normal browser check works without a media override. Same-image conventional-HLS activation then passed with Enable-Exitcode 0, healthy service, a private enable snapshot and 19/19 denial probes. The operator reports PC/Helium HLS playback after an initial Retry and one frozen-picture/page-reload incident; WebRTC kept working and later HLS worked normally. A HLS failed message was confirmed without its detailed error or exact timing, so startup reliability and an uninterrupted room-event interval remain unverified. Checkout/live image is now 73d5ff6d with conventional HLS enabled. Read-only exact-73 diagnosis then passed with Diagnostic-Exitcode 0: healthy service, no sampled exit/OOM or fixed error markers, one active HLS lease/all four workers running, six successful bootstraps and 394 successful segment requests. One not-ready bootstrap supports readiness as a possible initial-Retry explanation without attempt correlation; two startup-labelled generations and one idle stop do not establish a crash loop. The operator cannot confirm the exact uninterrupted interval and mentions possible random reconnects/room actions without correlation. NEXT consolidate startup/frozen-picture/room-event investigation into one bounded later validation step; no further ad-hoc operator check requested at this checkpoint; startup/recovery and grouped acceptance pending; picture/audio/room-event, passive authorization/lifecycle and grouped device/resource acceptance remain open. The original blocker remains unconfirmed; rollback recovery does not validate the new repair or HLS playback. The [audit](DEPENDENCY_AUDIT_2026-10-04.md) and [static review](STABILITY_REVIEW_2026-10-04.md) record the repairs and limits; package remediation and final security/live acceptance stay open. Keep HLS default-off without its overlay, WebRTC the default, WebCodecs explicit and fallback manual. The unavailable colleague's television remains an open device gate. `master` must not move without explicit operator authorization.
 
-## Product priority after stable synced baseline
+## Historical product sequence after stable synced baseline
+
+These steps record the earlier implementation sequence. Use [current NEXT](#next)
+for priorities and [the comparative review](STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07)
+for the current optional-transport recommendation and exact-8741 evidence limits.
 
 1. **bounded checkpoint closed with the documented final-matrix limitation:** media-subscription/WebRTC compatibility refactor plus estimator startup correction;
 2. **bounded checkpoint closed with explicit final-matrix limitations:** WebCodecs plus dedicated media WebSocket receive path;

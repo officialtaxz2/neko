@@ -21,16 +21,21 @@ import (
 )
 
 type WebRTCPeerCtx struct {
-	mu           sync.Mutex
-	id           string
-	logger       zerolog.Logger
-	session      types.Session
-	done         chan struct{}
-	doneOnce     sync.Once
-	closeOnce    sync.Once
-	initialOffer *webrtc.SessionDescription
-	metrics      *metrics
-	connection   *webrtc.PeerConnection
+	mu                 sync.Mutex
+	id                 string
+	logger             zerolog.Logger
+	session            types.Session
+	done               chan struct{}
+	doneOnce           sync.Once
+	closeOnce          sync.Once
+	recoveryMu         sync.Mutex
+	recoveryTimer      *time.Timer
+	recoveryGeneration uint64
+	destroyRequested   chan struct{}
+	destroying         bool
+	initialOffer       *webrtc.SessionDescription
+	metrics            *metrics
+	connection         *webrtc.PeerConnection
 	// bandwidth estimator
 	estimator     cc.BandwidthEstimator
 	estimateTrend *utils.TrendDetector
@@ -89,7 +94,15 @@ func (peer *WebRTCPeerCtx) setLocalDescription(description webrtc.SessionDescrip
 			return nil, err
 		}
 
-		<-gatherComplete
+		timer := time.NewTimer(15 * time.Second)
+		defer timer.Stop()
+		select {
+		case <-gatherComplete:
+		case <-peer.destroyRequested:
+			return nil, errors.New("ICE gathering canceled")
+		case <-timer.C:
+			return nil, errors.New("ICE gathering timed out")
+		}
 	} else {
 		if err := peer.connection.SetLocalDescription(description); err != nil {
 			return nil, err
@@ -115,6 +128,28 @@ func (peer *WebRTCPeerCtx) SetCandidate(candidate webrtc.ICECandidateInit) error
 
 // TODO: Add shutdown function?
 func (peer *WebRTCPeerCtx) Destroy() {
+	peer.recoveryMu.Lock()
+	peer.requestDestroyLocked()
+	peer.recoveryMu.Unlock()
+	peer.destroyConnection()
+}
+
+// Mark destruction before waiting for peer.mu, so non-trickle gathering can
+// release it. The recovery mutex also serializes timeout vs. reconnect intent.
+func (peer *WebRTCPeerCtx) requestDestroyLocked() {
+	if peer.destroying {
+		return
+	}
+	peer.destroying = true
+	peer.recoveryGeneration++
+	if peer.recoveryTimer != nil {
+		peer.recoveryTimer.Stop()
+		peer.recoveryTimer = nil
+	}
+	close(peer.destroyRequested)
+}
+
+func (peer *WebRTCPeerCtx) destroyConnection() {
 	peer.closeOnce.Do(func() {
 		peer.mu.Lock()
 		defer peer.mu.Unlock()
@@ -125,6 +160,46 @@ func (peer *WebRTCPeerCtx) Destroy() {
 		}
 		peer.logger.Err(err).Msg("peer connection destroyed")
 	})
+}
+
+// A transient disconnected peer gets the same bounded window as the client.
+// Failed/closed peers and authoritative lease revocation still close immediately.
+func (peer *WebRTCPeerCtx) startDisconnectedRecovery() {
+	peer.recoveryMu.Lock()
+	defer peer.recoveryMu.Unlock()
+	if peer.destroying || peer.recoveryTimer != nil || peer.connection.ConnectionState() != webrtc.PeerConnectionStateDisconnected {
+		return
+	}
+	peer.recoveryGeneration++
+	generation := peer.recoveryGeneration
+	peer.recoveryTimer = time.AfterFunc(8*time.Second, func() {
+		peer.recoveryMu.Lock()
+		if peer.destroying || peer.recoveryGeneration != generation || peer.recoveryTimer == nil {
+			peer.recoveryMu.Unlock()
+			return
+		}
+		state := peer.connection.ConnectionState()
+		shouldClose := state != webrtc.PeerConnectionStateConnected && state != webrtc.PeerConnectionStateClosed
+		if shouldClose {
+			peer.requestDestroyLocked()
+		} else {
+			peer.recoveryTimer = nil
+		}
+		peer.recoveryMu.Unlock()
+		if shouldClose {
+			peer.destroyConnection()
+		}
+	})
+}
+
+func (peer *WebRTCPeerCtx) cancelDisconnectedRecovery() {
+	peer.recoveryMu.Lock()
+	defer peer.recoveryMu.Unlock()
+	peer.recoveryGeneration++
+	if peer.recoveryTimer != nil {
+		peer.recoveryTimer.Stop()
+		peer.recoveryTimer = nil
+	}
 }
 
 func (peer *WebRTCPeerCtx) ID() string {

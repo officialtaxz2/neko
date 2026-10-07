@@ -4,11 +4,13 @@ package drop
 #cgo pkg-config: gtk+-3.0
 
 #include "drop.h"
+#include <stdlib.h>
 */
 import "C"
 
 import (
 	"sync"
+	"unsafe"
 
 	"github.com/kataras/go-events"
 )
@@ -29,7 +31,9 @@ func OpenWindow(files []string) {
 	defer C.dragUrisFree(urisUnsafe, size)
 
 	for i, file := range files {
-		C.dragUrisSetFile(urisUnsafe, C.CString(file), C.int(i))
+		cFile := C.CString(file)
+		C.dragUrisSetFile(urisUnsafe, cFile, C.int(i))
+		C.free(unsafe.Pointer(cFile))
 	}
 
 	C.dragWindowOpen(urisUnsafe)

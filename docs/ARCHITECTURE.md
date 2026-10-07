@@ -1,5 +1,14 @@
 # Architecture
 
+Current source assessment: 2026-10-07, initial `testing` HEAD `a91d9388`,
+last accepted application/live target `8741f788`, `master` unchanged at `d9105ef8`.
+The authorized independent B1–B3/B6 improvements are now in the working source;
+their target tests/builds/device gates are pending and do not inherit an 8741 pass.
+The [comparative review](STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07)
+and [current Workplan](WORKPLAN.md#next) distinguish implemented mechanisms,
+supplied target results and unmeasured benefit. Historical checkpoints below
+retain their original evidence limits; they are not the latest live status.
+
 ## Current repository architecture
 
 ```text
@@ -22,6 +31,57 @@ server/
             v
 shared server-side X11 browser/desktop
 ```
+
+### Event socket versus media delivery
+
+The browser's normal **event/session WebSocket** is legacy `/ws`. Its server
+adapter logs in through local HTTP and bridges to internal `/api/ws`, so the
+current logical event connection includes two server-side sockets. It carries
+login/session initialization, WebRTC SDP/ICE, chat/member/room actions, control
+grants/releases and optional-media capability/ticket exchanges. It remains
+required with WebRTC, WebCodecs and HLS. High-rate interactive input is carried
+by the WebRTC RTCDataChannel, separately from room control messages.
+
+The additional **media WebSocket** at `/api/media/ws` carries VP8/Opus units,
+media readiness/feedback/resync and heartbeat only. It is an explicitly selected
+receive-only delivery, decoded/rendered by worker WebCodecs, AudioWorklet and
+canvas. It neither replaces the event socket nor supplies an alternative input
+channel. HLS uses authenticated HTTPS objects and a playback lease negotiated on
+that same event plane; it is also receive-only with passive/admin eligibility.
+
+The central manager authorizes a participant delivery; the capture provider
+supplies shared encoded sources to its backend. WebRTC and media-WebSocket
+deliveries subscribe per viewer to demanded source outputs. Active HLS instead
+has **one shared high-video provider subscription and one shared audio
+subscription**, independent of viewer count. The high VP8 data fan out into
+three distinct VP8-decode/H.264-encode workers; a fourth worker converts Opus to
+AAC. Conventional HLS and LL-HLS share these workers and their object store.
+This avoids separate per-rendition source phases and creates no new HLS desktop
+capture, but adds native conversion and retains demand for high capture.
+
+One primary delivery per session, current `CanWatch` checks, bounded queues,
+explicit formats/timestamp validity/generations and revocation remain common
+invariants. Media consumer isolation does not isolate the shared event adapter,
+capture/native runtime or host CPU. The baseline event writers lacked bounded
+write deadlines; the common stability consequences are a static finding, not
+the demonstrated cause of the reported television incident.
+
+Current event connections use one `utils.WebSocketWriter` per socket, also on
+both legs of the legacy bridge: FIFO, 128 records/16 MiB including in-flight
+payloads, five-second write/terminal-flush ceilings and overflow by connection
+closure. Room fan-out no longer waits for network writes, though JSON encoding
+still runs synchronously. A logical legacy connection has three server writers;
+the ceilings are per socket, not total service RSS or a measured cost reduction.
+Revocation is applied before bounded terminal flushing. Reader cancellation
+avoids blocked channel handoffs. Legacy JSON API/Dial operations have 15-second
+limits and a session context, cleanup uses its own five-second context; streamed
+file bodies keep their request lifetime rather than an API total timeout.
+
+Normal legacy username/password login still uses the event URL query, whereas
+view-only login uses the compact fragment/subprotocol and optional media uses
+tickets/scoped leases. Credential-safe media URLs do not remove the common
+legacy login/logging boundary. Preserve reviewed proxy/log redaction and keep
+credentials, tokens, tickets and cookies out of evidence.
 
 Supporting trees:
 
@@ -46,11 +106,28 @@ The reconciled lockfile resolves Vue `2.7.14`, TypeScript `5.8.3`, and Vite `6.4
 
 Current behavior includes:
 
-- normal connection requires `RTCPeerConnection`;
+- the normal WebRTC choice requires `RTCPeerConnection`; optional receive paths
+  perform their own eligibility/codec/player capability checks;
 - ICE candidates are exchanged over WebSocket;
-- public STUN fallback may be injected if no STUN is configured;
+- explicit TURN/STUN/STUNS lists are preserved; public STUN fallback remains
+  only for an empty list, with ICE-lite behavior unchanged;
 - failed/closed or unresolved disconnected ICE states lead to disconnect/recovery flow;
-- an ICE `disconnected` state retains the existing peer for an eight-second self-recovery window;
+- client ICE `disconnected` and server Pion peer `Disconnected` now each have
+  one eight-second grace; rechecking cannot extend the client's deadline.
+  Failed peers and authoritative revocation close immediately. The callbacks
+  are different observations, so real timing/no-reload behavior needs a target
+  trace. Initial `checking` remains inside the 15-second startup deadline;
+- non-trickle ICE gathering has a 15-second bound plus a destruction-intent
+  signal before acquiring the peer mutex; external IP discovery is bounded to
+  15 seconds and a 4-KiB successful response;
+- WebRTC element callbacks are Vue-bound methods with one nonreactive health
+  state and 500-ms polling only while playback is requested. Frame-count
+  progress (excluding reported dropped frames) or old-browser time progress
+  resets the existing eight-second stall budget; metadata/seek/unmute/playing
+  events alone do not. Three source reattachments are followed by explicit
+  Play. Deliberate/native Pause, background throttling and autoplay denial are
+  distinct from a foreground stall; stale operations cannot mutate replacement
+  streams. No new network retry loop or `video.load()` is added;
 - after an established peer/socket is irrecoverable, one application-owned timer serializes at most four fresh legacy logins after 1/2/5/10 seconds;
 - initial-login failures, explicit logout, demo mode and server-directed disconnects cannot enter that automatic retry path;
 - old socket/peer/data-channel callbacks are identity-guarded, buffered ICE candidates are cleared during teardown, and the login component does not start a parallel connection;
@@ -209,7 +286,7 @@ shared capture / encoder outputs
         |
         +-- WebRTC -------------------- interactive default
         |
-        +-- WebCodecs + WebSocket ---- interactive-class receive candidate
+        +-- WebCodecs + WebSocket ---- receive-only low-delay candidate
         |
         +-- HLS / LL-HLS ------------- passive/view-only candidate
         |
@@ -218,11 +295,39 @@ shared capture / encoder outputs
 
 The control/session/auth path must remain independent enough that a receive-only backend does not gain control capability. A passive viewer can therefore use HTTP-streaming media while remaining in the same logical Neko room.
 
-The concrete boundary is implemented in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It distinguishes a backend subscription to an encoded source from the authorized delivery attached to a participant: WebRTC and the opt-in media WebSocket subscribe per participant, while the default-off HLS packager subscribes once per active rendition and issues separate short-lived viewer leases. The central delivery manager checks `CanWatch`; backends never receive login/share credentials or authority over control, plugins or member profiles.
+The concrete boundary is implemented in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It distinguishes a backend subscription to an encoded source from the authorized delivery attached to a participant: WebRTC and the opt-in media WebSocket subscribe per participant. The default-off HLS packager instead shares one high-video and one audio provider subscription across four conversion workers and issues separate short-lived viewer leases. The central delivery manager checks `CanWatch`; backends never receive login/share credentials or authority over control, plugins or member profiles.
 
 The version-1 WebCodecs/media-WebSocket specialization is fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md): an authenticated event-plane exchange creates a short-lived single-use ticket, the dedicated socket carries strict VP8/Opus records, every server/browser queue is bounded, stale generations are rejected, and audio owns the common presentation clock. Phase 1 implements the event exchange, ticket store, record codec and default-off server flag. Phase 2 implements the conditionally registered route/backend: it captures the original socket peer before generic proxy rewriting, trusts forwarded transport/address headers only from configured proxy CIDRs, requires secure transport and exact Origin plus ordered subprotocols, atomically redeems the ticket, re-resolves the live `CanWatch` session, then opens only credential-free exact-source subscriptions. A single writer drains lifecycle before media, READY keeps the lease opening, bounded feedback and sent-PTS history detect stalled/lagging delivery, and local generation/keyframe recovery or close contains overload to that participant. Phase 3 implements the isolated browser side: a strict shared-fixture parser and media-socket/decoder worker enforce the browser queue bounds, an AudioWorklet and canvas renderer use the fixed clock/drop rules, reset closes stale frames, and only the specified same-backend retries or explicit user actions are available. The browser side is selected by the normalized stored preference when no `media` query is present, or by the exact stateless URL override when it is present. Decoding continues within the four-entry WebCodecs queue when the two-frame renderer hand-off is full; surplus decoded `VideoFrame`s are closed locally so renderer scheduling cannot back up the compressed socket queue, while true compressed/audio overflow retains resync recovery and bounded source-specific diagnostics. WebCodecs component callbacks that mutate renderer primitives are Vue-bound prototype methods rather than class-field arrows, avoiding vue-class-component 7's synthetic data-instance capture; the client also releases a transferred frame immediately when its typed event emitter reports no mounted renderer listener. A single empty 128-frame AudioWorklet quantum is treated as transient; only 100 ms of continuous empty input raises the existing common A/V underflow recovery. Feedback uses a self-scheduled 1100-ms loop plus a server-side one-per-second token bucket with burst two, and only the server turns sustained reported A/V skew into recovery. Every resync refreshes feedback/progress/skew observation state while retaining the explicit two-second recovery deadline for a progress-timeout resync. Retryable `backend_error` END records leave the close handler attached so 4413/4500 remains the retry authority, and only 30 stable streaming seconds reset its four-attempt budget. Both server enablement and client selection are explicit. WebRTC remains the default and no transport fallback is automatic. The prototype is receive-only because current high-rate input still uses the WebRTC data channel; this is an explicit boundary, not hidden control-path parity.
 
-The passive HLS/LL-HLS specialization is fixed separately in [`HLS_LL_HLS.md`](HLS_LL_HLS.md). Phase 1 implements default-off configuration and authenticated event negotiation, digest-only ten-second tickets, independent digest-only sliding cookie leases, strict HTTP policy helpers and deterministic bounded models. Phase 2 conditionally registers the bootstrap/resource routes and central `hls` delivery backend; one process-wide packager takes four bounded exact-source subscriptions, transcodes current VP8/Opus into aligned H.264 High 3.1/AAC-LC fMP4, exposes conventional and LL playlist views over the same immutable memory store, and stops after the last unpaused lease plus the fixed grace. Playlist/keepalive responses refresh the scoped cookie, Private Mode releases demand and wakes requests, request writes occur outside packager locks, and only fixed credential-safe labels/log templates are emitted. Phase 3 adds `client/src/neko/hls/` with native Apple playback and lazy pinned hls.js MSE/worker support, advertised-only manual selection for passive/admin clients, an authoritative private-mode event bridge and bounded lease/player cleanup. Server path-prefix cookies and media log/CORS classification preserve the same boundary under subpaths. Phase 4 adds the separate opt-in HLS overlay and private evidence/probe/exact-image/rollback helpers; automated/image preparation and the preserving Caddy/logging/healthy-activation plus 19-denial-probe gate passed at application 93f1fa63 with helper 2484a022. The first enabled playback attempt failed, followed by normal-login timeouts (tentative /ws 101). Read-only target diagnosis confirmed the prepared image healthy but did not demonstrate HLS readiness. The worker now binds to the opened capture generation and waits through initial same-generation caps completion; HLS transcoders map encoder segments to the common input running-time domain and skip initial videorate gap filling. The inherited C log formatter is bounded. A required target-only real-codec gate now exercises cold VP8/Opus input through the production H.264/AAC packager. Those automated checks/images passed at exact 80020d99, including both real-codec tests and conventional packager readiness in one generation (test duration 18.11 seconds); the normal-login blocker is unconfirmed. The saved pre-HLS runtime was restored healthy with exit 0 and operator-confirmed normal login/picture/audio. The prepared 80020d99 image passed default-off deployment (Baseline-Exitcode 0, healthy, 2/2 disabled-route probes) and operator-confirmed normal login/picture/audio/control. Same-image HLS activation passed with Enable-Exitcode 0, healthy service and 19/19 HTTP denial probes, but HLS failed and the operator reported all streams stopped afterward. Read-only diagnosis found one ready packager/lease, 23 successful segment requests and two timeline-gap rejections, with no sampled Neko exit/OOM; default-off restoration passed with Recovery-Exitcode 0 and 2/2 disabled-route probes. Fresh browser confirmation is pending. HLS-only scene-cut suppression passed the isolated target GOP A/B gate at 97ba4ad9: the old code reproduced two timeline gaps, all three repaired codec tests passed and the scene-cut fixture stayed in generation 1 for 30.19 seconds. Exact 97ba4ad9 automated/image preparation passed with Repair-Check-Exitcode 0 (47 client tests, 13 Go packages, both fuzz jobs, all three codec tests and base/Brave builds). Default-off deployment of my-neko/brave:hls-97ba4ad9ab3e passed with Baseline-Exitcode 0, healthy service and 2/2 disabled-route probes. The operator reported the requested normal browser check works. The subsequent HLS attempt at the prepared 97ba4ad9 checkpoint failed with "HLS bootstrap failed; retry manually", and the operator confirmed WebRTC also stopped working. The latest enablement CLI/HTTP results have not been supplied. Read-only diagnosis passed with 84 log lines, one not-ready bootstrap, one negotiation rejection and no sampled exit/OOM or generation/lease-open markers. Same-image default-off restoration passed with Recovery-Exitcode 0, healthy service and 2/2 disabled-route probes; the operator confirmed normal login/picture/audio work again. The saved-startup summary passed with Saved-Check-Exitcode 0: audio/high/medium subscriptions persisted, low capture reached only its create marker, and the saved matching environment had HLS enabled. Paired startup diagnosis at helper 88f2b25d completed with exit 0: both constructors passed two starts and failed one, with medium losing its initial pre-anchor IDR and reaching only two parents. This narrows the smooth readiness defect independently of registry isolation. The 414639d2 isolated anchor A/B gate passed with Anchor-Check-Exitcode 0: old code reproduced the fixed initial-IDR failure; seven corrected checks each passed three times, with every real-codec fixture staying in generation 1. Full exact-414639d2 preparation FAILED with Repair-Prepare-Exitcode 1: 47 client tests, type/build, 13 Go packages, both fuzz jobs, registry/mapping and anchor lifecycle checks passed, but smooth readiness restarted with worker_failure and failed its generation-1 assertion at 20.03 seconds; scene cuts passed at 30.19 seconds in generation 1. Base/Brave image steps were not reached. Worker diagnosis at helper 53034495 then completed with exit 0: all six checks passed in three fresh processes, each smooth fixture ready in 18.11 seconds in generation 1 with no rejected pushes; the earlier worker failure was not reproduced. The controlled audio-anchor A/B at repair 71a14d21 passed with Audio-Anchor-Exitcode 0: the old AAC hold reproduced both the blocked-drainage unit failure and an audio/anchor/queue_full restart under 256 ms high-input delay; all eight corrected startup checks passed in three fresh processes and scene cuts passed once (25 top-level passes). All seven real-codec fixtures stayed in generation 1; normal readiness was 18.10/18.11/18.11 seconds and delayed-high readiness 18.09 seconds each. This verifies the controlled AAC-overflow mechanism, not the cause of the earlier unobserved worker failure or live all-stream outage. Full exact-71a14d21 preparation then passed with Repair-Prepare-Exitcode 0: the rebuilt GStreamer 1.26.2 image passed all nine selected startup checks, including normal readiness at 18.11 seconds, delayed-high readiness at 18.09 seconds and scene cuts at 30.19 seconds, all in generation 1; base/Brave images were built and the service remained unchanged. The supplied tail starts inside the codec-image build; earlier client/Go/fuzz steps are covered by the script's reported final success, not separately shown in this excerpt. Default-off deployment of my-neko/brave:hls-71a14d2174da then passed with Baseline-Exitcode 0, a healthy service and 2/2 disabled-route probes. The operator confirmed the requested normal browser check works without HLS at 71a14d21. Same-image conventional-HLS activation at 71a14d21 then passed with Enable-Exitcode 0, healthy service, a private enable snapshot and 17/17 public plus 2/2 cleartext-denial probes. The subsequent operator-reported HLS attempt at 71a14d21 went from connecting to failed with "HLS bootstrap failed; retry manually"; the operator reported only WebRTC streaming works. No successful HLS picture/audio or room-event interval is demonstrated. Read-only diagnosis passed with 950 captured lines, one not-ready bootstrap, one started/idle-stopped packager generation, medium/low keyframe-admission drops of 759/564 and cumulative part/segment publication only for audio/high. No sampled Neko exit/OOM was found. Same-image default-off restoration passed with Recovery-Exitcode 0, healthy service and 2/2 disabled-route probes; the operator confirmed normal login/picture/audio work again. The isolated source-clock-phase diagnosis at helper 409482b4 passed with Clock-Skew-Exitcode 0: aligned control ready in 18.11 seconds; all three skew runs reproduced not-ready at 24.02 seconds in generation 1 with audio/high ready, medium/low blocked, flowing IDRs and no rejected native pushes. This proves the controlled phase-admission defect, not the exact unmeasured live phases. A common high-source fan-out repair is implemented and statically reviewed: one shared video provider subscription feeds the existing three scaled encoders, plus one audio subscription; provider PTS/DTS are preserved. The isolated common-source repair A/B passed at a7ffb8b1 with Shared-Clock-Exitcode 0: the old defect reproduced once; 46 positive top-level checks passed across three cold processes including one scene-cut check, with all ten real-codec fixtures in generation 1. Full exact-a7ffb8b1 preparation then passed with Repair-Prepare-Exitcode 0: all thirteen selected native/startup checks passed in the rebuilt GStreamer 1.26.2 image, including the four real-codec fixtures in generation 1, and base/Brave images were built without changing the running service. The supplied excerpt starts inside the codec-image build; earlier client/Go/fuzz stages are covered by final script success without separately shown fresh counts. Default-off deployment of my-neko/brave:hls-a7ffb8b13448 then passed with Baseline-Exitcode 0, healthy service, a private baseline snapshot and 2/2 disabled-route probes; the operator reported the requested normal browser check works. Same-image a7ffb8b1 HLS activation passed with Enable-Exitcode 0, healthy service and 19/19 HTTP denial probes. The operator then reported first HLS picture and the compact streaming label, followed after roughly 30 seconds by "HLS playback did not become ready; retry manually"; Retry HLS restored playback and WebRTC continued working. Static inspection found the initial client readiness deadline was never disarmed on canplay/playing. Client-only repair 73d5ff6d cancels it on those current-player events, arms it before attachment and retains the independent startup/stall bounds; Read-only target diagnosis then passed with a healthy a7ff image, two successful HLS bootstraps and 486 successful segment requests, with no sampled process exit/OOM; the packager stopped after idle grace. The isolated target client gate passed with Client-Check-Exitcode 0: the old timer defect reproduced, all 52 repaired client tests plus type/build passed, and checkout/live service remained at a7ff. These are supplied target results, NOT EXECUTED IN CODEX. Scoped exact-73d5ff6d image preparation then passed with Client-Image-Exitcode 0: fresh client bundle index-CrHQRMnq.js, cached unchanged server/runtime layers, both base/Brave images and private snapshot/marker recorded while enabled a7ff stayed running. Exact-73d5ff6d default-off deployment then passed with Baseline-Exitcode 0, healthy my-neko/brave:hls-73d5ff6d2911, a private baseline snapshot and 2/2 disabled-route probes; the operator confirmed the requested normal browser check works without a media override. Same-image conventional-HLS activation then passed with Enable-Exitcode 0, healthy service, a private enable snapshot and 19/19 denial probes. The operator reports PC/Helium HLS playback after an initial Retry and one frozen-picture/page-reload incident; WebRTC kept working and later HLS worked normally. A HLS failed message was confirmed without its detailed error or exact timing, so startup reliability and an uninterrupted room-event interval remain unverified. Checkout/live image is now 73d5ff6d with conventional HLS enabled. Read-only exact-73 diagnosis then passed with Diagnostic-Exitcode 0: healthy service, no sampled exit/OOM or fixed error markers, one active HLS lease/all four workers running, six successful bootstraps and 394 successful segment requests. One not-ready bootstrap supports readiness as a possible initial-Retry explanation without attempt correlation; two startup-labelled generations and one idle stop do not establish a crash loop. The operator cannot confirm the exact uninterrupted interval and mentions possible random reconnects/room actions without correlation. NEXT consolidate startup/frozen-picture/room-event investigation into one bounded later validation step; no further ad-hoc operator check requested at this checkpoint; startup/recovery and grouped acceptance pending; the all-stream symptom's cause remains unconfirmed. See [the repair record](HLS_STARTUP_REPAIR_2026-10-04.md). Working playback, lifecycle/device/resource and grouped acceptance remain pending.
+The passive HLS/LL-HLS specialization is fixed separately in
+[`HLS_LL_HLS.md`](HLS_LL_HLS.md). Phases 1–3 and separate Phase 4 assets are
+implemented: default-off configuration, event negotiation, digest-only ten-second
+one-use tickets, sliding scoped cookie leases, strict HTTP/Origin/proxy policy,
+a shared bounded H.264/AAC fMP4 packager and explicit native or pinned local
+hls.js/MSE playback. The current packager consumes one high VP8 subscription and
+one shared Opus subscription; three video workers separately decode/scale/encode
+H.264 and one audio worker encodes AAC. Generation/anchor, fixed-GOP, rolling
+playlist and progress rules are explicit. HLS HTTP delivery has bounded writes,
+blocking reloads and retention; the common normal event writer has a separate
+unbounded-write finding and must not inherit an isolation claim from HLS.
+
+Both HLS modes reuse the same immutable retained objects and conversion workers.
+Private Mode releases demand, renewal preserves the short-lived cookie, permission
+loss closes the central delivery, and the last unpaused viewer starts a 15-second
+idle grace before worker/subscription/object cleanup. Active high input is fixed
+at 1280×720/25-fps VP8 and stereo 48-kHz Opus; arbitrary source-format changes
+are not currently transparent. Advertised-only passive/admin choices and explicit
+Retry do not provide an automatic fallback or an input channel.
+
+The supplied target is healthy exact-8741 with conventional HLS enabled.
+Preparation passed the recorded client/wire/package/image gates, and the operator
+confirmed at least five minutes of moving PC/Helium HLS picture/audio without
+Retry/reload alongside continuing WebRTC. Reliable cold start, native/TV/LL-HLS,
+scripted event/recovery, resource and final grouped acceptance remain open.
+No fresh native/fuzz gate or causal live-parser trace is inferred. Detailed
+historical failures and repairs remain in [WORKPLAN.md](WORKPLAN.md),
+[the startup record](HLS_STARTUP_REPAIR_2026-10-04.md) and
+[the latest rolling-window record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md).
 
 The compatibility refactor closes the planned gaps in the former WebRTC-facing `types.Sample`/`SampleListener` seam: format metadata, real GStreamer PTS/DTS, a manager-owned timeline, generations and discontinuities are explicit; subscriber queues are bounded and non-blocking; and generic session watching state no longer depends on the name `WebRTC`. Legacy stream-sink types remain capture-internal compatibility machinery, while WebRTC depends only on `EncodedMediaProvider`/`MediaSubscription`. That earlier compatibility block added no new transport, public API or configuration.
 
@@ -235,7 +340,7 @@ This architecture is directionally aligned with upstream issue #371, which expli
 - MJPEG only as an ultra-legacy image-only last resort;
 - fully automatic transport/codec selection after explicit capability detection and measured fallback behavior.
 
-The source-subscription and participant-delivery interface semantics are decided. Version-1 WebCodecs framing/negotiation, the server media endpoint/backend/queue state machines, the isolated receive-only client and its persisted manual selection/compact status productization are implemented. Phase 4 adds only a separate explicit Compose enablement overlay, credential-safe fixed-metric collection/PromQL and the grouped-validation record; omitting the overlay leaves the stable deployment unchanged. At exact `86893473`, automated, image, deployment/security and a roughly 15-minute zero-resync technical streaming checkpoint passed. The operator observed continuously visible video without conspicuous black flashes or stutters and audible approximately synchronized audio. The measured 25-fps cadence is the configured shared adaptive `high` source rate; a subjectively slightly less fluid WebCodecs presentation still requires a controlled pacing A/B, and the wider grouped matrix remains open. Exact `12cfe43b` passed the focused client productization checkpoint: 26 tests, type/build, image/deployment/security and the persisted/default/override/healthy/terminal browser matrix succeeded, while live view-only fragment preservation was not repeated and remains backed by automated coverage. The HLS contract and Phases 1–3 server/passive-client work are implemented in the repository. Focused automated target checks passed at `e85d8568`, and the default-off base/Brave image deployment started healthy at `741025c3`. Phase 4 deployment assets are implemented; automated/image and activation/invalid-input gates passed at application 93f1fa63 with helper 2484a022, while the reported failed playback/normal-login incident, new startup-repair verification, valid picture/audio, authorization/lifecycle and device/resource evidence remain OPEN; exact evidence and limits are recorded in `WORKPLAN.md`. The required final stability review is tracked in `STABILITY_REVIEW.md`; automatic selection remains later work.
+The source-subscription and participant-delivery interface semantics are decided. Version-1 WebCodecs framing/negotiation, the server media endpoint/backend/queue state machines, the isolated receive-only client and its persisted manual selection/compact status productization are implemented. Phase 4 adds only a separate explicit Compose enablement overlay, credential-safe fixed-metric collection/PromQL and the grouped-validation record; omitting the overlay leaves the stable deployment unchanged. At exact `86893473`, automated, image, deployment/security and a roughly 15-minute zero-resync technical streaming checkpoint passed. The operator observed continuously visible video without conspicuous black flashes or stutters and audible approximately synchronized audio. The measured 25-fps cadence is the configured shared adaptive `high` source rate; a subjectively slightly less fluid WebCodecs presentation still requires a controlled pacing A/B, and the wider grouped matrix remains open. Exact `12cfe43b` passed the focused client productization checkpoint: 26 tests, type/build, image/deployment/security and the persisted/default/override/healthy/terminal browser matrix succeeded, while live view-only fragment preservation was not repeated and remains backed by automated coverage. The HLS contract and Phases 1–3 server/passive-client work are implemented in the repository. Focused automated target checks passed at `e85d8568`, and the default-off base/Brave image deployment started healthy at `741025c3`. Phase 4 assets and subsequent repairs reached supplied exact-8741 preparation/activation and at least five minutes of moving PC/Helium HLS A/V alongside working WebRTC. Cold-start, scripted event/recovery, native/TV/LL-HLS and resource/full grouped acceptance remain OPEN; historical incidents and exact evidence limits are recorded in `WORKPLAN.md`. The required final stability review is tracked in `STABILITY_REVIEW.md`; automatic selection remains later work.
 
 ## Verification boundary
 

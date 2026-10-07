@@ -124,7 +124,24 @@ default-off HLS packager set
 
 There is one process-wide packager set for the single active Neko room, not one encoder or muxer per viewer. One audio worker owns one audio provider subscription. One high-video provider subscription feeds the same immutable encoded units to all three video decode/encode/mux workers. All video variants therefore begin from the same first source keyframe and provider clock. Both subscriptions and all four workers are shared across `hls` and `ll-hls` viewers. Regular and low-latency modes render different playlist views over the same retained objects.
 
-The 2026-10-05 source-phase diagnosis reproduced the prior independent-source admission defect in three cold runs. The common-video-input correction is implemented and statically reviewed; its repair A/B, full preparation and live acceptance remain pending. The running target service remains the confirmed default-off 71a14d21 image. This supersedes the original one-video-subscription-per-rendition topology; it does not claim the actual failed live source phases were measured.
+The 2026-10-05 source-phase diagnosis reproduced the prior independent-source
+admission defect in three cold runs. The common-video-input correction's A/B and
+full preparation subsequently passed at `a7ffb8b1`. Later client/playlist repairs
+culminated in supplied exact-8741 preparation/activation and at least five
+minutes of moving PC/Helium conventional-HLS picture/audio without Retry/reload
+alongside continuing WebRTC. This supersedes the original
+one-video-subscription-per-rendition topology. It does not claim the failed live
+source phases were measured or that grouped/native/TV/LL-HLS/resource acceptance
+passed. See [the current comparative assessment](STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07)
+and [remaining acceptance](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#remaining-acceptance).
+
+Current implementation constraint: `workerFormatMatches` requires the common
+`high` input to be VP8 at 1280×720 and 25/1 fps, with stereo 48-kHz Opus audio.
+Output scaling does not make arbitrary input resolution/codec changes supported.
+Distinguish a supported same-format generation restart from an unsupported input
+format in source-change acceptance. Transparent arbitrary-resolution recovery
+and a shared-decode/raw-source redesign are undecided future work; neither is
+implied by the existing broad source-change test wording.
 
 The first authorized lease starts all three configured variants so the multivariant playlist is internally consistent and can adapt immediately. The hard version-1 maximum is three video variants plus one audio rendition. When the last unpaused lease closes, the set enters a 15-second idle grace and then closes subscriptions, workers and retained objects. A new viewer after teardown starts a new packager generation.
 
@@ -350,7 +367,12 @@ During process shutdown, viewer leases close first, blocked requests wake, packa
 
 ## Bounded queues, storage and isolation
 
-Each video rendition and the shared audio worker requests a provider queue capacity of 64 with `drop_newest`. Internal worker hand-off is at most eight media events per rendition; published-object notification is at most two pending notifications because playlist snapshots can be regenerated from the store. No queue waits in provider fan-out.
+The shared high-video input and the audio worker each request a provider queue
+capacity of 64 with `drop_newest`: two provider subscriptions feed four workers.
+Internal worker hand-off is at most eight media events per rendition;
+published-object notification is at most two pending notifications because
+playlist snapshots can be regenerated from the store. No queue waits in
+provider fan-out.
 
 Any provider or internal overflow invalidates the affected packaging generation. The worker drops until the next aligned video IDR/common audio boundary, publishes a discontinuity and resumes; it never grows latency by replaying a backlog. If one rendition cannot recover within 12 seconds, it is removed from new master playlists while the other renditions continue. If audio fails, the whole set enters failed/warming state because version 1 does not silently change requested media composition.
 

@@ -1,5 +1,10 @@
 # Integrated stability review — 2026-10-04
 
+This dated record preserves its original findings and supplied checkpoints.
+For the current cross-transport assessment, later exact-8741 evidence and
+proposed priorities, read [the 2026-10-07 comparative review](STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07)
+and [current Workplan NEXT](WORKPLAN.md#next).
+
 Scope: `testing` baseline `3f1a62b0d12594f1dfc11a6c0064ae4d69116660` plus the
 Phase 4 assets and repairs in this implementation block. The final exact commit
 and image IDs must be recorded by the target-server helpers. Source/configuration

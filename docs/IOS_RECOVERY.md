@@ -1,5 +1,15 @@
 # Begrenzte iOS-Wiederherstellung nach Netzunterbrechungen
 
+Aktueller Implementierungsstand 2026-10-07: Client und Server lassen nun jeweils
+ein begrenztes Acht-Sekunden-Fenster für den bestehenden Peer zu. ICE `checking`
+gilt nicht mehr als verbunden und verlängert die Frist nicht. Der Player besitzt
+eine Vue-gebundene Fortschrittsüberwachung mit Pause-/Autoplay-/Seek-/Stale-
+Grenzen; native PiP-Pause bleibt Nutzerabsicht. Das sind statisch geprüfte
+Korrekturen, **keine neuen iPhone-Zielergebnisse**. Die bisherigen Evidenzgrenzen
+unten bleiben bestehen. Die neue fokussierte Vorbereitung und die erforderlichen
+Kurz-/Langunterbrechungs-, Play-/Pause-/Fullscreen-/Revocation-Phasen stehen im
+[aktuellen Workplan](WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07).
+
 Status: **auf `testing` implementiert und statisch geprüft; die containerisierten Client-/Serverprüfungen sowie Image-Build und -Start bestanden am Zielserver auf `913a981e`. Der Betreiber hat den Checkpoint am 2026-09-11 bewusst ohne die manuellen iPhone-Phasen A–C geschlossen. Damit bleibt No-Reload-Recovery auf einem realen iPhone ausdrücklich unbestätigt**.
 
 Dieses Runbook ist für einen Linux-Zielserver gedacht, auf dem nur Git, Bash, Docker Engine und `docker compose` vorhanden sein müssen. Node.js, npm, Go und Python werden auf dem Host **nicht** benötigt. Die automatisierbaren Prüfungen laufen in kurzlebigen Containern über [`docker-compose.validation.yaml`](../docker-compose.validation.yaml).

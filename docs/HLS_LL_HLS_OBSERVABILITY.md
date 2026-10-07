@@ -12,6 +12,7 @@ On the real server, from the repository root:
 bash deploy/collect-hls-media.sh init ../neko-hls-results
 bash deploy/collect-hls-media.sh snapshot ../neko-hls-results no-viewer
 bash deploy/collect-hls-media.sh snapshot ../neko-hls-results one-viewer
+bash deploy/collect-hls-media.sh sample ../neko-hls-results one-viewer 30
 ```
 
 The directory must be outside Git, must not be an ancestor of the repository,
@@ -20,6 +21,14 @@ and must be new or already private with mode `0700`. Files are created under
 image/health/restart fields, Docker versions, selected Prometheus samples and
 container resource counters. It copies the pending results template once.
 It never archives `.env`, full `docker inspect`, HTTP headers or raw logs.
+
+The collector also covers WebRTC/WebCodecs metrics and can sample 1–60 snapshots
+ten seconds apart without changing the selected overlay/backend. It now records
+host CPU count/aggregate `/proc/stat`, total RAM and selected container CPU/RAM
+limits. Docker CPU percentages use one logical core as 100%; convert explicitly
+before comparing with a whole-host percentage. Derive process CPU/egress rates
+from counter deltas over actual UTC intervals. The browser/VIDAA comparison
+trace and result sheet are in [Workplan NEXT](WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07).
 
 For a changed bind port or path prefix, set `NEKO_METRICS_URL` to the actual
 credential-free loopback HTTP `/metrics` URL. No public metrics exposure is

@@ -142,15 +142,15 @@ export const mutations = mutationTree(state, {
   },
 
   addTrack(state, [track, stream]: [MediaStreamTrack, MediaStream]) {
-    // Replace existing track of the same kind (video/audio) instead of
-    // accumulating stale tracks. During server renegotiation (triggered by
-    // room events like user join/leave, control changes, chat) the server
-    // sends a fresh video track. If we only append, the stream index stays
-    // at 0 pointing to the old, now-dead track → blackscreen.
+    // Replace a superseded track of the same kind instead of accumulating it.
+    // Track delivery can accompany connection replacement or renegotiation;
+    // ordinary chat/control events do not themselves prove renegotiation.
     const existingIdx = state.tracks.findIndex((t) => t.kind === track.kind)
     if (existingIdx !== -1) {
-      // Stop the old track to release resources (important for TV browsers)
-      try { state.tracks[existingIdx].stop() } catch (_) {}
+      // A repeated ontrack callback for the same object must not stop it.
+      if (state.tracks[existingIdx] !== track) {
+        try { state.tracks[existingIdx].stop() } catch (_) {}
+      }
       const newTracks = [...state.tracks]
       const newStreams = [...state.streams]
       newTracks[existingIdx] = track

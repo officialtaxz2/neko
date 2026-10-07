@@ -1,5 +1,18 @@
 # AGENTS.md
 
+Current authorized implementation checkpoint (2026-10-07): the comparative
+assessment was approved for implementation. Independent B1–B3/B6 corrections
+and B4/B9 target handoff assets are now implemented and statically reviewed in
+the working source; target tests/builds/runtime gates are NOT EXECUTED IN CODEX.
+The operator performs target checks. Desktop, Smart-TV and iPhone are required;
+Hisense VIDAA/Odin is the reported event-correlated WebRTC failure platform,
+with cause/model/firmware still open. Follow current `docs/WORKPLAN.md` NEXT,
+including the preparation-only `deploy/validate-media-stability.sh` and private
+`deploy/trace-media-browser.js`; keep all paths until conditional B5/B7/B8
+usage/resource decisions. Preserve exact-8741 live image/evidence and master
+d9105ef8. Older 'no new server command' HLS checkpoint wording below applies to
+unchanged exact-8741 evidence, not the newly changed common-event/WebRTC source.
+
 Latest checkpoint (2026-10-07): the full supplied five-minute exact-7dcc browser
 trace captures moving video followed by a freeze at media time 23.948 seconds,
 513 frames and a fixed 12.008–24.019-second buffered range. Audio loads only four

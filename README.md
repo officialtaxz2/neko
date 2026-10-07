@@ -6,6 +6,23 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 
 ## Status
 
+Comparative architecture assessment (2026-10-07):
+[source findings and media-path comparison](docs/STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07),
+[current upstream triage](docs/UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--2026-10-07)
+and [prioritized plan with target checks/rollback](docs/WORKPLAN.md#next).
+The operator authorized implementation of the improvement/comparison plan:
+improve core WebRTC, retain opt-in
+conventional HLS, freeze WebCodecs expansion pending comparative benefit, and
+defer LL-HLS unless its latency niche is needed. The independent correctness,
+event-socket isolation, WebRTC playback/recovery and configuration cleanups are
+implemented and statically reviewed. Target regressions/device/resource checks
+remain **NOT EXECUTED IN CODEX** and will be run by the operator. No optional
+transport was removed, no broad upstream merge or promotion was performed.
+The [current implementation/runbook](docs/WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07)
+includes a preparation-only helper and a bounded private browser trace for the
+reported Hisense VIDAA/Odin event-correlated WebRTC failures; their cause remains
+open. Desktop, Smart-TV and iPhone support are required.
+
 Latest HLS checkpoint (2026-10-07): the complete browser trace captures a freeze
 at about 24 seconds of media despite continued video delivery. Two source defects
 are repaired: rolling playlists now preserve segment discontinuity numbers;

@@ -421,12 +421,13 @@ func (manager *WebRTCManagerCtx) openPeer(session types.Session, lease types.Med
 	}
 
 	peer := &WebRTCPeerCtx{
-		id:         lease.ID(),
-		logger:     logger,
-		session:    session,
-		done:       make(chan struct{}),
-		metrics:    metrics,
-		connection: connection,
+		id:               lease.ID(),
+		logger:           logger,
+		session:          session,
+		done:             make(chan struct{}),
+		destroyRequested: make(chan struct{}),
+		metrics:          metrics,
+		connection:       connection,
 		// bandwidth estimator
 		estimator: estimator,
 		estimateTrend: utils.NewTrendDetector(
@@ -521,17 +522,26 @@ func (manager *WebRTCManagerCtx) openPeer(session types.Session, lease types.Med
 
 		ticker := time.NewTicker(rtcpPLIInterval)
 		defer ticker.Stop()
+		pliDone := make(chan struct{})
+		defer close(pliDone)
 
 		go func() {
-			for range ticker.C {
-				err := connection.WriteRTCP([]rtcp.Packet{
-					&rtcp.PictureLossIndication{
-						MediaSSRC: uint32(track.SSRC()),
-					},
-				})
+			for {
+				select {
+				case <-pliDone:
+					return
+				case <-peer.done:
+					return
+				case <-ticker.C:
+					err := connection.WriteRTCP([]rtcp.Packet{
+						&rtcp.PictureLossIndication{
+							MediaSSRC: uint32(track.SSRC()),
+						},
+					})
 
-				if err != nil {
-					logger.Err(err).Msg("remote track rtcp send err")
+					if err != nil {
+						logger.Err(err).Msg("remote track rtcp send err")
+					}
 				}
 			}
 		}()
@@ -578,11 +588,14 @@ func (manager *WebRTCManagerCtx) openPeer(session types.Session, lease types.Med
 	connection.OnConnectionStateChange(func(state webrtc.PeerConnectionState) {
 		switch state {
 		case webrtc.PeerConnectionStateConnected:
+			peer.cancelDisconnectedRecovery()
 			lease.SetState(types.MediaDeliveryStateActive)
-		case webrtc.PeerConnectionStateDisconnected,
-			webrtc.PeerConnectionStateFailed:
+		case webrtc.PeerConnectionStateDisconnected:
+			peer.startDisconnectedRecovery()
+		case webrtc.PeerConnectionStateFailed:
 			peer.Destroy()
 		case webrtc.PeerConnectionStateClosed:
+			peer.cancelDisconnectedRecovery()
 			// ensure we only run this once
 			once.Do(func() {
 				current := lease.SetState(types.MediaDeliveryStateClosed)

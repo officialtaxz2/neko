@@ -1,6 +1,343 @@
 # Stability review and outstanding device evidence
 
-Latest requested source-only follow-up (2026-10-05):
+## Authorized improvement block — 2026-10-07
+
+The operator subsequently authorized the comparative plan. Independent B1–B3
+and B6 source corrections and B4/B9 handoff assets are implemented and statically
+reviewed. **Tests, builds and device/runtime checks: NOT EXECUTED IN CODEX.**
+The target remains the accepted exact-8741 image until the operator prepares
+and validates a new exact commit. Historical passes below do not validate these
+new common-event/WebRTC changes.
+
+- **F1 / B2:** a bounded FIFO writer now owns each normal event socket, including
+  both legacy bridge legs; 128 records/16 MiB including in-flight writes, 5 s
+  operation/terminal-flush ceilings. Overflow closes its connection; no room or
+  security event is silently discarded while retaining a supposedly healthy
+  peer. Revocation precedes flush. JSON encoding remains synchronous and queue
+  ceilings are per socket, not total service memory. Reader handoffs can cancel;
+  local JSON API/handshake operations are 15 s and cleanup is separately 5 s.
+  Streaming file bodies retain cancellation without an API total-duration cap.
+- **F2/F3 / B3:** initial ICE checking is not success; startup stays bounded at
+  15 s. Client/server transient grace is 8 s, without extension by rechecking;
+  failed/revoked peers close immediately. Non-trickle gathering is bounded and
+  cancellable before peer locking. Vue methods own actual playback state, with
+  one foreground progress/reattachment owner and the existing three-attempt
+  ceiling. Pause/native PiP intent, autoplay/Play fallback, seek/metadata,
+  dropped-frame evidence, legacy undefined play returns and stale promises are
+  handled separately. Track removal uses that same owner instead of another
+  timer; late WebCodecs audio resumes cannot mutate a paused/replaced player.
+  Browser counters remain proxies, not proof of visible
+  moving pictures/audible sound or a universal blackscreen remedy.
+- **F4 / B1:** inbound PLI loops exit on track/peer closure; missing pipeline
+  IDs derive deterministically, nominal-rate order only when every rate is
+  known, otherwise explicit ladder order is required. Empty default selection
+  is rejected before peer creation and partially initialized peers close.
+  Pipeline-string shorthand and native GFile/URI/CString ownership are repaired.
+  One mutex now covers bitrate buckets and their reset; no subscription API or
+  native sample/clock topology was replaced.
+- **F8/F9 / B6:** remove unused Vue CLI configuration, use the Vite development
+  launcher while retaining its legacy port input, remove the special
+  four-second development-host timeout,
+  honor configured ICE server lists and correct unproven room-event cause
+  comments. Re-delivery of the same track object no longer stops that object.
+  Safari uses the existing manual clipboard fallback. Dependency remediation
+  remains separately scoped and open.
+
+New target-only regressions cover real Vue class binding/lifecycle, actual
+BaseClient timers and stale peers, seek/Pause/autoplay/progress, writer FIFO,
+buffer ownership/overflow/blocked-peer isolation, legacy cancellation and
+configuration/partial-peer cleanup. See [the exact target handoff](WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07).
+Runtime outcomes and performance improvement are **unmeasured**.
+
+Required devices are desktop, Smart-TV and iPhone. The user specifically reports
+Hisense **VIDAA / Odin** WebRTC abort/blackscreen during control request/release,
+chat or similar actions, resolved by reload. Treat this as operator evidence of
+an event-correlated symptom, not proof of renegotiation, ICE failure, decoder
+exhaustion or chat-audio causality. Model, firmware, browser build and exact
+failed layer remain open; do not infer them from older platform descriptions.
+Target checks will be performed by the operator. Small passive delay is wanted;
+no numerical accepted limit exists, and the HLS 24-s contract alone does not
+establish suitability. B5/B7/B8 require the recorded usage/resource decisions;
+all current paths remain available, without new automatic fallback.
+
+## Comparative fork and transport review — 2026-10-07
+
+**Original review scope: analysis and documentation at a91d9388, before the
+subsequent authorization and source changes recorded above.** Baseline findings
+in this section retain that original source state; the following
+chronological records retain the evidence available at their respective commits.
+The actionable sequence is [the current Workplan NEXT](WORKPLAN.md#next).
+
+### Snapshot and strength of evidence
+
+The initial working tree was clean on `testing`, at documentation HEAD
+`a91d9388d75f3d042f212398a1dcff1af198992d`. The latest application change is
+`8741f7880d9a709e6dc17924d2af0564a949ccd9`; `master` and `origin/master` remain
+`d9105ef8`. The local `upstream/master` still points to the September integration
+base `b0f01cedea68893e85a3fd852c0521238c285695`. A read-only GitHub API comparison
+independently found current upstream master
+`a2cb38dd10e20774b5f3ecf8b8c5d0b07a2051f5` (2026-10-04): 18 subsequent commits,
+71 changed files. No fetch, merge, branch update or upstream adoption was done.
+See [the upstream assessment](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--2026-10-07).
+
+Use these evidence classes throughout this assessment:
+
+- **S — static:** actual source/configuration/history establishes a mechanism or
+  boundary; it does not establish its runtime cost or the cause of a live incident.
+- **T — supplied target evidence:** a recorded operator/server result at the named
+  commit. Nothing was freshly executed in Codex. A later source change requires
+  relevant revalidation; earlier device results are not fresh exact-8741 results.
+- **O — open:** an unmeasured comparison, suspected cause, unsupported device or
+  unknown usage. No numerical performance benefit is inferred from architecture.
+
+The decisive existing results are:
+
+| Evidence | What it supports | What it does not support |
+|---|---|---|
+| WebRTC adaptive checkpoints `bfaca84e`, `2efcc6b1`, `ddf15cee` (T) | The documented three-viewer scenario; a 20-minute healthy high-tier hold; real constrained downgrade; peer isolation; a bounded lower-tier recovery probe | A universally optimal profile, all devices, or cost versus another transport |
+| WebCodecs bounded checkpoints `86893473`, `6b6cd328`, selection `12cfe43b` (T) | Roughly 15 minutes of technical playback; a corrected foreground iPhone interval over ten minutes with acceptable reported picture/audio and no retry; role/private-mode/manual-selection checks within their recorded limits | TV compatibility, numerical latency/pacing, background recovery, resource advantage or induced slow-client acceptance |
+| Exact-8741 preparation and activation, PC/Helium (T) | Both old rolling-playlist/watchdog defects reproduced in isolation; 66 client tests/type/build plus stated wire/package/image gates passed; operator confirmed at least five minutes of moving conventional-HLS picture/audio without Retry/reload while WebRTC continued working | Reliable cold start, a scripted room-event matrix, native Safari/TV or LL-HLS acceptance, ten-minute/full Phase 4 acceptance, direct CPU/RAM/latency comparison or proof of the earlier live parser cause |
+
+The exact HLS evidence and omissions remain in
+[the rolling-window repair record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md).
+Preserve its images and private evidence at
+`/opt/docker/nekoNew/neko-hls-results-8741f7880d9a`. This review needs no new
+server command, rebuild, old-image trace or repeat of the passed five-minute gate.
+
+### Actual transport responsibilities and shared dependencies
+
+There are **three media choices, but two distinct kinds of WebSocket**:
+
+1. **Normal event/session WebSocket:** the browser currently logs in through
+   legacy `/ws`; the server adapter performs a local HTTP login and opens an
+   internal `/api/ws` connection. It carries session initialization, SDP/ICE,
+   chat, members, control grants/releases, capability negotiation, media tickets
+   and permission/private-mode changes. It is mandatory for every media choice.
+   High-rate WebRTC keyboard/mouse/touch input uses its RTCDataChannel; the event
+   socket's room/control messages are a different function.
+2. **WebRTC media:** a peer receives shared capture output over RTP, with ICE,
+   RTCP and optionally the estimator/quality ladder. It also supplies interactive
+   input through the data channel. It remains the normal default.
+3. **Dedicated media WebSocket `/api/media/ws`:** an additional connection
+   carries encoded VP8/Opus records, readiness/feedback/resync and heartbeat
+   messages. A worker, WebCodecs decoders, AudioWorklet and canvas perform playback.
+   It does not replace login, chat, room actions or the normal socket, and adds
+   no interactive input transport. Selection is explicit and receive-only.
+4. **HLS/LL-HLS HTTPS:** event-plane negotiation authorizes bootstrap and a
+   scoped playback lease; playlists/init/parts/segments carry passive media.
+   Native video or pinned `hls.js`/MSE plays H.264/AAC. Conventional and low-latency
+   modes share one packager, workers and retained objects; they are not two
+   independent capture systems. Eligibility remains passive/view-only plus the
+   explicit administrative diagnostic path.
+
+The central delivery manager owns one primary delivery per session and checks
+the live `CanWatch` permission before/after attachment. The provider shares
+immutable encoded data with bounded subscriber queues and explicit source
+format, PTS/DTS validity, generations and keyframe/discontinuity state. These
+boundaries have value even if an optional transport is later removed. Separate
+queues and per-viewer leases contain many slow-consumer failures; they cannot
+isolate a common event connection, native capture failure or host CPU exhaustion.
+
+### Comparison of benefits, costs and evidence
+
+The numbers below are configuration/acceptance targets unless explicitly marked
+T. Lower transport overhead, quicker startup or a lower CPU/RAM footprint has
+**not** been measured across these paths.
+The retained media topology is unchanged; common-event bounds and the WebRTC
+grace/progress repair above are now static source properties, with new target
+evidence pending.
+
+| Dimension | WebRTC | WebCodecs + media WebSocket | Conventional HLS | LL-HLS |
+|---|---|---|---|---|
+| Product role (S) | Interactive default; passive viewing also supported | Explicit receive-only experiment; same room | Explicit passive compatibility candidate | Passive candidate where lower HTTP-streaming delay is needed |
+| Actual compatibility (T/O) | Existing desktop/mobile deployment; TV incident unresolved; omitted iPhone recovery phases stay open | Desktop and corrected foreground iPhone evidence; no affected-TV test | PC/Helium evidence at 8741; native Apple/TV acceptance open | No supplied live acceptance on the required devices |
+| Capability limits (S/O) | RTCPeerConnection, negotiated codec, ICE/data channel and autoplay constraints | Worker VideoDecoder **and** AudioDecoder for exact VP8/Opus, AudioWorklet/AudioContext/canvas; no native PiP; viewport fullscreen on tested iPhone | Native H.264/AAC HLS or suitable MSE+hls.js, plus the modern Neko application/event socket; a TV's ability to play an m3u8 alone is insufficient | HLS client support plus blocking/part semantics and suitable HTTP/proxy/network behavior |
+| Startup (S/T/O) | Login → signaling/ICE → first frame → autoplay; comparative distribution missing | Event login → ticket/socket → format/keyframe/audio buffering; fast-start targets unmeasured | Cold packager produces all four tracks; fixtures near 18.1 s and historical first picture near 20 s are different observations; 28 s server readiness allowance inside 30 s HTTP limit, not a measured p95 | Six-second readiness allowance; live startup unknown |
+| Latency and bandwidth (S/O) | RTP/RTCP with congestion feedback; ICE may use relay; actual candidate and overhead matter | Reliable ordered TCP; loss can delay later media. Fixed/manual source, no WebRTC estimator; framing and feedback add traffic | Six-second parents and buffer/hold-back trade latency for robustness; ABR chooses among outputs; transcoding and HTTP overhead can increase bytes | One-second parts and blocking reload add request/state cost; lower-latency benefit unmeasured. Contract requires path p95 RTT ≤333 ms |
+| Recovery (S/T/O) | One fresh-login owner and one bounded element repair; matched client/server 8-s transient grace and real progress checks are implemented but await target validation | Local audio reanchor and bounded same-backend resync/retry; no automatic backend fallback; corrected foreground interval passed | Player recovery plus independent HTTP/lease/progress checks; explicit Retry; latest rolling-window fixes passed bounded playback | Same lease/player safety plus more reload/part/discontinuity cases; runtime evidence open |
+| Capture and encoding (S) | Shares demanded configured source; optional high/medium/low capture pipelines can run concurrently | Reuses the selected VP8/Opus source; per-viewer delivery and browser decoding, no additional server encoder | Pins shared `high` VP8 input plus Opus; **two provider subscriptions, three separate VP8 decoders/H.264 encoders and one Opus→AAC worker**, all shared by viewers | Same four workers and objects as conventional HLS; disabling LL mode alone does not save those encoders |
+| CPU/RAM (S/O) | Pion/packetization, feedback and demanded capture cost; no clean cross-transport baseline | Queue/parser/writer and worker/browser decode cost; receiving on TCP can concentrate backlog; comparative footprint unknown | Largest identifiable additional native conversion machinery; 64 MiB object limit is not a total RSS limit; first viewer starts every variant | Similar native conversion cost, with additional HTTP waiter/playlist state; exact delta unmeasured |
+| Failure isolation (S/T/O) | Per-peer media queues and accepted estimator isolation; common event writes now bounded but new slow-reader acceptance pending; shared capture/host remain | Per-delivery queue/write/decoder limits; induced hostile/slow-client and shared-event tests remain open | Shared packager means one rendition/audio-generation failure can affect many HLS viewers; bounded HTTP readers; five-minute coexistence supports only that interval | Same shared-packager boundary; blocking-request isolation needs its own gate |
+| Authorization (S/T) | Live session/view-only controls, WebRTC/input permissions | TLS/exact Origin, ten-second one-use ticket via subprotocol, live permission recheck, credential-free source backend | TLS/exact Origin, one-use bootstrap and sliding 30-second HttpOnly path-scoped cookie lease, 15-second renewal, current session permission | Same security plus strict bounded reload/query handling |
+| Maintenance (S) | Required core lifecycle; Pion, legacy signaling, input and estimator | Separate wire protocol, worker decoders, audio clock/resync, canvas/frame ownership and browser feature changes | Native and MSE players, pinned hls.js, transcoder, custom fMP4/playlist/retention/lease/security machinery | Further playlist, blocking reload, preload/rendition-report and proxy test cases |
+
+The WebCodecs specification guarantees no particular codec implementation;
+exact runtime probes remain necessary. Browser WebSocket also supplies no receive
+backpressure. These limitations explain the need for the current bounded decode
+and recovery machinery, not a measured disadvantage on the target devices.
+Sources: [WebCodecs specification](https://www.w3.org/TR/webcodecs/),
+[WebSocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket),
+[hls.js compatibility](https://github.com/video-dev/hls.js#compatibility).
+
+### Findings and disposition
+
+The following identifiers map to the planned blocks in `WORKPLAN.md`. They are
+baseline findings; their implemented dispositions are recorded above, with
+remaining evidence conditions in `WORKPLAN.md`.
+
+**F1 — Common event delivery has unbounded waits (S); prioritize it across all
+backends.** `SessionManagerCtx.Broadcast` sends sequentially. Normal
+`WebSocketPeerCtx.Send/Ping` and the legacy bridge's two writers serialize writes
+without a write deadline; `Destroy` first sends a disconnect and can wait before
+closing. Legacy local HTTP requests have neither a client timeout nor a request
+context tied to session cancellation. This is a structural path by which a slow
+event reader/backend can delay broadcasts or cleanup; no supplied trace proves
+it caused the TV failures. Add bounded operations and then, where needed, one
+bounded writer owner with ordered lifecycle handling. Do not substitute
+unbounded per-message goroutines or silently drop authorization/control events.
+Relevant source: `server/internal/session/manager.go`,
+`server/internal/websocket/peer.go`, `server/internal/http/legacy/session.go` and
+`server/internal/http/legacy/handler.go`. Alternative media sockets do not bypass
+this common dependency.
+
+**F2 — WebRTC recovery policies conflict (S).** Client `base.ts` waits eight
+seconds for a disconnected ICE peer to recover; server `webrtc/manager.go`
+destroys a peer immediately on Pion peer `Disconnected` or `Failed`. ICE state
+and peer state are different callbacks, so actual ordering needs a target trace;
+the client window is not an end-to-end guarantee. The initial client timer is
+also cleared at ICE `checking`, and `peerConnected` includes that state without
+a separate first-frame deadline. Align bounded transient-disconnect ownership,
+first-picture progress and final failure instead of adding another reconnect
+loop. Existing 1/2/5/10-second fresh-login retries, stale-identity guards, explicit
+logout/revocation stops and Safari's Play fallback remain useful. There is no
+complete client/legacy ICE-restart flow merely because the current server API has
+a `signalRestart` handler.
+
+**F3 — WebRTC player state still has the callback problem already corrected in
+WebCodecs (S, runtime effect O).** `video.vue` registers class-field arrow
+callbacks for canplay/playing/pause/waiting/stalled/timeupdate while those
+callbacks mutate private primitive recovery fields. Vue-class-component 7
+constructs a synthetic data instance; class-field arrows can retain that instance
+instead of the live Vue instance. The earlier WebCodecs repair and Vue's
+[documented caveat](https://class-component.vuejs.org/guide/caveats.html), backed
+by the [exact v7.2.6 implementation](https://raw.githubusercontent.com/vuejs/vue-class-component/v7.2.6/src/data.ts),
+support reviewing these as bound prototype methods. No current WebRTC browser
+reproduction or TV attribution is claimed. Independently, loadedmetadata uses
+the canplay handler, any timeupdate marks progress, and startup before first play
+has no equivalent element watchdog. Deliberate Pause/autoplay denial must be
+distinguished from a stall. Consolidate one playback-progress owner, separate
+from network recovery; do not copy HLS buffer/time constants into WebRTC.
+
+**F4 — Some upstream correctness fixes are absent; capture convergence can
+reduce special machinery (S).** The inbound published-track RTCP PLI ticker
+goroutine ranges a channel that `ticker.Stop()` does not close; upstream #697
+supplies an exit signal. This applies to admitted incoming microphone/camera
+tracks, not every passive viewer. Upstream #711 derives IDs for configured
+pipelines and guards an empty selection. Here missing IDs can make valid pipeline
+definitions invisible to the media provider; the signal fallback still indexes
+`videos[0]`, but the preceding current `openPeer` rejects empty provider sources,
+so an end-to-end panic is **not** established. Preserve explicit quality ordering:
+alphabetical `high, low, medium` is not the fork's `high, medium, low` ladder.
+The upstream subscription API also addresses listener identity, per-sample
+snapshot allocation, pipeline-start races, shutdown and bitrate locking. Local
+bitrate bucket updates/reset use different locks while only the published gauge
+is atomic; native teardown ordering/race checks are required. Adapt the low-level
+capture seam once behind the richer existing provider, preserving timestamp
+validity/generations and the fork's corrected **bits/s** units. Do not retain two
+parallel subscription systems or replace the authorization/delivery manager.
+
+**F5 — Adaptive quality has demonstrated value; keep the validated behavior
+and default-off profile (S/T).** Receiver-loss/NACK evidence prevents a loss-free
+GCC collapse alone from lowering quality; a one-tier peer-local probe breaks
+lower-tier application-limited recovery deadlock with bounded backoff. Their
+negative controls and supplied target downgrade/recovery/isolation results
+justify this complexity. They do not justify universal bitrate/quantizer values
+or enabling the multi-pipeline profile everywhere. Multiple active source tiers
+cost captures/encoders; new HLS demand keeps high active. Historical whole-Brave
+resource samples are not isolated estimator or transport measurements. Retain
+the single-pipeline default, fixed diagnostics and the accepted profile; tune
+only from a controlled target baseline.
+
+**F6 — HLS pays a real conversion/topology cost; measured benefit is still
+bounded (S/T/O).** `mediahls/transcoder.go` independently decodes the common VP8
+high source for each of three H.264 outputs. Opus is decoded and encoded as AAC.
+No second desktop capture is created by HLS itself, but it can start/retain high
+capture and adds four native conversion workers. This is another lossy video
+generation; a larger H.264 target rate cannot restore details already lost in
+VP8. H.264 targets 3,000/1,100/365 kbit/s plus AAC 128 kbit/s and advertised
+playlist bandwidth estimates are not measured egress or quality improvements.
+The benefit is another passive playback ecosystem, with latest PC/Helium
+coexistence evidence. A reduced ladder, shared decode/raw tee or a source codec
+change is a separate design only if resources/quality make it necessary; clocks,
+anchors and source isolation make it a risky premature rewrite.
+
+**F7 — HLS source-format and lifecycle claims need a precise boundary (S/O).**
+`workerFormatMatches` requires high VP8 at 1280×720, 25/1 fps and stereo 48-kHz
+Opus. A changed generation with the supported format can be recovered; arbitrary
+resolution/codec changes are not transparent supported input. Existing broad
+resolution-change acceptance text must be read with this constraint and resolved
+before promising seamless changes. The independent master probe (one-second
+full-body deadline), lease renewal, readiness budget, player errors and progress
+watchdog serve different purposes but overlap in failure reporting. Consolidate
+their ownership/status where possible; preserve native-player revocation and
+lease renewal. The old timeout/parser hypotheses are not confirmed causes, so
+do not raise timeouts or buffers speculatively after the passed 8741 checkpoint.
+
+**F8 — Ordinary room events do not statically explain the reported TV failure
+(S/O).** Join/chat/control handlers do not directly clear or reconnect the media
+delivery. A new capture listener requests a shared-source keyframe; other
+listeners remain attached. This can create a bitrate burst, but causality is
+unmeasured. A video-store comment claims these events renegotiate fresh tracks;
+that causal assertion is not supported by the traced server path. Replacement
+of old same-kind tracks and listener cleanup still serve a valid purpose and
+must not be removed on that comment alone. Default chat sounds allocate a new
+Audio element and chat history grows without a fixed bound. These are separate
+device/long-session candidates, not TV diagnoses. Compare sound on/off as one
+variable, record socket/ICE/player failure separately, and change history/render
+behavior only with actual resource evidence and retained product requirements.
+
+**F9 — Small maintenance cleanup and dependency work have higher confidence
+than removing a useful transport (S/O).** `client/vue.config.js` is a Vue CLI
+artifact while package scripts use Vite; legacy `VUE_APP_*` environment fallbacks
+and special development-host timeout logic need an actual-caller inventory.
+No automatic migration/removal is justified for existing deployments. Client
+Google STUN injection checks only `stun:` and can augment an intentional TURN-only
+or `stuns:` configuration. Establish intended operator policy, actual ICE
+candidate/relay use and startup phases before simplifying it. Non-trickle
+gathering and external address discovery also need bounded cancellation review;
+more public STUN servers are not a demonstrated performance fix. Keep mobile
+touch/input, view-only enforcement and the chat/tooltip/Axios containment repairs.
+The supplied dependency audit contains 20 package entries, not 20 proven reachable
+production flaws; unpatched packages and Vue 2 maintenance remain open. Review
+runtime/build reachability and perform scoped updates separately from recovery
+or transport changes. See [the dependency classification](DEPENDENCY_AUDIT_2026-10-04.md).
+
+### Recommendation and alternatives
+
+**Retain WebRTC as the core/default and improve its common event, startup and
+recovery paths first. Retain conventional HLS as a bounded opt-in passive
+compatibility candidate. Keep WebCodecs implemented but freeze expansion until
+comparative evidence identifies a real niche. Keep LL-HLS unadvertised in the
+conventional-only deployment and defer its acceptance/expansion until there is a
+latency requirement.** The HLS server feature remains default-off in the
+repository even though the supplied current target has conventional HLS enabled.
+No deletion, new transport, automatic fallback, broad upstream merge or master
+promotion is authorized by this assessment.
+
+| Option | Benefit | Cost or lost behavior | Decision condition |
+|---|---|---|---|
+| Keep all three media paths; qualify each explicitly | Preserves tested WebCodecs iPhone behavior and HLS compatibility candidate | Three delivery/client lifecycle surfaces plus LL modes remain to maintain | Worthwhile if actual device/network needs and accepted resource budgets justify both optional paths |
+| WebRTC + conventional HLS; retire WebCodecs later | Likely simpler long-term split: interactive RTP and passive HTTP ecosystem | Loses manual VP8/Opus-over-HTTPS receive path and its tested foreground behavior; saved preferences/overlays/contracts need migration | Favor only if inventory and same-device comparison show no retained WebCodecs use or unique accepted benefit |
+| WebRTC + WebCodecs; retire HLS later | Avoids HLS native transcodes, custom packaging and HLS HTTP lifecycle | Loses native passive HLS ecosystem and ABR; TV compatibility remains unresolved | Favor if HLS has no required compatible devices or fails resource/quality gates and WebCodecs covers actual receive needs |
+| WebRTC only | Smallest delivery architecture and one primary media stack | Loses both alternative receive paths; offers no compatibility remedy for devices that cannot use WebRTC | Favor only if all required devices/networks pass WebRTC and users no longer need either optional path |
+| Remove only LL-HLS, retain conventional HLS | Reduces reload/part/client/proxy acceptance combinations | Requires contract/parser/advertisement cleanup; most conversion cost and some shared fMP4 machinery remain | Reasonable after confirming no low-delay passive requirement; current mode restriction already provides a reversible first step |
+
+Actual active use of each path, required device list and tolerated latency remain
+unknown. The operator's experiments establish usage during checkpoints, not an
+ongoing production population. Optional-path retirement should therefore begin
+with an explicit reversible disablement decision and end with removal only after
+its compatibility and saved-preference consequences are accepted. Do not remove
+the **normal event WebSocket**, central authorization, provider or interactive
+data channel while retiring the **dedicated media WebSocket**.
+
+The implementation and measurement blocks, their dependencies, target checks and
+rollback are recorded in [WORKPLAN.md](WORKPLAN.md#next). This is a completed
+static assessment with open empirical/device questions, not full transport
+acceptance or a claim to have reproduced the Smart-TV incident.
+
+## Historical HLS source follow-up — 2026-10-05 to 2026-10-07
+
+Historical requested source-only follow-up (2026-10-05):
 [the HLS client stability review](HLS_CLIENT_STABILITY_REVIEW_2026-10-05.md)
 corrects paused-time stalls, monitoring before first readiness and mixed
 HTTP/readiness error counts, with defensive player-event handling. Eight new
@@ -89,7 +426,11 @@ Operator direction recorded on 2026-10-04. This is a required review and validat
 - Source inspection found that join, chat and several control transitions call `chat.newMessage`; with `chat_sound` enabled it creates a new `Audio('chat.mp3')` element. The default is enabled. This is a concrete investigation candidate, **not a confirmed cause**. Do not change unrelated media settings simultaneously when testing it.
 - HLS is a compatibility candidate for passive viewers, not a proven fix or a demonstrated stability improvement over either existing backend. The event/session connection remains authoritative for every backend.
 
-## Implementation and validation order
+## Historical implementation and validation order
+
+This records the earlier HLS sequence. New application work now waits for the
+operator's decision on [the comparative plan](WORKPLAN.md#next); the sequence
+below does not authorize further repairs or target execution in this task.
 
 HLS/LL-HLS Phases 1–3 and the separate Phase 4 repository assets are implemented on `testing`. The unavailable television does not block repository implementation or checks on available devices; its device acceptance remains pending. Keep WebRTC as the default, preserve explicit WebCodecs selection and leave HLS default-off. No automatic fallback or `master` promotion is authorized.
 

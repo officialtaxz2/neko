@@ -31,7 +31,7 @@ in this summary. Raw evidence remains outside Git in the private directory.
 | HLS available-device conventional playback | NOT RUN | |
 | LL-HLS HTTP/2 or HTTP/3 + path RTT prerequisite | NOT RUN | |
 | LL-HLS available-device playback | NOT RUN | |
-| Actual colleague TV, exact model/firmware/browser | DEFERRED | Device unavailable |
+| Affected Hisense VIDAA/Odin TV, exact model/firmware/browser | NOT RUN | Record availability/version; no compatibility assumption |
 | Startup / latency / A/V drift / ten-minute stream | NOT RUN | |
 | Mixed-backend slow-viewer and adaptive down/up isolation | NOT RUN | |
 | No viewer / 1 viewer / 3 same / 3 variants resources | NOT RUN | |
@@ -39,6 +39,26 @@ in this summary. Raw evidence remains outside Git in the private directory.
 | Rollback and fresh default-off confirmation | NOT RUN | |
 
 ## Device measurements
+
+### Common-plane / transport comparison follow-up
+
+Use [the current Workplan handoff](WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07)
+for the authorized common-event/WebRTC changes. Historical exact-8741 playback
+does not pass these new gates. Preserve technical HLS targets separately from
+the user's still-unnumbered preference for small passive delay.
+
+| Additional gate | Result | Evidence / limitation |
+|---|---|---|
+| Actual Vue/BaseClient/config/partial-peer/writer/legacy regression checks | NOT RUN | |
+| Relevant Go race, incoming PLI lifecycle and native URI-drop checks | NOT RUN | |
+| Healthy viewers isolated from slow event reader; terminal/revoke ordering | NOT RUN | |
+| WebRTC short/expired/failed recovery, Pause/native PiP, no stale reopen | NOT RUN | |
+| iPhone Play/muted fallback, fullscreen/clipboard and file transfers | NOT RUN | |
+| VIDAA/Odin quiet vs chat/control sequence, sound on/off | NOT RUN | |
+| Ten cold/ten warm starts and 30 glass-to-glass samples per eligible path | NOT RUN | |
+| Like-quality CPU/RAM/egress/cleanup, per-path recurring use | NOT RUN | |
+| Accepted passive delay and keep/restrict/retire decision | NOT RUN | |
+
 
 For each device and mode record exact model/OS/browser, playback path, at least
 ten cold starts, a ten-minute unshaped run and at least 30 synchronized visible

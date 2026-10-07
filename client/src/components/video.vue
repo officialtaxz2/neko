@@ -557,6 +557,7 @@
   import KeyboardHelper from './keyboard_helper.vue'
   import { ScheduledVideoFrame } from '~/neko/media/controller'
   import { useCompactMediaStatus } from '~/neko/media-selection.js'
+  import { samplePlayback, hasPlaybackProgress } from '~/neko/playback-progress.js'
 
   // @ts-ignore
   import GuacamoleKeyboard from '~/utils/guacamole-keyboard.ts'
@@ -613,10 +614,22 @@
     // --- Stream health monitoring ---
     private _trackCleanup: (() => void) | null = null
     private _streamCleanup: (() => void) | null = null
-    private _removeTrackTimer: number | null = null
-    private _stalledTimer: any = null
-    private _recoveryAttempts = 0
-    private _hasEverPlayed = false // Guard: only run recovery if video played at least once
+    // A non-reserved data property belongs to the live Vue instance. Sealing
+    // keeps polling state out of reactive rendering on resource-limited devices.
+    private playbackHealth = Object.seal({
+      timer: null as number | null,
+      attempts: 0,
+      lastProgress: 0,
+      sample: null as ReturnType<typeof samplePlayback> | null,
+      generation: 0,
+      watchdog: 0,
+      playRequest: 0,
+      playPending: false,
+      sourcePending: false,
+      source: null as MediaStream | null,
+      destroyed: false,
+      hidden: false,
+    })
     private static readonly MAX_RECOVERY_ATTEMPTS = 3
     private static readonly STALLED_TIMEOUT_MS = 8000 // 8s — give mobile browsers more time
 
@@ -638,105 +651,128 @@
       }
     }
 
-    private onVideoCanPlayThrough = () => {
-      if (this.hlsSelected) return
-      if (!this._video) return
+    // Prototype methods are bound by Vue, rather than capturing the synthetic
+    // vue-class-component data instance in class-field arrow callbacks.
+    private onVideoCanPlayThrough() {
+      if (!this.currentWebRTCVideo()) return
       this.updateVideoDimensions()
       this.$accessor.video.setPlayable(true)
-      if (this.autoplay || this.playing) {
-        this.$nextTick(() => {
-          if (this._video) {
-            if (this.playing) {
-              // Direct play call since Watch('playing') won't fire if already true.
-              // If it fails (e.g. autoplay policies on mobile), delegate to watcher.
-              this._video.play().catch((err) => {
-                console.warn('[Neko] Direct play failed in canplaythrough, delegating to watcher:', err)
-                this.onPlayingChanged(true)
-              })
-            } else {
-              this.$accessor.video.play()
-            }
-          }
-        })
-      }
+      if (this.playing) void this.onPlayingChanged(true)
     }
 
-    private onVideoEnded = () => {
-      if (this.hlsSelected) return
-      this.$accessor.video.setPlayable(false)
+    private onVideoMetadata() {
+      if (!this.currentWebRTCVideo()) return
+      this.playbackHealth.sample = samplePlayback(this._video)
+      this.updateVideoDimensions()
     }
 
-    private onVideoError = (event: ErrorEvent) => {
-      if (this.hlsSelected) return
-      this.$log.error(event.error)
-      this.$accessor.video.setPlayable(false)
+    private onVideoSeeking() {
+      if (this.currentWebRTCVideo()) this.playbackHealth.sample = null
     }
 
-    private onVideoVolumeChange = () => {
+    private onVideoSeeked() {
+      if (this.currentWebRTCVideo()) this.playbackHealth.sample = samplePlayback(this._video)
+    }
+
+    private onVideoEnded() {
+      if (this.currentWebRTCVideo()) this.startStalledTimer()
+    }
+
+    private onVideoError(event: ErrorEvent) {
+      if (!this.currentWebRTCVideo()) return
+      this.$log.error(event.error || this._video.error)
+      this.startStalledTimer()
+    }
+
+    private onVideoVolumeChange() {
       if (!this._video) return
       this.$accessor.video.setMuted(this._video.muted)
       this.$accessor.video.setVolume(this._video.volume * 100)
     }
 
-    private onVideoPlaying = () => {
-      if (this.hlsSelected) return
-      this._hasEverPlayed = true
-      this.cancelStalledTimer()
-      this._recoveryAttempts = 0
-      this.$accessor.video.play()
+    private onVideoPlaying() {
+      if (!this.currentWebRTCVideo() || !this.playing) return
+      this.playbackHealth.sourcePending = false
+      this.observePlaybackProgress()
+      this.startStalledTimer()
     }
 
-    private onVideoPause = () => {
-      if (this.hlsSelected) return
-      this.$accessor.video.pause()
+    private onVideoPause() {
+      if (!this.currentWebRTCVideo() || !this._video.paused) return
+      if (this.playbackHealth.sourcePending || this.playbackHealth.playPending) {
+        this.startStalledTimer()
+      } else {
+        // Native fullscreen/PiP Pause is user intent too. Only a known source
+        // attachment or pending play operation may defer its pause event.
+        this.$accessor.video.pause()
+        void this.onPlayingChanged(false)
+      }
     }
 
     // --- Stream health: stalled / waiting handlers ---
-    private onVideoStalled = () => {
-      if (this.hlsSelected) return
-      // Only start recovery if we previously had a working stream.
-      // On mobile, 'stalled' fires during normal WebRTC startup buffering
-      // and triggering recovery there would kill the stream.
-      if (this._hasEverPlayed) {
-        console.warn('[Neko] Video stalled – starting recovery timer')
-        this.startStalledTimer()
-      }
+    private onVideoStalled() {
+      this.startStalledTimer()
     }
 
-    private onVideoWaiting = () => {
-      if (this.hlsSelected) return
-      // 'waiting' fires when playback stops due to lack of data.
-      // On mobile this is normal during initial buffering — only act if
-      // we had a working stream before.
-      if (this._hasEverPlayed) {
-        console.warn('[Neko] Video waiting for data')
-        this.startStalledTimer()
-      }
+    private onVideoWaiting() {
+      this.startStalledTimer()
     }
 
-    private onVideoTimeUpdate = () => {
-      if (this.hlsSelected) return
-      // If we receive a timeupdate the stream is alive – cancel any recovery timer.
-      // Optimize to avoid calling timer manipulation on every single timeupdate frame.
-      if (this._stalledTimer !== null || this._recoveryAttempts > 0 || !this._hasEverPlayed) {
-        this._hasEverPlayed = true
-        this.cancelStalledTimer()
-        this._recoveryAttempts = 0
+    private onVideoTimeUpdate() {
+      if (this.currentWebRTCVideo() && this.playing) this.observePlaybackProgress()
+    }
+
+    private currentWebRTCVideo() {
+      return !this.playbackHealth.destroyed && !this.receiveOnlySelected &&
+        !!this._video && !!this.stream && (this._video.srcObject === this.stream ||
+          (!('srcObject' in this._video) && this.playbackHealth.source === this.stream))
+    }
+
+    private observePlaybackProgress() {
+      const health = this.playbackHealth
+      const current = samplePlayback(this._video)
+      if (hasPlaybackProgress(health.sample, current)) {
+        health.lastProgress = Date.now()
+        health.attempts = 0
       }
+      health.sample = current
     }
 
     private startStalledTimer() {
-      if (this._stalledTimer) return // already ticking
-      this._stalledTimer = window.setTimeout(() => {
-        this._stalledTimer = null
-        this.attemptStreamRecovery('stalled timeout')
-      }, NekoVideo.STALLED_TIMEOUT_MS)
+      const health = this.playbackHealth
+      if (health.timer !== null || !this.currentWebRTCVideo() || !this.playing) return
+      health.lastProgress = Date.now()
+      health.sample = samplePlayback(this._video)
+      const generation = health.generation
+      const watchdog = health.watchdog
+      const poll = () => {
+        if (health.watchdog !== watchdog) return
+        health.timer = null
+        if (health.generation !== generation || !this.currentWebRTCVideo() || !this.playing) return
+        // Background throttling is not evidence of a broken foreground decoder.
+        if (document.hidden || health.hidden) {
+          health.hidden = document.hidden
+          health.lastProgress = Date.now()
+          health.sample = samplePlayback(this._video)
+        } else {
+          this.observePlaybackProgress()
+          if (Date.now() - health.lastProgress >= NekoVideo.STALLED_TIMEOUT_MS) {
+            health.lastProgress = Date.now()
+            void this.attemptStreamRecovery('no playback progress')
+          }
+        }
+        if (health.watchdog === watchdog && health.timer === null && health.generation === generation && this.currentWebRTCVideo() && this.playing) {
+          health.timer = window.setTimeout(poll, 500)
+        }
+      }
+      health.timer = window.setTimeout(poll, 500)
     }
 
     private cancelStalledTimer() {
-      if (this._stalledTimer) {
-        clearTimeout(this._stalledTimer)
-        this._stalledTimer = null
+      this.playbackHealth.watchdog++
+      if (this.playbackHealth.timer !== null) {
+        window.clearTimeout(this.playbackHealth.timer)
+        this.playbackHealth.timer = null
       }
     }
 
@@ -744,40 +780,41 @@
      * Attempt to recover a dead/stalled video stream.
      * Strategy:
      *  1. Re-assign srcObject (forces browser to re-evaluate the stream)
-     *  2. Let the normal media-ready/play watcher retry playback. If Safari
+     *  2. Let the common play owner retry playback after attachment. If Safari
      *     rejects autoplay even while muted, keep the central Play fallback.
      *
-     * IMPORTANT: We NEVER call video.load() on a WebRTC stream.
-     * load() resets the media element, discarding the srcObject's internal state.
-     * On iOS Safari this permanently kills the stream — the video stays black
-     * and no amount of play() calls will revive it.
+     * Keep the existing no-video.load() boundary for WebRTC and Safari Play.
+     * Reloading the element is a distinct lifecycle operation, not proof of
+     * recovery; actual device behavior remains a target acceptance case.
      *
-     * Attempts reset only after playback progress, track unmute or a new
-     * stream. A successful srcObject assignment alone is not recovery.
+     * Attempts reset only after playback progress or a new stream. Neither
+     * unmute nor successful srcObject assignment alone proves recovery.
      */
     private async attemptStreamRecovery(reason: string) {
-      if (this.receiveOnlySelected) return
-      if (!this._video || !this.stream) return
-
+      if (!this.currentWebRTCVideo() || !this.playing) return
+      const health = this.playbackHealth
       const max = NekoVideo.MAX_RECOVERY_ATTEMPTS
-      if (this._recoveryAttempts >= max) {
+      if (health.attempts >= max) {
         console.error(`[Neko] Stream recovery failed after ${max} attempts (${reason})`)
+        this.cancelStalledTimer()
+        this.$accessor.video.pause() // Explicit Play remains available; no network relogin here.
         return
       }
-      this._recoveryAttempts++
-      console.warn(`[Neko] Attempting stream recovery #${this._recoveryAttempts} (${reason})`)
-
+      health.attempts++
+      console.warn(`[Neko] Attempting stream recovery #${health.attempts} (${reason})`)
+      const generation = health.generation
+      const video = this._video
+      const stream = this.stream
+      health.playRequest++
+      health.playPending = false
+      health.sourcePending = true
       try {
-        // Re-assign srcObject to force the browser to re-evaluate the stream
-        this._video.srcObject = this.stream
+        if ('srcObject' in video) video.srcObject = stream
+        health.sample = samplePlayback(video)
         await this.$nextTick()
-
-        // We do NOT call play() here immediately.
-        // Re-assigning srcObject triggers the browser to load the stream.
-        // Once the stream is loaded and ready, it fires 'canplay' or 'canplaythrough',
-        // calling onVideoCanPlayThrough. Since this.playing is true, the handler
-        // will safely and automatically call play() when the stream is ready.
-        console.log('[Neko] Stream recovery srcObject re-assignment completed; awaiting playback progress')
+        if (generation === health.generation && video === this._video && stream === this.stream && this.currentWebRTCVideo() && this.playing) {
+          void this.onPlayingChanged(true)
+        }
       } catch (err) {
         console.warn('[Neko] Stream recovery srcObject assignment failed', err)
       }
@@ -922,6 +959,8 @@
     }
 
     get clipboard_read_available() {
+      const safari = navigator.userAgent.includes('Safari') &&
+        !navigator.userAgent.includes('Chrome') && !navigator.userAgent.includes('Chromium')
       return (
         'clipboard' in navigator &&
         typeof navigator.clipboard.readText === 'function' &&
@@ -929,7 +968,7 @@
         // instead it hangs when reading clipboard, until user clicks on the page
         // and the click itself is not handled by the page at all, also the clipboard
         // reads always fail with "Clipboard read operation is not allowed."
-        navigator.userAgent.indexOf('Firefox') == -1
+        navigator.userAgent.indexOf('Firefox') == -1 && !safari
       )
     }
 
@@ -1108,15 +1147,22 @@
       // Detach from the previous stream even when the store is being reset.
       // Otherwise an old removetrack callback can race a replacement peer.
       this.detachStreamListeners()
+      this.cancelStalledTimer()
+      const health = this.playbackHealth
+      health.generation++
+      health.playRequest++
+      health.playPending = false
+      health.sourcePending = !!stream
+      health.source = stream || null
+      health.attempts = 0
+      health.sample = null
+      health.hidden = false
 
-      if (this.receiveOnlySelected || !this._video) {
+      if (health.destroyed || this.receiveOnlySelected || !this._video) {
         return
       }
 
       if (!stream) {
-        this.cancelStalledTimer()
-        this._recoveryAttempts = 0
-        this._hasEverPlayed = false
         if ('srcObject' in this._video) {
           this._video.srcObject = null
         }
@@ -1135,7 +1181,6 @@
       this.attachStreamListeners(stream)
 
       this.updateVideoDimensions()
-      this._recoveryAttempts = 0
 
       // Proactively mark the stream as playable to unlock overlay controls
       // if browser media events get delayed or blocked by autoplay detection.
@@ -1146,15 +1191,10 @@
       // The onPlayingChanged watcher handles the muted fallback.
       if (this.autoplay) {
         this.$accessor.video.play()
-      } else if (this.playing) {
-        this.$nextTick(() => {
-          if (this._video) {
-            this._video.play().catch((err) => {
-              console.warn('[Neko] Failed to play new stream:', err)
-            })
-          }
-        })
       }
+      // A replacement stream may arrive while the playing store flag is true.
+      // Use the same play owner; no canplay-dependent startup deadlock.
+      if (this.playing) void this.onPlayingChanged(true)
     }
 
     @Watch('track')
@@ -1169,20 +1209,23 @@
 
     private attachTrackListeners(track: MediaStreamTrack) {
       this.detachTrackListeners()
+      const current = () => !this.playbackHealth.destroyed && !this.receiveOnlySelected && track === this.track
 
       const onEnded = () => {
+        if (!current()) return
         console.warn(`[Neko] Video track ended: ${track.id}`)
-        this.attemptStreamRecovery('track ended')
+        this.startStalledTimer()
       }
       const onMute = () => {
+        if (!current()) return
         console.warn(`[Neko] Video track muted (media pipeline stall): ${track.id}`)
         // A muted track may recover on its own – start a timer
         this.startStalledTimer()
       }
       const onUnmute = () => {
-        console.log(`[Neko] Video track unmuted (recovered): ${track.id}`)
-        this.cancelStalledTimer()
-        this._recoveryAttempts = 0
+        if (!current()) return
+        // Delivery resumed; only observed playback progress proves recovery.
+        this.startStalledTimer()
       }
 
       track.addEventListener('ended', onEnded)
@@ -1207,20 +1250,12 @@
       this.detachStreamListeners()
 
       const onRemoveTrack = (event: MediaStreamTrackEvent) => {
+        if (this.playbackHealth.destroyed || this.receiveOnlySelected || this.stream !== stream) return
         if (event.track.kind === 'video') {
           console.warn(`[Neko] Video track removed from stream: ${event.track.id}`)
-          // Don't immediately recover – a new track should arrive shortly via onTrack.
-          // But if nothing arrives within 3s, attempt recovery.
-          if (this._removeTrackTimer !== null) {
-            window.clearTimeout(this._removeTrackTimer)
-          }
-          this._removeTrackTimer = window.setTimeout(() => {
-            this._removeTrackTimer = null
-            if (this.stream === stream && stream.getVideoTracks().length === 0) {
-              console.warn('[Neko] No video tracks in stream after removetrack – triggering recovery')
-              this.attemptStreamRecovery('removetrack with no replacement')
-            }
-          }, 3000)
+          // Replacement tracks may arrive normally. The same progress owner
+          // supplies the grace; no second removetrack timer or immediate repair.
+          this.startStalledTimer()
         }
       }
 
@@ -1232,10 +1267,6 @@
     }
 
     private detachStreamListeners() {
-      if (this._removeTrackTimer !== null) {
-        window.clearTimeout(this._removeTrackTimer)
-        this._removeTrackTimer = null
-      }
       if (this._streamCleanup) {
         this._streamCleanup()
         this._streamCleanup = null
@@ -1248,8 +1279,13 @@
       // Gesture handlers call the controller directly, preserving Safari activation.
       if (this.hlsSelected) return
       if (this.webCodecsSelected) {
+        const health = this.playbackHealth
+        const request = ++health.playRequest
+        const generation = health.generation
         if (playing) {
           const audioRunning = await this.$client.playWebCodecs()
+          if (health.destroyed || request !== health.playRequest || generation !== health.generation ||
+            !this.webCodecsSelected || this.hlsSelected || !this.playing) return
           if (!audioRunning && this.$accessor.media.audioEnabled) {
             this.$accessor.video.setMuted(true)
             this.mutedOverlay = true
@@ -1262,50 +1298,49 @@
         return
       }
 
-      // Keep a stable reference across awaits. Reactive layout changes (for
-      // example switching into the view-only shell after member/init events)
-      // can temporarily clear the decorated ref while play() is rejecting.
+      const health = this.playbackHealth
       const video = this._video
-      if (!video) {
+      if (!playing) {
+        health.playRequest++
+        health.playPending = false
+        health.attempts = 0
+        this.cancelStalledTimer()
+        if (video && !video.paused) video.pause()
         return
       }
-
-      if (video.paused && playing) {
-        // if autoplay is disabled, play() will throw an error
-        // and we need to properly save the state otherwise we
-        // would be thinking we're playing when we're not
-        try {
-          await video.play()
-        } catch (err: any) {
-          if (!video.muted) {
-            // video.play() can fail if audio is set due restrictive
-            // browsers autoplay policy -> retry with muted audio.
-            // This is the PRIMARY mobile fix: iOS Safari and mobile Chrome
-            // block unmuted autoplay but allow muted autoplay.
-            try {
-              // Update the captured element before the store mutation can
-              // trigger a render and change this._video.
-              video.muted = true
-              this.$accessor.video.setMuted(true)
-              await video.play()
-              // Show the muted overlay so user can tap to unmute
-              this.mutedOverlay = true
-            } catch (err2: any) {
-              // if it still fails, show the play overlay instead of
-              // silently staying black
-              console.warn('[Neko] Autoplay blocked even muted, showing play overlay', err2)
+      if (!this.currentWebRTCVideo()) return
+      this.startStalledTimer()
+      if (!video.paused || health.playPending) return
+      const stream = this.stream
+      const generation = health.generation
+      const request = ++health.playRequest
+      health.playPending = true
+      const current = () => request === health.playRequest && generation === health.generation &&
+        this.currentWebRTCVideo() && video === this._video && stream === this.stream && this.playing
+      try {
+        await video.play() // Old browsers may return undefined; await is safe.
+      } catch (err: any) {
+        if (!current() || err?.name === 'AbortError') return
+        if (!video.muted && err?.name !== 'NotSupportedError') {
+          try {
+            video.muted = true
+            this.$accessor.video.setMuted(true)
+            await video.play()
+            if (current()) this.mutedOverlay = true
+          } catch (mutedError: any) {
+            if (current() && mutedError?.name !== 'AbortError') {
+              this.cancelStalledTimer()
               this.$accessor.video.pause()
             }
-          } else {
-            // Already muted but still failing — show play overlay
-            console.warn('[Neko] Play failed even muted, showing play overlay', err)
-            this.$accessor.video.pause()
           }
+        } else if (err?.name !== 'NotSupportedError') {
+          this.cancelStalledTimer()
+          this.$accessor.video.pause()
         }
-      }
-
-      if (!video.paused && !playing) {
-        video.pause()
+        // A decode/source error keeps the bounded progress owner active. An
+        // autoplay denial ends at the user-operated Play fallback instead.
+      } finally {
+        if (request === health.playRequest) health.playPending = false
       }
     }
 
@@ -1447,7 +1482,9 @@
       this._video.addEventListener('resize', this.onResize)
       this._video.addEventListener('canplaythrough', this.onVideoCanPlayThrough)
       this._video.addEventListener('canplay', this.onVideoCanPlayThrough)
-      this._video.addEventListener('loadedmetadata', this.onVideoCanPlayThrough)
+      this._video.addEventListener('loadedmetadata', this.onVideoMetadata)
+      this._video.addEventListener('seeking', this.onVideoSeeking)
+      this._video.addEventListener('seeked', this.onVideoSeeked)
       this._video.addEventListener('ended', this.onVideoEnded)
       this._video.addEventListener('error', this.onVideoError)
       this._video.addEventListener('volumechange', this.onVideoVolumeChange)
@@ -1491,6 +1528,11 @@
     }
 
     beforeDestroy() {
+      this.playbackHealth.destroyed = true
+      this.playbackHealth.generation++
+      this.playbackHealth.playRequest++
+      this.playbackHealth.source = null
+      this.cancelStalledTimer()
       if (this.hlsSelected) this.$client.detachHLSVideo(this._video)
       window.removeEventListener('focus', this._onWindowFocus)
       this.observer.disconnect()
@@ -1505,7 +1547,9 @@
         this._video.removeEventListener('resize', this.onResize)
         this._video.removeEventListener('canplaythrough', this.onVideoCanPlayThrough)
         this._video.removeEventListener('canplay', this.onVideoCanPlayThrough)
-        this._video.removeEventListener('loadedmetadata', this.onVideoCanPlayThrough)
+        this._video.removeEventListener('loadedmetadata', this.onVideoMetadata)
+        this._video.removeEventListener('seeking', this.onVideoSeeking)
+        this._video.removeEventListener('seeked', this.onVideoSeeked)
         this._video.removeEventListener('ended', this.onVideoEnded)
         this._video.removeEventListener('error', this.onVideoError)
         this._video.removeEventListener('volumechange', this.onVideoVolumeChange)
@@ -1597,7 +1641,8 @@
       }
 
       try {
-        await this._video.play()
+        this.$accessor.video.play()
+        await this.onPlayingChanged(true)
         this.onResize()
       } catch (err: any) {
         if (err && (err.name === 'NotAllowedError' || String(err.message).includes('user didn\'t interact'))) {
@@ -1614,11 +1659,8 @@
         this.$accessor.video.pause()
         return
       }
-      if (this._video.paused || !this.playable) {
-        return
-      }
-
-      this._video.pause()
+      this.$accessor.video.pause()
+      void this.onPlayingChanged(false)
     }
 
     toggle() {
@@ -1631,11 +1673,16 @@
         else void this.$client.playHLS()
         return
       }
+      if (this.webCodecsSelected) {
+        if (this.playing) this.$accessor.video.pause()
+        else this.$accessor.video.play()
+        return
+      }
 
       if (!this.playing) {
-        this.$accessor.video.play()
+        void this.play()
       } else {
-        this.$accessor.video.pause()
+        this.pause()
       }
     }
 
@@ -1648,13 +1695,22 @@
       }
       this.$accessor.video.play()
       this.$accessor.video.setMuted(false)
+      if (!this.receiveOnlySelected && this._video) {
+        this._video.muted = false
+        void this.onPlayingChanged(true)
+      }
     }
 
     unmute() {
       this.$accessor.video.setMuted(false)
       if (this.hlsSelected) { this.$client.setHLSMuted(false); void this.$client.playHLS() }
       if (this.webCodecsSelected) {
+        const health = this.playbackHealth
+        const request = ++health.playRequest
+        const generation = health.generation
         this.$client.playWebCodecs().then((running) => {
+          if (health.destroyed || request !== health.playRequest || generation !== health.generation ||
+            !this.webCodecsSelected || this.hlsSelected || !this.playing) return
           if (!running && this.$accessor.media.audioEnabled) this.$accessor.video.setMuted(true)
         })
       }

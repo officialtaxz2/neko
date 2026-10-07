@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"slices"
-	"sync"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog"
@@ -12,32 +11,31 @@ import (
 	"github.com/m1k1o/neko/server/pkg/types"
 	"github.com/m1k1o/neko/server/pkg/types/event"
 	"github.com/m1k1o/neko/server/pkg/types/message"
+	"github.com/m1k1o/neko/server/pkg/utils"
 )
 
 type WebSocketPeerCtx struct {
-	mu         sync.Mutex
 	logger     zerolog.Logger
 	connection *websocket.Conn
+	writer     *utils.WebSocketWriter
 }
 
 func newPeer(logger zerolog.Logger, connection *websocket.Conn) *WebSocketPeerCtx {
 	return &WebSocketPeerCtx{
 		logger:     logger.With().Str("submodule", "peer").Logger(),
 		connection: connection,
+		writer:     utils.NewWebSocketWriter(connection),
 	}
 }
 
 func (peer *WebSocketPeerCtx) Send(event string, payload any) {
-	peer.mu.Lock()
-	defer peer.mu.Unlock()
-
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		peer.logger.Err(err).Str("event", event).Msg("message marshalling has failed")
 		return
 	}
 
-	err = peer.connection.WriteJSON(types.WebSocketMessage{
+	err = peer.writer.SendJSON(types.WebSocketMessage{
 		Event:   event,
 		Payload: raw,
 	})
@@ -65,29 +63,24 @@ func (peer *WebSocketPeerCtx) Send(event string, payload any) {
 }
 
 func (peer *WebSocketPeerCtx) Ping() error {
-	peer.mu.Lock()
-	defer peer.mu.Unlock()
-
 	// application level heartbeat
-	if err := peer.connection.WriteJSON(types.WebSocketMessage{
+	if err := peer.writer.SendJSON(types.WebSocketMessage{
 		Event: event.SYSTEM_HEARTBEAT,
 	}); err != nil {
 		return err
 	}
 
-	return peer.connection.WriteMessage(websocket.PingMessage, nil)
+	return peer.writer.Send(websocket.PingMessage, nil)
 }
 
 func (peer *WebSocketPeerCtx) Destroy(reason string) {
-	peer.Send(
-		event.SYSTEM_DISCONNECT,
-		message.SystemDisconnect{
-			Message: reason,
-		})
-
-	peer.mu.Lock()
-	defer peer.mu.Unlock()
-
-	err := peer.connection.Close()
-	peer.logger.Err(err).Msg("peer connection destroyed")
+	raw, err := json.Marshal(message.SystemDisconnect{Message: reason})
+	if err != nil {
+		peer.writer.Close()
+		return
+	}
+	peer.writer.CloseAfterJSON(types.WebSocketMessage{
+		Event: event.SYSTEM_DISCONNECT,
+		Payload: raw,
+	})
 }

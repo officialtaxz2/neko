@@ -1,6 +1,41 @@
 # Project Definition
 
-Last consolidated: 2026-09-14.
+Requirements last consolidated: 2026-09-14; comparative assessment added 2026-10-07.
+
+## Current architecture decision checkpoint — 2026-10-07
+
+The [comparative fork review](STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07)
+and [prioritized plan](WORKPLAN.md#next) separate the original assessment from
+the subsequently authorized implementation. Existing
+shared-room, authorization, mobile/input and explicit-selection requirements
+remain authoritative. The independent B1–B3/B6 repairs and target comparison
+assets are implemented and statically reviewed, with target validation pending.
+Conditional B5/B7/B8 remain dependent on usage/measurement and a disposition
+decision; no optional path retirement or `master` promotion is authorized.
+
+The accepted direction is: retain/improve default WebRTC;
+retain conventional HLS as an opt-in passive compatibility candidate; freeze
+WebCodecs expansion pending an actual required-device/network benefit and
+controlled comparison; keep LL-HLS unadvertised in the conventional-only
+deployment pending a latency need. Optional server features stay default-off in
+the base repository configuration. The normal login/event WebSocket is required
+by all three choices and is distinct from the additional media WebSocket.
+
+Supplied exact-8741 PC/Helium evidence confirms at least five minutes of moving
+HLS A/V without Retry/reload alongside continuing WebRTC. It does not establish
+Smart-TV compatibility, reliable cold starts, native/LL-HLS/resource acceptance
+or the cause of the earlier reported event failures. Earlier corrected foreground
+iPhone WebCodecs evidence remains valid within its bounded scope; real recurring
+backend use is not yet inventoried. No path should be removed solely for code
+size or from unsupported compatibility assumptions.
+
+Required devices, confirmed by the operator: desktop, Smart-TV and iPhone.
+A small delay is acceptable to passive viewers but should remain modest; no
+numerical user budget has been agreed. The technical HLS ≤24-second contract is
+not evidence that such a delay meets this preference. Hisense VIDAA/Odin is the
+reported affected WebRTC platform; control requests/releases/chat correlate with
+abort/blackscreen and reload recovery. Exact model/firmware/browser version and
+cause are open. Target checks are performed by the operator, not in Codex.
 
 State labels:
 

@@ -15,21 +15,14 @@ func (h *MessageHandlerCtx) signalRequest(session types.Session, payload *messag
 		return errors.New("not allowed to watch")
 	}
 
-	offer, peer, err := h.webrtc.CreatePeer(session)
-	if err != nil {
-		return err
-	}
-
-	// set webrtc as paused if session has private mode enabled
-	if session.PrivateModeEnabled() {
-		peer.SetPaused(true)
-	}
-
 	video := payload.Video
 
 	// use default first video, if not provided
 	if video.Selector == nil {
 		videos := h.capture.Video().IDs()
+		if len(videos) == 0 {
+			return errors.New("no video streams available")
+		}
 		video.Selector = &types.StreamSelector{
 			ID:   videos[0],
 			Type: types.StreamSelectorTypeExact,
@@ -39,6 +32,21 @@ func (h *MessageHandlerCtx) signalRequest(session types.Session, payload *messag
 	// TODO: Remove, used for compatibility with old clients.
 	if video.Auto == nil {
 		video.Auto = &payload.Auto
+	}
+
+	offer, peer, err := h.webrtc.CreatePeer(session)
+	if err != nil {
+		return err
+	}
+	initialized := false
+	defer func() {
+		if !initialized {
+			peer.Destroy()
+		}
+	}()
+
+	if session.PrivateModeEnabled() {
+		peer.SetPaused(true)
 	}
 
 	// set video stream
@@ -60,6 +68,7 @@ func (h *MessageHandlerCtx) signalRequest(session types.Session, payload *messag
 	if err != nil {
 		return err
 	}
+	initialized = true
 
 	session.Send(
 		event.SIGNAL_PROVIDE,

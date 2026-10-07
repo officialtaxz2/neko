@@ -3,18 +3,22 @@
 set -Eeuo pipefail
 
 readonly RESULT_TEMPLATE="docs/HLS_LL_HLS_RESULTS_TEMPLATE.md"
-readonly METRICS_PATTERN='^(go_goroutines|go_memstats_heap_alloc_bytes|process_(cpu_seconds_total|resident_memory_bytes)|neko_(media_hls_|media_(deliveries|delivery_(opens|closes)_total|source_generation|subscriptions_active|subscription_(delivered_(bytes|units)_total|discontinuities_total|dropped_units_total|queue_(capacity|depth)))|websocket_(connections|drops_total|resyncs_total)|capture_(pipelines_active|streamsink_(bitrate|listeners|bytes))|webrtc_(connection_state|track_dropped_samples_total|receiver_estimated_target_bitrate|receiver_congestion_evidence|recovery_probe_)))'
+readonly METRICS_PATTERN='^(go_goroutines|go_memstats_heap_alloc_bytes|process_(cpu_seconds_total|resident_memory_bytes)|neko_(media_hls_|media_(deliveries|delivery_(opens|closes)_total|source_generation|subscriptions_active|subscription_(delivered_(bytes|units)_total|discontinuities_total|dropped_units_total|queue_(capacity|depth)))|websocket_(connections|handshakes_total|records_total|bytes_total|drops_total|resyncs_total|write_duration_seconds|queue_depth|queue_bytes|client_lag_milliseconds)|capture_(pipelines_active|streamsink_(bitrate|listeners|bytes))|webrtc_(connection_state|track_dropped_samples_total|receiver_estimated_target_bitrate|receiver_congestion_evidence|recovery_probe_)))'
 
 usage() {
   cat <<'EOF'
 Target-server HLS evidence (run from the repository root):
   bash deploy/collect-hls-media.sh init OUTPUT_DIR
   bash deploy/collect-hls-media.sh snapshot OUTPUT_DIR PHASE
+  bash deploy/collect-hls-media.sh sample OUTPUT_DIR PHASE COUNT
 
 OUTPUT_DIR must be outside the repository. Set NEKO_METRICS_URL for a changed
 loopback port/prefix (default http://127.0.0.1:8082/metrics).
 Only fixed metric families and selected container fields are archived.
 No .env, full docker inspect, response headers, cookies or raw logs are copied.
+The same collector covers WebRTC, WebCodecs and HLS without enabling overlays.
+sample takes 1..60 snapshots, ten seconds apart (up to roughly ten minutes).
+COUNT is a count, not a duration; slow collection extends elapsed wall time.
 EOF
 }
 
@@ -49,22 +53,35 @@ environment_record() {
   fi
   docker compose version
   docker version --format 'docker_client={{.Client.Version}} docker_server={{.Server.Version}}'
+  printf 'host_logical_cpus=%s\n' "$(getconf _NPROCESSORS_ONLN)"
+  grep -E '^MemTotal:' /proc/meminfo
+  grep -E '^cpu ' /proc/stat
   if [[ -z "$container" ]]; then
     printf 'container=not-running\n'
     return
   fi
   docker inspect "$container" --format \
     'configured_image={{.Config.Image}} image_id={{.Image}} status={{.State.Status}} restarts={{.RestartCount}} started_at={{.State.StartedAt}}{{if .State.Health}} health={{.State.Health.Status}}{{end}}'
+  docker inspect "$container" --format 'nano_cpus={{.HostConfig.NanoCpus}} cpu_quota={{.HostConfig.CpuQuota}} cpu_period={{.HostConfig.CpuPeriod}} cpuset={{.HostConfig.CpusetCpus}} memory_limit={{.HostConfig.Memory}}'
   docker inspect "$container" --format \
     '{{range .Config.Env}}{{if or (eq . "NEKO_MEDIA_HLS_ENABLED=true") (eq . "NEKO_MEDIA_HLS_ENABLED=false") (eq . "NEKO_MEDIA_HLS_MODES=hls") (eq . "NEKO_MEDIA_HLS_MODES=hls ll-hls") (eq . "NEKO_MEDIA_WEBCODECS_WS_ENABLED=true")}}{{println .}}{{end}}{{end}}'
 }
 
 main() {
-  local action="${1:-}" output stamp container metrics_url label
+  local action="${1:-}" output stamp container metrics_url label count iteration
   case "$action" in -h|--help|help) usage; return;; esac
-  [[ "$action" == init && $# -eq 2 || "$action" == snapshot && $# -eq 3 ]] || { usage >&2; exit 2; }
+  [[ "$action" == init && $# -eq 2 || "$action" == snapshot && $# -eq 3 || "$action" == sample && $# -eq 4 ]] || { usage >&2; exit 2; }
+  if [[ "$action" == sample ]]; then
+    count="$4"
+    [[ "$count" =~ ^([1-9]|[1-5][0-9]|60)$ ]] || fail 'COUNT must be 1..60'
+    for ((iteration=1; iteration<=count; iteration++)); do
+      main snapshot "$2" "$3"
+      if ((iteration < count)); then sleep 10; fi
+    done
+    return
+  fi
   umask 077
-  for required in docker git curl grep realpath stat; do
+  for required in docker git curl grep realpath stat getconf; do
     command -v "$required" >/dev/null 2>&1 || fail "required command not found: $required"
   done
   [[ -f docker-compose.yaml && -f "$RESULT_TEMPLATE" ]] || fail 'run from the repository root'
