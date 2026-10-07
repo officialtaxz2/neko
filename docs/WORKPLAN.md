@@ -1266,16 +1266,20 @@ appears after Retry. This is captured failure, not successful five-minute playba
 Exact-8741 repair preparation then passed with Prepare-Exitcode 0: both old
 defects reproduced in isolated copies; all 66 client tests/type/build, repaired
 all-track/both-mode wire check, HLS package and server/base/Brave builds passed.
-Target checkout is `8741f7880d9a709e6dc17924d2af0564a949ccd9`; live exact-7dcc
-was retained. Evidence: `/opt/docker/nekoNew/neko-hls-results-8741f7880d9a`.
-NEXT [activate the prepared image](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#next-activate-the-prepared-image)
-and perform one fresh-page five-minute HLS picture/audio check alongside WebRTC.
-No rebuild, later-doc pull, old-image browser trace or timeout tuning is requested.
-These are supplied target results, NOT EXECUTED IN CODEX; activation/live acceptance
-are PENDING. The uncaptured hls.js parser error as the live audio-stop cause
-remains an inference despite controlled reproduction of the wire defect.
-The earlier WebRTC-join hypothesis remains uncorrelated.
-Reliable first start and sustained playback remain open.
+Target checkout/live deployment is now
+`8741f7880d9a709e6dc17924d2af0564a949ccd9`: activation passed with
+Activate-Exitcode 0, a healthy candidate image and private enable snapshot.
+Evidence: `/opt/docker/nekoNew/neko-hls-results-8741f7880d9a`.
+The operator confirmed at least five minutes of moving HLS picture/audio without
+Retry/reload while WebRTC continued working. The bounded PC/Helium sustained
+playback gate is PASSED. NEXT consolidate [remaining grouped acceptance](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#remaining-acceptance);
+no additional server command or ad-hoc check is requested at this checkpoint.
+No rebuild, later-doc pull, old-image trace, repeated five-minute gate or timeout
+tuning is needed. These are supplied target/browser results, NOT EXECUTED IN CODEX.
+The uncaptured hls.js parser error as the old audio-stop cause remains an inference
+despite controlled reproduction and the positive repaired run. The earlier
+WebRTC-join hypothesis remains uncorrelated. Repeated cold starts, room actions,
+authorization/lifecycle and grouped device/resource/dependency acceptance stay open.
 No repeated unchanged native/fuzz or HTTP-denial gate is required for this
 bounded playlist/watchdog change. Prior client/image checks apply to their commits;
 the new production delta's focused exact-8741 preparation has now passed.

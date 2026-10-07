@@ -1,12 +1,15 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-7DCC3C5E TRACE CAPTURED FREEZE / EXACT-8741 TARGET PREPARATION PASSED / ACTIVATION AND LIVE ACCEPTANCE PENDING**.
+Status: **EXACT-7DCC3C5E TRACE CAPTURED FREEZE / EXACT-8741 PREPARATION, ACTIVATION AND BOUNDED FIVE-MINUTE PLAYBACK PASSED / GROUPED ACCEPTANCE OPEN**.
 The [2026-10-07 repair record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md)
 records the supplied successful old/new, 66-client-test/type/build, HLS
-wire/package and image gate with Prepare-Exitcode 0. Target checkout is exact-8741;
-live exact-7dcc was retained. NEXT activate the prepared image and check sustained
-HLS playback alongside WebRTC. No additional old-image test or new build is needed.
-All target results are supplied, **NOT EXECUTED IN CODEX**; live acceptance is pending.
+wire/package and image gate with Prepare-Exitcode 0. Exact-8741 is now live:
+Activate-Exitcode 0, healthy image and private enable snapshot. The operator
+confirmed at least five minutes of moving HLS picture/audio without Retry/reload
+while WebRTC continued working. This bounded PC/Helium gate is passed;
+[remaining acceptance](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#remaining-acceptance)
+stays open. No new server command or rebuild is needed. All target/browser results
+are supplied, **NOT EXECUTED IN CODEX**.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -1128,5 +1131,8 @@ target preparation scope. The earlier trace instructions are historical;
 another trace on the old image is not requested. Exact-8741 repair preparation
 subsequently passed with Prepare-Exitcode 0 and all 66 client tests/type/build,
 the old/new wire check, full HLS package and server/base/Brave builds. Target
-checkout is exact-8741; live exact-7dcc was retained. Supplied target evidence,
-**NOT EXECUTED IN CODEX**. Activation and live sustained acceptance remain pending.
+checkout/live deployment is now exact-8741: activation passed with
+Activate-Exitcode 0 and a healthy candidate image. The operator confirmed at least
+five minutes of moving HLS picture/audio without Retry/reload alongside working
+WebRTC. The bounded PC/Helium sustained-playback gate is passed; grouped/device
+acceptance remains open. Supplied target/browser evidence, **NOT EXECUTED IN CODEX**.

@@ -65,16 +65,17 @@ terminal HTTP error is captured. Static inspection confirms a rolling-playlist
 discontinuity defect and seek-only watchdog bypass; both are repaired on testing.
 Exact-8741 target preparation subsequently passed: controlled old defects,
 66 client tests/type/build, repaired wire/HLS-package checks and candidate images.
-Checkout is exact-8741; live exact-7dcc was retained. NEXT
-[activate the prepared image and check sustained playback](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#next-activate-the-prepared-image).
-Activation/live acceptance are pending; no rebuild, old-image trace or timeout tuning.
-The uncaptured parser error as the live audio-stop cause remains an inference.
-Supplied target results, NOT EXECUTED IN CODEX; the corrected saved-startup
-helper has no fresh execution. Reliable first start/sustained/wider acceptance
-remain open.
+Checkout/live deployment is now exact-8741: activation passed with Activate-Exitcode 0
+and a healthy candidate image. The operator confirmed at least five minutes of
+moving HLS picture/audio without Retry/reload while WebRTC continued working.
+This bounded PC/Helium sustained-playback gate is passed; [remaining grouped
+acceptance](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#remaining-acceptance)
+stays open. No new server command, rebuild, old-image trace or timeout tuning.
+The uncaptured parser error as the old audio-stop cause remains an inference.
+Supplied target/browser results, NOT EXECUTED IN CODEX; the corrected saved-startup
+helper has no fresh execution. Repeated cold-start and wider acceptance remain open.
 Preserve prior evidence.
-The initial fixed error, timed/event
-interval and concurrent WebRTC result are not separately supplied. The wider device,
+An explicit room-action sequence was not supplied for the passed interval. The wider device,
 authorization/lifecycle and resource gates stay open.
 
 Operator direction recorded on 2026-10-04. This is a required review and validation plan, not a claim that the reported device failures have been reproduced or fixed.

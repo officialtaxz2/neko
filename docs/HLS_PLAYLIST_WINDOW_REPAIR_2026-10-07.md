@@ -1,16 +1,18 @@
 # HLS rolling-playlist and seek-only progress repair — 2026-10-07
 
-Status: **EXACT-8741 TARGET PREPARATION PASSED / ACTIVATION AND LIVE ACCEPTANCE PENDING**.
-The supplied preparation fast-forwarded the target checkout to
-`8741f7880d9a709e6dc17924d2af0564a949ccd9`, preserving the live application
-`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b` with conventional HLS enabled.
-All runtime results are supplied from the target, **NOT EXECUTED IN CODEX**.
-Preserve the old live image and all prior private evidence.
+Status: **EXACT-8741 PREPARATION, ACTIVATION AND BOUNDED FIVE-MINUTE PLAYBACK PASSED / GROUPED ACCEPTANCE OPEN**.
+Target checkout and live deployment are
+`8741f7880d9a709e6dc17924d2af0564a949ccd9`, conventional HLS enabled.
+The operator confirmed moving HLS picture/audio for at least five minutes
+without Retry/reload, with WebRTC working alongside it. This is bounded
+PC/Helium acceptance, not full Phase 4 or a device-wide stability claim.
+All runtime/browser results are supplied, **NOT EXECUTED IN CODEX**.
+Preserve the previous exact-7dcc image and all prior private evidence.
 
-## Supplied five-minute browser trace
+## Supplied exact-7dcc five-minute browser trace
 
-The operator supplied the complete `hls-browser-trace-v1` JSON from the existing
-PC/Helium page. Its reason is `five_minute_limit`, duration 300,001 ms; these
+The operator supplied the complete `hls-browser-trace-v1` JSON from the old
+exact-7dcc PC/Helium page. Its reason is `five_minute_limit`, duration 300,001 ms; these
 are supplied browser observations, **NOT EXECUTED IN CODEX**. The attachment
 initially truncated the JSON; the existing report was subsequently copied in
 full without requesting another test, Retry or reload.
@@ -58,7 +60,8 @@ returns on that parsing error before scheduling the next reload. This is a
 strong explanation for audio stopping after four segments and the buffer
 ending around 24 seconds, while new video variants still load. The supplied
 trace does **not** expose the parser error or prove which ABR transition caused
-the difference between audio and video. A repaired live result remains pending.
+the difference between audio and video. The repaired five-minute live gate below
+passed; the uncaptured parser error remains an inferred cause of the old freeze.
 
 The client watchdog separately treated every changed `currentTime` as playback
 progress. Captured seek jumps indefinitely hid the frozen buffer/frames. The
@@ -122,14 +125,13 @@ LL-HLS acceptance. There is no fresh codec integration or fuzz result in this
 block. npm's dependency audit warnings remain part of open dependency maintenance;
 no package update or audit remediation is claimed.
 
-## Next: activate the prepared image
+## Supplied exact-8741 activation and playback — 2026-10-07
 
-Keep the target checkout at **exact-8741**. Later documentation/helper commits
-are not the prepared image checkpoint; no additional pull or build is needed.
-Use the existing deployer directly for this bounded HLS-only packager/client
-change. It verifies the preparation marker/image ID and saves the current image
-for rollback before replacing the service. No repeated unchanged native/fuzz or
-HTTP-denial gate is required. Activation itself is **PENDING**.
+The operator supplied the completed activation block below with
+**Activate-Exitcode: 0**. It is an execution record; do not repeat it.
+The existing deployer checked the prepared image and recorded private init/enable
+evidence. Keep the target checkout at **exact-8741**; later documentation commits
+are not a replacement image checkpoint. No additional pull or build is needed.
 
 ```bash
 set +e
@@ -146,13 +148,36 @@ NEKO_HLS_ACTIVATE_REPAIR
 printf 'Activate-Exitcode: %s\n' "$?"
 ```
 
-After activation, open a fresh private browser page at
-`https://neko.taxzvps.de/?media=hls` so the candidate client bundle is loaded.
-Sign in as admin for this existing admin/passive HLS prototype. Keep moving
-content/audio playing for five minutes without Retry/reload, with a
-normal WebRTC viewer open alongside it. Supply the activation result and whether
-HLS picture/audio stayed continuous while WebRTC kept working. If it fails,
-preserve the failed page for one targeted diagnosis; do not request another
-old-image trace or infer a room-event cause. Reliable cold start, room actions,
-authorization/lifecycle, TV/native/LL-HLS, resource/isolation and dependency
-maintenance remain open. `master` stays at `d9105ef8`.
+| Gate | Supplied result |
+| --- | --- |
+| Application commit | `8741f7880d9a709e6dc17924d2af0564a949ccd9` |
+| Deployment helper blob | `c6f52dc80fdf605ec908f3fe3856ce23e015e494` |
+| Live image/service | `my-neko/brave:hls-8741f7880d9a`; healthy after recreation |
+| Private evidence | Init and enable snapshot in `/opt/docker/nekoNew/neko-hls-results-8741f7880d9a` |
+| Initial browser report | Playback worked without frozen pictures |
+| Bounded browser interval | Operator explicitly confirmed at least five minutes of moving HLS picture/audio without Retry or reload |
+| Concurrent WebRTC | Operator confirmed WebRTC continued working throughout that interval |
+
+This closes the requested bounded conventional-HLS sustained-playback gate on
+the existing PC/Helium setup. The duration and audio/WebRTC behavior are operator
+observations, not a new automated browser trace or server measurement. No repeated
+cold-start distribution, room-action sequence, native player or TV result was
+supplied. The positive repaired run supports the repair; it does not expose the
+old hls.js parser error or prove a WebRTC-join cause. No further diagnosis is
+required for this passed interval.
+
+## Remaining acceptance
+
+Continue the [grouped Phase 4 plan](HLS_LL_HLS_VALIDATION.md) with the passed
+exact-8741 preparation, activation and bounded browser interval recorded. Do not
+repeat these gates without a new failure, source change or other concrete reason.
+No additional server command or ad-hoc operator check is requested now.
+
+- Repeated cold-start reliability and the existing startup latency target.
+- A documented room-action/reconnect interval and authorization/lease lifecycle.
+- TV/native/LL-HLS compatibility and grouped device/resource/isolation checks.
+- Open dependency maintenance and final integrated security/stability acceptance.
+
+Keep conventional HLS opt-in, WebRTC the default and backend switching manual.
+Preserve prior images/evidence. `master` stays at `d9105ef8` until explicitly
+authorized promotion after the remaining grouped acceptance.

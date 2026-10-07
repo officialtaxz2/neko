@@ -14,12 +14,17 @@ subsequently PASSED with Prepare-Exitcode 0: both old defects reproduced in
 isolated copies; all 66 client tests, TypeScript/build, repaired all-track/both-mode
 rolling wire check, HLS package and server/base/Brave builds passed. Private
 evidence: `/opt/docker/nekoNew/neko-hls-results-8741f7880d9a`.
-Target checkout is `8741f7880d9a709e6dc17924d2af0564a949ccd9`; live exact
-`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b` was retained. These are supplied
-target results, NOT EXECUTED IN CODEX; no fresh native/fuzz gate is claimed.
-NEXT activate the prepared exact-8741 image using the existing deployer, then one
-fresh-page five-minute HLS picture/audio check alongside WebRTC. Activation/live
-acceptance are PENDING; do not pull later documentation commits or rebuild.
+Target checkout/live deployment is now
+`8741f7880d9a709e6dc17924d2af0564a949ccd9`: activation PASSED with
+Activate-Exitcode 0, healthy `my-neko/brave:hls-8741f7880d9a` and a private
+enable snapshot. The operator initially reported no frozen pictures, then
+explicitly confirmed at least five minutes of moving HLS picture/audio without
+Retry/reload while WebRTC continued working. This closes the bounded PC/Helium
+conventional-HLS sustained-playback gate, not full Phase 4 acceptance.
+These are supplied target/browser results, NOT EXECUTED IN CODEX; no fresh
+native/fuzz gate or causal parser trace is claimed. Preserve prior images/evidence.
+NEXT consolidate remaining grouped acceptance; no new server command, repeated
+five-minute check, later-doc pull or rebuild is needed at this checkpoint.
 No further old-image browser trace or speculative timeout/buffer tuning is needed.
 Keep cold-start/grouped/device/dependency acceptance open; master remains d9105ef8.
 

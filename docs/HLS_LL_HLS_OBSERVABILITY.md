@@ -76,10 +76,14 @@ seek jumps. Only bootstrap exceeded the 900-ms slow threshold; no new terminal
 HTTP error is captured. Exact-8741 preparation then passed with Prepare-Exitcode 0,
 both old-defect reproductions, 66 client tests/type/build, repaired wire/HLS-package
 checks and candidate images. Private evidence is
-`/opt/docker/nekoNew/neko-hls-results-8741f7880d9a`; checkout is exact-8741 and
-live exact-7dcc was retained. NEXT [activate the prepared image](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#next-activate-the-prepared-image)
-and check sustained HLS picture/audio alongside WebRTC. Supplied target evidence,
-NOT EXECUTED IN CODEX; activation/live acceptance remain pending. No new build/trace.
+`/opt/docker/nekoNew/neko-hls-results-8741f7880d9a`; checkout/live deployment is
+now exact-8741. Activation passed with Activate-Exitcode 0, healthy candidate
+image and private enable snapshot. The operator confirmed at least five minutes
+of moving HLS picture/audio without Retry/reload while WebRTC continued working.
+This bounded PC/Helium playback gate is passed; [remaining acceptance](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#remaining-acceptance)
+stays open. Supplied target/browser evidence, NOT EXECUTED IN CODEX; the live
+interval is an operator report, not a new instrumented trace. No new build/trace
+or server command is requested.
 
 The progress and saved-startup label parsers were statically corrected to admit
 digits before their unchanged fixed allowlists, retaining the `vp8` codec that

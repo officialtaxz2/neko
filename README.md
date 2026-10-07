@@ -12,10 +12,13 @@ are repaired: rolling playlists now preserve segment discontinuity numbers;
 seek-only time jumps no longer hide a playback stall. Exact-8741 preparation
 subsequently passed with **Prepare-Exitcode 0**: both old defects reproduced,
 66 client tests/type/build, HLS wire/package checks and candidate images passed.
-The server checkout is exact-8741; live exact-7dcc was retained. These are
-supplied target results, **NOT EXECUTED IN CODEX**. NEXT
-[activate the prepared image and check sustained playback](docs/HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#next-activate-the-prepared-image).
-Activation/live acceptance remain pending; no new build or old-image trace.
+Exact-8741 activation then passed with **Activate-Exitcode 0** and a healthy
+`my-neko/brave:hls-8741f7880d9a`. The operator confirmed at least five minutes
+of moving HLS picture/audio without Retry/reload while WebRTC continued working.
+This bounded PC/Helium playback gate is passed; [remaining grouped/device
+acceptance](docs/HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#remaining-acceptance)
+stays open. These are supplied target/browser results, **NOT EXECUTED IN CODEX**.
+No additional server command or rebuild is needed for this checkpoint.
 
 Historical HLS source review (2026-10-05): fixes paused-time stall accounting,
 monitoring before first readiness and mixed HTTP/readiness error budgets, plus
