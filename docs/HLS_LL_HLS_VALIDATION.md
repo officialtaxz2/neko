@@ -73,10 +73,12 @@ failure proof; current video was already cleared. The complete bounded trace
 is now supplied: a freeze at 23.948 seconds of media with 513 frames, fixed
 buffer, audio loading stopped after four segments and repeated six-second seeks.
 Medium video delivery continues; no new terminal HTTP error is captured.
-NEXT [rolling-playlist/watchdog repair preparation](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md)
-with isolated old/new checks, fresh client/HLS checks and image assembly while
-keeping live exact-7dcc. New repair checks/build/live acceptance are PENDING /
-NOT EXECUTED IN CODEX. No additional old-image trace or timeout tuning is requested.
+Exact-8741 preparation subsequently passed with Prepare-Exitcode 0: both old
+defects reproduced, all 66 client tests/type/build, repaired wire/HLS-package
+checks and server/base/Brave images passed. Checkout is exact-8741; live exact-7dcc
+was retained. NEXT [activate the prepared image](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#next-activate-the-prepared-image)
+and one fresh-page five-minute HLS picture/audio check alongside WebRTC. Activation/
+live acceptance remain pending; no rebuild or later-doc pull is needed.
 Supplied target result, NOT EXECUTED IN CODEX; the corrected saved-startup helper
 has no fresh target execution. Reliable-first-start and sustained playback acceptance
 remain open.

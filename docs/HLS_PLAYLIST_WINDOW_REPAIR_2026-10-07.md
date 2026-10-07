@@ -1,9 +1,11 @@
 # HLS rolling-playlist and seek-only progress repair — 2026-10-07
 
-Status: **IMPLEMENTED / STATICALLY REVIEWED / TARGET CHECKS PENDING**.
-The live application remains exact `7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b`
-with conventional HLS enabled. No new activation or runtime verification was
-performed in Codex. Preserve that live image and all prior private evidence.
+Status: **EXACT-8741 TARGET PREPARATION PASSED / ACTIVATION AND LIVE ACCEPTANCE PENDING**.
+The supplied preparation fast-forwarded the target checkout to
+`8741f7880d9a709e6dc17924d2af0564a949ccd9`, preserving the live application
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b` with conventional HLS enabled.
+All runtime results are supplied from the target, **NOT EXECUTED IN CODEX**.
+Preserve the old live image and all prior private evidence.
 
 ## Supplied five-minute browser trace
 
@@ -94,11 +96,63 @@ Source codecs/transcoders, security configuration, dependencies and runtime
 configuration are unchanged. Prior exact-8f native/fuzz evidence is inherited
 where supplied, **not freshly rerun or relabelled as candidate results**.
 No production container, Caddy configuration or active session is restarted by
-preparation. New preparation/tests/images are **PENDING / NOT EXECUTED IN CODEX**.
+preparation. The exact-8741 target preparation below has now passed; none of
+those tests/builds were executed in Codex.
 
-After a supplied successful preparation, use the existing exact-candidate
-deployment procedure, then one bounded live check past several 24-second window
-advances with moving picture/audio and concurrent WebRTC. Request further
-diagnostics only if that path still fails. Reliable cold start, room actions,
+## Supplied exact-8741 preparation — 2026-10-07
+
+The operator supplied the preparation output with **Prepare-Exitcode: 0**.
+
+| Gate | Supplied result |
+| --- | --- |
+| Old client control | Seek-only jumps hide the controlled stall, as required |
+| Repaired client | 66 tests passed; zero failures/skips; TypeScript and build passed |
+| Old server control | Retained-segment discontinuity changes at the fourth parent, as required |
+| Repaired wire check | `TestPackagerRollingPlaylistPreservesDiscontinuityNumbers` passed for all four tracks/both modes over six simulated parents |
+| Full HLS package | Uncached `go test ./internal/mediahls -count=1` passed |
+| Application checkout | Fast-forwarded from exact-7dcc to exact-8741 |
+| Candidate images | Server validation, `my-neko/base:hls-8741f7880d9a` and `my-neko/brave:hls-8741f7880d9a` built |
+| Client image bundle | `index-DPO2ZBEO.js`; fresh image client build shown |
+| Live service | Same exact-7dcc container/image retained through preparation |
+| Private evidence | `/opt/docker/nekoNew/neko-hls-results-8741f7880d9a`; snapshot and successful validation marker recorded |
+
+These controlled results confirm the old defects and the repaired automated
+paths. They do not prove that the browser freeze is fixed or close TV/native/
+LL-HLS acceptance. There is no fresh codec integration or fuzz result in this
+block. npm's dependency audit warnings remain part of open dependency maintenance;
+no package update or audit remediation is claimed.
+
+## Next: activate the prepared image
+
+Keep the target checkout at **exact-8741**. Later documentation/helper commits
+are not the prepared image checkpoint; no additional pull or build is needed.
+Use the existing deployer directly for this bounded HLS-only packager/client
+change. It verifies the preparation marker/image ID and saves the current image
+for rollback before replacing the service. No repeated unchanged native/fuzz or
+HTTP-denial gate is required. Activation itself is **PENDING**.
+
+```bash
+set +e
+bash -Ee -o pipefail <<'NEKO_HLS_ACTIVATE_REPAIR'
+trap 'printf "Abbruch in Zeile %s, Exitcode %s\n" "$LINENO" "$?" >&2' ERR
+cd /opt/docker/nekoNew/neko
+test "$(git rev-parse HEAD)" = "8741f7880d9a709e6dc17924d2af0564a949ccd9"
+
+umask 077
+output=/opt/docker/nekoNew/neko-hls-results-8741f7880d9a
+test "$(stat -c %a "$output")" = 700
+bash deploy/deploy-hls-media.sh enable "$output"
+NEKO_HLS_ACTIVATE_REPAIR
+printf 'Activate-Exitcode: %s\n' "$?"
+```
+
+After activation, open a fresh private browser page at
+`https://neko.taxzvps.de/?media=hls` so the candidate client bundle is loaded.
+Sign in as admin for this existing admin/passive HLS prototype. Keep moving
+content/audio playing for five minutes without Retry/reload, with a
+normal WebRTC viewer open alongside it. Supply the activation result and whether
+HLS picture/audio stayed continuous while WebRTC kept working. If it fails,
+preserve the failed page for one targeted diagnosis; do not request another
+old-image trace or infer a room-event cause. Reliable cold start, room actions,
 authorization/lifecycle, TV/native/LL-HLS, resource/isolation and dependency
 maintenance remain open. `master` stays at `d9105ef8`.

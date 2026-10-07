@@ -9,10 +9,13 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 Latest HLS checkpoint (2026-10-07): the complete browser trace captures a freeze
 at about 24 seconds of media despite continued video delivery. Two source defects
 are repaired: rolling playlists now preserve segment discontinuity numbers;
-seek-only time jumps no longer hide a playback stall. NEXT the
-[focused old/new checks and candidate image preparation](docs/HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md),
-keeping the live exact-7dcc service running. New checks/build/live acceptance are
-**PENDING / NOT EXECUTED IN CODEX**; no new old-image browser test is requested.
+seek-only time jumps no longer hide a playback stall. Exact-8741 preparation
+subsequently passed with **Prepare-Exitcode 0**: both old defects reproduced,
+66 client tests/type/build, HLS wire/package checks and candidate images passed.
+The server checkout is exact-8741; live exact-7dcc was retained. These are
+supplied target results, **NOT EXECUTED IN CODEX**. NEXT
+[activate the prepared image and check sustained playback](docs/HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#next-activate-the-prepared-image).
+Activation/live acceptance remain pending; no new build or old-image trace.
 
 Historical HLS source review (2026-10-05): fixes paused-time stall accounting,
 monitoring before first readiness and mixed HTTP/readiness error budgets, plus

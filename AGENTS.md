@@ -9,11 +9,17 @@ The [rolling-playlist repair](docs/HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md)
 increments track-local discontinuity bases when an earlier tag is evicted and
 excludes seek-only/metadata-only time changes from playback progress. Both defects
 are confirmed by static inspection; attribution of the live audio stop to the
-uncaptured hls.js parser error remains an inference. NEXT focused isolated old/new
-client and wire-playlist checks plus image preparation using
-`deploy/prepare-hls-playlist-window.sh`, preserving live exact
-`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b` and all prior images/evidence.
-New tests/build/live acceptance are PENDING / NOT EXECUTED IN CODEX.
+uncaptured hls.js parser error remains an inference. Exact-8741 target preparation
+subsequently PASSED with Prepare-Exitcode 0: both old defects reproduced in
+isolated copies; all 66 client tests, TypeScript/build, repaired all-track/both-mode
+rolling wire check, HLS package and server/base/Brave builds passed. Private
+evidence: `/opt/docker/nekoNew/neko-hls-results-8741f7880d9a`.
+Target checkout is `8741f7880d9a709e6dc17924d2af0564a949ccd9`; live exact
+`7dcc3c5e4ba0279f35727eb4bed2e86bf721ad3b` was retained. These are supplied
+target results, NOT EXECUTED IN CODEX; no fresh native/fuzz gate is claimed.
+NEXT activate the prepared exact-8741 image using the existing deployer, then one
+fresh-page five-minute HLS picture/audio check alongside WebRTC. Activation/live
+acceptance are PENDING; do not pull later documentation commits or rebuild.
 No further old-image browser trace or speculative timeout/buffer tuning is needed.
 Keep cold-start/grouped/device/dependency acceptance open; master remains d9105ef8.
 

@@ -1,10 +1,12 @@
 # HLS client startup and pause/recovery review — 2026-10-05
 
-Status: **EXACT-7DCC3C5E FIVE-MINUTE TRACE CAPTURED FREEZE / ROLLING-PLAYLIST AND SEEK-ONLY WATCHDOG DEFECTS REPAIRED / TARGET CHECKS PENDING**.
+Status: **EXACT-7DCC3C5E TRACE CAPTURED FREEZE / EXACT-8741 TARGET PREPARATION PASSED / ACTIVATION AND LIVE ACCEPTANCE PENDING**.
 The [2026-10-07 repair record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md)
-is the current next step: focused isolated old/new checks and image preparation,
-preserving the live exact-7dcc service. No additional old-image browser test is
-requested. New tests/build/live acceptance are **NOT EXECUTED IN CODEX**.
+records the supplied successful old/new, 66-client-test/type/build, HLS
+wire/package and image gate with Prepare-Exitcode 0. Target checkout is exact-8741;
+live exact-7dcc was retained. NEXT activate the prepared image and check sustained
+HLS playback alongside WebRTC. No additional old-image test or new build is needed.
+All target results are supplied, **NOT EXECUTED IN CODEX**; live acceptance is pending.
 The supplied exact-68 target result passed all 60 tests, TypeScript and build;
 scoped image preparation subsequently passed with Image-Prepare-Exitcode 0.
 All execution results below are supplied from the server, **NOT EXECUTED IN CODEX**.
@@ -1123,5 +1125,8 @@ limit. This is a captured failure, not five-minute acceptance.
 See [the supplied trace and bounded repairs](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md)
 for the rolling discontinuity defect, seek-only watchdog correction and exact
 target preparation scope. The earlier trace instructions are historical;
-another trace on the old image is not requested. New repair checks/images/live
-acceptance are **PENDING / NOT EXECUTED IN CODEX**.
+another trace on the old image is not requested. Exact-8741 repair preparation
+subsequently passed with Prepare-Exitcode 0 and all 66 client tests/type/build,
+the old/new wire check, full HLS package and server/base/Brave builds. Target
+checkout is exact-8741; live exact-7dcc was retained. Supplied target evidence,
+**NOT EXECUTED IN CODEX**. Activation and live sustained acceptance remain pending.

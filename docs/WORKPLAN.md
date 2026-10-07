@@ -1263,18 +1263,22 @@ The full bounded five-minute trace is now supplied: playback stops at media time
 despite continued medium-video loading. Audio loads four segments; later six-second
 seek jumps hide the stall from the old watchdog. No new terminal HTTP failure
 appears after Retry. This is captured failure, not successful five-minute playback.
-NEXT the [rolling-playlist/watchdog repair preparation](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md):
-isolated old/new client and wire-playlist assertions, fresh client tests/type/build,
-HLS package/server build and candidate base/Brave images. Preserve live exact-7dcc
-and prior images/evidence. No additional old-image browser trace or tuning is
-requested. New repair checks/images/live acceptance are PENDING / NOT EXECUTED
-IN CODEX. The playlist protocol defect is statically confirmed; the uncaptured
-hls.js parser error as the live audio-stop cause remains a strong inference.
+Exact-8741 repair preparation then passed with Prepare-Exitcode 0: both old
+defects reproduced in isolated copies; all 66 client tests/type/build, repaired
+all-track/both-mode wire check, HLS package and server/base/Brave builds passed.
+Target checkout is `8741f7880d9a709e6dc17924d2af0564a949ccd9`; live exact-7dcc
+was retained. Evidence: `/opt/docker/nekoNew/neko-hls-results-8741f7880d9a`.
+NEXT [activate the prepared image](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#next-activate-the-prepared-image)
+and perform one fresh-page five-minute HLS picture/audio check alongside WebRTC.
+No rebuild, later-doc pull, old-image browser trace or timeout tuning is requested.
+These are supplied target results, NOT EXECUTED IN CODEX; activation/live acceptance
+are PENDING. The uncaptured hls.js parser error as the live audio-stop cause
+remains an inference despite controlled reproduction of the wire defect.
 The earlier WebRTC-join hypothesis remains uncorrelated.
 Reliable first start and sustained playback remain open.
 No repeated unchanged native/fuzz or HTTP-denial gate is required for this
 bounded playlist/watchdog change. Prior client/image checks apply to their commits;
-the new production delta requires the focused candidate preparation above.
+the new production delta's focused exact-8741 preparation has now passed.
 Do not repeat passed client/image/HTTP-denial gates without a new reason.
 Historical results below apply only to their recorded commits.
 

@@ -36,10 +36,12 @@ response metadata; the full 250-entry buffer omits later failures. Status-zero
 entries with body data are not failure proof. The complete five-minute trace
 now captures a freeze at 23.948 seconds of media with fixed frames/buffer,
 continued video loading and audio stopped after four segments. Repeated seeks
-hide the stall from the old watchdog. NEXT the
-[rolling-playlist/watchdog repair preparation](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md),
-keeping live exact-7dcc. New repair checks/images/live acceptance are PENDING /
-NOT EXECUTED IN CODEX; no additional old-image trace or speculative tuning. Supplied target
+hide the stall from the old watchdog. Exact-8741 preparation subsequently passed:
+old defects reproduced, 66 client tests/type/build, repaired wire/HLS-package
+checks and candidate images passed. Checkout is exact-8741; live exact-7dcc was
+retained. NEXT [activate the prepared image](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#next-activate-the-prepared-image)
+and check sustained HLS playback alongside WebRTC. Activation/live acceptance
+are pending; no rebuild or old-image trace. Supplied target
 results, NOT EXECUTED IN CODEX; the corrected saved-startup helper has no fresh
 execution. Reliable first start and
 sustained playback remain open.

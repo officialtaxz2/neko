@@ -38,9 +38,11 @@ one 1,001-ms master without response metadata, but a full 250-entry buffer omits
 later failures. Status zero with body data is not failure proof. The complete
 five-minute trace now captures a freeze near media time 24 seconds, audio loading
 stopped after four segments and repeated seeks while video delivery continues.
-NEXT [rolling-playlist/watchdog repair preparation](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md),
-preserving live exact-7dcc. New checks/images/live acceptance are PENDING;
-no additional old-image trace or speculative timeout/buffer change. Supplied target results,
+Exact-8741 preparation subsequently passed: old defects reproduced, 66 client
+tests/type/build, repaired wire/HLS-package checks and candidate images passed.
+Checkout is exact-8741; live exact-7dcc was retained. NEXT
+[activate the prepared image and check sustained playback](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md#next-activate-the-prepared-image).
+Activation/live acceptance are pending; no rebuild or old-image trace. Supplied target results,
 NOT EXECUTED IN CODEX; the corrected saved-startup helper has no fresh execution.
 Reliable first
 start and sustained playback remain open.
