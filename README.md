@@ -26,11 +26,13 @@ open. Desktop, Smart-TV and iPhone support are required.
 The supplied exact-8d preparation **passed with Prepare-Exitcode 0** after the
 exact-f03 capture event-order failure. The helper confirms the old defect,
 100 repaired subscription race repetitions and backend/server/image gates;
-80 client tests/type/build are inherited from unchanged exact-f03. Candidate
-images are prepared, with the accepted exact-8741 service retained. The
+80 client tests/type/build are inherited from unchanged exact-f03. Subsequent
+baseline activation **passed with Baseline-Exitcode 0**: healthy exact-8d image,
+private snapshot and 2/2 disabled-HLS HTTP probes. The live service is exact-8d
+with HLS off; preserve the previously accepted exact-8741 image/evidence. The
 [next handoff](docs/WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07)
-is controlled exact-8d activation with HLS off, followed by WebRTC browser checks.
-No candidate activation/device/resource acceptance is claimed. Keep the target
+is desktop WebRTC picture/audio/input/chat confirmation before HLS enablement.
+New browser/device/resource acceptance is not supplied. Keep the target
 at its prepared exact-8d commit; no pull, rebuild or repeated preparation is
 needed. No local project execution took place in Codex.
 

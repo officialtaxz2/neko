@@ -24,10 +24,12 @@ and [the upstream triage](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--
 - Initial audit HEAD: `a91d9388d75f3d042f212398a1dcff1af198992d`.
   The authorized improvement block was published on `origin/testing` as
   `f03bc4bcf68be81a76e65f9195580daad76df7b2` and transferred to the target.
-  Its preparation FAILED; the last accepted application/live target remains
+  Its preparation FAILED; the last accepted HLS/browser baseline remains
   `8741f7880d9a709e6dc17924d2af0564a949ccd9`. The ordering repair
   `8d8126c92903dab58056fa316b626b38dcffb376` subsequently PASSED preparation
-  and has candidate images, without activation yet. `master` stays `d9105ef8`;
+  and subsequently activated healthy with HLS disabled (Baseline-Exitcode 0,
+  2/2 disabled HTTP probes). The live candidate is exact-8d; new browser/device
+  acceptance is pending. `master` stays `d9105ef8`;
   no upstream integration or promotion was performed.
 - Supplied healthy `my-neko/brave:hls-8741f7880d9a` activation and at least five
   minutes of moving PC/Helium conventional-HLS A/V without Retry/reload while
@@ -85,16 +87,23 @@ the retained-live snapshot, ORDERING GATE PASSED, PREPARATION PASSED and
 100 repaired subscription race repetitions and repeated backend/race/server
 gates; their earlier individual output is not separately supplied. The unchanged
 client inherits f03's 80 tests/type/build. No fresh native/fuzz or device/resource
-comparison is claimed. The retained-live assertion passed; no activation was
-issued. Preserve both failed f03 evidence and accepted exact-8741 images/config.
+comparison is claimed. The retained-live assertion passed; at preparation no
+activation was issued. Preserve failed f03 evidence and accepted exact-8741
+images/config.
 
-**NEXT:** keep the target checkout pinned at exact-8d and use the successful
-result directory for controlled **step 2 baseline activation**. No documentation
-pull, rebuild or preparation repeat is needed. This restarts Neko with HLS
-omitted and adaptive/WebCodecs retained; require healthy service, 2/2 disabled
-HTTP-route probes and normal WebRTC browser behavior before enabling conventional
-HLS on the same candidate image. Candidate activation, VIDAA causality, grouped
-device/event/security acceptance and cost comparisons remain open.
+**Supplied baseline activation:** Baseline-Exitcode 0 at exact-8d using deployer
+blob `c6f52dc80fdf605ec908f3fe3856ce23e015e494`; healthy
+`my-neko/brave:hls-8d8126c92903`, private baseline snapshot in the same successful
+directory, and 2/2 disabled bootstrap/media 404 probes. HLS is omitted;
+adaptive/WebCodecs overlays are retained. This verifies deployment/HTTP route
+state, not moving WebRTC picture/audio or room-action stability.
+
+**NEXT:** keep the target pinned at exact-8d. Ask for the desktop WebRTC
+picture/audio/input/chat confirmation before conventional-HLS enablement on that
+same image. No documentation pull, rebuild, preparation, activation or HTTP-probe
+repeat is needed now. VIDAA causality, new browser/device/event/security grouped
+acceptance and comparative costs remain open. No HLS-enabled candidate or
+performance/device claim is inferred from the healthy baseline.
 
 | Item | Implemented behavior | New verification status |
 |---|---|---|
@@ -103,7 +112,7 @@ device/event/security acceptance and cost comparisons remain open.
 | B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race checks passed. Desktop/iPhone/VIDAA playback/outage/revocation and fresh-login owner: NOT RUN |
 | Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture passed, capture race failed on order. Exact-8d helper reports old defect and 100 repaired race repetitions passed; full subscription/native-copy refactor remains conditional |
 | B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Exact-f03 client/type/Vite and relevant Go checks passed. Actual development launcher, ICE configurations/Safari/role browser matrix: NOT RUN; package maintenance separately open |
-| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation passed, candidate images and retained-live snapshot recorded; activation/browser trace/resource comparison pending |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation and HLS-off activation/2 disabled probes passed; browser trace/resource comparison and HLS enablement pending |
 
 The numerical bounds above are safety/recovery limits, not measured performance
 improvements or a promised first-picture latency. JSON serialization remains
@@ -152,9 +161,10 @@ automatic dependency fix is part of the ordering repair.
 
 **Operator step 2 — controlled activation and regression.** Preserve private
 accepted image/config/overlay snapshots. Only after preparation succeeds, use
-the existing deployment runbook with its matching marker/images. The next
-activation is exact-8d from the successful private directory; later documentation
-commits must not replace this image identity:
+the existing deployment runbook with its matching marker/images. The supplied
+baseline activation below PASSED at exact-8d from the successful private
+directory. It is a record, not a rerun instruction. Later documentation commits
+must not replace this image identity:
 
 ```bash
 test "$(git rev-parse HEAD)" = "8d8126c92903dab58056fa316b626b38dcffb376"

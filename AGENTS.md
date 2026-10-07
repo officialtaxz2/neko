@@ -9,13 +9,15 @@ gate details are covered by helper success, not separately visible test output.
 Client evidence is inherited only from unchanged exact-f03 (80 tests/type/build).
 Private evidence: `/opt/docker/nekoNew/neko-stability-8d8126c92903-20261007T171646Z`.
 Images `my-neko/base:hls-8d8126c92903` and `my-neko/brave:hls-8d8126c92903`
-were built; the retained-live assertion and private snapshot passed. No candidate
-activation or browser/device/resource acceptance has occurred. Keep the target
+were built; the retained-live assertion and private snapshot passed. Subsequent
+baseline activation PASSED with Baseline-Exitcode 0: healthy exact-8d Brave image,
+private baseline snapshot and 2/2 disabled bootstrap/media 404 probes. HLS is
+disabled; adaptive/WebCodecs overlays are retained. Browser/device/resource
+acceptance is not supplied. Keep the target
 checkout pinned at exact-8d; no documentation pull, rebuild or preparation repeat
-is needed. NEXT is operator-controlled baseline activation using that result
-directory, with HLS omitted and adaptive/WebCodecs retained, then disabled-route
-and normal WebRTC browser checks before same-image conventional-HLS enablement.
-The service will restart for activation; preserve accepted exact-8741 images/
+is needed. Do not repeat baseline activation or the passed HTTP probes. NEXT is
+the operator's desktop WebRTC picture/audio/input/chat confirmation before
+same-image conventional-HLS enablement. Preserve accepted exact-8741 images/
 configuration/evidence. These are supplied target results, NOT EXECUTED IN CODEX.
 VIDAA causality, grouped acceptance, comparative costs and B5/B7/B8 decisions
 remain open; do not remove paths or promote master.

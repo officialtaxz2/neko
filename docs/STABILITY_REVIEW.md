@@ -32,9 +32,12 @@ service retained; Base/Brave exports and the private snapshot are visible.
 The excerpt starts inside the base build, so earlier individual assertions/counts
 are not separately visible. Unchanged client evidence alone is inherited from
 f03. Evidence: `/opt/docker/nekoNew/neko-stability-8d8126c92903-20261007T171646Z`.
-No candidate activation, device matrix or comparison measurement is supplied.
-NEXT is exact-8d HLS-off activation and WebRTC browser regression, then separately
-same-image conventional HLS. No pull/rebuild/preparation repeat is required.
+Subsequent exact-8d HLS-off activation passed with Baseline-Exitcode 0: healthy
+`my-neko/brave:hls-8d8126c92903`, private baseline snapshot and 2/2 disabled
+bootstrap/media 404 probes. New browser/device and comparison measurements are
+not supplied. NEXT is desktop WebRTC picture/audio/input/chat confirmation,
+then separately same-image conventional HLS. No pull/rebuild/preparation,
+activation or HTTP-probe repeat is required at this checkpoint.
 This is no demonstrated cause of VIDAA failure or
 of the earlier HLS freeze, and no performance advantage is claimed.
 
