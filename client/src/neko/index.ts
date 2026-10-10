@@ -324,8 +324,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   public canSelectMediaBackend(backend: string) {
-    return !isHLSBackend(backend) || ((this.$accessor.user.viewOnly || this.$accessor.user.admin) &&
-      this.$accessor.hls.availableModes.includes(backend as HLSMode))
+    return !isHLSBackend(backend) || this.$accessor.hls.availableModes.includes(backend as HLSMode)
   }
 
   public clearMediaBackendOverride() {
@@ -938,7 +937,6 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       this.hlsController?.stop()
       const controller = new HLSMediaController(this.url, this.mediaBackend as HLSMode, {
         sendEvent: (event, payload) => this.sendMessage(event, payload),
-        eligible: () => this.$accessor.user.viewOnly || this.$accessor.user.admin,
         eventSocketOpen: () => this.socketOpen && this.connected,
         autoplay: () => this.$accessor.settings.autoplay,
         setStatus: (status, detail = '') => this.$accessor.hls.setStatus({ status, detail }),
@@ -956,10 +954,10 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       controller.setVolume(this.$accessor.video.volume / 100)
       if (this.hlsVideo) controller.attach(this.hlsVideo)
       controller.start()
-      if (location.protocol === 'https:' && (this.$accessor.user.viewOnly || this.$accessor.user.admin)) {
+      if (location.protocol === 'https:') {
         this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: this.mediaBackend === 'hls' ? 'll-hls' : 'hls' })
       }
-    } else if (location.protocol === 'https:' && (this.$accessor.user.viewOnly || this.$accessor.user.admin)) {
+    } else if (location.protocol === 'https:') {
       // Discovery allocates no lease/packager. An installation may advertise just one mode.
       this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: 'hls' })
       this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: 'll-hls' })
@@ -1135,7 +1133,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   protected [EVENT.HLS.CAPABILITIES](payload: HLSCapabilitiesPayload) {
-    if (!(this.$accessor.user.viewOnly || this.$accessor.user.admin)) return
+    if (!this.connected || !this.socketOpen) return
     this.$accessor.hls.advertise(hlsModes(payload) as HLSMode[])
     this.hlsController?.handleCapabilities(payload)
   }

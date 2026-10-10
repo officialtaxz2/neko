@@ -45,10 +45,16 @@ about 708 MiB container memory. Subsequent single-WebRTC sampling also completed
 with exit 0: one audio/high-video viewer, two captures, no HLS worker; mean CPU
 about 1.38 cores and container memory about 1.24 GiB. These values include the
 shared browser/capture/encoding; controlled cross-path costs and longer memory
-trend remain open. The [next resource stage](docs/WORKPLAN.md#next-b4-step-resource-baseline)
-is one conventional-HLS viewer on unchanged content/configuration. Keep the target
-at its prepared exact-8d commit; no pull, rebuild or repeated preparation is
-needed. No local project execution took place in Codex.
+trend remain open. Single-HLS sampling also completed with exit 0: only HLS
+audio/high demand, two captures and four workers; mean CPU about 2.05 cores
+and container memory 1.579 GiB. The [next resource stage](docs/WORKPLAN.md#next-b4-step-resource-baseline)
+is one WebCodecs viewer on unchanged content/configuration. Keep comparison on
+exact-8d; no pull/rebuild during measurement. The operator approved HLS selection
+for ordinary members too; the narrow client correction and scoped preparation
+mode are implemented/statically reviewed, **not yet target-tested or deployed**.
+Server `CanWatch`/lease checks and receive-only input remain. Prepare the client
+after comparison; roughly ten-second starts still need cold/warm timing.
+No local project execution took place in Codex.
 
 Latest HLS checkpoint (2026-10-07): the complete browser trace captures a freeze
 at about 24 seconds of media despite continued video delivery. Two source defects

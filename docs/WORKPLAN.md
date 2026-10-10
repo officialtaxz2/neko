@@ -31,7 +31,7 @@ and [the upstream triage](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--
   2/2 disabled HTTP probes), then conventional HLS enabled (Enable-Exitcode 0,
   17/17 public and 2/2 cleartext-denial probes). The live candidate is exact-8d
   with conventional HLS enabled; its bounded ten-minute PC coexistence and
-  initial idle and single-WebRTC resource sampling completed successfully.
+  initial idle, single-WebRTC and single-HLS resource sampling completed successfully.
   Wider device/grouped and comparative
   resource acceptance is pending. `master` stays `d9105ef8`;
   no upstream integration or promotion was performed.
@@ -119,19 +119,53 @@ sustained-playback/coexistence gate PASSED**. This is supplied browser observati
 not a new trace, timing/CPU/RAM measurement or scripted event/device acceptance.
 
 **NEXT:** keep the target pinned at exact-8d with conventional HLS enabled.
-The supplied six-point idle and single-WebRTC sampling completed with
+The supplied six-point idle, single-WebRTC and single-HLS sampling completed with
 Resource-Exitcode 0 each on 2026-10-10. Every WebRTC sample shows only one
-audio/high-video viewer, two captures and no HLS worker.
+audio/high-video viewer, two captures and no HLS worker; every HLS sample shows
+only HLS audio/high subscriptions, two captures and four running HLS workers.
 Continue **B4 resource comparison** with the existing read-only collector:
-**one HLS viewer next**, then one WebCodecs and mixed/scaled/cleanup
+**one WebCodecs viewer next**, then mixed/scaled/cleanup
 cases with comparable content and source quality. Use the staged handoff below
 and the same private results directory; remaining per-path measurements and
 controlled comparisons stay open. Preserve passed evidence and prior images/config.
-Do not repeat the completed idle/WebRTC screens.
+Do not repeat the completed idle/WebRTC/HLS screens.
 No pull, rebuild, preparation, activation, HTTP-probe or PC-ten-minute repeat
 is needed. TV waits for device access; iPhone, full event/role/recovery/slow-peer
 matrix, numerical latency and comparative costs remain open. The PC pass permits
 continued validation, not optional-path removal or a master promotion.
+
+**New approved product correction — 2026-10-10:** the operator encountered the
+existing ordinary-member HLS rejection and explicitly chose to allow normal
+logged-in users too. The narrow client change is implemented/statically reviewed:
+HTTPS capability discovery, advertised-mode selection and controller startup
+no longer require admin/view-only status. Connected-session checks and server
+`CanWatch`, ticket/lease/Origin/revocation enforcement remain intact. HLS remains
+receive-only; ordinary chat uses the existing event socket, while input/control
+delivery still requires WebRTC. No timeouts, buffers, codecs or server permissions
+were changed. **This candidate is not yet prepared or deployed**; supplied
+exact-8d device/resource passes are baseline evidence, not fresh candidate gates.
+Complete the current comparison on exact-8d before pulling the changed client.
+Then use the existing preparation helper with **`--hls-member-access`** at the
+reviewed new exact commit: the strict exact-8d ancestry/path allowlist permits
+only the three client files, the adjusted controller test, helper and docs.
+It requires fresh client tests/type/build and Base/Brave images, retains and
+verifies the live container/image, and inherits only unchanged exact-8d backend/
+race/ordering evidence. No fresh native/fuzz result is claimed. Never use
+`--capture-ordering-repair` to inherit client tests after this client change.
+After preparation passes, activate the new image in a separate operator step;
+the return path is the saved exact-8d image and unchanged overlays.
+Target role gate: ordinary account, admin and genuine view-only link each get
+only advertised HLS choices and moving A/V; ordinary chat still works, HLS
+keyboard/pointer remains disabled, and manual WebRTC selection restores permitted
+input. Check ordinary default-WebRTC login/chat/control when HLS is disabled,
+disabled-HLS explicit failure/manual return, unavailable LL mode,
+stored/query choices across role changes, private Pause/resume, logout/revoke,
+and a current connected session without `CanWatch` being denied by the server.
+Unchanged synthetic denial gates need no repetition absent a new reason.
+All new-client automated/build/browser checks are **PENDING / NOT EXECUTED IN CODEX**.
+The reported roughly ten-second startup is a user-perceived concern, not a
+timed distribution; record cold/warm first moving A/V separately before proposing
+startup/topology tuning. The ≤24-second contract does not settle user preference.
 
 | Item | Implemented behavior | New verification status |
 |---|---|---|
@@ -140,7 +174,8 @@ continued validation, not optional-path removal or a master promotion.
 | B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race passed; exact-8d general PC/ten-minute coexistence passed. Scripted outage/revocation/fresh-login owner and iPhone/VIDAA: NOT RUN |
 | Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture passed, capture race failed on order. Exact-8d helper reports old defect and 100 repaired race repetitions passed; full subscription/native-copy refactor remains conditional |
 | B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Exact-f03 client/type/Vite and relevant Go checks passed. Actual development launcher, ICE configurations/Safari/role browser matrix: NOT RUN; package maintenance separately open |
-| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation/deployment/HTTP, operator-confirmed ten-minute PC A/V/coexistence and six-point idle/single-WebRTC resource sampling completed successfully; HLS/WebCodecs sampling, full resource comparison, browser trace and grouped/device acceptance pending |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation/deployment/HTTP, operator-confirmed ten-minute PC A/V/coexistence and six-point idle/WebRTC/HLS sampling completed successfully; WebCodecs sampling, full resource comparison, browser trace and grouped/device acceptance pending |
+| Approved HLS member access | Client discovers/selects advertised HLS for ordinary authenticated members too; redundant role-only controller callback removed; existing auth-negative fixture follows the authenticated event-session gate | IMPLEMENTED/STATICALLY REVIEWED only. Scoped fresh client/image preparation and ordinary/admin/view-only/live permission/manual-WebRTC gates pending; exact-8d service remains unchanged |
 
 The numerical bounds above are safety/recovery limits, not measured performance
 improvements or a promised first-picture latency. JSON serialization remains
@@ -359,7 +394,7 @@ continuity; no separate browser interruption report was supplied for this phase.
 |---|---|---|---|
 | Warm enabled service, idle | 2.68 / 1.12 | 708.0 | 0 / 0 / 0 |
 | One high-source WebRTC viewer | 137.86 / 139.76 | approximately 1273.3 | 2 / 2 / 0 |
-| One HLS viewer | PENDING | PENDING | PENDING |
+| One HLS viewer (admin diagnostic) | 204.60 / 204.94 | approximately 1616.9 | 2 / 2 / 4 |
 | One WebCodecs viewer | PENDING | PENDING | PENDING |
 
 WebRTC CPU range is **119.51–147.21% of one core**. The mean is about
@@ -382,13 +417,61 @@ cumulative totals, not accurate transport rates or proof of a delivery problem.
 No resource winner, cross-path cost advantage or B5/B7/B8 decision follows.
 Supplied target evidence, **NOT EXECUTED IN CODEX**; do not repeat this screen.
 
-**Next operator stage: one conventional-HLS viewer.** Close the WebRTC viewer
-and open exactly one foreground Neko HLS viewer; wait for moving picture/audio
+**Supplied single-HLS screen — 2026-10-10: Resource-Exitcode 0.**
+Six `hls-one` snapshots in the same directory, from 13:01:13.594623804 to
+13:02:10.026745650 UTC (56.432 seconds):
+
+| Sample UTC | Docker CPU (% of one logical core) | Docker memory (GiB, as reported) | PIDs |
+|---|---|---|---|
+| 13:01:13.594 | 216.90 | 1.579 | 282 |
+| 13:01:24.948 | 198.87 | 1.591 | 282 |
+| 13:01:36.217 | 208.10 | 1.573 | 282 |
+| 13:01:47.497 | 206.57 | 1.576 | 282 |
+| 13:01:58.772 | 193.84 | 1.577 | 282 |
+| 13:02:10.026 | 203.31 | 1.578 | 283 |
+
+Every point has present gauges at **subscriptions=2, capture_pipelines=2,
+hls_running_workers=4**. Only `backend="hls"` audio/source `audio` = 1 and
+video/source `high` = 1 are positive; no WebRTC/WebCodecs demand is sampled.
+The same exact-8d image ID/start time, healthy state, zero restarts and limits
+are supplied. The source is high but the client's actual ABR output/quality and
+content equivalence are not recorded. Six points do not prove uninterrupted A/V.
+The operator reports HLS works through admin access and estimates startup at
+about ten seconds; no precise time origin, cold/warm classification or timed
+startup series is supplied. This does not meet a full startup/device gate.
+
+CPU mean/median: **204.60%/204.94% of one core**, range **193.84–216.90%**;
+about **2.05 cores / 25.57% of eight-core capacity**, not measured whole-host load.
+Memory mean: approximately **1.579 GiB / 1616.9 MiB**, range
+**1.573–1.591 GiB / 1610.8–1629.2 MiB**. First-to-last memory is about 1 MiB
+lower, not proof of a long-session plateau or complete cleanup. Observed mean
+differences from the earlier WebRTC phase are **+66.74 one-core CPU percentage
+points / 0.67 cores** and approximately **+343.6 MiB**. This is consistent with
+the statically known additional four HLS conversion workers, but is not a
+controlled attribution: browser load/content, role, ABR output and retained
+allocations can differ. Do not label the difference as pure protocol overhead
+or extrapolate it per additional HLS viewer. Rounded cumulative network totals
+(994 MB→1 GB received, 1.81→1.83 GB sent) do not measure transport bandwidth.
+These are supplied target results, **NOT EXECUTED IN CODEX**. Do not repeat
+the completed idle/WebRTC/HLS screens.
+
+**Role finding and correction:** exact-8d's client checks admin/view-only before
+starting HLS and discovers/exposes modes only for those roles. The same guard
+was present at exact-8741. The supplied ordinary-member error is this explicit
+pre-negotiation refusal, not a captured media outage. Server HLS negotiation/
+bootstrap authorizes current connected `CanWatch` sessions; the UI restriction
+is not the server's security boundary. The operator approved ordinary-member
+access, now implemented in the new candidate above, not yet on the exact-8d
+service. Keep the pending fresh role gate separate from these resource results.
+
+**Next operator stage: one WebCodecs/media-WebSocket viewer.** Close the HLS
+viewer, open exactly one foreground Neko tab and select WebCodecs in settings;
+wait for moving picture/audio
 before running the block. Close other Neko viewers and ensure no other participant
 is watching. Keep shared-browser content, quality settings, image and overlays
-unchanged. Do not enable LL-HLS. The block below waits
+unchanged. The block below waits
 60 seconds and takes six comparable initial screening points into the existing
-private directory under a new `hls-one` label. The positive subscription rows
+private directory under a new `webcodecs-one` label. The positive subscription rows
 record backend/source/kind, including the actual video tier; they contain no
 peer/session IDs. Do not interpret a low-tier sample as a high-source comparison.
 Record any observed tier change or interruption. No target pull is needed:
@@ -401,15 +484,15 @@ cd /opt/docker/nekoNew/neko
 test "$(git rev-parse HEAD)" = "8d8126c92903dab58056fa316b626b38dcffb376"
 results=/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z
 test -d "$results"
-if compgen -G "$results/*-hls-one.resources.txt" >/dev/null; then
-  printf 'STOP: hls-one wurde in diesem Ordner bereits gemessen.\n' >&2
+if compgen -G "$results/*-webcodecs-one.resources.txt" >/dev/null; then
+  printf 'STOP: webcodecs-one wurde in diesem Ordner bereits gemessen.\n' >&2
   exit 1
 fi
 sleep 60
-bash deploy/collect-hls-media.sh sample "$results" hls-one 6
+bash deploy/collect-hls-media.sh sample "$results" webcodecs-one 6
 
 printf '\nRessourcen-Ergebnis\nErgebnisordner: %s\n' "$results"
-for resource_file in "$results"/*-hls-one.resources.txt; do
+for resource_file in "$results"/*-webcodecs-one.resources.txt; do
   printf '\n%s\n' "${resource_file##*/}"
   cat -- "$resource_file"
   awk '
@@ -439,8 +522,8 @@ Missing gauge families remain unknown. The collector neither restarts nor
 deploys the service; remaining-path execution/results remain pending.
 
 Six points are an initial resource/cleanup screen, not a full statistical B4
-comparison. After reviewing HLS evidence, use the same source/workload and
-comparable steady intervals for WebCodecs, then mixed/scaled viewers and
+comparison. After reviewing WebCodecs evidence, use the same source/workload and
+comparable steady intervals for mixed/scaled viewers and
 post-cleanup. Keep longer controlled intervals and repeated cases for the full
 B4 gate; do not infer a total-cost winner from one short interval. A warmed
 enabled-service baseline is not the cost of a cold or disabled optional backend;

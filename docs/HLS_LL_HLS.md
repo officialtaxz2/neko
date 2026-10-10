@@ -73,7 +73,7 @@ This contract does not add:
 - a second X11/PulseAudio desktop capture;
 - a client dependency, endpoint or packager in this design-only block.
 
-The HLS backend itself is always receive-only. A normal/admin profile retains only the rights it already has on the existing event plane; selecting HLS grants none. The first product UI SHOULD expose HLS to server-enforced view-only sessions and an explicit administrator diagnostic path. Only `MemberProfile.IsViewOnly` provides the hard no-input guarantee.
+The HLS backend itself is always receive-only. A normal/admin profile retains only the rights it already has on the existing event plane; selecting HLS grants none. The operator approved ordinary-member access on 2026-10-10: the product UI SHOULD expose only server-advertised HLS modes to any authenticated participant with current server `CanWatch`, including normal members, view-only sessions and admins. This supersedes the first prototype's admin/view-only UI restriction; exact-8d still has that old restriction until the corrected client passes fresh gates and is activated. Selecting HLS creates no replacement keyboard/pointer transport and does not turn a normal profile into a view-only identity. Only `MemberProfile.IsViewOnly` provides the hard server-side no-input guarantee.
 
 ## Evidence baseline and compatibility choice
 

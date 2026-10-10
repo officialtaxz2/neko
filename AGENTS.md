@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Latest resource checkpoint (2026-10-10): supplied exact-8d idle and subsequent
-single-WebRTC resource sampling completed with Resource-Exitcode 0 each.
+Latest resource checkpoint (2026-10-10): supplied exact-8d idle, single-WebRTC
+and subsequent single-HLS sampling completed with Resource-Exitcode 0 each.
 Private evidence:
 `/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z`.
 All six idle samples contain the relevant gauge families and report zero media
@@ -25,12 +25,29 @@ The phase includes browser/capture/encoding/delivery, not isolated WebRTC cost;
 rounded network counters do not measure transport throughput, and actual
 content equivalence to the earlier idle phase is not independently verified.
 No separate browser interruption report accompanies this sampling output.
-NEXT: one HLS viewer, then one WebCodecs and mixed/scaled/cleanup
+All six `hls-one` points show only HLS audio/high-video subscriptions (two),
+two capture pipelines and four running HLS workers, with gauges present.
+Mean CPU 204.60% of one core (2.05 cores, 25.57% of eight-core capacity);
+mean Docker memory 1.579 GiB / 1616.9 MiB. Observed differences from the earlier
+WebRTC phase are +66.74 one-core CPU percentage points and about +343.6 MiB,
+not isolated transport costs or a controlled quality/content comparison.
+The same healthy image ID/start time and zero restarts are supplied. The
+operator reports HLS works as admin and estimates starts at about ten seconds;
+the time origin/cold-warm state and exact interval continuity are unrecorded.
+The ordinary-member rejection matches the old client role guard, not a captured
+streaming outage. The operator explicitly approved ordinary-member HLS access.
+That narrow client change and the scoped `--hls-member-access` preparation mode
+are IMPLEMENTED/STATICALLY REVIEWED in working source; target gates remain
+pending, NOT EXECUTED IN CODEX. No server permission or input transport changes.
+NEXT: one WebCodecs viewer, then mixed/scaled/cleanup
 intervals using the same private directory and unchanged content/configuration;
-follow `docs/WORKPLAN.md` NEXT. Do not repeat idle or the WebRTC screen, the PC ten-minute coexistence
+follow `docs/WORKPLAN.md` NEXT. Do not repeat idle/WebRTC/HLS screens, the PC ten-minute coexistence
 gate or passed deployment/preparation/HTTP checks. Keep the target pinned at
-exact-8d with conventional HLS enabled and all overlays unchanged; no pull or
-rebuild. Supplied target results, NOT EXECUTED IN CODEX. Required-device/grouped
+exact-8d with conventional HLS enabled and all overlays unchanged for comparison;
+no pull/rebuild during these intervals. Afterwards prepare the new role-access
+candidate with fresh client/images and inherited unchanged exact-8d backend
+evidence; do not use ordering-only inheritance after changing the client.
+Supplied target results, NOT EXECUTED IN CODEX. Required-device/grouped
 acceptance, B5/B7/B8 decisions and dependency disposition remain open; master
 stays d9105ef8.
 

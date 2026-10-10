@@ -21,6 +21,15 @@ deployment pending a latency need. Optional server features stay default-off in
 the base repository configuration. The normal login/event WebSocket is required
 by all three choices and is distinct from the additional media WebSocket.
 
+Approved member-access correction (2026-10-10): advertised HLS modes should also
+be selectable by ordinary authenticated members with current server `CanWatch`.
+The narrow client change is implemented/statically reviewed, with fresh target
+client/image/role gates pending; exact-8d still has the original admin/view-only
+UI restriction. Selection changes no profile/permission or input transport.
+Ordinary chat remains on the event socket; genuine view-only sessions retain
+their server-enforced denials. Startup around ten seconds is an operator concern;
+cold/warm timing and the acceptable user budget stay open. Follow Workplan NEXT.
+
 Supplied exact-8741 PC/Helium evidence confirms at least five minutes of moving
 HLS A/V without Retry/reload alongside continuing WebRTC. It does not establish
 Smart-TV compatibility, reliable cold starts, native/LL-HLS/resource acceptance

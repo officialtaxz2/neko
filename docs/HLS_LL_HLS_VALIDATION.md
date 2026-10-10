@@ -1,5 +1,19 @@
 # HLS / LL-HLS Phase 4 target-server validation
 
+**Approved ordinary-member client correction — 2026-10-10:** source now admits
+ordinary authenticated members to advertised HLS modes, removing the old UI-only
+role gate. Server `CanWatch`, lease/revocation and receive-only input remain.
+This candidate has no fresh target result; exact-8d measurements do not validate
+its changed client. Finish current WebCodecs/comparative intervals on exact-8d,
+then follow Workplan NEXT for scoped `--hls-member-access` preparation: fresh
+client tests/type/build and Base/Brave images, inherited unchanged exact-8d
+backend evidence, retained live image and no automatic activation. Require
+ordinary/admin/view-only, ordinary chat, HLS input inhibition/manual WebRTC,
+stored/query/disabled-mode/private-Pause and current `CanWatch` denial/revocation
+gates before accepting the new image. Roll back to saved exact-8d plus overlays.
+Target execution: **PENDING / NOT EXECUTED IN CODEX**. Historical role wording
+below describes the original prototype and its named commits.
+
 **Current bounded PC checkpoint — 2026-10-07:** exact
 `8d8126c92903dab58056fa316b626b38dcffb376` preparation, healthy HLS-off baseline
 and same-image conventional-HLS activation passed with their supplied CLI/HTTP

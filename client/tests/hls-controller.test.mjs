@@ -15,7 +15,7 @@ const manifest = '#EXTM3U\n#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="audio",URI="audio/i
 const child = '#EXTM3U\n#EXT-X-MAP:URI="init-1.mp4"\n#EXTINF:6,\nseg-1.m4s\n'
 const flush = async () => { await new Promise(setImmediate); await new Promise(setImmediate) }
 
-function harness({ eligible = true, autoplay = true, fetcher, mse = false, mseAttach } = {}) {
+function harness({ authenticated = true, autoplay = true, fetcher, mse = false, mseAttach } = {}) {
   let now = 0, id = 0, revoked = false
   const timers = new Map(), status = [], events = [], requests = [], playing = [], playable = []
   const exports = {}
@@ -59,8 +59,8 @@ function harness({ eligible = true, autoplay = true, fetcher, mse = false, mseAt
     },
   })
   const controller = new exports.HLSMediaController('wss://neko.example/prefix/ws', 'hls', {
-    sendEvent: (event, payload) => events.push({ event, payload }), eligible: () => eligible,
-    eventSocketOpen: () => true, autoplay: () => autoplay, setStatus: (state, detail) => status.push({ state, detail }),
+    sendEvent: (event, payload) => events.push({ event, payload }),
+    eventSocketOpen: () => authenticated, autoplay: () => autoplay, setStatus: (state, detail) => status.push({ state, detail }),
     setPlayer() {}, setPlayable: (value) => playable.push(value), setPlaying: (value) => playing.push(value), setMuted() {}, resolution() {},
   })
   controller.attach(video)
@@ -81,17 +81,19 @@ function harness({ eligible = true, autoplay = true, fetcher, mse = false, mseAt
   return { controller, video, timers, status, events, requests, playing, playable, advance, negotiate, revoke: () => { revoked = true } }
 }
 
-test('unadvertised and ineligible HLS modes terminate without a bootstrap or another backend', async () => {
+test('unadvertised modes and unauthenticated HLS sessions terminate without a bootstrap or another backend', async () => {
   const disabled = harness()
   disabled.controller.start()
   await disabled.advance(5000)
   assert.equal(disabled.status.at(-1).state, 'terminal')
   assert.equal(disabled.requests.length, 0)
   assert.equal(disabled.events.length, 1)
-  const ordinary = harness({ eligible:false })
-  ordinary.controller.start()
-  assert.equal(ordinary.status.at(-1).state, 'terminal')
-  assert.equal(ordinary.events.length, 0)
+  const unauthenticated = harness({ authenticated:false })
+  unauthenticated.controller.start()
+  assert.equal(unauthenticated.status.at(-1).state, 'terminal')
+  assert.equal(unauthenticated.status.at(-1).detail, 'HLS requires an authenticated session and HTTP playback support')
+  assert.equal(unauthenticated.events.length, 0)
+  assert.equal(unauthenticated.requests.length, 0)
 })
 
 test('private mode clears native buffers immediately and resumes the same lease', async () => {

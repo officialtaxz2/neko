@@ -594,7 +594,7 @@
     }
 
     get hls_modes() {
-      return this.$accessor.user.viewOnly || this.$accessor.user.admin ? this.$accessor.hls.availableModes : []
+      return this.$accessor.hls.availableModes
     }
 
     get hls_preference_unavailable() {

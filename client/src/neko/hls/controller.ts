@@ -7,7 +7,6 @@ import { clearHLSVideo, hlsBase, hlsLeaseURL, hlsMasterChildren, hlsModes, HLS_A
 
 interface Callbacks {
   sendEvent: (event: typeof EVENT.HLS.CAPABILITIES_REQUEST | typeof EVENT.HLS.CREATE, payload: any) => void
-  eligible: () => boolean
   eventSocketOpen: () => boolean
   autoplay: () => boolean
   setStatus: (status: HLSStatus, detail?: string) => void
@@ -54,7 +53,6 @@ export class HLSMediaController {
     this.stop()
     this.stopped = false
     this.desiredPlaying = this.callbacks.autoplay()
-    if (!this.callbacks.eligible()) { this.fail('HLS is available only to view-only viewers and admin diagnostics'); return }
     if (!this.callbacks.eventSocketOpen() || typeof fetch !== 'function' || typeof AbortController !== 'function') {
       this.fail('HLS requires an authenticated session and HTTP playback support'); return
     }
@@ -251,7 +249,7 @@ export class HLSMediaController {
     const generation = this.generation
     void (async () => {
       try {
-        if (!this.callbacks.eventSocketOpen() || !this.callbacks.eligible()) { this.fail('HLS session ended'); return }
+        if (!this.callbacks.eventSocketOpen()) { this.fail('HLS session ended'); return }
         if (Date.now() >= this.keepAliveAt) {
           const alive = await this.request(new URL('keepalive', new URL('.', this.master)).href, { method: 'POST' })
           if (!this.current(generation)) return

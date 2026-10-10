@@ -20,6 +20,15 @@ and [current Workplan](WORKPLAN.md#next) distinguish implemented mechanisms,
 supplied target results and unmeasured benefit. Historical checkpoints below
 retain their original evidence limits; they are not the latest live status.
 
+Source follow-up (2026-10-10): ordinary-member HLS selection was approved after
+the existing role-only client refusal. Discovery, selection and startup now use
+authenticated-session/server-advertisement boundaries rather than admin/view-only
+status. Server `CanWatch`/ticket/lease/revocation checks and receive-only input
+are unchanged. The client change and scoped preparation mode are implemented/
+statically reviewed, not target-verified or deployed. Exact-8d idle/WebRTC/HLS
+resource screens are baseline evidence; finish comparisons there before new
+candidate preparation. Follow Workplan NEXT.
+
 ## Current repository architecture
 
 ```text

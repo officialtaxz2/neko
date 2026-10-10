@@ -48,10 +48,20 @@ HLS worker in every point, with gauges present. CPU mean is 137.86% of one core
 trend and post-cleanup return remain unmeasured. These whole-container phase
 values include browser/capture/encoding, not isolated transport overhead;
 content equivalence to the idle phase is not independently verified.
-Do not repeat the idle/WebRTC screens or passed ten-minute PC coexistence gate.
-Next is one conventional-HLS viewer, then WebCodecs and mixed/scaled/cleanup
+Subsequent six-point `hls-one` sampling completed with exit 0: only HLS
+audio/high-video subscriptions (two), two captures and four running HLS workers.
+Mean CPU 204.60% of one core (2.05 cores, 25.57% of eight-core capacity);
+mean memory 1.579 GiB / 1616.9 MiB. Observed differences from WebRTC are +66.74
+one-core CPU percentage points and about +343.6 MiB, with content/ABR output,
+role and retained allocations not independently controlled. Do not extrapolate
+them per viewer or as pure transport overhead. Ordinary-member rejection was
+the existing client policy; its approved correction has separate pending gates.
+Roughly ten-second starts are operator estimates, not a timed cold/warm series.
+Do not repeat idle/WebRTC/HLS screens or the passed ten-minute coexistence gate.
+Next is one WebCodecs viewer, then mixed/scaled/cleanup
 intervals; the remaining paths and controlled comparisons stay open. Supplied
-target evidence, NOT EXECUTED IN CODEX.
+target evidence, NOT EXECUTED IN CODEX. Keep resource sampling on exact-8d;
+prepare the new member-access client only after those intervals.
 
 For a changed bind port or path prefix, set `NEKO_METRICS_URL` to the actual
 credential-free loopback HTTP `/metrics` URL. No public metrics exposure is

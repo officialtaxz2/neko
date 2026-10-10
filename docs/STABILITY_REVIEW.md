@@ -78,12 +78,35 @@ and capture/encoding work and does not isolate WebRTC cost. Content equivalence
 between these temporally separated phases is not independently verified.
 Memory rises about 36.9 MiB first-to-last; this short record neither proves a
 leak nor establishes a stable long-session plateau. Rendered/audio continuity
-was not separately reported for this sampling interval. HLS/WebCodecs cost,
-longer sessions and post-cleanup return remain open. Next is one conventional-
-HLS viewer on unchanged content/configuration, following the
+was not separately reported for this sampling interval. Controlled cross-path
+cost, longer sessions and post-cleanup return remain open. Follow the
 [staged handoff](WORKPLAN.md#next-b4-step-resource-baseline). Do not repeat the
-completed idle/WebRTC screens or passed coexistence/server gates. Supplied
+completed resource screens or passed coexistence/server gates. Supplied
 target evidence, **NOT EXECUTED IN CODEX**; no path-removal decision follows.
+
+**Supplied B4 single-HLS screen and approved member access — 2026-10-10:**
+Resource-Exitcode 0, six `hls-one` points over 56.432 seconds in the same private
+directory. Only HLS audio/high subscriptions (two), two capture pipelines and
+four running HLS workers are sampled; same healthy image ID/start time and zero
+restarts. CPU mean/median: 204.60%/204.94% of one core (range 193.84–216.90%),
+about 2.05 cores. Memory mean: 1.579 GiB / 1616.9 MiB (range 1.573–1.591 GiB).
+Observed differences from WebRTC are +66.74 one-core CPU percentage points and
+about +343.6 MiB. These whole-container phases do not isolate protocol/transcode
+cost or control content, role, ABR output and prior allocations; scaling,
+longer sessions and cleanup remain open.
+
+The ordinary-member rejection is the old client guard before negotiation,
+also present at 8741; the backend authorizes current connected `CanWatch`.
+The operator reports admin playback and roughly ten-second starts, without
+timed cold/warm or complete continuity evidence. Ordinary-member access was
+explicitly approved and is now implemented/statically reviewed in the new
+client, with its redundant role-only startup callback removed. Server
+authorization/lease checks and receive-only input behavior remain; chat stays
+on the event socket. Fresh client/image and ordinary/admin/view-only/manual-
+WebRTC/live-denial gates remain pending. Estimated startup is a user concern,
+not measured acceptance; no buffer/timeout/codec tuning accompanies this change.
+Next is WebCodecs sampling on exact-8d, then candidate preparation.
+**NOT EXECUTED IN CODEX**; no path-removal decision follows.
 
 - **F1 / B2:** a bounded FIFO writer now owns each normal event socket, including
   both legacy bridge legs; 128 records/16 MiB including in-flight writes, 5 s
@@ -177,6 +200,7 @@ The decisive existing results are:
 | Exact-8d preparation/deployment and PC coexistence (T) | Supplied ordering-repair/backend/image gates, healthy activation and 19 denial probes; at least ten minutes of moving HLS A/V with concurrent WebRTC, without observed freeze, Retry or reload | Scripted room-event/outage/role coverage, valid-lease security matrix, numerical latency/resources, iPhone or VIDAA acceptance |
 | Exact-8d idle resource screen, 2026-10-10 (T) | Six present-gauge zero-demand points; Docker CPU mean 2.68% of one core and memory mean 708.0 MiB on the retained enabled service | Per-path cost/quality advantage, cold/disabled-backend overhead, precise transport throughput, server RSS or full lifetime cleanup/leak acceptance |
 | Exact-8d single-WebRTC screen, 2026-10-10 (T) | Six points with one audio/high-video WebRTC viewer, two captures and zero HLS workers; whole-container mean CPU 137.86% of one core and memory approximately 1273.3 MiB | Isolated WebRTC overhead, independently controlled content, HLS/WebCodecs advantage, precise network rates, rendered/audio continuity or a leak diagnosis from the short memory rise |
+| Exact-8d single-HLS screen, 2026-10-10 (T) | Six points with only HLS audio/high input, two captures and four workers; whole-container mean CPU 204.60% of one core and memory approximately 1616.9 MiB; reported admin playback and roughly ten-second starts | Controlled quality/content/role comparison, timed cold/warm distribution, ordinary-member playback, complete A/V continuity, scaling or cleanup acceptance |
 
 The exact HLS evidence and omissions remain in
 [the rolling-window repair record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md).
@@ -229,14 +253,14 @@ evidence. Scripted recovery/event/device and comparative resource gates stay ope
 
 | Dimension | WebRTC | WebCodecs + media WebSocket | Conventional HLS | LL-HLS |
 |---|---|---|---|---|
-| Product role (S) | Interactive default; passive viewing also supported | Explicit receive-only experiment; same room | Explicit passive compatibility candidate | Passive candidate where lower HTTP-streaming delay is needed |
+| Product role (S) | Interactive default; passive viewing also supported | Explicit receive-only experiment; same room | Passive compatibility candidate; ordinary-member choice approved/implemented in new client, exact-8d still admin/view-only | Same approved member-access policy if advertised; latency niche still requires evidence |
 | Actual compatibility (T/O) | Existing desktop/mobile deployment; TV incident unresolved; omitted iPhone recovery phases stay open | Desktop and corrected foreground iPhone evidence; no affected-TV test | Prior PC/Helium at 8741 and ten-minute PC coexistence at 8d; native Apple/TV acceptance open | No supplied live acceptance on the required devices |
 | Capability limits (S/O) | RTCPeerConnection, negotiated codec, ICE/data channel and autoplay constraints | Worker VideoDecoder **and** AudioDecoder for exact VP8/Opus, AudioWorklet/AudioContext/canvas; no native PiP; viewport fullscreen on tested iPhone | Native H.264/AAC HLS or suitable MSE+hls.js, plus the modern Neko application/event socket; a TV's ability to play an m3u8 alone is insufficient | HLS client support plus blocking/part semantics and suitable HTTP/proxy/network behavior |
 | Startup (S/T/O) | Login → signaling/ICE → first frame → autoplay; comparative distribution missing | Event login → ticket/socket → format/keyframe/audio buffering; fast-start targets unmeasured | Cold packager produces all four tracks; fixtures near 18.1 s and historical first picture near 20 s are different observations; 28 s server readiness allowance inside 30 s HTTP limit, not a measured p95 | Six-second readiness allowance; live startup unknown |
 | Latency and bandwidth (S/O) | RTP/RTCP with congestion feedback; ICE may use relay; actual candidate and overhead matter | Reliable ordered TCP; loss can delay later media. Fixed/manual source, no WebRTC estimator; framing and feedback add traffic | Six-second parents and buffer/hold-back trade latency for robustness; ABR chooses among outputs; transcoding and HTTP overhead can increase bytes | One-second parts and blocking reload add request/state cost; lower-latency benefit unmeasured. Contract requires path p95 RTT ≤333 ms |
 | Recovery (S/T/O) | One fresh-login owner and one bounded element repair; matched client/server 8-s transient grace and real progress checks have automated and general PC evidence; scripted outage/revoke and device gates open | Local audio reanchor and bounded same-backend resync/retry; no automatic backend fallback; corrected foreground interval passed | Player recovery plus independent HTTP/lease/progress checks; explicit Retry; latest rolling-window fixes passed bounded playback | Same lease/player safety plus more reload/part/discontinuity cases; runtime evidence open |
 | Capture and encoding (S) | Shares demanded configured source; optional high/medium/low capture pipelines can run concurrently | Reuses the selected VP8/Opus source; per-viewer delivery and browser decoding, no additional server encoder | Pins shared `high` VP8 input plus Opus; **two provider subscriptions, three separate VP8 decoders/H.264 encoders and one Opus→AAC worker**, all shared by viewers | Same four workers and objects as conventional HLS; disabling LL mode alone does not save those encoders |
-| CPU/RAM (S/T/O) | Pion/packetization, feedback and demanded capture cost; initial six-point high-viewer whole-container screen: mean CPU 137.86% of one core, memory approximately 1273.3 MiB; no controlled cross-transport comparison | Queue/parser/writer and worker/browser decode cost; receiving on TCP can concentrate backlog; comparative footprint unknown | Largest identifiable additional native conversion machinery; 64 MiB object limit is not a total RSS limit; first viewer starts every variant | Similar native conversion cost, with additional HTTP waiter/playlist state; exact delta unmeasured |
+| CPU/RAM (S/T/O) | Pion/packetization, feedback and demanded capture cost; initial six-point high-viewer whole-container screen: mean CPU 137.86% of one core, memory approximately 1273.3 MiB; no controlled cross-transport comparison | Queue/parser/writer and worker/browser decode cost; receiving on TCP can concentrate backlog; comparative footprint unknown | Four additional shared conversion workers; initial admin screen: mean CPU 204.60% of one core, memory approximately 1616.9 MiB; 64 MiB object limit is not total RSS; first viewer starts every variant | Similar native conversion cost, with additional HTTP waiter/playlist state; exact delta unmeasured |
 | Failure isolation (S/T/O) | Per-peer media queues and accepted estimator isolation; common event writes now bounded but new slow-reader acceptance pending; shared capture/host remain | Per-delivery queue/write/decoder limits; induced hostile/slow-client and shared-event tests remain open | Shared packager means one rendition/audio-generation failure can affect many HLS viewers; bounded HTTP readers; bounded five-/ten-minute coexistence supports only those intervals | Same shared-packager boundary; blocking-request isolation needs its own gate |
 | Authorization (S/T) | Live session/view-only controls, WebRTC/input permissions | TLS/exact Origin, ten-second one-use ticket via subprotocol, live permission recheck, credential-free source backend | TLS/exact Origin, one-use bootstrap and sliding 30-second HttpOnly path-scoped cookie lease, 15-second renewal, current session permission | Same security plus strict bounded reload/query handling |
 | Maintenance (S) | Required core lifecycle; Pion, legacy signaling, input and estimator | Separate wire protocol, worker decoders, audio clock/resync, canvas/frame ownership and browser feature changes | Native and MSE players, pinned hls.js, transcoder, custom fMP4/playlist/retention/lease/security machinery | Further playlist, blocking reload, preload/rendition-report and proxy test cases |
