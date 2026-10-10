@@ -48,10 +48,25 @@ without observed freeze, Retry or reload. This closes that bounded sustained-
 playback/coexistence gate at exact-8d. It is supplied browser observation, not a
 captured trace, scripted event/outage/role matrix, numerical resource/latency
 comparison or iPhone/TV acceptance. Do not repeat the passed interval or server
-gates. NEXT is the read-only B4 resource baseline/comparison and remaining
+gates. NEXT is the read-only B4 per-path resource comparison and remaining
 available-device/grouped coverage; unavailable VIDAA stays explicitly open.
 This is no demonstrated cause of VIDAA failure or
 of the earlier HLS freeze, and no performance advantage is claimed.
+
+**Supplied B4 idle screen — 2026-10-10:** Resource-Exitcode 0, six points in
+`/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z`. All samples have
+present subscription/running-HLS-worker/capture gauges at zero. Docker CPU
+mean/median are 2.68%/1.12% of one core, range 0.59–10.50%; memory mean is
+708.0 MiB, range 707.3–708.5 MiB. The first CPU peak is unexplained and retained.
+The sampled exact-8d image is healthy with zero recorded restarts, on eight
+logical CPUs without explicit Docker CPU/RAM limits. This bounds observed idle
+media demand; it neither proves optional paths have zero overhead nor measures
+individual process RSS, transport bandwidth or longer-session leak behavior.
+Per-path cost/latency evidence and B5/B7/B8 decisions remain open. Next is exactly
+one WebRTC viewer on unchanged content/configuration, following the
+[current staged handoff](WORKPLAN.md#next-b4-step-resource-baseline). Do not repeat
+the passed idle/coexistence/server gates. Supplied target evidence,
+**NOT EXECUTED IN CODEX**; required iPhone/TV and full grouped acceptance stay open.
 
 - **F1 / B2:** a bounded FIFO writer now owns each normal event socket, including
   both legacy bridge legs; 128 records/16 MiB including in-flight writes, 5 s
@@ -142,6 +157,8 @@ The decisive existing results are:
 | WebRTC adaptive checkpoints `bfaca84e`, `2efcc6b1`, `ddf15cee` (T) | The documented three-viewer scenario; a 20-minute healthy high-tier hold; real constrained downgrade; peer isolation; a bounded lower-tier recovery probe | A universally optimal profile, all devices, or cost versus another transport |
 | WebCodecs bounded checkpoints `86893473`, `6b6cd328`, selection `12cfe43b` (T) | Roughly 15 minutes of technical playback; a corrected foreground iPhone interval over ten minutes with acceptable reported picture/audio and no retry; role/private-mode/manual-selection checks within their recorded limits | TV compatibility, numerical latency/pacing, background recovery, resource advantage or induced slow-client acceptance |
 | Exact-8741 preparation and activation, PC/Helium (T) | Both old rolling-playlist/watchdog defects reproduced in isolation; 66 client tests/type/build plus stated wire/package/image gates passed; operator confirmed at least five minutes of moving conventional-HLS picture/audio without Retry/reload while WebRTC continued working | Reliable cold start, a scripted room-event matrix, native Safari/TV or LL-HLS acceptance, ten-minute/full Phase 4 acceptance, direct CPU/RAM/latency comparison or proof of the earlier live parser cause |
+| Exact-8d preparation/deployment and PC coexistence (T) | Supplied ordering-repair/backend/image gates, healthy activation and 19 denial probes; at least ten minutes of moving HLS A/V with concurrent WebRTC, without observed freeze, Retry or reload | Scripted room-event/outage/role coverage, valid-lease security matrix, numerical latency/resources, iPhone or VIDAA acceptance |
+| Exact-8d idle resource screen, 2026-10-10 (T) | Six present-gauge zero-demand points; Docker CPU mean 2.68% of one core and memory mean 708.0 MiB on the retained enabled service | Per-path cost/quality advantage, cold/disabled-backend overhead, precise transport throughput, server RSS or full lifetime cleanup/leak acceptance |
 
 The exact HLS evidence and omissions remain in
 [the rolling-window repair record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md).
@@ -189,20 +206,20 @@ The numbers below are configuration/acceptance targets unless explicitly marked
 T. Lower transport overhead, quicker startup or a lower CPU/RAM footprint has
 **not** been measured across these paths.
 The retained media topology is unchanged; common-event bounds and the WebRTC
-grace/progress repair above are now static source properties, with new target
-evidence pending.
+grace/progress repair above have supplied automated/preparation and bounded PC
+evidence. Scripted recovery/event/device and comparative resource gates stay open.
 
 | Dimension | WebRTC | WebCodecs + media WebSocket | Conventional HLS | LL-HLS |
 |---|---|---|---|---|
 | Product role (S) | Interactive default; passive viewing also supported | Explicit receive-only experiment; same room | Explicit passive compatibility candidate | Passive candidate where lower HTTP-streaming delay is needed |
-| Actual compatibility (T/O) | Existing desktop/mobile deployment; TV incident unresolved; omitted iPhone recovery phases stay open | Desktop and corrected foreground iPhone evidence; no affected-TV test | PC/Helium evidence at 8741; native Apple/TV acceptance open | No supplied live acceptance on the required devices |
+| Actual compatibility (T/O) | Existing desktop/mobile deployment; TV incident unresolved; omitted iPhone recovery phases stay open | Desktop and corrected foreground iPhone evidence; no affected-TV test | Prior PC/Helium at 8741 and ten-minute PC coexistence at 8d; native Apple/TV acceptance open | No supplied live acceptance on the required devices |
 | Capability limits (S/O) | RTCPeerConnection, negotiated codec, ICE/data channel and autoplay constraints | Worker VideoDecoder **and** AudioDecoder for exact VP8/Opus, AudioWorklet/AudioContext/canvas; no native PiP; viewport fullscreen on tested iPhone | Native H.264/AAC HLS or suitable MSE+hls.js, plus the modern Neko application/event socket; a TV's ability to play an m3u8 alone is insufficient | HLS client support plus blocking/part semantics and suitable HTTP/proxy/network behavior |
 | Startup (S/T/O) | Login → signaling/ICE → first frame → autoplay; comparative distribution missing | Event login → ticket/socket → format/keyframe/audio buffering; fast-start targets unmeasured | Cold packager produces all four tracks; fixtures near 18.1 s and historical first picture near 20 s are different observations; 28 s server readiness allowance inside 30 s HTTP limit, not a measured p95 | Six-second readiness allowance; live startup unknown |
 | Latency and bandwidth (S/O) | RTP/RTCP with congestion feedback; ICE may use relay; actual candidate and overhead matter | Reliable ordered TCP; loss can delay later media. Fixed/manual source, no WebRTC estimator; framing and feedback add traffic | Six-second parents and buffer/hold-back trade latency for robustness; ABR chooses among outputs; transcoding and HTTP overhead can increase bytes | One-second parts and blocking reload add request/state cost; lower-latency benefit unmeasured. Contract requires path p95 RTT ≤333 ms |
-| Recovery (S/T/O) | One fresh-login owner and one bounded element repair; matched client/server 8-s transient grace and real progress checks are implemented but await target validation | Local audio reanchor and bounded same-backend resync/retry; no automatic backend fallback; corrected foreground interval passed | Player recovery plus independent HTTP/lease/progress checks; explicit Retry; latest rolling-window fixes passed bounded playback | Same lease/player safety plus more reload/part/discontinuity cases; runtime evidence open |
+| Recovery (S/T/O) | One fresh-login owner and one bounded element repair; matched client/server 8-s transient grace and real progress checks have automated and general PC evidence; scripted outage/revoke and device gates open | Local audio reanchor and bounded same-backend resync/retry; no automatic backend fallback; corrected foreground interval passed | Player recovery plus independent HTTP/lease/progress checks; explicit Retry; latest rolling-window fixes passed bounded playback | Same lease/player safety plus more reload/part/discontinuity cases; runtime evidence open |
 | Capture and encoding (S) | Shares demanded configured source; optional high/medium/low capture pipelines can run concurrently | Reuses the selected VP8/Opus source; per-viewer delivery and browser decoding, no additional server encoder | Pins shared `high` VP8 input plus Opus; **two provider subscriptions, three separate VP8 decoders/H.264 encoders and one Opus→AAC worker**, all shared by viewers | Same four workers and objects as conventional HLS; disabling LL mode alone does not save those encoders |
 | CPU/RAM (S/O) | Pion/packetization, feedback and demanded capture cost; no clean cross-transport baseline | Queue/parser/writer and worker/browser decode cost; receiving on TCP can concentrate backlog; comparative footprint unknown | Largest identifiable additional native conversion machinery; 64 MiB object limit is not a total RSS limit; first viewer starts every variant | Similar native conversion cost, with additional HTTP waiter/playlist state; exact delta unmeasured |
-| Failure isolation (S/T/O) | Per-peer media queues and accepted estimator isolation; common event writes now bounded but new slow-reader acceptance pending; shared capture/host remain | Per-delivery queue/write/decoder limits; induced hostile/slow-client and shared-event tests remain open | Shared packager means one rendition/audio-generation failure can affect many HLS viewers; bounded HTTP readers; five-minute coexistence supports only that interval | Same shared-packager boundary; blocking-request isolation needs its own gate |
+| Failure isolation (S/T/O) | Per-peer media queues and accepted estimator isolation; common event writes now bounded but new slow-reader acceptance pending; shared capture/host remain | Per-delivery queue/write/decoder limits; induced hostile/slow-client and shared-event tests remain open | Shared packager means one rendition/audio-generation failure can affect many HLS viewers; bounded HTTP readers; bounded five-/ten-minute coexistence supports only those intervals | Same shared-packager boundary; blocking-request isolation needs its own gate |
 | Authorization (S/T) | Live session/view-only controls, WebRTC/input permissions | TLS/exact Origin, ten-second one-use ticket via subprotocol, live permission recheck, credential-free source backend | TLS/exact Origin, one-use bootstrap and sliding 30-second HttpOnly path-scoped cookie lease, 15-second renewal, current session permission | Same security plus strict bounded reload/query handling |
 | Maintenance (S) | Required core lifecycle; Pion, legacy signaling, input and estimator | Separate wire protocol, worker decoders, audio clock/resync, canvas/frame ownership and browser feature changes | Native and MSE players, pinned hls.js, transcoder, custom fMP4/playlist/retention/lease/security machinery | Further playlist, blocking reload, preload/rendition-report and proxy test cases |
 

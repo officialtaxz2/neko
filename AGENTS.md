@@ -1,5 +1,26 @@
 # AGENTS.md
 
+Latest resource checkpoint (2026-10-10): supplied exact-8d idle sampling PASSED
+with Resource-Exitcode 0. Private evidence:
+`/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z`.
+All six samples contain the relevant gauge families and report zero media
+subscriptions, running HLS workers and active capture pipelines. Docker CPU:
+mean 2.68%, median 1.12%, range 0.59–10.50% of one logical core; the first
+10.50% sample is retained without attributing its cause. Docker memory:
+mean 708.0 MiB, range 707.3–708.5 MiB; this is container accounting, not pure
+server RSS. The sampled exact-8d image is healthy, restarts=0, on eight logical
+CPUs without explicit Docker CPU/RAM limits. Rounded cumulative network totals
+are not bandwidth measurements. This is a warmed enabled-service idle screen,
+not proof of zero optional-path overhead, full cleanup or comparative costs.
+NEXT: one WebRTC viewer, then one HLS, one WebCodecs and mixed/scaled/cleanup
+intervals using the same private directory and unchanged content/configuration;
+follow `docs/WORKPLAN.md` NEXT. Do not repeat idle, the PC ten-minute coexistence
+gate or passed deployment/preparation/HTTP checks. Keep the target pinned at
+exact-8d with conventional HLS enabled and all overlays unchanged; no pull or
+rebuild. Supplied target results, NOT EXECUTED IN CODEX. Required-device/grouped
+acceptance, B5/B7/B8 decisions and dependency disposition remain open; master
+stays d9105ef8.
+
 Latest implementation checkpoint (2026-10-07): supplied exact
 `8d8126c92903dab58056fa316b626b38dcffb376` preparation PASSED with
 Prepare-Exitcode 0. The helper reports the old deterministic ordering defect,
@@ -27,10 +48,10 @@ and one concurrent working WebRTC tab, no observed freeze, Retry or reload.
 This bounded sustained-playback/coexistence gate PASSED; it is operator browser
 evidence, not an automated trace, a scripted event/outage matrix, numerical
 latency/resource comparison, iPhone or TV acceptance. Do not repeat it or the
-passed deployment/HTTP gates. NEXT B4 read-only resource baseline and comparable
-per-path intervals using the existing collector; first no-viewer phase after
-closing viewer tabs and settling. Keep exact-8d and all overlays unchanged;
-measurements remain pending. iPhone/grouped checks and unavailable-TV gate stay open.
+passed deployment/HTTP gates. The subsequent idle resource checkpoint and next
+per-path interval are recorded above and in the current Workplan. Keep exact-8d
+and all overlays unchanged; comparative measurements remain pending.
+iPhone/grouped checks and unavailable-TV gate stay open.
 Preserve accepted exact-8741 images/
 configuration/evidence. These are supplied target results, NOT EXECUTED IN CODEX.
 VIDAA causality, grouped acceptance, comparative costs and B5/B7/B8 decisions

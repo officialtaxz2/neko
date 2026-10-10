@@ -1,6 +1,6 @@
 # Work Plan / Handoff State
 
-Current assessment and NEXT consolidated: 2026-10-07.
+Current assessment and NEXT consolidated: 2026-10-10.
 
 ## NEXT
 
@@ -30,8 +30,9 @@ and [the upstream triage](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--
   and subsequently activated healthy with HLS disabled (Baseline-Exitcode 0,
   2/2 disabled HTTP probes), then conventional HLS enabled (Enable-Exitcode 0,
   17/17 public and 2/2 cleartext-denial probes). The live candidate is exact-8d
-  with conventional HLS enabled; new sustained browser/device
-  acceptance is pending. `master` stays `d9105ef8`;
+  with conventional HLS enabled; its bounded ten-minute PC coexistence and
+  initial idle resource screen passed. Wider device/grouped and comparative
+  resource acceptance is pending. `master` stays `d9105ef8`;
   no upstream integration or promotion was performed.
 - Supplied healthy `my-neko/brave:hls-8741f7880d9a` activation and at least five
   minutes of moving PC/Helium conventional-HLS A/V without Retry/reload while
@@ -117,10 +118,12 @@ sustained-playback/coexistence gate PASSED**. This is supplied browser observati
 not a new trace, timing/CPU/RAM measurement or scripted event/device acceptance.
 
 **NEXT:** keep the target pinned at exact-8d with conventional HLS enabled.
-Continue **B4 resource baseline/comparison** with the existing read-only collector,
-starting with no viewers, then one WebRTC, one HLS, one WebCodecs and mixed/scaled
-cases with comparable content and source quality. Use the staged baseline below;
-its measurements are pending. Preserve passed evidence and prior images/config.
+The supplied six-point idle screen passed with Resource-Exitcode 0 on 2026-10-10.
+Continue **B4 resource comparison** with the existing read-only collector:
+**one WebRTC viewer next**, then one HLS, one WebCodecs and mixed/scaled/cleanup
+cases with comparable content and source quality. Use the staged handoff below
+and the same private results directory; per-path measurements remain pending.
+Preserve passed evidence and prior images/config. Do not repeat the idle screen.
 No pull, rebuild, preparation, activation, HTTP-probe or PC-ten-minute repeat
 is needed. TV waits for device access; iPhone, full event/role/recovery/slow-peer
 matrix, numerical latency and comparative costs remain open. The PC pass permits
@@ -133,7 +136,7 @@ continued validation, not optional-path removal or a master promotion.
 | B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race passed; exact-8d general PC/ten-minute coexistence passed. Scripted outage/revocation/fresh-login owner and iPhone/VIDAA: NOT RUN |
 | Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture passed, capture race failed on order. Exact-8d helper reports old defect and 100 repaired race repetitions passed; full subscription/native-copy refactor remains conditional |
 | B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Exact-f03 client/type/Vite and relevant Go checks passed. Actual development launcher, ICE configurations/Safari/role browser matrix: NOT RUN; package maintenance separately open |
-| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation/deployment/HTTP and operator-confirmed ten-minute PC A/V/coexistence passed; browser trace/resource comparison and full grouped/device acceptance pending |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation/deployment/HTTP, operator-confirmed ten-minute PC A/V/coexistence and six-point idle resource screen passed; per-path resource comparison, browser trace and full grouped/device acceptance pending |
 
 The numerical bounds above are safety/recovery limits, not measured performance
 improvements or a promised first-picture latency. JSON serialization remains
@@ -287,25 +290,54 @@ converted into passes, removal approval or new performance claims.
 
 ### Next B4 step: resource baseline
 
-The ten-minute PC coexistence check is closed. Resource evidence is still absent;
-the first staged measurement is a short no-viewer baseline on the current warmed
-exact-8d service, with conventional HLS, adaptive and WebCodecs still enabled.
-Close all viewer tabs, ensure no other viewer is active, keep the shared-browser
-content the same and wait 60 seconds before sampling. This permits the existing
-15-second HLS idle grace to settle; actual subscription/worker gauges determine
-whether the interval qualifies as idle. Do not change image, overlay, source
-quality, browser content or configuration during these stages.
+**Supplied idle screen — 2026-10-10: PASSED / Resource-Exitcode 0.**
+The operator ran `init`, waited 60 seconds with viewers closed, then sampled six
+points on the warmed exact-8d service without changing overlays. Private evidence:
+`/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z`.
+The first/last sample timestamps are 12:04:43.325179868 / 12:05:39.511252257 UTC,
+56.186 seconds apart; collection overhead extends the nominal ten-second spacing.
 
-Use `deploy/collect-hls-media.sh init` then `sample NEW_PRIVATE_DIR idle 6` on the
-target. Six points ten seconds apart are an initial resource/cleanup screen,
-not a full statistical B4 comparison or evidence for B5/B7/B8 decisions. Archive
-the raw fixed metrics privately and share only CPU/RAM rows, CPU/limit metadata
-and summed subscription/worker/capture gauges with explicit metric-presence flags;
-never print per-peer metrics or credentials. Missing gauge families are unknown,
-not a demonstrated zero. The collector does not restart or deploy the service.
-Target sampling remains **PENDING / NOT EXECUTED IN CODEX**. The first operator
-block below requires closed viewer tabs and unchanged shared-browser content;
-its 60-second settling period is included. No target pull is needed:
+| Sample UTC | Docker CPU (% of one logical core) | Docker memory (MiB) |
+|---|---|---|
+| 12:04:43.325 | 10.50 | 708.5 |
+| 12:04:54.567 | 1.25 | 707.8 |
+| 12:05:05.793 | 0.68 | 707.3 |
+| 12:05:17.035 | 0.99 | 707.8 |
+| 12:05:28.266 | 2.05 | 708.4 |
+| 12:05:39.511 | 0.59 | 708.3 |
+
+Every sample reports **subscriptions=0, hls_running_workers=0,
+capture_pipelines=0**, with **metric=1** for all three gauge families; these are
+observed zeros, not missing metrics. PID count is 173 throughout. CPU mean is
+**2.68%**, median **1.12%**, range **0.59–10.50%** of one core. Retain the first
+10.50% sample; its cause is unknown. Memory mean is **708.0 MiB**, range
+**707.3–708.5 MiB**. The selected environment reports eight logical CPUs,
+healthy `my-neko/brave:hls-8d8126c92903`, restarts=0 and image ID
+`sha256:50863ca62fc05961269e8a349ef1716b5c5efc2c77a38ad7f3fd9bbcc2ab7d1a`,
+started 2026-10-07T21:02:44.637461823Z. Docker limits are nano_cpus=0,
+cpu_quota=0, cpu_period=0, empty cpuset and memory_limit=0: no explicit Docker
+CPU/RAM restriction is recorded. Container health/restart metadata does not
+independently verify every child process or exclude all OOM events.
+
+This supports inactive media demand in the sampled interval, **not zero
+optional-path CPU/RAM overhead or full lifetime cleanup/leak acceptance**.
+Docker memory covers container accounting, including the shared browser; it is
+not pure Go/server RSS. Normalizing the mean across eight cores gives about
+0.335% of that capacity, not a measured whole-host CPU load. The rounded
+cumulative network values (636 MB received, 1.47→1.48 GB sent) are not precise
+bandwidth rates or attribution to any transport. No numerical per-path advantage
+or B5/B7/B8 decision follows from this idle screen. These are supplied target
+results, **NOT EXECUTED IN CODEX**. Do not repeat the passed idle phase.
+
+**Next operator stage: one WebRTC viewer.** Open exactly one foreground Neko
+viewer using WebRTC, with picture/audio working; close other HLS/WebCodecs/Neko
+viewer tabs and ensure no other participant is watching. Keep shared-browser
+content, quality settings, image and overlays unchanged. The block below waits
+60 seconds and takes six comparable initial screening points into the existing
+private directory under a new `webrtc-one` label. The positive subscription rows
+record backend/source/kind, including the actual video tier; they contain no
+peer/session IDs. Do not interpret a low-tier sample as a high-source comparison.
+Record any observed tier change or interruption. No target pull is needed:
 
 ```bash
 (
@@ -313,14 +345,17 @@ set -Eeuo pipefail
 trap 'printf "\nResource-Exitcode: %s\n" "$?" >&2' ERR
 cd /opt/docker/nekoNew/neko
 test "$(git rev-parse HEAD)" = "8d8126c92903dab58056fa316b626b38dcffb376"
-results="/opt/docker/nekoNew/neko-costs-8d8126c92903-$(date -u +%Y%m%dT%H%M%SZ)"
-test ! -e "$results"
-bash deploy/collect-hls-media.sh init "$results"
+results=/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z
+test -d "$results"
+if compgen -G "$results/*-webrtc-one.resources.txt" >/dev/null; then
+  printf 'STOP: webrtc-one wurde in diesem Ordner bereits gemessen.\n' >&2
+  exit 1
+fi
 sleep 60
-bash deploy/collect-hls-media.sh sample "$results" idle 6
+bash deploy/collect-hls-media.sh sample "$results" webrtc-one 6
 
 printf '\nRessourcen-Ergebnis\nErgebnisordner: %s\n' "$results"
-for resource_file in "$results"/*-idle.resources.txt; do
+for resource_file in "$results"/*-webrtc-one.resources.txt; do
   printf '\n%s\n' "${resource_file##*/}"
   cat -- "$resource_file"
   awk '
@@ -329,6 +364,8 @@ for resource_file in "$results"/*-idle.resources.txt; do
     /^neko_capture_pipelines_active[{ ]/ { pt += $NF; ps = 1 }
     END { printf "subscriptions=%.0f metric=%d hls_running_workers=%.0f metric=%d capture_pipelines=%.0f metric=%d\n", st, ss, wt, ws, pt, ps }
   ' "${resource_file%.resources.txt}.metrics.prom"
+  awk '/^neko_media_subscriptions_active[{ ]/ && $NF > 0 { print }' \
+    "${resource_file%.resources.txt}.metrics.prom"
 done
 for environment_file in "$results"/*-environment.txt; do
   last_environment="$environment_file"
@@ -339,13 +376,19 @@ printf '\nResource-Exitcode: 0\n'
 ```
 
 `metric=1` means that gauge family was present; `metric=0` means unobserved.
-Nonzero subscription/running-worker/capture totals require checking other viewers,
-legitimate background demand and cleanup before treating the phase as zero-media
-idle. Retain and label the actual workload; a nonzero gauge alone is not proof
-of a leak. No idle or resource acceptance is assumed in advance.
+Nonzero subscription/capture demand is expected with a viewer. Verify actual
+backend/source rows and whether any other demand or HLS workers remain; retain
+and label the actual workload instead of forcing an expected count. Share only
+CPU/RAM rows, the selected environment fields, these subscription rows and summed
+gauges with presence flags. Never export raw per-peer metrics or credentials.
+Missing gauge families remain unknown. The collector neither restarts nor
+deploys the service; per-path execution/results remain pending.
 
-After reviewing idle evidence, use the same source/workload and comparable
-steady intervals for each path, then mixed viewers and post-cleanup. A warmed
+Six points are an initial resource/cleanup screen, not a full statistical B4
+comparison. After reviewing WebRTC evidence, use the same source/workload and
+comparable steady intervals for HLS and WebCodecs, then mixed/scaled viewers and
+post-cleanup. Keep longer controlled intervals and repeated cases for the full
+B4 gate; do not infer a total-cost winner from one short interval. A warmed
 enabled-service baseline is not the cost of a cold or disabled optional backend;
 separate startup peaks and later scaling/long-session trends. Derive throughput
 from raw counter deltas over actual time; formatted cumulative Docker network

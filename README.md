@@ -39,7 +39,11 @@ unavailable, so its device/event gate remains unverified. The operator explicitl
 confirmed at least ten minutes of moving HLS picture/audio alongside working
 WebRTC in two PC tabs, without freeze, Retry or reload. This bounded PC gate
 passed; resource/latency comparisons and full grouped device acceptance remain
-open. Keep the target
+open. The supplied six-point idle resource screen on 2026-10-10 also passed:
+zero media subscriptions/running HLS workers/capture pipelines in every sample,
+about 708 MiB container memory. Per-path costs remain unmeasured; the
+[next resource stage](docs/WORKPLAN.md#next-b4-step-resource-baseline) is one
+WebRTC viewer on unchanged content/configuration. Keep the target
 at its prepared exact-8d commit; no pull, rebuild or repeated preparation is
 needed. No local project execution took place in Codex.
 

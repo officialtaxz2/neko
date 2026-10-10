@@ -30,12 +30,20 @@ before comparing with a whole-host percentage. Derive process CPU/egress rates
 from counter deltas over actual UTC intervals. The browser/VIDAA comparison
 trace and result sheet are in [Workplan NEXT](WORKPLAN.md#implemented-block-and-target-handoff--2026-10-07).
 
-After the supplied exact-8d ten-minute PC coexistence pass, the next staged
-measurement is [the resource baseline](WORKPLAN.md#next-b4-step-resource-baseline):
-six idle samples on the unchanged warmed service, then comparable per-path
-intervals. This is an initial resource/cleanup screen, not a full cost comparison
-or evidence that a disabled/cold backend consumes the same memory. Its target
-execution and results remain pending.
+The supplied exact-8d [idle resource screen](WORKPLAN.md#next-b4-step-resource-baseline)
+passed on 2026-10-10 with Resource-Exitcode 0: six samples over 56.186 seconds,
+each with present subscription/running-HLS-worker/capture gauges at zero.
+Docker CPU mean/median are 2.68%/1.12% of one core (range 0.59–10.50%);
+memory mean is 708.0 MiB (range 707.3–708.5 MiB). The first CPU peak remains
+unattributed. The sampled image is healthy exact-8d, restarts=0, with eight
+logical CPUs and no explicit Docker CPU/RAM limits. This is container memory
+accounting, not server RSS, and rounded cumulative network totals do not measure
+bandwidth. It supports inactive media demand in this warmed enabled-service
+interval, not zero optional-path overhead or full cost/cleanup acceptance.
+Do not repeat it or the passed ten-minute PC coexistence gate. Next is one
+WebRTC viewer in the same private directory, then comparable HLS/WebCodecs and
+mixed/scaled/cleanup intervals; those results remain pending. Supplied target
+evidence, NOT EXECUTED IN CODEX.
 
 For a changed bind port or path prefix, set `NEKO_METRICS_URL` to the actual
 credential-free loopback HTTP `/metrics` URL. No public metrics exposure is
