@@ -40,10 +40,18 @@ logical CPUs and no explicit Docker CPU/RAM limits. This is container memory
 accounting, not server RSS, and rounded cumulative network totals do not measure
 bandwidth. It supports inactive media demand in this warmed enabled-service
 interval, not zero optional-path overhead or full cost/cleanup acceptance.
-Do not repeat it or the passed ten-minute PC coexistence gate. Next is one
-WebRTC viewer in the same private directory, then comparable HLS/WebCodecs and
-mixed/scaled/cleanup intervals; those results remain pending. Supplied target
-evidence, NOT EXECUTED IN CODEX.
+Subsequent six-point `webrtc-one` sampling completed with Resource-Exitcode 0
+in the same directory: one audio/high-video WebRTC viewer, two captures and no
+HLS worker in every point, with gauges present. CPU mean is 137.86% of one core
+(approximately 1.38 cores, 17.23% of eight-core capacity); memory mean is about
+1.2435 GiB / 1273.3 MiB. Memory rises about 36.9 MiB over 56.256 seconds; longer
+trend and post-cleanup return remain unmeasured. These whole-container phase
+values include browser/capture/encoding, not isolated transport overhead;
+content equivalence to the idle phase is not independently verified.
+Do not repeat the idle/WebRTC screens or passed ten-minute PC coexistence gate.
+Next is one conventional-HLS viewer, then WebCodecs and mixed/scaled/cleanup
+intervals; the remaining paths and controlled comparisons stay open. Supplied
+target evidence, NOT EXECUTED IN CODEX.
 
 For a changed bind port or path prefix, set `NEKO_METRICS_URL` to the actual
 credential-free loopback HTTP `/metrics` URL. No public metrics exposure is

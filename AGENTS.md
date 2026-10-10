@@ -1,9 +1,10 @@
 # AGENTS.md
 
-Latest resource checkpoint (2026-10-10): supplied exact-8d idle sampling PASSED
-with Resource-Exitcode 0. Private evidence:
+Latest resource checkpoint (2026-10-10): supplied exact-8d idle and subsequent
+single-WebRTC resource sampling completed with Resource-Exitcode 0 each.
+Private evidence:
 `/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z`.
-All six samples contain the relevant gauge families and report zero media
+All six idle samples contain the relevant gauge families and report zero media
 subscriptions, running HLS workers and active capture pipelines. Docker CPU:
 mean 2.68%, median 1.12%, range 0.59–10.50% of one logical core; the first
 10.50% sample is retained without attributing its cause. Docker memory:
@@ -12,9 +13,21 @@ server RSS. The sampled exact-8d image is healthy, restarts=0, on eight logical
 CPUs without explicit Docker CPU/RAM limits. Rounded cumulative network totals
 are not bandwidth measurements. This is a warmed enabled-service idle screen,
 not proof of zero optional-path overhead, full cleanup or comparative costs.
-NEXT: one WebRTC viewer, then one HLS, one WebCodecs and mixed/scaled/cleanup
+The subsequent six `webrtc-one` samples show only one audio and one high-video
+WebRTC subscription, two capture pipelines and no running HLS worker, with all
+gauge families present. CPU mean/median: 137.86%/139.76% of one core, range
+119.51–147.21%; approximately 1.38 cores or 17.23% of eight-core capacity, not
+measured total host usage. Docker memory mean: approximately 1.2435 GiB
+(1273.3 MiB), range 1.224–1.261 GiB. It rises about 36.9 MiB from first to last
+point in 56.256 seconds; no longer-session or post-cleanup evidence establishes
+a leak. The same healthy image ID/start time and zero restarts are supplied.
+The phase includes browser/capture/encoding/delivery, not isolated WebRTC cost;
+rounded network counters do not measure transport throughput, and actual
+content equivalence to the earlier idle phase is not independently verified.
+No separate browser interruption report accompanies this sampling output.
+NEXT: one HLS viewer, then one WebCodecs and mixed/scaled/cleanup
 intervals using the same private directory and unchanged content/configuration;
-follow `docs/WORKPLAN.md` NEXT. Do not repeat idle, the PC ten-minute coexistence
+follow `docs/WORKPLAN.md` NEXT. Do not repeat idle or the WebRTC screen, the PC ten-minute coexistence
 gate or passed deployment/preparation/HTTP checks. Keep the target pinned at
 exact-8d with conventional HLS enabled and all overlays unchanged; no pull or
 rebuild. Supplied target results, NOT EXECUTED IN CODEX. Required-device/grouped

@@ -31,7 +31,8 @@ and [the upstream triage](UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--
   2/2 disabled HTTP probes), then conventional HLS enabled (Enable-Exitcode 0,
   17/17 public and 2/2 cleartext-denial probes). The live candidate is exact-8d
   with conventional HLS enabled; its bounded ten-minute PC coexistence and
-  initial idle resource screen passed. Wider device/grouped and comparative
+  initial idle and single-WebRTC resource sampling completed successfully.
+  Wider device/grouped and comparative
   resource acceptance is pending. `master` stays `d9105ef8`;
   no upstream integration or promotion was performed.
 - Supplied healthy `my-neko/brave:hls-8741f7880d9a` activation and at least five
@@ -118,12 +119,15 @@ sustained-playback/coexistence gate PASSED**. This is supplied browser observati
 not a new trace, timing/CPU/RAM measurement or scripted event/device acceptance.
 
 **NEXT:** keep the target pinned at exact-8d with conventional HLS enabled.
-The supplied six-point idle screen passed with Resource-Exitcode 0 on 2026-10-10.
+The supplied six-point idle and single-WebRTC sampling completed with
+Resource-Exitcode 0 each on 2026-10-10. Every WebRTC sample shows only one
+audio/high-video viewer, two captures and no HLS worker.
 Continue **B4 resource comparison** with the existing read-only collector:
-**one WebRTC viewer next**, then one HLS, one WebCodecs and mixed/scaled/cleanup
+**one HLS viewer next**, then one WebCodecs and mixed/scaled/cleanup
 cases with comparable content and source quality. Use the staged handoff below
-and the same private results directory; per-path measurements remain pending.
-Preserve passed evidence and prior images/config. Do not repeat the idle screen.
+and the same private results directory; remaining per-path measurements and
+controlled comparisons stay open. Preserve passed evidence and prior images/config.
+Do not repeat the completed idle/WebRTC screens.
 No pull, rebuild, preparation, activation, HTTP-probe or PC-ten-minute repeat
 is needed. TV waits for device access; iPhone, full event/role/recovery/slow-peer
 matrix, numerical latency and comparative costs remain open. The PC pass permits
@@ -136,7 +140,7 @@ continued validation, not optional-path removal or a master promotion.
 | B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race passed; exact-8d general PC/ten-minute coexistence passed. Scripted outage/revocation/fresh-login owner and iPhone/VIDAA: NOT RUN |
 | Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture passed, capture race failed on order. Exact-8d helper reports old defect and 100 repaired race repetitions passed; full subscription/native-copy refactor remains conditional |
 | B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Exact-f03 client/type/Vite and relevant Go checks passed. Actual development launcher, ICE configurations/Safari/role browser matrix: NOT RUN; package maintenance separately open |
-| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation/deployment/HTTP, operator-confirmed ten-minute PC A/V/coexistence and six-point idle resource screen passed; per-path resource comparison, browser trace and full grouped/device acceptance pending |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation/deployment/HTTP, operator-confirmed ten-minute PC A/V/coexistence and six-point idle/single-WebRTC resource sampling completed successfully; HLS/WebCodecs sampling, full resource comparison, browser trace and grouped/device acceptance pending |
 
 The numerical bounds above are safety/recovery limits, not measured performance
 improvements or a promised first-picture latency. JSON serialization remains
@@ -329,12 +333,62 @@ bandwidth rates or attribution to any transport. No numerical per-path advantage
 or B5/B7/B8 decision follows from this idle screen. These are supplied target
 results, **NOT EXECUTED IN CODEX**. Do not repeat the passed idle phase.
 
-**Next operator stage: one WebRTC viewer.** Open exactly one foreground Neko
-viewer using WebRTC, with picture/audio working; close other HLS/WebCodecs/Neko
-viewer tabs and ensure no other participant is watching. Keep shared-browser
-content, quality settings, image and overlays unchanged. The block below waits
+**Supplied single-WebRTC screen — 2026-10-10: Resource-Exitcode 0.**
+Six `webrtc-one` snapshots in the same private directory, from
+12:43:44.615534340 to 12:44:40.871258556 UTC (56.256 seconds):
+
+| Sample UTC | Docker CPU (% of one logical core) | Docker memory (GiB, as reported) | PIDs |
+|---|---|---|---|
+| 12:43:44.615 | 141.47 | 1.224 | 211 |
+| 12:43:55.867 | 147.21 | 1.227 | 211 |
+| 12:44:07.123 | 138.04 | 1.240 | 211 |
+| 12:44:18.378 | 119.51 | 1.249 | 211 |
+| 12:44:29.612 | 144.80 | 1.261 | 213 |
+| 12:44:40.871 | 136.13 | 1.260 | 213 |
+
+All points report **subscriptions=2, hls_running_workers=0,
+capture_pipelines=2**, with all three families present. The two positive
+subscription rows are always `backend="webrtc"`, audio/source `audio` = 1 and
+video/source `high` = 1; no sampled tier switch or other backend demand is seen.
+The selected environment has the same healthy exact-8d image ID, start time,
+zero restarts, eight CPUs and Docker limits as the idle phase. Collection
+success and these server gauges do not independently prove rendered/audio
+continuity; no separate browser interruption report was supplied for this phase.
+
+| Initial phase (six points each) | Mean / median Docker CPU (% of one core) | Mean container memory (MiB) | Subscriptions / captures / running HLS workers |
+|---|---|---|---|
+| Warm enabled service, idle | 2.68 / 1.12 | 708.0 | 0 / 0 / 0 |
+| One high-source WebRTC viewer | 137.86 / 139.76 | approximately 1273.3 | 2 / 2 / 0 |
+| One HLS viewer | PENDING | PENDING | PENDING |
+| One WebCodecs viewer | PENDING | PENDING | PENDING |
+
+WebRTC CPU range is **119.51–147.21% of one core**. The mean is about
+**1.38 cores**, or **17.23% of eight-core capacity**, not total measured host
+load. Memory mean is approximately **1.2435 GiB / 1273.3 MiB**, range
+**1.224–1.261 GiB / 1253.4–1291.3 MiB**, derived from rounded Docker output.
+Compared with the earlier idle means, the observed phase differences are
+**+135.18 CPU percentage points of one core** and approximately **+565.3 MiB**.
+These are **whole-container workload differences, not isolated WebRTC overhead**:
+the shared browser, demanded capture/encoding, delivery, caches and other work
+are included. The phases are roughly 39 minutes apart, and actual content
+equivalence was not independently recorded. Do not treat them as a controlled
+before/after benchmark or subtract the idle values as a pure transport cost.
+
+Memory rises about **36.9 MiB** between the first and last WebRTC point; the last
+is slightly below the preceding peak. This short record neither proves a leak
+nor establishes a sustained plateau; longer comparable intervals and post-cleanup
+return remain open. Network 695→715 MB received and 1.51→1.52 GB sent are rounded
+cumulative totals, not accurate transport rates or proof of a delivery problem.
+No resource winner, cross-path cost advantage or B5/B7/B8 decision follows.
+Supplied target evidence, **NOT EXECUTED IN CODEX**; do not repeat this screen.
+
+**Next operator stage: one conventional-HLS viewer.** Close the WebRTC viewer
+and open exactly one foreground Neko HLS viewer; wait for moving picture/audio
+before running the block. Close other Neko viewers and ensure no other participant
+is watching. Keep shared-browser content, quality settings, image and overlays
+unchanged. Do not enable LL-HLS. The block below waits
 60 seconds and takes six comparable initial screening points into the existing
-private directory under a new `webrtc-one` label. The positive subscription rows
+private directory under a new `hls-one` label. The positive subscription rows
 record backend/source/kind, including the actual video tier; they contain no
 peer/session IDs. Do not interpret a low-tier sample as a high-source comparison.
 Record any observed tier change or interruption. No target pull is needed:
@@ -347,15 +401,15 @@ cd /opt/docker/nekoNew/neko
 test "$(git rev-parse HEAD)" = "8d8126c92903dab58056fa316b626b38dcffb376"
 results=/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z
 test -d "$results"
-if compgen -G "$results/*-webrtc-one.resources.txt" >/dev/null; then
-  printf 'STOP: webrtc-one wurde in diesem Ordner bereits gemessen.\n' >&2
+if compgen -G "$results/*-hls-one.resources.txt" >/dev/null; then
+  printf 'STOP: hls-one wurde in diesem Ordner bereits gemessen.\n' >&2
   exit 1
 fi
 sleep 60
-bash deploy/collect-hls-media.sh sample "$results" webrtc-one 6
+bash deploy/collect-hls-media.sh sample "$results" hls-one 6
 
 printf '\nRessourcen-Ergebnis\nErgebnisordner: %s\n' "$results"
-for resource_file in "$results"/*-webrtc-one.resources.txt; do
+for resource_file in "$results"/*-hls-one.resources.txt; do
   printf '\n%s\n' "${resource_file##*/}"
   cat -- "$resource_file"
   awk '
@@ -382,15 +436,17 @@ and label the actual workload instead of forcing an expected count. Share only
 CPU/RAM rows, the selected environment fields, these subscription rows and summed
 gauges with presence flags. Never export raw per-peer metrics or credentials.
 Missing gauge families remain unknown. The collector neither restarts nor
-deploys the service; per-path execution/results remain pending.
+deploys the service; remaining-path execution/results remain pending.
 
 Six points are an initial resource/cleanup screen, not a full statistical B4
-comparison. After reviewing WebRTC evidence, use the same source/workload and
-comparable steady intervals for HLS and WebCodecs, then mixed/scaled viewers and
+comparison. After reviewing HLS evidence, use the same source/workload and
+comparable steady intervals for WebCodecs, then mixed/scaled viewers and
 post-cleanup. Keep longer controlled intervals and repeated cases for the full
 B4 gate; do not infer a total-cost winner from one short interval. A warmed
 enabled-service baseline is not the cost of a cold or disabled optional backend;
-separate startup peaks and later scaling/long-session trends. Derive throughput
+later phases can also retain allocations/caches from earlier viewers, so a
+single sequential run is not an isolated RSS comparison.
+Separate startup peaks and later scaling/long-session trends. Derive throughput
 from raw counter deltas over actual time; formatted cumulative Docker network
 totals alone are not precise bandwidth rates. See the full B4 procedure below.
 

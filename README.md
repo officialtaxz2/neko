@@ -41,9 +41,12 @@ WebRTC in two PC tabs, without freeze, Retry or reload. This bounded PC gate
 passed; resource/latency comparisons and full grouped device acceptance remain
 open. The supplied six-point idle resource screen on 2026-10-10 also passed:
 zero media subscriptions/running HLS workers/capture pipelines in every sample,
-about 708 MiB container memory. Per-path costs remain unmeasured; the
-[next resource stage](docs/WORKPLAN.md#next-b4-step-resource-baseline) is one
-WebRTC viewer on unchanged content/configuration. Keep the target
+about 708 MiB container memory. Subsequent single-WebRTC sampling also completed
+with exit 0: one audio/high-video viewer, two captures, no HLS worker; mean CPU
+about 1.38 cores and container memory about 1.24 GiB. These values include the
+shared browser/capture/encoding; controlled cross-path costs and longer memory
+trend remain open. The [next resource stage](docs/WORKPLAN.md#next-b4-step-resource-baseline)
+is one conventional-HLS viewer on unchanged content/configuration. Keep the target
 at its prepared exact-8d commit; no pull, rebuild or repeated preparation is
 needed. No local project execution took place in Codex.
 
