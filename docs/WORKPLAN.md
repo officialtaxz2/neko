@@ -118,24 +118,30 @@ two tabs, without observed freeze, Retry or reload. The exact-8d **bounded PC
 sustained-playback/coexistence gate PASSED**. This is supplied browser observation,
 not a new trace, timing/CPU/RAM measurement or scripted event/device acceptance.
 
-**NEXT:** keep the target pinned at exact-8d with conventional HLS enabled.
-The supplied six-point idle, single-WebRTC, single-HLS and single-WebCodecs sampling completed with
-Resource-Exitcode 0 each on 2026-10-10. Every WebRTC sample shows only one
+**NEXT:** prepare the approved member-access candidate at exact
+**`d297a025bb8e52284884cc3f26ca9ede3ad88d8e`**, retaining the live exact-8d image,
+conventional HLS and unchanged overlays. Use the single preparation block below;
+activation follows in a separate operator step only after supplied success.
+The supplied six-point idle, single-WebRTC, single-HLS, single-WebCodecs and
+post-activity cleanup sampling completed with Resource-Exitcode 0 each on
+2026-10-10. Every WebRTC sample shows only one
 audio/high-video viewer, two captures and no HLS worker; every HLS sample shows
 only HLS audio/high subscriptions, two captures and four running HLS workers.
 Every WebCodecs point shows only WebCodecs audio/high demand, two captures and
 no HLS worker. Its lower sampled CPU and higher whole-container memory/PID count
-do not establish a transport advantage or leak. Continue with **post-activity
-cleanup on exact-8d**, using the read-only collector and same private directory:
-close all viewers, settle, then sample resource return and inactive media demand.
-This adds lifetime coverage after media activity, rather than repeating the
-earlier pre-activity idle screen. Then prepare the independent approved
-member-access client below. Mixed/scaled/longer controlled B4 comparisons stay
+do not establish a transport advantage or leak. The subsequent post-activity
+screen confirms present zero subscription/capture/running-worker gauges in all
+six points; CPU ends at 0.56% of one core and Docker memory falls about 47.1 MiB,
+but ends at 1.706 GiB, still above initial idle. Server RSS is about 281.5–282.0
+MiB, Go heap 2.45–3.29 MiB and goroutines 21 throughout. Component attribution,
+longer memory/process cleanup and leak disposition remain open. This bounded
+inactive-demand gate does not prove full cleanup. Mixed/scaled/longer controlled B4 comparisons stay
 open; completing those wider architecture decision gates is not a prerequisite
 for the narrow role correction. Preserve passed evidence and prior images/config.
-Do not repeat the completed idle/WebRTC/HLS/WebCodecs screens.
-No pull/rebuild during cleanup; no activation, HTTP-probe or PC-ten-minute repeat
-is needed now. TV waits for device access; iPhone, full event/role/recovery/slow-peer
+Do not repeat the five completed resource screens, passed exact-8d preparation/
+deployment/HTTP gates or PC-ten-minute interval. The new client needs fresh
+preparation; no activation is requested in that step. TV waits for device access;
+iPhone, full event/role/recovery/slow-peer
 matrix, numerical latency and comparative costs remain open. The PC pass permits
 continued validation, not optional-path removal or a master promotion.
 
@@ -149,9 +155,9 @@ receive-only; ordinary chat uses the existing event socket, while input/control
 delivery still requires WebRTC. No timeouts, buffers, codecs or server permissions
 were changed. **This candidate is not yet prepared or deployed**; supplied
 exact-8d device/resource passes are baseline evidence, not fresh candidate gates.
-Complete the new short post-activity cleanup screen on exact-8d before pulling
-the changed client; full B4 comparative acceptance remains open afterwards.
-Then use the existing preparation helper with **`--hls-member-access`** at the
+The short post-activity cleanup screen on exact-8d is now supplied successfully;
+full B4 comparative acceptance and retained-memory attribution remain open.
+Use the existing preparation helper with **`--hls-member-access`** at the
 published application candidate **`d297a025bb8e52284884cc3f26ca9ede3ad88d8e`**
 (not a subsequent documentation-only HEAD): the strict exact-8d ancestry/path allowlist permits
 only the three client files, the adjusted controller test, helper and docs.
@@ -174,6 +180,58 @@ The reported roughly ten-second startup is a user-perceived concern, not a
 timed distribution; record cold/warm first moving A/V separately before proposing
 startup/topology tuning. The ≤24-second contract does not settle user preference.
 
+**Next operator stage — new client preparation only (PENDING).** The block
+checks the clean exact-8d `testing` checkout, fetches authorized `origin/testing`,
+requires the reviewed application candidate in that fetched history and advances
+only to exact-d297. It does not select a later documentation-only HEAD. The
+existing helper tests/types/builds the client and builds local Base/Brave images
+from an immutable private source archive; unchanged exact-8d backend/race/
+ordering evidence is inherited under its ancestry/path scope guard. Live exact-8d
+container/image identity is checked afterwards. No activation, restart, proxy
+change, pruning or registry push is part of this step. Leave viewer tabs closed
+during preparation and preserve the earlier resource evidence and images.
+On failure the live service remains unchanged; preserve the PENDING marker/log
+and do not activate. Send the final summary/exit code, or the failure tail.
+
+```bash
+(
+if bash -Eeuo pipefail <<'NEKO_MEMBER_PREP_D297'
+cd /opt/docker/nekoNew/neko
+test "$(git branch --show-current)" = testing
+test -z "$(git status --porcelain=v1)"
+test "$(git rev-parse HEAD)" = "8d8126c92903dab58056fa316b626b38dcffb376"
+
+candidate=d297a025bb8e52284884cc3f26ca9ede3ad88d8e
+git fetch origin testing
+git merge-base --is-ancestor "$candidate" FETCH_HEAD
+git merge --ff-only "$candidate"
+test "$(git rev-parse HEAD)" = "$candidate"
+
+results="/opt/docker/nekoNew/neko-member-access-d297a025bb8e-$(date -u +%Y%m%dT%H%M%SZ)"
+printf '\nErgebnisordner: %s\n' "$results"
+bash deploy/validate-media-stability.sh "$results" --hls-member-access
+
+printf '\nVorbereitungs-Zusammenfassung\n'
+grep -E '^(validation_commit=|image_tag=|backend_evidence=|# (tests|pass|fail) |MEMBER ACCESS PREPARATION PASSED:|PREPARATION PASSED;)' \
+  "$results/validation.log"
+cat -- "$results/images.txt"
+NEKO_MEMBER_PREP_D297
+then
+  preparation_result=0
+else
+  preparation_result=$?
+fi
+printf '\nPrepare-Exitcode: %s\n' "$preparation_result"
+exit "$preparation_result"
+)
+```
+
+**After supplied preparation success:** activate only the corresponding
+`my-neko/brave:hls-d297a025bb8e` with its exact private validation marker in a
+separate operator step, then perform the ordinary/admin/view-only/chat/manual-
+WebRTC/live-permission gates above. The saved exact-8d image/configuration is the
+return path. This new candidate has no target preparation or browser pass yet.
+
 | Item | Implemented behavior | New verification status |
 |---|---|---|
 | B1 / correctness | PLI exit on track/peer closure; missing IDs with deterministic nominal-rate ordering only when all rates are known; empty selection before creation; partial-peer teardown; pipeline shorthand; native URI/GFile/CString release | Exact-f03 config/handler Go and race checks passed; server-validation image compiled native drop. Repeated real incoming tracks/native URI drops: NOT RUN |
@@ -181,7 +239,7 @@ startup/topology tuning. The ≤24-second contract does not settle user preferen
 | B3 / WebRTC | Vue methods and sealed live health state, one 500-ms foreground poll/element repair owner including track removal, meaningful browser frame/time progress, 8 s stalls and three reattachments then Play; startup/play not canplay-gated; Pause/native PiP/autoplay/seek/stale boundaries (including WebCodecs audio resume); initial checking inside 15 s; matching 8 s transient client/server grace; bounded/cancelable non-trickle gathering | Exact-f03 80 client tests/type/build and WebRTC Go/race passed; exact-8d general PC/ten-minute coexistence passed. Scripted outage/revocation/fresh-login owner and iPhone/VIDAA: NOT RUN |
 | Independent B5 subset / ordering follow-up | One mutex for bitrate buckets and reset, retaining bits/s/source payload/clock semantics; capture format handoff barrier moved before publication | Exact-f03 normal capture passed, capture race failed on order. Exact-8d helper reports old defect and 100 repaired race repetitions passed; full subscription/native-copy refactor remains conditional |
 | B6 / small cleanup | Remove unreferenced Vue CLI file; repair `client/dev/serve` to use Vite `dev` and `VITE_APP_SERVER_PORT`, retaining `VUE_APP_SERVER_PORT` as input alias and index fallback; uniform startup timeout; explicit ICE server policy; corrected event-cause comment; same-track identity preserved; Safari clipboard fallback | Exact-f03 client/type/Vite and relevant Go checks passed. Actual development launcher, ICE configurations/Safari/role browser matrix: NOT RUN; package maintenance separately open |
-| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation/deployment/HTTP, operator-confirmed ten-minute PC A/V/coexistence and six-point idle/WebRTC/HLS/WebCodecs sampling completed successfully; post-activity cleanup, full resource comparison, browser trace and grouped/device acceptance pending |
+| B4/B9 / handoff | Existing collector extended for all transports/resources, preparation-only helper, bounded ES5 browser trace and protocol below | Exact-8d preparation/deployment/HTTP, operator-confirmed ten-minute PC A/V/coexistence and five six-point resource screens completed successfully; bounded inactive-media-demand cleanup confirmed, retained memory/PIDs unresolved; full resource comparison, browser trace and grouped/device acceptance pending |
 | Approved HLS member access | Client discovers/selects advertised HLS for ordinary authenticated members too; redundant role-only controller callback removed; existing auth-negative fixture follows the authenticated event-session gate | IMPLEMENTED/STATICALLY REVIEWED only. Scoped fresh client/image preparation and ordinary/admin/view-only/live permission/manual-WebRTC gates pending; exact-8d service remains unchanged |
 
 The numerical bounds above are safety/recovery limits, not measured performance
@@ -403,7 +461,7 @@ continuity; no separate browser interruption report was supplied for this phase.
 | One high-source WebRTC viewer | 137.86 / 139.76 | approximately 1273.3 | 2 / 2 / 0 |
 | One HLS viewer (admin diagnostic) | 204.60 / 204.94 | approximately 1616.9 | 2 / 2 / 4 |
 | One high-source WebCodecs viewer | 75.78 / 76.73 | approximately 1790.6 | 2 / 2 / 0 |
-| Post-activity idle / cleanup | PENDING | PENDING | PENDING |
+| Post-activity idle / cleanup | 6.89 / 3.37 | approximately 1766.2 | 0 / 0 / 0 |
 
 WebRTC CPU range is **119.51–147.21% of one core**. The mean is about
 **1.38 cores**, or **17.23% of eight-core capacity**, not total measured host
@@ -511,15 +569,47 @@ bandwidth. Keep all paths; no B5/B7/B8 decision follows from these screens.
 Supplied target evidence, **NOT EXECUTED IN CODEX**. All four initial phases
 are collected; **full B4 comparative acceptance remains open**.
 
-**Next operator stage: post-activity cleanup.** Close all Neko viewer tabs and
-ensure no other participant is watching. Leave shared-browser content, quality,
-image and overlays unchanged; do not restart the service or pull a new commit.
-The block waits 60 seconds, then takes six new points under `post-cleanup` in
-the existing private directory. This checks demand shutdown/resource return
-after the higher memory/PID readings, before changing the client image. The
-fixed process RSS/Go heap/goroutine rows, when present, help distinguish server
-accounting from whole-container memory; missing rows remain unknown.
-Positive subscription rows contain no peer/session IDs. No target pull is needed:
+**Supplied post-activity cleanup screen — 2026-10-10: Resource-Exitcode 0.**
+After closing viewers and settling 60 seconds, six `post-cleanup` snapshots in
+the same directory span 13:51:57.484252439 to 13:52:53.584728845 UTC
+(56.100 seconds):
+
+| Sample UTC | Docker CPU (% of one logical core) | Docker memory (GiB, as reported) | PIDs |
+|---|---|---|---|
+| 13:51:57.484 | 21.91 | 1.752 | 340 |
+| 13:52:08.722 | 11.41 | 1.736 | 340 |
+| 13:52:19.946 | 4.88 | 1.735 | 339 |
+| 13:52:31.161 | 0.70 | 1.711 | 336 |
+| 13:52:42.375 | 1.85 | 1.709 | 335 |
+| 13:52:53.584 | 0.56 | 1.706 | 334 |
+
+Every point has **subscriptions=0, capture_pipelines=0, hls_running_workers=0**
+and **metric=1** for all three gauge families. The same healthy exact-8d image
+ID/start time, zero restarts, eight CPUs and unchanged limits are supplied.
+This confirms **bounded inactive media demand**, not all process/memory cleanup.
+CPU mean/median: **6.89%/3.37% of one core**, range **0.56–21.91%**; about
+**0.07 cores / 0.86% of eight-core capacity**, not total measured host usage.
+The late low values do not attribute the earlier post-activity CPU work.
+Docker memory mean: approximately **1.7248 GiB / 1766.2 MiB**. It falls about
+**47.1 MiB** from 1.752 to 1.706 GiB; the final **1746.9 MiB** remains about
+**1038.9 MiB** above the earlier idle mean. PIDs decline 340→334, still above
+the initial 173; their owners and the reason for retained memory are unrecorded.
+
+All six points expose **21 Go goroutines**, **2.45–3.29 MiB allocated Go heap**
+(2564432–3452408 bytes) and **281.5–282.0 MiB server process RSS**
+(295149568–295673856 bytes). These bound the observed heap/RSS in this short
+interval; they do not exclude native/server allocations or a longer leak.
+Go heap is not total process RSS, and Docker container accounting includes other
+processes/caches with different accounting. Subtracting process RSS does not
+identify browser/native/cache costs; no pre-activity process RSS baseline was
+shared. Rounded cumulative network stays at 1.7/2.73 GB; this is not zero-traffic
+proof. Full memory/process cleanup and leak disposition remain **OPEN**, not
+passed, failed or blamed on WebCodecs/HLS/WebRTC. Supplied target results,
+**NOT EXECUTED IN CODEX**. Do not repeat this bounded screen.
+
+**Completed operator stage — post-activity collection record, not a rerun.**
+The following block produced the supplied results. Preserve its private raw
+files; continue to the new client preparation above:
 
 ```bash
 (
@@ -569,13 +659,18 @@ allocations to return to the initial idle memory level. Share only
 CPU/RAM rows, fixed process RSS/Go heap/goroutine rows, the selected environment fields, these subscription rows and summed
 gauges with presence flags. Never export raw per-peer metrics or credentials.
 Missing gauge families remain unknown. The collector neither restarts nor
-deploys the service; post-activity cleanup execution/results remain pending.
+deploys the service; the supplied bounded inactive-demand screen is complete.
 
 Six points are an initial resource/cleanup screen, not a full statistical B4
-comparison. After reviewing cleanup evidence, prepare the independent exact-d297
-member-access candidate above in a separate operator step. Mixed/scaled viewer
-and longer-session resource comparisons remain open for B5/B7/B8 decisions;
-use a declared source/workload and comparable steady intervals. Keep longer
+comparison. Prepare the independent exact-d297 member-access candidate above
+in a separate operator step. Mixed/scaled viewer and longer-session resource
+comparisons remain open for B5/B7/B8 decisions; prioritize retained-memory/PID
+attribution before proposing a capture or encoder redesign. Collect comparable
+process RSS/Go/native/browser-component and cgroup accounting across repeated
+open/close cycles and later settled intervals, without exposing command-line
+arguments or URLs. Distinguish retained caches/allocations from repeated growth;
+the current six-point cleanup screen does not establish either explanation.
+Use a declared source/workload and comparable steady intervals. Keep longer
 controlled intervals and repeated cases for the full
 B4 gate; do not infer a total-cost winner from one short interval. A warmed
 enabled-service baseline is not the cost of a cold or disabled optional backend;

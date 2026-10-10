@@ -106,8 +106,8 @@ on the event socket. Fresh client/image and ordinary/admin/view-only/manual-
 WebRTC/live-denial gates remain pending. Estimated startup is a user concern,
 not measured acceptance; no buffer/timeout/codec tuning accompanies this change.
 The member-access source is published as exact candidate d297a025; it is not on
-the sampled exact-8d service. Next is post-activity cleanup on exact-8d, then
-scoped candidate preparation with fresh client/image gates.
+the sampled exact-8d service. The bounded post-activity demand screen is now
+supplied; next is scoped candidate preparation with fresh client/image gates.
 **NOT EXECUTED IN CODEX**; no path-removal decision follows.
 
 **Supplied B4 single-WebCodecs screen — 2026-10-10:** Resource-Exitcode 0,
@@ -122,10 +122,26 @@ phase while memory is about 517.3 MiB higher. Content/workload and retained
 allocations are uncontrolled: this proves neither lower transport cost nor a
 leak. First-to-last memory rises about 12.3 MiB; no separate browser continuity
 report is supplied for this short interval. All four initial phases are now
-collected, **not full B4 acceptance**. Check post-activity demand/resource return
-before changing the image; mixed/scaled/longer controlled comparisons stay open
+collected, **not full B4 acceptance**. The following post-activity screen adds
+demand/resource-return evidence; mixed/scaled/longer controlled comparisons stay open
 and do not block the independent member-access correction. Keep all paths.
 Supplied target evidence, **NOT EXECUTED IN CODEX**.
+
+**Supplied B4 post-activity cleanup screen — 2026-10-10:** Resource-Exitcode 0,
+six points over 56.100 seconds, all present gauges at zero subscriptions,
+captures and running HLS workers. Same healthy image ID/start time and zero
+restarts. CPU mean/median 6.89%/3.37% of one core, range 0.56–21.91%, ending
+at 0.56%. Docker memory falls about 47.1 MiB to 1.706 GiB, mean 1.7248 GiB /
+1766.2 MiB; the final value is about 1038.9 MiB above the earlier idle mean.
+PIDs fall 340→334 versus initial 173. Server RSS is about 281.5–282.0 MiB,
+allocated Go heap 2.45–3.29 MiB and goroutines 21 in all points. Container
+accounting is not process RSS; neither subtracting these values nor zero media
+gauges identifies the retained-memory component. Bounded inactive media demand
+is confirmed; full memory/process cleanup and longer leak disposition remain
+open. Prioritize component accounting/repeated settled open-close cycles before
+B5/B7 redesign; no optional-path winner or removal follows. Proceed with the
+independent exact-d297 client preparation, preserving live exact-8d. New client/
+image/browser gates are pending. Supplied evidence, **NOT EXECUTED IN CODEX**.
 
 - **F1 / B2:** a bounded FIFO writer now owns each normal event socket, including
   both legacy bridge legs; 128 records/16 MiB including in-flight writes, 5 s
@@ -221,6 +237,7 @@ The decisive existing results are:
 | Exact-8d single-WebRTC screen, 2026-10-10 (T) | Six points with one audio/high-video WebRTC viewer, two captures and zero HLS workers; whole-container mean CPU 137.86% of one core and memory approximately 1273.3 MiB | Isolated WebRTC overhead, independently controlled content, HLS/WebCodecs advantage, precise network rates, rendered/audio continuity or a leak diagnosis from the short memory rise |
 | Exact-8d single-HLS screen, 2026-10-10 (T) | Six points with only HLS audio/high input, two captures and four workers; whole-container mean CPU 204.60% of one core and memory approximately 1616.9 MiB; reported admin playback and roughly ten-second starts | Controlled quality/content/role comparison, timed cold/warm distribution, ordinary-member playback, complete A/V continuity, scaling or cleanup acceptance |
 | Exact-8d single-WebCodecs screen, 2026-10-10 (T) | Six points with only WebCodecs audio/high demand, two captures and zero running HLS workers; whole-container mean CPU 75.78% of one core, memory approximately 1790.6 MiB, PIDs=343 | Isolated transport advantage, attribution of higher memory/PIDs, independently controlled workload, long-session/leak or post-cleanup acceptance, precise bandwidth or rendered/audio continuity |
+| Exact-8d post-activity cleanup screen, 2026-10-10 (T) | Six present-gauge zero subscription/capture/running-worker points; CPU ends at 0.56% of one core, memory declines 47.1 MiB to 1.706 GiB, goroutines 21, server RSS about 281.5–282.0 MiB | Full process/memory cleanup, attribution of retained memory/PIDs, repeated-cycle or longer leak disposition, return to initial idle memory or an optional-path advantage |
 
 The exact HLS evidence and omissions remain in
 [the rolling-window repair record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md).

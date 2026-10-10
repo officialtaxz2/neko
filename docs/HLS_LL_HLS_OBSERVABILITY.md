@@ -66,15 +66,24 @@ image ID/start time and zero restarts. Lower CPU than the earlier WebRTC phase
 and about 517.3 MiB higher memory are observed whole-container differences,
 not an isolated transport advantage or leak diagnosis. Sequential content,
 browser processes and retained allocations are not independently controlled.
-All four initial screens are collected, not full comparative acceptance.
-Do not repeat idle/WebRTC/HLS/WebCodecs screens or the passed ten-minute
-coexistence gate. Next is post-activity cleanup on exact-8d before preparing
-the independent member-access candidate d297a025. Close all viewers, preserve
-content/configuration and sample demand/resource return; optional fixed server
-RSS/Go heap/goroutine rows help separate accounting. Mixed/scaled/longer
-controlled comparisons stay open for B5/B7/B8 decisions and do not block that
-client correction. Supplied target evidence, NOT EXECUTED IN CODEX. No pull or
-rebuild during cleanup; candidate preparation/activation are separate steps.
+Subsequent six-point `post-cleanup` sampling completed with exit 0 over 56.100
+seconds: all three gauge families present at zero demand/captures/running HLS
+workers, same healthy image/start time and zero restarts. CPU mean/median
+6.89%/3.37% of one core, ending at 0.56%; Docker memory falls about 47.1 MiB to
+1.706 GiB (mean 1.7248 GiB / 1766.2 MiB), still about 1038.9 MiB above initial
+idle mean. PIDs decline 340→334 versus initial 173. Server process RSS is about
+281.5–282.0 MiB, allocated Go heap 2.45–3.29 MiB, goroutines 21 throughout.
+This confirms bounded inactive media demand; full process/memory cleanup and
+retained-memory attribution remain open. Go heap is not total server RSS;
+container accounting covers other processes/caches and cannot be attributed
+by subtracting process RSS. No pre-activity process baseline was shared.
+All five initial screens are collected, not full comparative acceptance.
+Do not repeat them or the passed ten-minute coexistence gate. Next is scoped
+preparation of independent member-access candidate d297a025 while retaining
+live exact-8d. Mixed/scaled/longer comparisons and component/repeated-cycle
+memory checks stay open for B5/B7/B8 decisions and do not block that client
+correction. Supplied target evidence, NOT EXECUTED IN CODEX. New candidate
+preparation/activation are separate steps; new client gates remain pending.
 
 For a changed bind port or path prefix, set `NEKO_METRICS_URL` to the actual
 credential-free loopback HTTP `/metrics` URL. No public metrics exposure is

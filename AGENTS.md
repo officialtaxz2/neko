@@ -1,7 +1,8 @@
 # AGENTS.md
 
 Latest resource checkpoint (2026-10-10): supplied exact-8d idle, single-WebRTC,
-single-HLS and single-WebCodecs sampling completed with Resource-Exitcode 0 each.
+single-HLS, single-WebCodecs and post-activity cleanup sampling completed with
+Resource-Exitcode 0 each.
 Private evidence:
 `/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z`.
 All six idle samples contain the relevant gauge families and report zero media
@@ -49,18 +50,30 @@ start time and zero restarts. Observed CPU is lower than the earlier WebRTC
 phase, while memory is about 517.3 MiB higher; workload/content and retained
 allocations are uncontrolled, so neither a transport advantage nor a leak is
 established. First-to-last memory rises about 12.3 MiB in 56.210 seconds.
-NEXT: close all viewers, then collect a new post-activity cleanup screen on
-unchanged exact-8d before preparing the member-access candidate. This checks
-inactive media demand and resource return after the higher memory/PID readings;
-it does not repeat the earlier pre-activity idle baseline. Mixed/scaled/longer
-controlled comparisons remain open and do not block this independent client
-correction. Follow `docs/WORKPLAN.md` NEXT.
-Do not repeat idle/WebRTC/HLS/WebCodecs screens, the PC ten-minute coexistence
+All six `post-cleanup` points have present gauges at subscriptions/captures/
+running-HLS-workers=0. Same healthy image/start time and zero restarts. CPU
+mean/median 6.89%/3.37% of one core, range 0.56–21.91%; it ends at 0.56%.
+Docker memory falls from 1.752 to 1.706 GiB (about 47.1 MiB) in 56.100 seconds,
+mean about 1.7248 GiB / 1766.2 MiB. PIDs fall 340→334 but remain above initial
+idle 173. The final memory is about 1038.9 MiB above the earlier idle mean;
+the responsible component and longer trend remain unknown. All points have
+21 Go goroutines, about 2.45–3.29 MiB allocated Go heap and 281.5–282.0 MiB
+server process RSS. Heap is not total server RSS; container accounting also
+covers other processes/caches and cannot be attributed by subtracting RSS.
+Inactive media demand is confirmed for this bounded interval; full memory/
+process cleanup and leak disposition are NOT accepted, failed or attributed.
+NEXT: transfer and prepare exact member-access candidate d297a025 using the
+scoped `--hls-member-access` helper, fresh client/image gates and the existing
+retained-live assertion. Activation is a separate step after supplied success.
+Mixed/scaled/longer controlled comparisons and component memory attribution
+remain open and do not block this independent client correction.
+Follow `docs/WORKPLAN.md` NEXT. Do not repeat the five resource screens, the PC ten-minute coexistence
 gate or passed deployment/preparation/HTTP checks. Keep the target pinned at
-exact-8d with conventional HLS enabled and all overlays unchanged for comparison;
-no pull/rebuild during cleanup. Afterwards prepare exact candidate
-`d297a025bb8e52284884cc3f26ca9ede3ad88d8e` with fresh client/images and inherited unchanged exact-8d backend
-evidence; do not use ordering-only inheritance after changing the client.
+exact-8d until the reviewed preparation handoff; retain its healthy live image,
+conventional HLS and all overlays during preparation. Selected source is
+`d297a025bb8e52284884cc3f26ca9ede3ad88d8e`, not a later documentation-only HEAD.
+Inherit only unchanged exact-8d backend evidence; never use ordering-only
+inheritance after changing the client. Target candidate checks are pending.
 Supplied target results, NOT EXECUTED IN CODEX. Required-device/grouped
 acceptance, B5/B7/B8 decisions and dependency disposition remain open; master
 stays d9105ef8.
