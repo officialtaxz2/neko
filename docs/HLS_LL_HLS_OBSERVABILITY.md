@@ -57,11 +57,24 @@ role and retained allocations not independently controlled. Do not extrapolate
 them per viewer or as pure transport overhead. Ordinary-member rejection was
 the existing client policy; its approved correction has separate pending gates.
 Roughly ten-second starts are operator estimates, not a timed cold/warm series.
-Do not repeat idle/WebRTC/HLS screens or the passed ten-minute coexistence gate.
-Next is one WebCodecs viewer, then mixed/scaled/cleanup
-intervals; the remaining paths and controlled comparisons stay open. Supplied
-target evidence, NOT EXECUTED IN CODEX. Keep resource sampling on exact-8d;
-prepare the new member-access client only after those intervals.
+Subsequent six-point `webcodecs-one` sampling completed with exit 0: only
+WebCodecs audio/high subscriptions (two), two captures and no running HLS worker.
+CPU mean/median: 75.78%/76.73% of one core (about 0.76 cores, 9.47% of eight-core
+capacity); memory mean about 1.7487 GiB / 1790.6 MiB, PIDs=343 throughout.
+First-to-last memory rises about 12.3 MiB over 56.210 seconds. Same healthy
+image ID/start time and zero restarts. Lower CPU than the earlier WebRTC phase
+and about 517.3 MiB higher memory are observed whole-container differences,
+not an isolated transport advantage or leak diagnosis. Sequential content,
+browser processes and retained allocations are not independently controlled.
+All four initial screens are collected, not full comparative acceptance.
+Do not repeat idle/WebRTC/HLS/WebCodecs screens or the passed ten-minute
+coexistence gate. Next is post-activity cleanup on exact-8d before preparing
+the independent member-access candidate d297a025. Close all viewers, preserve
+content/configuration and sample demand/resource return; optional fixed server
+RSS/Go heap/goroutine rows help separate accounting. Mixed/scaled/longer
+controlled comparisons stay open for B5/B7/B8 decisions and do not block that
+client correction. Supplied target evidence, NOT EXECUTED IN CODEX. No pull or
+rebuild during cleanup; candidate preparation/activation are separate steps.
 
 For a changed bind port or path prefix, set `NEKO_METRICS_URL` to the actual
 credential-free loopback HTTP `/metrics` URL. No public metrics exposure is

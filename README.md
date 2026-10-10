@@ -47,13 +47,19 @@ about 1.38 cores and container memory about 1.24 GiB. These values include the
 shared browser/capture/encoding; controlled cross-path costs and longer memory
 trend remain open. Single-HLS sampling also completed with exit 0: only HLS
 audio/high demand, two captures and four workers; mean CPU about 2.05 cores
-and container memory 1.579 GiB. The [next resource stage](docs/WORKPLAN.md#next-b4-step-resource-baseline)
-is one WebCodecs viewer on unchanged content/configuration. Keep comparison on
-exact-8d; no pull/rebuild during measurement. The operator approved HLS selection
+and container memory 1.579 GiB. Single-WebCodecs sampling also completed with
+exit 0: only WebCodecs audio/high demand, two captures and no running HLS worker;
+mean CPU about 0.76 cores and container memory 1.75 GiB. These sequential
+whole-container phases do not establish a transport advantage or leak.
+The [next resource stage](docs/WORKPLAN.md#next-b4-step-resource-baseline) is
+post-activity cleanup after closing all viewers, on unchanged exact-8d content/
+configuration; no pull/rebuild during cleanup. Wider controlled comparisons
+remain open. The operator approved HLS selection
 for ordinary members too; the narrow client correction and scoped preparation
 mode are implemented/statically reviewed, **not yet target-tested or deployed**.
 Server `CanWatch`/lease checks and receive-only input remain. Prepare the client
-after comparison; roughly ten-second starts still need cold/warm timing.
+at exact-d297 after the cleanup screen; its fresh client/image gates precede
+activation. Roughly ten-second starts still need cold/warm timing.
 No local project execution took place in Codex.
 
 Latest HLS checkpoint (2026-10-07): the complete browser trace captures a freeze

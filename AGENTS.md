@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Latest resource checkpoint (2026-10-10): supplied exact-8d idle, single-WebRTC
-and subsequent single-HLS sampling completed with Resource-Exitcode 0 each.
+Latest resource checkpoint (2026-10-10): supplied exact-8d idle, single-WebRTC,
+single-HLS and single-WebCodecs sampling completed with Resource-Exitcode 0 each.
 Private evidence:
 `/opt/docker/nekoNew/neko-costs-8d8126c92903-20261010T120343Z`.
 All six idle samples contain the relevant gauge families and report zero media
@@ -37,15 +37,29 @@ the time origin/cold-warm state and exact interval continuity are unrecorded.
 The ordinary-member rejection matches the old client role guard, not a captured
 streaming outage. The operator explicitly approved ordinary-member HLS access.
 That narrow client change and the scoped `--hls-member-access` preparation mode
-are IMPLEMENTED/STATICALLY REVIEWED in working source; target gates remain
+are IMPLEMENTED/STATICALLY REVIEWED at published testing candidate d297a025;
+target gates remain
 pending, NOT EXECUTED IN CODEX. No server permission or input transport changes.
-NEXT: one WebCodecs viewer, then mixed/scaled/cleanup
-intervals using the same private directory and unchanged content/configuration;
-follow `docs/WORKPLAN.md` NEXT. Do not repeat idle/WebRTC/HLS screens, the PC ten-minute coexistence
+All six `webcodecs-one` points show only WebCodecs audio/high-video subscriptions
+(two), two capture pipelines and zero running HLS workers, with gauges present.
+CPU mean/median: 75.78%/76.73% of one core, range 56.48–92.46%; about 0.76 cores
+or 9.47% of eight-core capacity. Docker memory mean: about 1.7487 GiB /
+1790.6 MiB, range 1.739–1.755 GiB; PIDs=343 throughout. Same healthy image ID,
+start time and zero restarts. Observed CPU is lower than the earlier WebRTC
+phase, while memory is about 517.3 MiB higher; workload/content and retained
+allocations are uncontrolled, so neither a transport advantage nor a leak is
+established. First-to-last memory rises about 12.3 MiB in 56.210 seconds.
+NEXT: close all viewers, then collect a new post-activity cleanup screen on
+unchanged exact-8d before preparing the member-access candidate. This checks
+inactive media demand and resource return after the higher memory/PID readings;
+it does not repeat the earlier pre-activity idle baseline. Mixed/scaled/longer
+controlled comparisons remain open and do not block this independent client
+correction. Follow `docs/WORKPLAN.md` NEXT.
+Do not repeat idle/WebRTC/HLS/WebCodecs screens, the PC ten-minute coexistence
 gate or passed deployment/preparation/HTTP checks. Keep the target pinned at
 exact-8d with conventional HLS enabled and all overlays unchanged for comparison;
-no pull/rebuild during these intervals. Afterwards prepare the new role-access
-candidate with fresh client/images and inherited unchanged exact-8d backend
+no pull/rebuild during cleanup. Afterwards prepare exact candidate
+`d297a025bb8e52284884cc3f26ca9ede3ad88d8e` with fresh client/images and inherited unchanged exact-8d backend
 evidence; do not use ordering-only inheritance after changing the client.
 Supplied target results, NOT EXECUTED IN CODEX. Required-device/grouped
 acceptance, B5/B7/B8 decisions and dependency disposition remain open; master

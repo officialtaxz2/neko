@@ -105,8 +105,27 @@ authorization/lease checks and receive-only input behavior remain; chat stays
 on the event socket. Fresh client/image and ordinary/admin/view-only/manual-
 WebRTC/live-denial gates remain pending. Estimated startup is a user concern,
 not measured acceptance; no buffer/timeout/codec tuning accompanies this change.
-Next is WebCodecs sampling on exact-8d, then candidate preparation.
+The member-access source is published as exact candidate d297a025; it is not on
+the sampled exact-8d service. Next is post-activity cleanup on exact-8d, then
+scoped candidate preparation with fresh client/image gates.
 **NOT EXECUTED IN CODEX**; no path-removal decision follows.
+
+**Supplied B4 single-WebCodecs screen — 2026-10-10:** Resource-Exitcode 0,
+six `webcodecs-one` points over 56.210 seconds in the same private directory.
+All points show only WebCodecs audio/high subscriptions (two), two captures and
+zero running HLS workers, with gauges present; same healthy exact-8d image ID/
+start time, zero restarts and Docker limits. CPU mean/median: 75.78%/76.73% of
+one core (range 56.48–92.46%), about 0.76 cores. Memory mean: approximately
+1.7487 GiB / 1790.6 MiB (range 1.739–1.755 GiB), PIDs=343 throughout.
+Observed CPU is 62.08 one-core percentage points below the earlier WebRTC
+phase while memory is about 517.3 MiB higher. Content/workload and retained
+allocations are uncontrolled: this proves neither lower transport cost nor a
+leak. First-to-last memory rises about 12.3 MiB; no separate browser continuity
+report is supplied for this short interval. All four initial phases are now
+collected, **not full B4 acceptance**. Check post-activity demand/resource return
+before changing the image; mixed/scaled/longer controlled comparisons stay open
+and do not block the independent member-access correction. Keep all paths.
+Supplied target evidence, **NOT EXECUTED IN CODEX**.
 
 - **F1 / B2:** a bounded FIFO writer now owns each normal event socket, including
   both legacy bridge legs; 128 records/16 MiB including in-flight writes, 5 s
@@ -201,6 +220,7 @@ The decisive existing results are:
 | Exact-8d idle resource screen, 2026-10-10 (T) | Six present-gauge zero-demand points; Docker CPU mean 2.68% of one core and memory mean 708.0 MiB on the retained enabled service | Per-path cost/quality advantage, cold/disabled-backend overhead, precise transport throughput, server RSS or full lifetime cleanup/leak acceptance |
 | Exact-8d single-WebRTC screen, 2026-10-10 (T) | Six points with one audio/high-video WebRTC viewer, two captures and zero HLS workers; whole-container mean CPU 137.86% of one core and memory approximately 1273.3 MiB | Isolated WebRTC overhead, independently controlled content, HLS/WebCodecs advantage, precise network rates, rendered/audio continuity or a leak diagnosis from the short memory rise |
 | Exact-8d single-HLS screen, 2026-10-10 (T) | Six points with only HLS audio/high input, two captures and four workers; whole-container mean CPU 204.60% of one core and memory approximately 1616.9 MiB; reported admin playback and roughly ten-second starts | Controlled quality/content/role comparison, timed cold/warm distribution, ordinary-member playback, complete A/V continuity, scaling or cleanup acceptance |
+| Exact-8d single-WebCodecs screen, 2026-10-10 (T) | Six points with only WebCodecs audio/high demand, two captures and zero running HLS workers; whole-container mean CPU 75.78% of one core, memory approximately 1790.6 MiB, PIDs=343 | Isolated transport advantage, attribution of higher memory/PIDs, independently controlled workload, long-session/leak or post-cleanup acceptance, precise bandwidth or rendered/audio continuity |
 
 The exact HLS evidence and omissions remain in
 [the rolling-window repair record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md).
@@ -260,7 +280,7 @@ evidence. Scripted recovery/event/device and comparative resource gates stay ope
 | Latency and bandwidth (S/O) | RTP/RTCP with congestion feedback; ICE may use relay; actual candidate and overhead matter | Reliable ordered TCP; loss can delay later media. Fixed/manual source, no WebRTC estimator; framing and feedback add traffic | Six-second parents and buffer/hold-back trade latency for robustness; ABR chooses among outputs; transcoding and HTTP overhead can increase bytes | One-second parts and blocking reload add request/state cost; lower-latency benefit unmeasured. Contract requires path p95 RTT ≤333 ms |
 | Recovery (S/T/O) | One fresh-login owner and one bounded element repair; matched client/server 8-s transient grace and real progress checks have automated and general PC evidence; scripted outage/revoke and device gates open | Local audio reanchor and bounded same-backend resync/retry; no automatic backend fallback; corrected foreground interval passed | Player recovery plus independent HTTP/lease/progress checks; explicit Retry; latest rolling-window fixes passed bounded playback | Same lease/player safety plus more reload/part/discontinuity cases; runtime evidence open |
 | Capture and encoding (S) | Shares demanded configured source; optional high/medium/low capture pipelines can run concurrently | Reuses the selected VP8/Opus source; per-viewer delivery and browser decoding, no additional server encoder | Pins shared `high` VP8 input plus Opus; **two provider subscriptions, three separate VP8 decoders/H.264 encoders and one Opus→AAC worker**, all shared by viewers | Same four workers and objects as conventional HLS; disabling LL mode alone does not save those encoders |
-| CPU/RAM (S/T/O) | Pion/packetization, feedback and demanded capture cost; initial six-point high-viewer whole-container screen: mean CPU 137.86% of one core, memory approximately 1273.3 MiB; no controlled cross-transport comparison | Queue/parser/writer and worker/browser decode cost; receiving on TCP can concentrate backlog; comparative footprint unknown | Four additional shared conversion workers; initial admin screen: mean CPU 204.60% of one core, memory approximately 1616.9 MiB; 64 MiB object limit is not total RSS; first viewer starts every variant | Similar native conversion cost, with additional HTTP waiter/playlist state; exact delta unmeasured |
+| CPU/RAM (S/T/O) | Pion/packetization, feedback and demanded capture cost; initial six-point high-viewer whole-container screen: mean CPU 137.86% of one core, memory approximately 1273.3 MiB; no controlled cross-transport comparison | Queue/parser/writer and worker/browser decode cost; initial high-viewer whole-container screen: mean CPU 75.78% of one core, memory approximately 1790.6 MiB; sequential workload/retained allocations prevent an isolated advantage claim | Four additional shared conversion workers; initial admin screen: mean CPU 204.60% of one core, memory approximately 1616.9 MiB; 64 MiB object limit is not total RSS; first viewer starts every variant | Similar native conversion cost, with additional HTTP waiter/playlist state; exact delta unmeasured |
 | Failure isolation (S/T/O) | Per-peer media queues and accepted estimator isolation; common event writes now bounded but new slow-reader acceptance pending; shared capture/host remain | Per-delivery queue/write/decoder limits; induced hostile/slow-client and shared-event tests remain open | Shared packager means one rendition/audio-generation failure can affect many HLS viewers; bounded HTTP readers; bounded five-/ten-minute coexistence supports only those intervals | Same shared-packager boundary; blocking-request isolation needs its own gate |
 | Authorization (S/T) | Live session/view-only controls, WebRTC/input permissions | TLS/exact Origin, ten-second one-use ticket via subprotocol, live permission recheck, credential-free source backend | TLS/exact Origin, one-use bootstrap and sliding 30-second HttpOnly path-scoped cookie lease, 15-second renewal, current session permission | Same security plus strict bounded reload/query handling |
 | Maintenance (S) | Required core lifecycle; Pion, legacy signaling, input and estimator | Separate wire protocol, worker decoders, audio clock/resync, canvas/frame ownership and browser feature changes | Native and MSE players, pinned hls.js, transcoder, custom fMP4/playlist/retention/lease/security machinery | Further playlist, blocking reload, preload/rendition-report and proxy test cases |
