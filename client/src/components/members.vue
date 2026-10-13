@@ -4,7 +4,7 @@
       <ul class="members-list">
         <li v-if="member">
           <div :class="[{ host: member.id === host }, 'self', 'member']">
-            <neko-avatar class="avatar" :seed="member.displayname" :size="50" />
+            <neko-avatar class="avatar" :seed="member.displayname" :avatar="member.avatar" :size="50" />
           </div>
         </li>
         <template v-for="(member, index) in members">
@@ -18,7 +18,7 @@
               @contextmenu.stop.prevent="onContext($event, { member })"
               @click.stop.prevent="onContext($event, { member })"
             >
-              <neko-avatar class="avatar" :seed="member.displayname" :size="50" />
+              <neko-avatar class="avatar" :seed="member.displayname" :avatar="member.avatar" :size="50" />
             </div>
           </li>
         </template>
