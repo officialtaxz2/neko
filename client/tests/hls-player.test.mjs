@@ -10,7 +10,7 @@ const compiled = ts.transpileModule(source, { compilerOptions: { target:ts.Scrip
 const master = 'https://neko.example/api/media/hls/abcdefghijklmnopqrstuv/master.m3u8'
 const flush = async () => { await new Promise(setImmediate); await new Promise(setImmediate) }
 
-function harness() {
+function harness(mode = 'll-hls') {
   const exports = {}, requests = [], terminal = [], success = []
   let instance, player
   class MockHls {
@@ -32,7 +32,7 @@ function harness() {
     // Deliberately ignore abort in this double to exercise stale completions.
     fetch: (url, init) => new Promise((resolve) => requests.push({ url, init, complete:resolve })),
   })
-  player = exports.createMSEPlayer({}, master, 'll-hls', (detail) => { terminal.push(detail); player.destroy() })
+  player = exports.createMSEPlayer({}, master, mode, (detail) => { terminal.push(detail); player.destroy() })
   const loader = () => {
     const value = new instance.config.loader()
     instance.loaders.push(value)
@@ -43,7 +43,7 @@ function harness() {
     { loadPolicy:{ maxLoadTimeMs:12000 } },
     { onSuccess: (response) => success.push(response), onError() {}, onTimeout() {} },
   )
-  return { player, requests, terminal, success, loader, load }
+  return { player, requests, terminal, success, loader, load, config: () => instance.config }
 }
 
 test('MSE loader leaves the fourth lease slot free and discards queued work on destroy', async () => {
@@ -91,4 +91,19 @@ test('HTTP denial and hostile playlists cause a fixed terminal error', async () 
     assert.equal(h.success.length, 0)
     assert.doesNotMatch(h.terminal[0], /example|abcdefghijkl/)
   }
+})
+
+test('LL-HLS uses the server PART-HOLD-BACK instead of a segment-count live sync', () => {
+  // hls.js ignores PART-HOLD-BACK whenever any liveSync* option is user-set.
+  const low = harness('ll-hls').config()
+  for (const key of ['liveSyncDuration', 'liveSyncDurationCount', 'liveMaxLatencyDuration', 'liveMaxLatencyDurationCount']) {
+    assert.equal(key in low, false, key)
+  }
+  assert.equal(low.lowLatencyMode, true)
+  assert.ok(low.maxLiveSyncPlaybackRate > 1 && low.maxLiveSyncPlaybackRate <= 1.25)
+  const conventional = harness('hls').config()
+  assert.equal(conventional.lowLatencyMode, false)
+  assert.equal(conventional.liveSyncDurationCount, 3)
+  assert.equal(conventional.liveMaxLatencyDurationCount, 5)
+  assert.equal('maxLiveSyncPlaybackRate' in conventional, false)
 })

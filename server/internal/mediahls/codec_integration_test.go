@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -550,3 +551,63 @@ func (diagnostics *codecFixtureDiagnostics) log(t *testing.T) {
 		t.Log(line)
 	}
 }
+
+// Real codecs reach LL-HLS readiness within its window and keep serving the
+// parts of a completed parent after the rollover: every part listed by the
+// LL-HLS playlist must be retrievable.
+func TestRealCodecsServeLowLatencyPartsAcrossRollover(t *testing.T) {
+	if err := validateGSTTranscoderElements(); err != nil {
+		t.Fatal(err)
+	}
+	provider := &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4)}
+	diagnostics := &codecFixtureDiagnostics{tracks: make(map[string]*codecFixtureTrace)}
+	packager := newPackager(provider, diagnostics)
+	diagnostics.packager = packager
+	defer packager.Shutdown()
+	defer diagnostics.log(t)
+	ctx, cancel := context.WithTimeout(context.Background(), LowLatencyReadyWindow+time.Second)
+	defer cancel()
+	// The packager starts on demand; the first LL-HLS viewer waits for three
+	// parts. A cold start also includes encoder warm-up and the first parent
+	// boundary, so readiness is measured from Acquire like the bootstrap.
+	started := time.Now()
+	if err := packager.Acquire(ctx, ModeLLHLS); err != nil {
+		t.Fatalf("real codecs did not reach LL-HLS readiness: %v", err)
+	}
+	defer packager.Release()
+	t.Logf("LL-HLS ready after %s", time.Since(started).Round(time.Millisecond))
+	for _, id := range []string{"audio", "high", "medium", "low"} {
+		msn, _, err := packager.Position(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Block until the current parent completed and one more part exists.
+		wait, cancelWait := context.WithTimeout(context.Background(), 2*ParentDuration)
+		data, err := packager.Playlist(wait, ModeLLHLS, id, PlaylistDirectives{MSN: msn + 1, Part: 0, HasMSN: true, HasPart: true})
+		cancelWait()
+		if err != nil {
+			t.Fatalf("%s: blocking LL-HLS reload across rollover: %v", id, err)
+		}
+		text := string(data)
+		if !strings.Contains(text, fmt.Sprintf("seg-%d.m4s", msn)) {
+			t.Fatalf("%s: parent %d did not complete:\n%s", id, msn, text)
+		}
+		listed := 0
+		for _, line := range strings.Split(text, "\n") {
+			if !strings.HasPrefix(line, "#EXT-X-PART:") {
+				continue
+			}
+			uri := line[strings.Index(line, `URI="`)+5:]
+			uri = uri[:strings.Index(uri, `"`)]
+			object, found := packager.Object(id, uri)
+			if !found || object.Size() == 0 {
+				t.Fatalf("%s: listed part %s is not retrievable", id, uri)
+			}
+			listed++
+		}
+		if listed < 7 || !strings.Contains(text, fmt.Sprintf(`URI="part-%d-5.m4s"`, msn)) {
+			t.Fatalf("%s: completed parent parts not listed (%d parts):\n%s", id, listed, text)
+		}
+	}
+}
+

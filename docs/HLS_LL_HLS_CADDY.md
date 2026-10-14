@@ -169,3 +169,8 @@ pending. Do not enable global debug/body/header logging for diagnosis.
 For LL-HLS additionally establish real client-facing HTTP/2 or HTTP/3 and path
 p95 RTT at or below 333 ms. Backend HTTP/1.1 is a separate hop and does not prove
 or disprove the public protocol gate. Conventional HLS can be tested first.
+
+### LL-HLS blocking reloads (2026-10-14)
+
+LL-HLS holds playlist requests (`_HLS_msn`/`_HLS_part`) for up to seven seconds and then writes a complete playlist. Caddy's `reverse_proxy` does not buffer requests or responses unless `request_buffers`/`response_buffers` are set, and neither the server nor the HTTP transport has a read, write or response-header timeout unless configured. The supplied minimal site (`reverse_proxy 127.0.0.1:8082` plus the reviewed `header_up -Forwarded` and `transport http { compression off }`) therefore needs no LL-specific change. Do not add `flush_interval -1` (see above); do not add short `timeouts`. HTTP/2 and HTTP/3 are enabled by default for HTTPS sites. Run `bash deploy/check-ll-hls.sh https://<public-host> 60` on the server while one browser plays LL-HLS: it reports any timeout below 10 s, buffering, the negotiated protocol, viewer RTT and whether held reloads and parts succeed.
+

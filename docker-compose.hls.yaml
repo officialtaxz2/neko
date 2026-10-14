@@ -1,7 +1,9 @@
 # Explicit opt-in for passive HLS; omit this file to keep HLS disabled.
 # Requires the adaptive overlay's exact high/medium/low source geometry.
 # HTTPS is mandatory; there is no insecure-loopback exception for HLS cookies.
-# Start with conventional HLS. Use "hls ll-hls" after the HTTP/2 + RTT gate.
+# Both modes are offered; viewers pick HLS (stable, ~20 s behind) or LL-HLS
+# (~3-5 s behind, needs HTTP/2 at the proxy). Set "hls" to offer only HLS.
+# deploy/check-ll-hls.sh checks the proxy, viewer RTT and blocking reloads.
 # Viper environment StringSlice values are whitespace-separated, not CSV.
 services:
   neko:
@@ -9,6 +11,6 @@ services:
       NEKO_MEDIA_HLS_ENABLED: "true"
       NEKO_MEDIA_HLS_ALLOWED_ORIGINS: "${NEKO_MEDIA_HLS_ALLOWED_ORIGINS:?set one exact HTTPS public origin}"
       NEKO_MEDIA_HLS_TRUSTED_PROXIES: "${NEKO_MEDIA_HLS_TRUSTED_PROXIES:?set only the immediate reverse-proxy IP or CIDR}"
-      NEKO_MEDIA_HLS_MODES: "${NEKO_MEDIA_HLS_MODES:-hls}"
+      NEKO_MEDIA_HLS_MODES: "${NEKO_MEDIA_HLS_MODES:-hls ll-hls}"
       NEKO_MEDIA_HLS_MAX_LEASES: "${NEKO_MEDIA_HLS_MAX_LEASES:-128}"
       NEKO_MEDIA_HLS_MAX_REQUESTS: "${NEKO_MEDIA_HLS_MAX_REQUESTS:-512}"

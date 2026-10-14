@@ -125,10 +125,14 @@ export function createMSEPlayer(video: HTMLVideoElement, master: string, mode: '
 
   const retry = { maxNumRetry: 2, retryDelayMs: 1000, maxRetryDelayMs: 2000 }
   const policy = { default: { maxTimeToFirstByteMs: 10000, maxLoadTimeMs: 12000, timeoutRetry: retry, errorRetry: retry } }
+  // Any user liveSync* value overrides PART-HOLD-BACK in hls.js, so LL-HLS
+  // leaves them unset (3 s target) and catches up drift by playback rate.
+  const latency = mode === 'll-hls' ? { maxLiveSyncPlaybackRate: 1.1 } :
+    { liveSyncDurationCount: 3, liveMaxLatencyDurationCount: 5 }
   const hls = new Hls({ debug: false, enableWorker: true, workerPath: workerURL, loader: ScopedLoader,
     lowLatencyMode: mode === 'll-hls', progressive: false, startLevel: -1,
     maxBufferLength: mode === 'll-hls' ? 6 : 18, maxMaxBufferLength: 24, backBufferLength: 6,
-    maxBufferSize: 16 * 1024 * 1024, liveSyncDurationCount: 3, liveMaxLatencyDurationCount: 5,
+    maxBufferSize: 16 * 1024 * 1024, ...latency,
     manifestLoadPolicy: policy, playlistLoadPolicy: policy, fragLoadPolicy: policy })
   hls.on(Hls.Events.ERROR, (_event, data) => {
     // Error objects include URLs; only fixed messages may reach state/UI/logs.

@@ -107,3 +107,89 @@ func playlistSegmentDiscontinuities(t *testing.T, playlist string) map[string]ui
 	}
 	return numbers
 }
+
+// LL-HLS keeps listing the parts of the most recent completed parents, so a
+// player at PART-HOLD-BACK can cross a parent rollover part by part. Every
+// listed part must still be retained; conventional playlists list none.
+func TestPackagerLowLatencyListsRecentParentParts(t *testing.T) {
+	provider := newFakeHLSProvider()
+	packager := newPackager(provider, fakeTranscoderFactory{})
+	var workers []*packagerWorker
+	for _, id := range []string{"high", "audio", "medium", "low"} {
+		kind := types.MediaKindVideo
+		if id == "audio" {
+			kind = types.MediaKindAudio
+		}
+		source := provider.Sources(kind)[0]
+		var variant Variant
+		for _, candidate := range FixedVariants() {
+			if candidate.ID == id {
+				variant = candidate
+			}
+		}
+		worker, err := packager.newRenditionWorker(id, variant, source, 1, 7, 1, time.Unix(0, 0))
+		if err != nil {
+			t.Fatal(err)
+		}
+		workers = append(workers, worker)
+		packager.tracks[id] = worker.track
+	}
+	t.Cleanup(func() {
+		closePackagerWorkers(workers, false)
+		packager.Shutdown()
+	})
+	for second := 0; second <= 31; second++ {
+		for _, worker := range workers {
+			if !worker.transcoder.Push(startupUnit(second)) {
+				t.Fatal("fixture transcoder rejected sample")
+			}
+			if err := packager.acceptSample(worker.track, <-worker.transcoder.Samples()); err != nil {
+				t.Fatalf("%s at %ds: %v", worker.track.id, second, err)
+			}
+		}
+		if second == 4 {
+			// Before the first parent completes, the media sequence names the
+			// parent of the listed parts.
+			data, err := packager.Playlist(context.Background(), ModeLLHLS, "high", PlaylistDirectives{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(data), "#EXT-X-MEDIA-SEQUENCE:1\n") || !strings.Contains(string(data), `URI="part-1-0.m4s"`) {
+				t.Fatalf("startup LL-HLS playlist:\n%s", data)
+			}
+		}
+	}
+	// Parents 1–5 are complete (3–5 visible) and part 6-0 is current.
+	for _, worker := range workers {
+		id := worker.track.id
+		conventional, err := packager.Playlist(context.Background(), ModeHLS, id, PlaylistDirectives{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(conventional), "#EXT-X-PART") {
+			t.Fatalf("%s: conventional playlist lists parts:\n%s", id, conventional)
+		}
+		data, err := packager.Playlist(context.Background(), ModeLLHLS, id, PlaylistDirectives{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var listed []string
+		for _, line := range strings.Split(string(data), "\n") {
+			if strings.HasPrefix(line, "#EXT-X-PART:") {
+				uri := line[strings.Index(line, `URI="`)+5:]
+				listed = append(listed, uri[:strings.Index(uri, `"`)])
+			}
+		}
+		if len(listed) != 13 || listed[0] != "part-4-0.m4s" || listed[12] != "part-6-0.m4s" {
+			t.Fatalf("%s: listed parts %v\n%s", id, listed, data)
+		}
+		if strings.Contains(string(data), "part-3-") {
+			t.Fatalf("%s: oldest visible parent still lists parts:\n%s", id, data)
+		}
+		for _, uri := range listed {
+			if _, found := packager.Object(id, uri); !found {
+				t.Fatalf("%s: listed part %s is not retained", id, uri)
+			}
+		}
+	}
+}
