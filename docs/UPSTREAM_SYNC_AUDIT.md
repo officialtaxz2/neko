@@ -97,3 +97,43 @@ No dependency installation, project script, test, linter, type-checker, build, D
 ## Outcome
 
 The upstream synchronization is Codex-side complete and its reviewed history is on `master`. Runtime/build status is **NOT EXECUTED IN CODEX**. The next bounded unit is target-server verification of `master` as defined in [`WORKPLAN.md`](WORKPLAN.md#next).
+
+---
+
+# Follow-up synchronization (2026-10-13)
+
+## Git scope
+
+| Item | Reference |
+|---|---|
+| Pre-sync fork HEAD (`master`) | `d9105ef87e727c12b59dab3034dff958a8376c56` |
+| Upstream HEAD fetched | `c75a2f60b57e544fea8d0f2f305a435980af84cb` |
+| Merge base | `b0f01cedea68893e85a3fd852c0521238c285695` (previous sync) |
+| Pre-sync divergence | 40 fork-only / 19 upstream-only commits |
+| Integration branch | `claude/project-thread-gy8zrw` (draft PR, not merged into `master`) |
+| Post-merge relation to fetched upstream | 41 ahead / 0 behind |
+
+The upstream-only delta covered 82 files (+4,114 / −670). Since the previous sync the fork changed no `server/` file, so all server changes apply unmodified.
+
+## Accepted upstream changes
+
+- OIDC/OAuth member provider with session-bound state, email restrictions and OAuth-only mode; `api/oauth/config` consumed by the login screen.
+- Optional member avatars (`http`/`https` only) in chat, members and context menu.
+- Markdown rendering no longer compiles chat messages as Vue templates (XSS fix); emoji tooltip uses `title`. Fork Open-in-App links keep working because `chat.vue` handles them by click delegation.
+- Safari always shows the clipboard fallback button.
+- Server: sanitized session ids (`utils.SafeID`), `chat.max_length` (default 512, matching the client limit), websocket read limit, internal originless websocket dial, leaky one-frame video queues, capture subscription API, video-id derivation, RTCP PLI goroutine leak and drag-and-drop CString/GFile leak fixes.
+- Tor Browser download URI, example compose configurations, inherited docs.
+
+## Conflict resolution
+
+- `client/src/components/chat.vue`: kept the fork's pilot (active host) highlight; added the upstream avatar prop.
+- `client/src/components/connect.vue`: kept the fork's demo mode, dev-host detection and styling; added upstream OAuth config loading, OAuth button (styled with fork tokens) and `passwordLoginEnabled` gating. The demo checkbox is hidden when password login is disabled.
+
+One upstream trailing blank line in `examples/README.md` was removed so `git diff --check` stays clean.
+
+## Static verification
+
+- no conflict markers; `git diff --check` clean;
+- auto-merged fork files (`avatar.vue`, `markdown.ts`, `members.vue`, `context.vue`, `video.vue`) inspected; fork class names, touch/click handlers and Open-in-App delegation preserved.
+
+Runtime/build/test status: **NOT EXECUTED**. Target-server checks pending: `client` lint/build, `server/build`, login (password and, if configured, OAuth), chat with emoji/links/Open-in-App, demo mode on a dev host, mobile/touch and reconnect regression matrix from [`WORKPLAN.md`](WORKPLAN.md).
