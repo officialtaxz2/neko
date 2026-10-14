@@ -17,6 +17,7 @@ NEKO_UID=1000 # uid/gid of the "neko" user inside the image (runtime/Dockerfile)
 HEALTH_TIMEOUT=180
 
 DO_BUILD=1
+DO_CHECK=0
 NO_CACHE=""
 
 usage() {
@@ -26,6 +27,9 @@ Usage: bash setup.sh [options]
 Options:
   --no-build    Skip the image build, only prepare .env/directories and (re)start.
   --no-cache    Build without Docker cache (also pulls the latest Brave release).
+  --check       Run the server and client tests in containers first
+                (docker-compose.validation.yaml, a few minutes); stop if they fail.
+                Useful after a git pull that changed server/ or client/.
   -h, --help    Show this help.
 EOF
 }
@@ -34,6 +38,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-build) DO_BUILD=0 ;;
     --no-cache) NO_CACHE="--no-cache" ;;
+    --check) DO_CHECK=1 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
   esac
@@ -184,6 +189,26 @@ for dir in "$PROFILE_DIR" "$DOWNLOADS_DIR"; do
       chown -R "$NEKO_UID:$NEKO_UID" /target
   fi
 done
+
+# --------------------------------------------------------------------
+# Optional checks (--check)
+
+if [[ "$DO_CHECK" == 1 ]]; then
+  [[ -f docker-compose.validation.yaml ]] || die "docker-compose.validation.yaml not found."
+  validation=(docker compose -f docker-compose.validation.yaml)
+  commit="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+
+  log "Checks: building the server test image"
+  NEKO_VALIDATION_COMMIT="$commit" "${validation[@]}" build server-checks \
+    || die "Building the server test image failed; the running containers were not touched."
+  log "Checks: Go tests, fuzzing and server build"
+  "${validation[@]}" run --rm server-checks \
+    || die "Server checks failed; the running containers were not touched. See the output above."
+  log "Checks: client tests, lint and build"
+  "${validation[@]}" run --rm client-checks \
+    || die "Client checks failed; the running containers were not touched. See the output above."
+  log "Checks passed"
+fi
 
 # --------------------------------------------------------------------
 # Images
