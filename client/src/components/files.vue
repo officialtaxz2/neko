@@ -2,28 +2,30 @@
   <div class="files">
     <div class="files-cwd">
       <p>{{ cwd }}</p>
-      <i class="fas fa-rotate-right refresh" @click="refresh" />
+      <button type="button" class="icon-btn refresh" :aria-label="$t('files.refresh')" @click="refresh">
+        <i class="fas fa-rotate-right" aria-hidden="true" />
+      </button>
     </div>
     <div class="files-actions" v-if="files.filter((f) => f.type !== 'dir').length > 2">
       <div class="left-controls">
-        <span v-if="!selectionMode" class="action-btn select-toggle" @click="toggleSelectionMode">
+        <button type="button" v-if="!selectionMode" class="icon-btn action-btn select-toggle" @click="toggleSelectionMode">
           {{ tWithFallback('files.select', 'Select') }}
-        </span>
-        <span v-else class="action-btn select-all" @click="toggleSelectAll">
+        </button>
+        <button type="button" v-else class="icon-btn action-btn select-all" @click="toggleSelectAll">
           {{
             isAllSelected
               ? tWithFallback('files.unselect_all', 'Unselect All')
               : tWithFallback('files.select_all', 'Select All')
           }}
-        </span>
+        </button>
       </div>
       <div v-if="selectionMode" class="right-controls">
-        <span class="action-btn delete-selected" v-if="selectedFiles.length > 0" @click="deleteSelectedFiles">
+        <button type="button" class="icon-btn action-btn delete-selected" v-if="selectedFiles.length > 0" @click="deleteSelectedFiles">
           <i class="fas fa-trash"></i> {{ tWithFallback('files.delete', 'Delete') }} ({{ selectedFiles.length }})
-        </span>
-        <span class="action-btn select-toggle cancel-btn" @click="toggleSelectionMode">
+        </button>
+        <button type="button" class="icon-btn action-btn select-toggle cancel-btn" @click="toggleSelectionMode">
           {{ tWithFallback('files.cancel', 'Cancel') }}
-        </span>
+        </button>
       </div>
     </div>
     <div class="files-list">
@@ -48,24 +50,34 @@
         <i :class="fileIcon(item)" />
         <p class="file-name" :title="item.name">{{ item.name }}</p>
         <p class="file-size">{{ fileSize(item.size) }}</p>
-        <i
+        <button
           v-if="!selectionMode && item.type !== 'dir' && canDownload"
-          class="fas fa-download download"
+          type="button"
+          class="icon-btn download"
+          :aria-label="$t('files.download', { name: item.name })"
           @click="download(item)"
-        />
-        <i
+        >
+          <i class="fas fa-download" aria-hidden="true" />
+        </button>
+        <button
           v-if="!selectionMode && item.type !== 'dir' && canDelete"
-          class="fas fa-trash delete"
+          type="button"
+          class="icon-btn delete"
           :title="$t('files.delete')"
+          :aria-label="$t('files.delete')"
           @click="deleteFile(item)"
-        />
+        >
+          <i class="fas fa-trash" aria-hidden="true" />
+        </button>
       </div>
     </div>
     <div class="transfer-area">
       <div class="transfers" v-if="transfers.length > 0">
         <p v-if="downloads.length > 0" class="transfers-list-header">
           <span>{{ $t('files.downloads') }}</span>
-          <i class="fas fa-xmark remove-transfer" @click="downloads.forEach((t) => removeTransfer(t))"></i>
+          <button type="button" class="icon-btn remove-transfer" :aria-label="$t('files.remove')" @click="downloads.forEach((t) => removeTransfer(t))">
+            <i class="fas fa-xmark" aria-hidden="true" />
+          </button>
         </p>
         <div v-for="download in downloads" :key="download.id" class="transfers-list-item">
           <div class="transfer-info">
@@ -80,7 +92,9 @@
             ></i>
             <p class="file-name" :title="download.name">{{ download.name }}</p>
             <p class="file-size">{{ Math.min(100, Math.round((download.progress / download.size) * 100)) }}%</p>
-            <i class="fas fa-xmark remove-transfer" @click="removeTransfer(download)"></i>
+            <button type="button" class="icon-btn remove-transfer" :aria-label="$t('files.remove')" @click="removeTransfer(download)">
+            <i class="fas fa-xmark" aria-hidden="true" />
+          </button>
           </div>
           <div v-if="download.status === 'failed'" class="transfer-error">{{ download.error }}</div>
           <progress
@@ -93,7 +107,9 @@
         </div>
         <p v-if="uploads.length > 0" class="transfers-list-header">
           <span>{{ $t('files.uploads') }}</span>
-          <i class="fas fa-xmark remove-transfer" @click="uploads.forEach((t) => removeTransfer(t))"></i>
+          <button type="button" class="icon-btn remove-transfer" :aria-label="$t('files.remove')" @click="uploads.forEach((t) => removeTransfer(t))">
+            <i class="fas fa-xmark" aria-hidden="true" />
+          </button>
         </p>
         <div v-for="upload in uploads" :key="upload.id" class="transfers-list-item">
           <div class="transfer-info">
@@ -109,7 +125,9 @@
             ></i>
             <p class="file-name" :title="upload.name">{{ upload.name }}</p>
             <p class="file-size">{{ Math.min(100, Math.round((upload.progress / upload.size) * 100)) }}%</p>
-            <i class="fas fa-xmark remove-transfer" @click="removeTransfer(upload)"></i>
+            <button type="button" class="icon-btn remove-transfer" :aria-label="$t('files.remove')" @click="removeTransfer(upload)">
+            <i class="fas fa-xmark" aria-hidden="true" />
+          </button>
           </div>
           <div v-if="upload.status === 'failed'" class="transfer-error">{{ upload.error }}</div>
           <progress
@@ -128,7 +146,10 @@
         @dragover.prevent="uploadAreaDrag = true"
         @dragleave.prevent="uploadAreaDrag = false"
         @drop.prevent="(e) => upload(e.dataTransfer)"
+        role="button"
+        tabindex="0"
         @click="openFileBrowser"
+        @keydown.enter.space.prevent="openFileBrowser"
       >
         <i class="fas fa-file-arrow-up" />
         <p>{{ $t('files.upload_here') }}</p>

@@ -1,25 +1,28 @@
-export const logout = 'Ausloggen'
+export const logout = 'Abmelden'
 export const unsupported = 'Dieser Webbrowser unterstützt kein Web-RTC.'
 export const admin_loggedin = 'Du bist eingeloggt als Admin.'
 export const you = 'Du'
+export const you_object = 'dich'
 export const somebody = 'Jemand'
-export const send_a_message = 'Sende eine Nachricht'
+export const send_a_message = 'Nachricht an den Raum'
 
 export const side = {
   chat: 'Chat',
   files: 'Dateien',
   settings: 'Einstellungen',
   members: 'Mitglieder',
+  tabs: 'Seitenleiste',
 }
 
 export const connect = {
-  login_title: 'Bitte Anmelden',
+  login_title: 'Bitte anmelden',
   invitation_title: 'Du wurdest zu diesem Raum eingeladen',
-  displayname: 'Gebe deinen Benutzernamen an',
+  displayname: 'Dein Anzeigename',
   password: 'Passwort',
   connect: 'Verbinden',
   error: 'Login Fehler',
   empty_displayname: 'Benutzername kann nicht leer sein.',
+  demo_mode: 'Demo- / Testmodus (lokale Simulation)',
 }
 
 export const context = {
@@ -51,8 +54,50 @@ export const controls = {
   request: 'Steuerung anfordern',
   lock: 'Steuerung sperren',
   unlock: 'Steuerung entsperren',
-  has: 'Du hast die Kontrolle', // TODO: prüfen Übersetzung
-  hasnot: 'Du hast keine Kontrolle', // TODO: prüfen Übersetzung
+  has: 'Du hast die Steuerung',
+  hasnot: 'Du hast keine Steuerung',
+  mic_on: 'Mikrofon einschalten',
+  mic_off: 'Mikrofon ausschalten',
+  mic_error: 'Mikrofon-Fehler',
+  take: 'Steuerung übernehmen',
+  request_short: 'Anfragen',
+  requested: 'Angefragt',
+  release_short: 'Abgeben',
+  you_control: 'Du steuerst',
+  other_controls: '{name} steuert',
+  nobody_controls: 'Niemand steuert',
+  watching: 'Du schaust zu',
+  waiting_for: 'Wartet auf {name}',
+  input_active: 'Maus und Tastatur aktiv',
+  input_locked: 'Deine Eingabe ist pausiert',
+  lock_input: 'Meine Maus- und Tastatureingabe pausieren',
+  unlock_input: 'Meine Maus- und Tastatureingabe fortsetzen',
+  pause_input: 'Eingabe pausieren',
+  resume_input: 'Eingabe fortsetzen',
+  remote_screen: 'Geteilter Bildschirm',
+  locked_by_admin: 'Steuerung gesperrt',
+  admin_only: 'Nur Admins können steuern',
+  force_take: 'Übernehmen',
+  click_to_control: 'Zum Steuern ins Bild klicken',
+  play: 'Abspielen',
+  pause: 'Pause',
+  mute: 'Ton aus',
+  unmute: 'Ton an',
+  volume: 'Lautstärke',
+  more: 'Mehr',
+  emotes: 'Emotes',
+  about: 'Über n.eko',
+  fullscreen: 'Vollbild',
+  exit_fullscreen: 'Vollbild beenden',
+  resolution: 'Bildschirmauflösung',
+  pip: 'Bild im Bild',
+  clipboard: 'Zwischenablage',
+  keyboard: 'Tastatur',
+  keyboard_helper: 'Sondertasten',
+  microphone: 'Mikrofon',
+  stream: 'Stream: {name}',
+  close: 'Schließen',
+  sound: 'Ton',
 }
 
 export const locks = {
@@ -80,17 +125,20 @@ export const locks = {
     notif_locked: 'Dateiübertragung gesperrt',
     notif_unlocked: 'Dateiübertragung entsperrt',
   },
+  chip_control: 'Steuerung gesperrt',
+  chip_login: 'Login gesperrt',
+  chip_file_transfer: 'Dateien gesperrt',
 }
 
 export const setting = {
   scroll: 'Scroll-Empfindlichkeit',
-  scroll_invert: 'Bildlauf umkehren',
-  autoplay: 'Autoplay Video',
-  ignore_emotes: 'Emotes ignorieren',
-  chat_sound: 'Chat-Sound abspielen',
-  force_touch: 'Touch-Steuerelemente erzwingen',
+  scroll_invert: 'Scrollrichtung umkehren',
+  autoplay: 'Video automatisch abspielen',
+  ignore_emotes: 'Emotes ausblenden',
+  chat_sound: 'Ton bei neuen Nachrichten',
+  force_touch: 'Touch-Bedienung erzwingen',
   keyboard_layout: 'Tastaturbelegung',
-  trackpad_mode: 'Trackpad Mode',
+  trackpad_mode: 'Trackpad-Modus',
   trackpad_cursor_hidden: 'Trackpad-Zeiger ausblenden',
   media_backend: 'Standard-Medienpfad',
   media_backend_webrtc: 'WebRTC',
@@ -100,6 +148,30 @@ export const setting = {
   media_backend_clear_override: 'Gespeicherte Auswahl verwenden',
 
   broadcast_title: 'Live-Übertragung',
+  group_stream: 'Stream',
+  group_input: 'Eingabe',
+  group_chat: 'Chat',
+  group_room: 'Raum',
+  group_account: 'Konto',
+  admin_badge: 'Admin',
+  language: 'Sprache',
+  open_links_in_app: 'Links immer in der App öffnen',
+  media_desc_webrtc: 'Geringste Verzögerung, nötig zum Steuern',
+  media_desc_ll_hls: 'Zum Zuschauen, kurze Verzögerung',
+  media_desc_hls: 'Zum Zuschauen, am robustesten, mehr Verzögerung',
+  media_default: 'Standard',
+  lock_control: 'Steuerung sperren',
+  lock_control_hint: 'Nur Admins können steuern',
+  lock_login: 'Neue Logins sperren',
+  lock_login_hint: 'Nur Admins können beitreten',
+  lock_file_transfer: 'Dateiübertragung sperren',
+  lock_file_transfer_hint: 'Nur Admins können Dateien übertragen',
+  broadcast_hint: 'RTMP, z. B. YouTube',
+  broadcast_start: 'Starten',
+  broadcast_stop: 'Stoppen',
+  logout_confirm_title: 'Abmelden?',
+  logout_confirm_text: 'Du verlässt damit den Raum.',
+  trackpad_touch_only: 'Nur auf Touch-Geräten verfügbar',
 }
 
 export const media = {
@@ -122,7 +194,7 @@ export const media = {
 export const connection = {
   logged_out: 'Du wurdest ausgeloggt.',
   reconnecting: 'Erneut verbinden...',
-  connected: 'Verbindet',
+  connected: 'Verbunden',
   disconnected: 'Getrennt',
   kicked: 'Du wurdest aus diesem Raum entfernt.',
   button_confirm: 'OK',
@@ -138,20 +210,22 @@ export const notifications = {
   controls_released_force: 'hat die Steuerung gewaltsam losgelassen',
   controls_released_steal: 'hat die Steuerung freigegeben von {name}',
   controls_given: 'hat die Steuerung übergeben an {name}',
-  controls_has: '{name} hat die Sterung',
-  controls_has_alt: 'Aber ich habe die Person wissen lassen, dass du es wolltest',
-  controls_requesting: '{name} fordert die Kontrollen an',
+  controls_has: '{name} hat die Steuerung',
+  controls_has_alt: '{name} hat deine Anfrage bekommen',
+  controls_requesting: '{name} fragt nach der Steuerung',
   resolution: 'die Auflösung geändert zu {width}x{height}@{rate}',
   banned: 'sperrte {name}',
   kicked: '{name} wurde rausgeworfen',
   muted: '{name} stummgeschaltet',
   unmuted: '{name} stummschaltung aufgehoben',
+  controls_taken_self: 'Du steuerst jetzt',
+  controls_released_self: 'Du hast die Steuerung abgegeben',
 }
 
 export const files = {
   downloads: 'Herunterladen',
   uploads: 'Hochladen',
-  upload_here: 'Klicken oder ziehen Sie Dateien zum Hochladen hierher',
+  upload_here: 'Zum Hochladen klicken oder Dateien hierher ziehen',
   delete: 'Löschen',
   delete_title: '"{name}" löschen?',
   delete_confirm: 'Möchten Sie diese Datei wirklich entfernen?',
@@ -161,6 +235,9 @@ export const files = {
   cancel: 'Abbrechen',
   delete_selected_title: 'Ausgewählte Dateien löschen?',
   delete_selected_confirm: 'Möchten Sie die {count} ausgewählten Dateien wirklich entfernen?',
+  refresh: 'Aktualisieren',
+  download: '{name} herunterladen',
+  remove: 'Aus der Liste entfernen',
 }
 
 export const clipboard_manager = {
@@ -175,4 +252,13 @@ export const clipboard_manager = {
   mic_connecting: 'Mikrofon wird gestartet...',
   keyboard_helper_title: 'Zusatztasten Tastatur',
   sync_hint: 'Tipp: Das Kopieren eines Eintrags aktualisiert sowohl deinen lokalen PC als auch die VM-Zwischenablage. Nutze Strg+V zum Einfügen in der VM.',
+}
+
+export const header = {
+  in_room: '{count} im Raum',
+  chat: 'Chat',
+  open_panel: 'Seitenleiste öffnen',
+  close_panel: 'Seitenleiste schließen',
+  new_messages: 'Neue Nachrichten',
+  admin: 'Admin',
 }

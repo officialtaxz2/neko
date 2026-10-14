@@ -1,24 +1,15 @@
 <template>
   <ul>
-    <li><i @click.stop.prevent="about" class="fas fa-question-circle" /></li>
     <li>
-      <i
-        class="fas fa-shield-alt"
-        v-tooltip="{
-          content: $t('admin_loggedin'),
-          placement: 'right',
-          offset: 5,
-          boundariesElement: 'body',
-        }"
-        v-if="admin"
-      />
-    </li>
-    <li>
-      <select v-model="$i18n.locale">
-        <option v-for="(lang, i) in langs" :key="`Lang${i}`" :value="lang">
-          {{ lang }}
-        </option>
-      </select>
+      <button
+        type="button"
+        class="icon-btn"
+        :aria-label="$t('controls.about')"
+        v-tooltip="{ content: $t('controls.about'), placement: 'top', offset: 5, boundariesElement: 'body' }"
+        @click.stop.prevent="about"
+      >
+        <i class="fas fa-question-circle" aria-hidden="true" />
+      </button>
     </li>
   </ul>
 </template>
@@ -27,7 +18,7 @@
   ul {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     padding: 0;
     margin: 0;
     list-style: none;
@@ -36,57 +27,21 @@
       display: inline-flex;
       align-items: center;
 
-      i {
-        font-size: 20px;
-        cursor: pointer;
+      .icon-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-inner);
+        border: 1px solid var(--glass-border);
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 16px;
         color: var(--text-subtle);
         transition: var(--transition-fluid);
 
         &:hover {
           color: var(--color-cyber-mint);
-          filter: drop-shadow(0 0 6px var(--color-cyber-mint-glow));
-          transform: translateY(-1px);
-        }
-
-        &:active {
-          transform: translateY(0);
+          background: rgba(255, 255, 255, 0.08);
         }
       }
-    }
-  }
-
-  select {
-    appearance: none;
-    background-color: rgba(12, 13, 18, 0.45);
-    border: 1px solid var(--glass-border);
-    color: var(--text-pure);
-    cursor: pointer;
-    border-radius: var(--radius-button);
-    padding: 2px 10px;
-    height: 30px;
-    line-height: 26px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    vertical-align: middle;
-    display: inline-block;
-    transition: var(--transition-fluid);
-    outline: none;
-
-    option {
-      font-weight: normal;
-      color: var(--text-pure);
-      background-color: var(--bg-obsidian-floating);
-    }
-
-    &:hover {
-      border-color: rgba(38, 230, 180, 0.25);
-      background-color: rgba(12, 13, 18, 0.6);
-    }
-
-    &:focus {
-      border-color: var(--color-cyber-mint);
-      box-shadow: 0 0 0 3px rgba(38, 230, 180, 0.15);
     }
   }
 </style>
@@ -98,10 +53,6 @@
 
   @Component({ name: 'neko-menu' })
   export default class NekoMenu extends Vue {
-    get admin() {
-      return this.$accessor.user.admin
-    }
-
     get langs() {
       return Object.keys(messages)
     }

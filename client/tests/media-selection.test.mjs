@@ -121,7 +121,8 @@ test('sidebar changes persist and re-enter startup while the WebRTC action persi
   const client = await readFile(new URL('../src/neko/index.ts', import.meta.url), 'utf8')
   const video = await readFile(new URL('../src/components/video.vue', import.meta.url), 'utf8')
 
-  assert.match(settings, /<select v-model="media_backend">/)
+  assert.match(settings, /role="radiogroup"/)
+  assert.match(settings, /type="radio"[\s\S]*?@change="media_backend = option\.value"/)
   assert.match(
     settings,
     /set media_backend\(value: string\) \{\s*if \(!this\.\$client\.canSelectMediaBackend\(value\)\) return\s*this\.\$accessor\.settings\.setMediaBackend\(value\)\s*this\.\$client\.changeMediaBackend\(value\)/,

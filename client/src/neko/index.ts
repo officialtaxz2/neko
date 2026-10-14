@@ -1147,9 +1147,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       this.$vue.$notify({
         group: 'neko',
         type: 'info',
-        title: this.$vue.$t('notifications.controls_taken', {
-          name: member.id == this.id && this.$vue.$te('you') ? this.$vue.$t('you') : member.displayname,
-        }) as string,
+        title: this.$vue.$t('notifications.controls_taken_self') as string,
         duration: 5000,
         speed: 1000,
       })
@@ -1174,9 +1172,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       this.$vue.$notify({
         group: 'neko',
         type: 'info',
-        title: this.$vue.$t('notifications.controls_released', {
-          name: member.id == this.id && this.$vue.$te('you') ? this.$vue.$t('you') : member.displayname,
-        }) as string,
+        title: this.$vue.$t('notifications.controls_released_self') as string,
         duration: 5000,
         speed: 1000,
       })
@@ -1200,7 +1196,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       group: 'neko',
       type: 'info',
       title: this.$vue.$t('notifications.controls_has', { name: member.displayname }) as string,
-      text: this.$vue.$t('notifications.controls_has_alt') as string,
+      text: this.$vue.$t('notifications.controls_has_alt', { name: member.displayname }) as string,
       duration: 5000,
       speed: 1000,
     })
@@ -1233,7 +1229,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.$accessor.chat.newMessage({
       id,
       content: this.$vue.$t('notifications.controls_given', {
-        name: member.id == this.id && this.$vue.$te('you') ? this.$vue.$t('you') : member.displayname,
+        name: member.id == this.id && this.$vue.$te('you_object') ? this.$vue.$t('you_object') : member.displayname,
       }) as string,
       type: 'event',
       created: new Date(),
@@ -1352,7 +1348,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.$accessor.chat.newMessage({
       id,
       content: this.$vue.$t('notifications.banned', {
-        name: member.id == this.id && this.$vue.$te('you') ? this.$vue.$t('you') : member.displayname,
+        name: member.id == this.id && this.$vue.$te('you_object') ? this.$vue.$t('you_object') : member.displayname,
       }) as string,
       type: 'event',
       created: new Date(),

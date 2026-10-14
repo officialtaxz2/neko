@@ -19,6 +19,7 @@
         <textarea
           ref="overlay"
           class="overlay"
+          :aria-label="$t('controls.remote_screen')"
           spellcheck="false"
           tabindex="0"
           data-gramm="false"
@@ -38,12 +39,24 @@
           @compositionstart="onCompositionStartHandler"
           @compositionend="onCompositionEndHandler"
         />
-        <div v-if="!playing && playable" class="player-overlay" @click.stop.prevent="playAndUnmute">
-          <i class="fas fa-play-circle" />
-        </div>
-        <div v-else-if="mutedOverlay && muted" class="player-overlay" @click.stop.prevent="unmute">
-          <i class="fas fa-volume-up" />
-        </div>
+        <button
+          v-if="!playing && playable"
+          type="button"
+          class="player-overlay"
+          :aria-label="$t('controls.play')"
+          @click.stop.prevent="playAndUnmute"
+        >
+          <i class="fas fa-play-circle" aria-hidden="true" />
+        </button>
+        <button
+          v-else-if="mutedOverlay && muted"
+          type="button"
+          class="player-overlay"
+          :aria-label="$t('controls.unmute')"
+          @click.stop.prevent="unmute"
+        >
+          <i class="fas fa-volume-up" aria-hidden="true" />
+        </button>
         <div v-if="hlsSelected" :class="['media-status', { compact: hlsStatus === 'streaming' }]" role="status">
           <span v-if="hlsStatus === 'streaming'">{{ hlsLabel }}</span>
           <template v-else>
@@ -66,61 +79,83 @@
       </div>
       <ul v-if="(!fullscreen || fallbackFullscreen) && !hideControls" class="video-menu top">
         <li>
-          <i
+          <button
+            type="button"
+            class="icon-btn"
+            :aria-label="fallbackFullscreen ? $t('controls.exit_fullscreen') : $t('controls.fullscreen')"
+            v-tooltip="menuTooltip(fallbackFullscreen ? $t('controls.exit_fullscreen') : $t('controls.fullscreen'))"
             @click.stop.prevent="requestFullscreen"
-            :class="['fas', fallbackFullscreen ? 'fa-compress' : 'fa-expand']"
-          ></i>
+          >
+            <i :class="['fas', fallbackFullscreen ? 'fa-compress' : 'fa-expand']" aria-hidden="true" />
+          </button>
         </li>
         <li v-if="!fallbackFullscreen && admin && !receiveOnlySelected">
-          <i @click.stop.prevent="openResolution" class="fas fa-desktop"></i>
+          <button
+            type="button"
+            class="icon-btn"
+            :aria-label="$t('controls.resolution')"
+            v-tooltip="menuTooltip($t('controls.resolution'))"
+            @click.stop.prevent="openResolution"
+          >
+            <i class="fas fa-desktop" aria-hidden="true" />
+          </button>
         </li>
-        <li
-          v-if="!fallbackFullscreen && !receiveOnlySelected && !controlLocked && !implicitHosting"
-          :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]"
-        >
-          <i
-            :class="[
-              hosted && !hosting ? 'disabled' : '',
-              !hosted && !hosting ? 'faded' : '',
-              'fas',
-              'fa-computer-mouse',
-            ]"
+        <!-- Embed mode has no control bar, so the control toggle lives on the player. -->
+        <li v-if="extraControls && !fallbackFullscreen && !receiveOnlySelected && !controlLocked && !implicitHosting">
+          <button
+            type="button"
+            :class="['icon-btn', { disabled: hosted && !hosting, faded: !hosted && !hosting }]"
+            :aria-label="hosting ? $t('controls.release') : $t('controls.request')"
+            :aria-pressed="hosting ? 'true' : 'false'"
             @click.stop.prevent="toggleControl"
-          />
+          >
+            <i class="fas fa-computer-mouse" aria-hidden="true" />
+          </button>
         </li>
       </ul>
       <ul v-if="!fullscreen && !fallbackFullscreen && !hideControls" class="video-menu bottom">
         <li v-if="hosting">
-          <i
+          <button
+            type="button"
+            class="icon-btn"
+            :aria-label="$t('controls.clipboard')"
+            v-tooltip="menuTooltip($t('clipboard_manager.history_title'))"
             @click.stop.prevent="openClipboard"
-            v-tooltip="{ content: $t('clipboard_manager.history_title'), placement: 'left', offset: 5 }"
-            class="fas fa-clipboard"
-          ></i>
+          >
+            <i class="fas fa-clipboard" aria-hidden="true" />
+          </button>
         </li>
-        <li>
-          <i
-            v-if="pip_available"
+        <li v-if="pip_available">
+          <button
+            type="button"
+            class="icon-btn"
+            :aria-label="$t('controls.pip')"
+            v-tooltip="menuTooltip($t('controls.pip'))"
             @click.stop.prevent="requestPictureInPicture"
-            v-tooltip="{ content: 'Picture-in-Picture', placement: 'left', offset: 5, boundariesElement: 'body' }"
-            class="fas fa-external-link-alt"
-          />
+          >
+            <i class="fas fa-external-link-alt" aria-hidden="true" />
+          </button>
         </li>
-        <li
-          v-if="hosting && is_touch_device"
-          :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]"
-          @click.stop.prevent="toggleKeyboardHelper"
-        >
-          <i
-            class="fas fa-sliders-h"
-            v-tooltip="{ content: $t('clipboard_manager.keyboard_helper_title'), placement: 'left', offset: 5 }"
-          />
+        <li v-if="hosting && is_touch_device">
+          <button
+            type="button"
+            class="icon-btn"
+            :aria-label="$t('controls.keyboard_helper')"
+            v-tooltip="menuTooltip($t('clipboard_manager.keyboard_helper_title'))"
+            @click.stop.prevent="toggleKeyboardHelper"
+          >
+            <i class="fas fa-sliders-h" aria-hidden="true" />
+          </button>
         </li>
-        <li
-          v-if="hosting && is_touch_device"
-          :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]"
-          @click.stop.prevent="openMobileKeyboard"
-        >
-          <i class="fas fa-keyboard" />
+        <li v-if="hosting && is_touch_device">
+          <button
+            type="button"
+            class="icon-btn"
+            :aria-label="$t('controls.keyboard')"
+            @click.stop.prevent="openMobileKeyboard"
+          >
+            <i class="fas fa-keyboard" aria-hidden="true" />
+          </button>
         </li>
       </ul>
       <neko-resolution ref="resolution" v-if="admin && !receiveOnlySelected" />
@@ -214,16 +249,12 @@
           margin: 0;
           display: flex;
 
-          i {
+          button {
             width: 34px;
             height: 34px;
-            background: transparent;
             border-radius: 50%;
-            line-height: 34px;
             font-size: 15px;
-            text-align: center;
             color: var(--text-subtle);
-            cursor: pointer;
             transition: var(--transition-fluid);
 
             &:hover {
@@ -245,18 +276,6 @@
               color: var(--style-error);
               opacity: 0.6;
             }
-          }
-
-          &.extra-control {
-            display: none;
-          }
-          @media (max-width: 1024px) {
-            &.extra-control {
-              display: block;
-            }
-          }
-          &.force-show {
-            display: block !important;
           }
         }
       }
@@ -419,6 +438,12 @@
         }
 
         .player-overlay {
+          left: 0;
+          margin: 0;
+          padding: 0;
+          border: none;
+          appearance: none;
+          font: inherit;
           background: radial-gradient(circle at 50% 50%, rgba(12, 13, 18, 0.7) 0%, rgba(5, 5, 8, 0.95) 100%);
           backdrop-filter: blur(14px) saturate(120%);
           display: flex;
@@ -1569,6 +1594,10 @@
       //@ts-ignore
       this._video.requestPictureInPicture()
       this.onResize()
+    }
+
+    menuTooltip(content: string) {
+      return { content, placement: 'left', offset: 5, boundariesElement: 'body', delay: { show: 300, hide: 100 } }
     }
 
     openResolution(event: MouseEvent) {

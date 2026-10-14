@@ -1,16 +1,37 @@
 <template>
   <div class="emotes" @mouseleave="stopSendingEmotes" @mouseup="stopSendingEmotes">
     <ul v-if="!muted">
-      <li v-for="emote in recent" :key="emote">
-        <div :class="['emote', emote]" @mousedown.stop.prevent="startSendingEmotes(emote)" />
-      </li>
+      <template v-if="!compact">
+        <li v-for="emote in recent" :key="emote">
+          <button
+            type="button"
+            class="icon-btn recent"
+            :aria-label="emote"
+            @mousedown.stop.prevent="startSendingEmotes(emote)"
+            @keydown.enter.space.prevent="sendEmote(emote)"
+          >
+            <span :class="['emote', emote]" aria-hidden="true" />
+          </button>
+        </li>
+      </template>
       <li>
-        <i @click.stop.prevent="open" class="fas fa-grin-beam"></i>
+        <button
+          type="button"
+          :class="['icon-btn', 'open', { boxed: compact }]"
+          :aria-label="$t('controls.emotes')"
+          aria-haspopup="true"
+          v-tooltip="{ content: $t('controls.emotes'), placement: 'top', offset: 5, boundariesElement: 'body' }"
+          @click.stop.prevent="open"
+        >
+          <i class="far fa-grin-beam" aria-hidden="true"></i>
+        </button>
       </li>
     </ul>
     <vue-context class="context" ref="context">
       <li v-for="emote in emotes" :key="emote">
-        <div @click="sendEmote(emote)" :class="['emote', emote]" />
+        <button type="button" class="icon-btn" :aria-label="emote" @click="sendEmote(emote)">
+          <span :class="['emote', emote]" aria-hidden="true" />
+        </button>
       </li>
     </vue-context>
   </div>
@@ -26,11 +47,43 @@
 
       li {
         font-size: 24px;
-        margin: 0 5px;
+        margin: 0 3px;
 
-        i,
-        div {
-          cursor: pointer;
+        .recent {
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.06);
+          }
+
+          .emote {
+            display: block;
+            width: 24px;
+            height: 24px;
+          }
+        }
+
+        .open {
+          width: 40px;
+          height: 40px;
+          border-radius: var(--radius-inner);
+          border: 1px solid var(--glass-border);
+          background: rgba(255, 255, 255, 0.04);
+          color: var(--text-subtle);
+          font-size: 18px;
+          transition: var(--transition-fluid);
+
+          &:hover {
+            color: var(--color-cyber-mint);
+            background: rgba(255, 255, 255, 0.08);
+          }
+
+          &.boxed {
+            width: 44px;
+            height: 44px;
+          }
         }
       }
     }
@@ -60,7 +113,12 @@
         padding: 5px;
         border-radius: 3px;
 
+        .icon-btn {
+          display: block;
+        }
+
         .emote {
+          display: block;
           width: 24px;
           height: 24px;
         }
@@ -85,7 +143,7 @@
 </style>
 
 <script lang="ts">
-  import { Vue, Ref, Component } from 'vue-property-decorator'
+  import { Vue, Ref, Component, Prop } from 'vue-property-decorator'
   import { get, set } from '../utils/localstorage'
 
   // @ts-ignore
@@ -99,6 +157,7 @@
   })
   export default class NekoEmotes extends Vue {
     @Ref('context') readonly context!: any
+    @Prop(Boolean) readonly compact!: boolean
     recent: string[] = JSON.parse(get('emote_recent', '[]'))
 
     get emotes() {

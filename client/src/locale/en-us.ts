@@ -2,14 +2,16 @@ export const logout = 'log out'
 export const unsupported = 'this web-browser does not support WebRTC'
 export const admin_loggedin = 'You are logged in as an admin'
 export const you = 'You'
+export const you_object = 'you'
 export const somebody = 'Somebody'
-export const send_a_message = 'Send a message'
+export const send_a_message = 'Message the room'
 
 export const side = {
   chat: 'Chat',
   files: 'Files',
   settings: 'Settings',
   members: 'Members',
+  tabs: 'Side panel',
 }
 
 export const connect = {
@@ -20,6 +22,7 @@ export const connect = {
   connect: 'Connect',
   error: 'Login error',
   empty_displayname: 'Display Name cannot be empty.',
+  demo_mode: 'Demo / test mode (local simulation)',
 }
 
 export const context = {
@@ -56,6 +59,45 @@ export const controls = {
   mic_on: 'Enable Microphone',
   mic_off: 'Disable Microphone',
   mic_error: 'Microphone Error',
+  take: 'Take control',
+  request_short: 'Request',
+  requested: 'Requested',
+  release_short: 'Give up',
+  you_control: 'You are in control',
+  other_controls: '{name} is in control',
+  nobody_controls: 'Nobody is in control',
+  watching: 'You are watching',
+  waiting_for: 'Waiting for {name}',
+  input_active: 'Mouse and keyboard active',
+  input_locked: 'Your input is paused',
+  lock_input: 'Pause my mouse and keyboard input',
+  unlock_input: 'Resume my mouse and keyboard input',
+  pause_input: 'Pause input',
+  resume_input: 'Resume input',
+  remote_screen: 'Shared screen',
+  locked_by_admin: 'Control locked',
+  admin_only: 'Only admins can take control',
+  force_take: 'Take over',
+  click_to_control: 'Click into the picture to control',
+  play: 'Play',
+  pause: 'Pause',
+  mute: 'Mute',
+  unmute: 'Unmute',
+  volume: 'Volume',
+  more: 'More',
+  emotes: 'Emotes',
+  about: 'About n.eko',
+  fullscreen: 'Fullscreen',
+  exit_fullscreen: 'Exit fullscreen',
+  resolution: 'Screen resolution',
+  pip: 'Picture in picture',
+  clipboard: 'Clipboard',
+  keyboard: 'Keyboard',
+  keyboard_helper: 'Special keys',
+  microphone: 'Microphone',
+  stream: 'Stream: {name}',
+  close: 'Close',
+  sound: 'Sound',
 }
 
 export const locks = {
@@ -83,6 +125,9 @@ export const locks = {
     notif_locked: 'locked file transfer',
     notif_unlocked: 'unlocked file transfer',
   },
+  chip_control: 'Control locked',
+  chip_login: 'Login locked',
+  chip_file_transfer: 'Files locked',
 }
 
 export const setting = {
@@ -103,6 +148,30 @@ export const setting = {
   media_backend_clear_override: 'Use saved default',
 
   broadcast_title: 'Live Broadcast',
+  group_stream: 'Stream',
+  group_input: 'Input',
+  group_chat: 'Chat',
+  group_room: 'Room',
+  group_account: 'Account',
+  admin_badge: 'Admin',
+  language: 'Language',
+  open_links_in_app: 'Always open links in the app',
+  media_desc_webrtc: 'Lowest delay, required for controlling',
+  media_desc_ll_hls: 'For watching, short delay',
+  media_desc_hls: 'For watching, most robust, longer delay',
+  media_default: 'Default',
+  lock_control: 'Lock control',
+  lock_control_hint: 'Only admins can take control',
+  lock_login: 'Lock new logins',
+  lock_login_hint: 'Only admins can join',
+  lock_file_transfer: 'Lock file transfer',
+  lock_file_transfer_hint: 'Only admins can transfer files',
+  broadcast_hint: 'RTMP, e.g. YouTube',
+  broadcast_start: 'Start',
+  broadcast_stop: 'Stop',
+  logout_confirm_title: 'Log out?',
+  logout_confirm_text: 'You will leave the room.',
+  trackpad_touch_only: 'Only available on touch devices',
 }
 
 export const media = {
@@ -142,13 +211,15 @@ export const notifications = {
   controls_released_steal: 'released the controls from {name}',
   controls_given: 'gave the controls to {name}',
   controls_has: '{name} has the controls',
-  controls_has_alt: 'But I let the person know you wanted it',
+  controls_has_alt: '{name} got your request',
   controls_requesting: '{name} is requesting the controls',
   resolution: 'changed the resolution to {width}x{height}@{rate}',
   banned: 'banned {name}',
   kicked: 'kicked {name}',
   muted: 'muted {name}',
   unmuted: 'unmuted {name}',
+  controls_taken_self: 'You are now in control',
+  controls_released_self: 'You released the controls',
 }
 
 export const files = {
@@ -164,6 +235,9 @@ export const files = {
   cancel: 'Cancel',
   delete_selected_title: 'Delete selected files?',
   delete_selected_confirm: 'Do you really want to remove the {count} selected files?',
+  refresh: 'Refresh',
+  download: 'Download {name}',
+  remove: 'Remove from list',
 }
 
 export const clipboard_manager = {
@@ -178,4 +252,13 @@ export const clipboard_manager = {
   mic_connecting: 'Initializing Microphone...',
   keyboard_helper_title: 'Mobile Keyboard Modifier',
   sync_hint: 'Tip: Copying an item updates both your host computer and the VM clipboard. To paste inside the VM, press Ctrl+V.',
+}
+
+export const header = {
+  in_room: '{count} in the room',
+  chat: 'Chat',
+  open_panel: 'Open side panel',
+  close_panel: 'Close side panel',
+  new_messages: 'New messages',
+  admin: 'Admin',
 }

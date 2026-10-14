@@ -1,5 +1,8 @@
 <template>
-  <div id="neko" :class="[!videoOnly && side ? 'expanded' : '', force_touch ? 'force-touch' : '']">
+  <div
+    id="neko"
+    :class="[!videoOnly && side ? 'expanded' : '', force_touch ? 'force-touch' : '', { 'has-dock': !videoOnly }]"
+  >
     <template v-if="!$client.supported">
       <neko-unsupported />
     </template>
@@ -17,19 +20,25 @@
           />
         </div>
         <div v-if="!videoOnly || viewOnly" :class="['room-container', { 'view-only-controls': viewOnly }]">
-          <neko-members v-if="!viewOnly" />
           <div class="room-menu">
-            <div v-if="!viewOnly" class="settings">
-              <neko-menu />
+            <div v-if="!viewOnly" class="room-left">
+              <neko-members />
             </div>
             <div class="controls">
               <neko-controls :shakeKbd="shakeKbd" />
             </div>
-            <div v-if="!viewOnly" class="emotes">
+            <div v-if="!viewOnly" class="room-right">
               <neko-emotes />
+              <neko-menu />
             </div>
           </div>
         </div>
+        <neko-mobile-dock
+          v-if="!videoOnly"
+          :shakeKbd="shakeKbd"
+          :pipAvailable="pipAvailable"
+          @action="onDockAction"
+        />
       </main>
       <neko-side v-if="!videoOnly && side" />
       <neko-connect v-if="!connected" />
@@ -92,40 +101,43 @@
         height: $controls-height;
         max-width: 100%;
         flex-shrink: 0;
-        flex-direction: column;
         display: flex;
         border-top: 1px solid var(--glass-border);
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
         z-index: 10;
-        padding: 4px 0;
 
         .room-menu {
-          max-width: 100%;
           flex: 1;
-          display: flex;
+          min-width: 0;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+          align-items: center;
+          gap: 16px;
+          padding: 0 16px;
 
-          .settings {
-            margin-left: 15px;
-            flex: 1;
-            justify-content: flex-start;
-            align-items: center;
+          .room-left {
+            min-width: 0;
             display: flex;
+            align-items: center;
           }
 
           .controls {
-            flex: 1.5;
+            display: flex;
             justify-content: center;
             align-items: center;
-            display: flex;
           }
 
-          .emotes {
-            margin-right: 15px;
-            flex: 1;
+          .room-right {
+            min-width: 0;
+            display: flex;
             justify-content: flex-end;
             align-items: center;
-            display: flex;
+            gap: 10px;
           }
+        }
+
+        &.view-only-controls .room-menu {
+          grid-template-columns: 1fr;
         }
       }
     }
@@ -196,6 +208,33 @@
   @media only screen and (max-width: 768px) {
     #neko .neko-main .room-container:not(.view-only-controls) {
       display: none;
+    }
+
+    // Phones: video on top, the dock right below it. Player tools that now
+    // live in the dock's "More" sheet are hidden on the video.
+    #neko.has-dock {
+      .neko-main {
+        height: auto;
+        min-height: 0;
+      }
+
+      &:not(.expanded) .neko-main {
+        height: 100vh;
+        height: 100dvh;
+      }
+
+      .video-menu.bottom {
+        display: none;
+      }
+    }
+  }
+
+  @media only screen and (max-width: 768px) and (orientation: portrait) {
+    // Portrait phones: the video keeps its own height at the top and the dock
+    // follows directly below it instead of floating at the bottom edge.
+    #neko.has-dock .video-container {
+      flex: none;
+      height: min(62.5vw, 60vh);
     }
   }
 
@@ -317,6 +356,7 @@
   import About from '~/components/about.vue'
   import Header from '~/components/header.vue'
   import Unsupported from '~/components/unsupported.vue'
+  import MobileDock, { DockAction } from '~/components/mobile-dock.vue'
 
   @Component({
     name: 'neko',
@@ -331,6 +371,7 @@
       'neko-about': About,
       'neko-header': Header,
       'neko-unsupported': Unsupported,
+      'neko-mobile-dock': MobileDock,
     },
   })
   export default class Neko extends Vue {
@@ -401,6 +442,40 @@
             side.scrollIntoView({ behavior: 'smooth', block: 'start' })
           }
         })
+      }
+    }
+
+    // Mirrors the player's own Picture-in-Picture check (video.vue pip_available).
+    get pipAvailable() {
+      const probe = document.createElement('video') as HTMLVideoElement & {
+        webkitSupportsPresentationMode?: (mode: string) => boolean
+      }
+      if (this.$accessor.hls.selected && probe.webkitSupportsPresentationMode?.('picture-in-picture')) return true
+      return typeof probe.requestPictureInPicture === 'function'
+    }
+
+    onDockAction(action: DockAction, event?: MouseEvent) {
+      const video = this.video as any
+      if (!video) return
+      switch (action) {
+        case 'fullscreen':
+          video.requestFullscreen()
+          break
+        case 'keyboard':
+          video.openMobileKeyboard()
+          break
+        case 'keyboard-helper':
+          video.toggleKeyboardHelper()
+          break
+        case 'clipboard':
+          video.openClipboard()
+          break
+        case 'pip':
+          video.requestPictureInPicture()
+          break
+        case 'resolution':
+          if (event) video.openResolution(event)
+          break
       }
     }
 

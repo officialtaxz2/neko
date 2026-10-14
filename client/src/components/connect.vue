@@ -12,6 +12,7 @@
           v-if="passwordLoginEnabled"
           type="text"
           :placeholder="$t('connect.displayname')"
+          :aria-label="$t('connect.displayname')"
           v-model="displayname"
           autofocus
         />
@@ -19,12 +20,13 @@
           v-if="passwordLoginEnabled && !isInvitation"
           type="password"
           :placeholder="$t('connect.password')"
+          :aria-label="$t('connect.password')"
           v-model="password"
         />
 
         <div class="demo-checkbox-container" v-if="passwordLoginEnabled && !isInvitation && showDemo">
           <input type="checkbox" id="demo-mode" v-model="demoMode" />
-          <label for="demo-mode">Demo- / Testmodus (Lokale Sim)</label>
+          <label for="demo-mode">{{ $t('connect.demo_mode') }}</label>
         </div>
 
         <button v-if="passwordLoginEnabled" type="submit" @click.stop.prevent="login">

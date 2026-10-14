@@ -40,7 +40,7 @@
               boundariesElement: 'body',
             }"
           >
-            <strong v-if="message.id === id && $te('you')">{{ $t('you') }}</strong>
+            <strong v-if="message.id === id && $te('you')">{{ member(message.id).displayname }} ({{ $t('you') }})</strong>
             <strong v-else>{{ member(message.id).displayname }}</strong>
             {{ message.content }}
           </div>
@@ -51,9 +51,23 @@
     <div v-if="!muted" class="chat-send">
       <div class="accent" />
       <div class="text-container">
-        <textarea ref="input" :placeholder="$t('send_a_message')" @keydown="onKeyDown" v-model="content" />
+        <textarea
+          ref="input"
+          :placeholder="$t('send_a_message')"
+          :aria-label="$t('send_a_message')"
+          @keydown="onKeyDown"
+          v-model="content"
+        />
         <neko-emoji v-if="emoji" @picked="onEmojiPicked" @done="emoji = false" />
-        <i class="emoji-menu fas fa-laugh" @click.stop.prevent="onEmoji"></i>
+        <button
+          type="button"
+          class="icon-btn emoji-menu"
+          :aria-label="$t('controls.emotes')"
+          :aria-expanded="emoji ? 'true' : 'false'"
+          @click.stop.prevent="onEmoji"
+        >
+          <i class="far fa-smile" aria-hidden="true"></i>
+        </button>
       </div>
     </div>
   </div>
@@ -181,7 +195,6 @@
                 font-size: 11px;
                 font-weight: 500;
                 line-height: 12px;
-                opacity: 0.75;
 
                 &::first-letter {
                   text-transform: uppercase;
@@ -364,6 +377,7 @@
       .text-container {
         flex: 1;
         width: 100%;
+        box-sizing: border-box;
         background-color: rgba(12, 13, 18, 0.45);
         border: 1px solid var(--glass-border);
         border-radius: var(--radius-inner);
@@ -440,7 +454,8 @@
 
 <script lang="ts">
   import { Component, Ref, Watch, Vue } from 'vue-property-decorator'
-  import { formatRelative } from 'date-fns'
+  import { formatRelative, Locale } from 'date-fns'
+  import { de, enUS, es, fi, fr, id, ja, ko, nb, pl, ru, sk, sv, zhCN, zhTW } from 'date-fns/locale'
 
   import { Member } from '~/neko/types'
 
@@ -450,6 +465,25 @@
   import Avatar from './avatar.vue'
 
   const length = 512 // max length of message
+
+  // date-fns locale for each client language key in ~/locale
+  const dateLocales: Record<string, Locale> = {
+    en: enUS,
+    es,
+    sk,
+    sv,
+    nb,
+    fr,
+    de,
+    ko,
+    fi,
+    ru,
+    cn: zhCN,
+    tw: zhTW,
+    ja,
+    id,
+    pl,
+  }
 
   @Component({
     name: 'neko-chat',
@@ -509,7 +543,7 @@
     }
 
     timestamp(time: Date) {
-      const str = formatRelative(time, new Date())
+      const str = formatRelative(time, new Date(), { locale: dateLocales[this.$i18n.locale] || enUS })
       return `${str.charAt(0).toUpperCase()}${str.slice(1)}`
     }
 
