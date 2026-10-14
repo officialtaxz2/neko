@@ -1,5 +1,40 @@
 # Stability review and outstanding device evidence
 
+## WebRTC race repairs — 2026-10-14
+
+Two data races on the WebRTC path were reproduced with `go test -race` in a
+cloud container (not the target server) and repaired:
+
+- **Estimator flags (inherited from upstream).** `estimatorReader` read
+  `videoAuto`, `videoDisabled`, `paused` and `audioDisabled` without `peer.mu`
+  while `SetPaused`/`SetVideo` write them under it. It now takes one locked
+  snapshot per tick. `TestEstimatorReaderStateAccessIsSynchronized` fails with
+  DATA RACE on the old code and passes with the repair.
+- **Session state.** `SessionCtx.state` was written from the WebRTC
+  connection-state callback (`SetWebRTCConnected`/`SetMediaDeliveryActive`) and
+  the websocket lifecycle while broadcasts, handlers and the API read it via
+  `State()`. A `stateMu` RWMutex now guards it. The existing
+  `internal/media` delivery tests reported DATA RACE and failed under `-race`
+  before; they pass after.
+
+The whole server suite then passed three consecutive `go test -race ./...`
+runs. Neither race is shown to cause a visible outage; both are corrected
+because they are undefined behavior on the connect/disconnect and adaptive
+paths.
+
+F2/F3 status: the current source already carries their B3 repairs (server
+8-second disconnected grace in `startDisconnectedRecovery`, client matching
+window in `client/src/neko/base.ts`, prototype-method video callbacks in
+`video.vue`). No further change was made.
+
+Event-path hypothesis for the TV report (not reproduced, no TV available):
+member join, chat messages and control changes all call `chat.newMessage`,
+which plays `new Audio('chat.mp3')` while the chat-sound setting is on (the
+default). Some TV browsers allow only one active media element; Samsung Tizen
+developers report that starting audio stops playing video. Turning off the
+chat sound in the client settings on the affected TV is a zero-code test of
+this hypothesis. No code change is made until that test is reported.
+
 ## Authorized improvement block — 2026-10-07
 
 The operator subsequently authorized the comparative plan. Independent B1–B3
