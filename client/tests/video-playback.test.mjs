@@ -57,6 +57,7 @@ function harness({ autoplay = true, play } = {}) {
       if (path === 'resize-observer-polyfill') return class { observe() {} disconnect() {} }
       if (path === '~/utils/guacamole-keyboard.ts') return () => ({ listenTo() {}, reset() {} })
       if (path === '~/neko/playback-progress.js') return progress
+      if (path === '~/utils/touch') return { isTouchDevice: () => false }
       if (path === '~/utils') return { isFullscreen: () => false, lockKeyboard() {}, unlockKeyboard() {} }
       if (path.endsWith('.vue')) return {}
       throw new Error(`Unexpected component module: ${path}`)
