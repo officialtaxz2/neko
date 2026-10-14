@@ -267,4 +267,6 @@ Consequence: future upstream syncs will conflict in the same files again. Migrat
 - auto-merged server files (`api/router.go`, `api/session.go`, `session/auth.go`, `member/manager.go`, `websocket/manager.go`, `pkg/types/member.go`) inspected against the fork's view-only and media changes;
 - `bash -n setup.sh`.
 
-Runtime/build/test status: **NOT EXECUTED**. GitHub CI only builds the server image and client; `go test` and the client tests must run on the target server: `cd server && go test ./...`, `cd client && npm ci && npm run lint && npm run build && npm test`, then a Brave image build, password/OAuth login, view-only link login, WebRTC, adaptive quality, and (with overlays) WebCodecs/HLS smoke checks.
+Target-server results supplied by the operator on 2026-10-14 for `master` at `93b8c84` (via `docker-compose.validation.yaml`): all 15 Go packages of `server-checks` plus `./internal/api` and `./internal/plugins/chat` passed, both 30 s fuzz jobs passed, `./build` succeeded; client `npm test` 80/80, `npm run lint` and `npm run build` passed. Deployment/browser checks below remain pending.
+
+Original status before those results: **NOT EXECUTED**. GitHub CI only builds the server image and client; `go test` and the client tests must run on the target server: `cd server && go test ./...`, `cd client && npm ci && npm run lint && npm run build && npm test`, then a Brave image build, password/OAuth login, view-only link login, WebRTC, adaptive quality, and (with overlays) WebCodecs/HLS smoke checks.
