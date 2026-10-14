@@ -20,6 +20,7 @@ export const state = () => ({
   muted: get<boolean>('muted', false),
   playing: false,
   playable: false,
+  microphone: false,
 })
 
 export const getters = getterTree(state, {
@@ -45,6 +46,10 @@ export const mutations = mutationTree(state, {
     if (state.playable) {
       state.playing = !state.playing
     }
+  },
+
+  setMicrophone(state, active: boolean) {
+    state.microphone = active
   },
 
   setMuted(state, muted: boolean) {
@@ -180,6 +185,7 @@ export const mutations = mutationTree(state, {
     state.vertical = 9
     state.playing = false
     state.playable = false
+    state.microphone = false
   },
 })
 

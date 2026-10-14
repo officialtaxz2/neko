@@ -1,54 +1,35 @@
 <template>
   <div class="header">
-    <a href="https://github.com/m1k1o/neko" title="Github repository" target="_blank" class="neko">
-      <img src="@/assets/images/logo.svg" alt="n.eko" />
+    <button type="button" class="icon-btn neko" :aria-label="$t('controls.about')" @click="about">
+      <img src="@/assets/images/logo.svg" alt="" />
       <span><b>n</b>.eko</span>
-    </a>
-    <ul class="menu">
-      <li>
-        <i
-          :class="[{ disabled: !admin }, { locked: isLocked('control') }, 'fas', 'fa-mouse']"
-          @click="toggleLock('control')"
-          v-tooltip="{
-            content: lockedTooltip('control'),
-            placement: 'bottom',
-            offset: 5,
-            boundariesElement: 'body',
-            delay: { show: 300, hide: 100 },
-          }"
-        />
-      </li>
-      <li>
-        <i
-          :class="[{ disabled: !admin }, { locked: isLocked('login') }, locked ? 'fa-lock' : 'fa-lock-open', 'fas']"
-          @click="toggleLock('login')"
-          v-tooltip="{
-            content: lockedTooltip('login'),
-            placement: 'bottom',
-            offset: 5,
-            boundariesElement: 'body',
-            delay: { show: 300, hide: 100 },
-          }"
-        />
-      </li>
-      <li v-if="fileTransfer">
-        <i
-          :class="[{ disabled: !admin }, { locked: isLocked('file_transfer') }, 'fas', 'fa-file']"
-          @click="toggleLock('file_transfer')"
-          v-tooltip="{
-            content: lockedTooltip('file_transfer'),
-            placement: 'bottom',
-            offset: 5,
-            boundariesElement: 'body',
-            delay: { show: 300, hide: 100 },
-          }"
-        />
-      </li>
-      <li>
-        <span v-if="showBadge" class="badge">&bull;</span>
-        <i class="fas fa-bars toggle" @click="toggleMenu" />
-      </li>
-    </ul>
+    </button>
+    <div class="status" role="status">
+      <span v-for="resource in activeLocks" :key="resource" class="chip warn" :title="$t(`locks.chip_${resource}`)">
+        <i class="fas fa-lock" aria-hidden="true" />
+        <span class="chip-text">{{ $t(`locks.chip_${resource}`) }}</span>
+      </span>
+      <span v-if="admin" class="chip admin" :title="$t('admin_loggedin')">
+        <i class="fas fa-shield-alt" aria-hidden="true" />
+        <span class="chip-text">{{ $t('header.admin') }}</span>
+      </span>
+      <span class="chip ok" :title="$t('header.in_room', { count: connectedCount })">
+        <span class="dot" aria-hidden="true" />
+        <span class="chip-text">{{ $t('header.in_room', { count: connectedCount }) }}</span>
+        <span class="chip-count" aria-hidden="true">{{ connectedCount }}</span>
+      </span>
+    </div>
+    <button
+      type="button"
+      :class="['icon-btn', 'panel-toggle', { active: side }]"
+      :aria-expanded="side ? 'true' : 'false'"
+      :aria-label="side ? $t('header.close_panel') : $t('header.open_panel')"
+      @click="toggleMenu"
+    >
+      <i class="fas fa-comment-alt" aria-hidden="true" />
+      <span class="label">{{ $t('header.chat') }}</span>
+      <span v-if="showBadge" class="badge" :title="$t('header.new_messages')" />
+    </button>
   </div>
 </template>
 
@@ -58,98 +39,152 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+    gap: 10px;
+    padding: 0 12px 0 16px;
+    min-width: 0;
 
     .neko {
-      flex: 1;
-      display: flex;
-      justify-content: flex-start;
-      align-items: center;
-      width: 150px;
-      margin-left: 20px;
-      color: $text-normal;
-      text-decoration: none;
+      flex: none;
+      gap: 9px;
+      color: var(--text-pure);
+      border-radius: 8px;
+      padding: 2px 4px;
 
       img {
         display: block;
-        float: left;
-        height: 30px;
-        margin-right: 10px;
+        height: 28px;
       }
 
       span {
-        font-size: 30px;
-        line-height: 30px;
+        font-size: 24px;
+        line-height: 28px;
+        font-weight: 500;
 
         b {
           font-weight: 900;
+          color: var(--color-cyber-mint);
         }
       }
     }
 
-    .menu {
-      justify-self: flex-end;
-      margin-right: 10px;
+    .status {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .chip {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-subtle);
       white-space: nowrap;
 
-      li {
-        display: inline-block;
-        margin-right: 10px;
+      i {
+        font-size: 11px;
+      }
 
-        i {
-          display: block;
-          width: 30px;
-          height: 30px;
-          text-align: center;
-          line-height: 32px;
-          border-radius: 3px;
-          cursor: pointer;
+      &.warn {
+        border-color: rgba(245, 194, 107, 0.4);
+        color: #f5c26b;
+        background: rgba(245, 194, 107, 0.07);
+      }
+
+      &.admin i {
+        color: #ffb86c;
+      }
+
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--color-cyber-mint);
+        box-shadow: 0 0 8px var(--color-cyber-mint);
+      }
+
+      .chip-count {
+        display: none;
+      }
+    }
+
+    .panel-toggle {
+      position: relative;
+      flex: none;
+      gap: 8px;
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-subtle);
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: var(--transition-fluid);
+
+      &:hover {
+        color: var(--text-pure);
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      &.active {
+        color: var(--color-cyber-mint);
+        border-color: rgba(38, 230, 180, 0.35);
+        background: rgba(38, 230, 180, 0.1);
+      }
+
+      .badge {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ff5a66;
+        box-shadow: 0 0 0 2px var(--bg-obsidian-deep);
+      }
+    }
+  }
+
+  // Narrow screens: keep every status visible, but icon-only.
+  @media (max-width: 600px) {
+    .header {
+      gap: 6px;
+      padding: 0 8px 0 10px;
+
+      .neko span {
+        font-size: 20px;
+      }
+
+      .chip {
+        padding: 0 8px;
+
+        .chip-text {
+          display: none;
         }
 
-        .disabled {
-          cursor: default;
-          opacity: 0.8;
+        .chip-count {
+          display: inline;
         }
+      }
 
-        .locked {
-          color: rgba($color: $style-error, $alpha: 0.5);
-        }
+      .panel-toggle {
+        width: 40px;
+        padding: 0;
 
-        .toggle {
-          background: $background-primary;
-        }
-
-        .badge {
-          position: absolute;
-          background: red;
-          font-weight: bold;
-          font-size: 1.25em;
-          border-radius: 50%;
-          width: 20px;
-          height: 20px;
-          text-align: center;
-          line-height: 20px;
-          pointer-events: none;
-
-          transform: translate(-50%, -25%) scale(1);
-          box-shadow: 0 0 0 0 rgba(0, 0, 0, 1);
-          animation: badger-pulse 2s infinite;
-        }
-
-        @keyframes badger-pulse {
-          0% {
-            transform: translate(-50%, -25%) scale(0.85);
-            box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7);
-          }
-
-          70% {
-            transform: translate(-50%, -25%) scale(1);
-            box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
-          }
-
-          100% {
-            transform: translate(-50%, -25%) scale(0.85);
-            box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
-          }
+        .label {
+          display: none;
         }
       }
     }
@@ -160,14 +195,10 @@
   import { Component, Vue } from 'vue-property-decorator'
   import { AdminLockResource } from '~/neko/messages'
 
-  @Component({ name: 'neko-settings' })
+  @Component({ name: 'neko-header' })
   export default class NekoHeader extends Vue {
     get admin() {
       return this.$accessor.user.admin
-    }
-
-    get locked() {
-      return this.$accessor.locked
     }
 
     get side() {
@@ -186,26 +217,24 @@
       return this.$accessor.remote.fileTransfer
     }
 
-    toggleLock(resource: AdminLockResource) {
-      this.$accessor.toggleLock(resource)
+    get activeLocks(): AdminLockResource[] {
+      const resources: AdminLockResource[] = ['control', 'login']
+      if (this.fileTransfer) resources.push('file_transfer')
+      return resources.filter((resource) => this.$accessor.isLocked(resource))
     }
 
-    isLocked(resource: AdminLockResource): boolean {
-      return this.$accessor.isLocked(resource)
+    get connectedCount() {
+      return Object.values(this.$accessor.user.members).filter((member) => member.connected).length
+    }
+
+    about() {
+      this.$accessor.client.toggleAbout()
     }
 
     readTexts: number = 0
     toggleMenu() {
       this.$accessor.client.toggleSide()
       this.readTexts = this.texts
-    }
-
-    lockedTooltip(resource: AdminLockResource) {
-      if (this.admin) {
-        return this.$t(`locks.${resource}.` + (this.isLocked(resource) ? `unlock` : `lock`))
-      }
-
-      return this.$t(`locks.${resource}.` + (this.isLocked(resource) ? `locked` : `unlocked`))
     }
   }
 </script>

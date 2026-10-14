@@ -1,25 +1,28 @@
 <template>
   <div class="members">
     <div class="members-container">
-      <ul class="members-list">
+      <ul class="members-list" :aria-label="$t('side.members')">
         <li v-if="member">
-          <div :class="[{ host: member.id === host }, 'self', 'member']">
-            <neko-avatar class="avatar" :seed="member.displayname" :avatar="member.avatar" :size="50" />
+          <div :class="[{ host: member.id === host }, 'self', 'member']" :title="member.displayname">
+            <neko-avatar class="avatar" :seed="member.displayname" :avatar="member.avatar" :size="34" />
           </div>
         </li>
         <template v-for="(member, index) in members">
           <li
             v-if="member.id !== id && member.connected"
             :key="index"
-            v-tooltip="{ content: member.displayname, html: false, placement: 'bottom', offset: -15, boundariesElement: 'body' }"
+            v-tooltip="{ content: member.displayname, html: false, placement: 'top', offset: 5, boundariesElement: 'body' }"
           >
-            <div
-              :class="[{ host: member.id === host, admin: member.admin }, 'member']"
+            <button
+              type="button"
+              :class="['icon-btn', { host: member.id === host, admin: member.admin }, 'member']"
+              :aria-label="member.displayname"
+              aria-haspopup="menu"
               @contextmenu.stop.prevent="onContext($event, { member })"
               @click.stop.prevent="onContext($event, { member })"
             >
-              <neko-avatar class="avatar" :seed="member.displayname" :avatar="member.avatar" :size="50" />
-            </div>
+              <neko-avatar class="avatar" :seed="member.displayname" :avatar="member.avatar" :size="34" />
+            </button>
           </li>
         </template>
       </ul>
@@ -33,10 +36,9 @@
     flex: 1;
     overflow-x: auto;
     overflow-y: hidden;
-    padding-bottom: 8px;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
-    min-height: 60px;
+    min-height: 48px;
     display: flex;
     align-items: center;
 
@@ -61,14 +63,14 @@
     .members-container {
       display: block;
       clear: both;
-      padding: 0 16px;
-      margin: 0 auto;
+      padding: 4px 4px;
+      margin: 0;
 
       .members-list {
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: 12px;
+        gap: 6px;
         white-space: nowrap;
         list-style: none;
         padding: 0;
@@ -82,8 +84,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             padding: 2px;
             background: rgba(255, 255, 255, 0.05);
@@ -91,7 +93,7 @@
             transition: var(--transition-fluid);
 
             &:hover {
-              transform: translateY(-3px) scale(1.05);
+              transform: translateY(-2px);
               border-color: rgba(255, 255, 255, 0.3);
               box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             }
@@ -104,9 +106,9 @@
                 background: var(--bg-obsidian-slate);
                 color: var(--color-cyber-mint);
                 position: absolute;
-                width: 18px;
-                height: 18px;
-                line-height: 18px;
+                width: 16px;
+                height: 16px;
+                line-height: 15px;
                 font-size: 11px;
                 text-align: center;
                 top: -4px;
@@ -127,9 +129,9 @@
                 color: #ffb86c;
                 background: var(--bg-obsidian-slate);
                 position: absolute;
-                width: 18px;
-                height: 18px;
-                line-height: 18px;
+                width: 16px;
+                height: 16px;
+                line-height: 15px;
                 font-size: 10px;
                 text-align: center;
                 top: -4px;
@@ -154,9 +156,9 @@
                 background: var(--color-cyber-mint);
                 color: #050508;
                 position: absolute;
-                width: 18px;
-                height: 18px;
-                line-height: 18px;
+                width: 16px;
+                height: 16px;
+                line-height: 15px;
                 font-size: 9px;
                 text-align: center;
                 bottom: -4px;
@@ -178,16 +180,16 @@
           }
 
           &:nth-child(2) {
-            margin-left: 14px;
+            margin-left: 8px;
 
             &::before {
               position: absolute;
               content: ' ';
-              height: 28px;
+              height: 24px;
               width: 1px;
               background: rgba(255, 255, 255, 0.1);
-              top: 10px;
-              left: -8px;
+              top: 7px;
+              left: -7px;
             }
           }
         }

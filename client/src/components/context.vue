@@ -14,40 +14,38 @@
       </li>
       <li class="seperator" />
       <li>
-        <span @click="ignore(child.data.member)" v-if="!child.data.member.ignored">{{ $t('context.ignore') }}</span>
-        <span @click="unignore(child.data.member)" v-else>{{ $t('context.unignore') }}</span>
+        <button type="button" class="v-context-item" @click="ignore(child.data.member)" v-if="!child.data.member.ignored">{{ $t('context.ignore') }}</button>
+        <button type="button" class="v-context-item" @click="unignore(child.data.member)" v-else>{{ $t('context.unignore') }}</button>
       </li>
 
       <template v-if="admin">
         <li>
-          <span @click="mute(child.data.member)" v-if="!child.data.member.muted">{{ $t('context.mute') }}</span>
-          <span @click="unmute(child.data.member)" v-else>{{ $t('context.unmute') }}</span>
+          <button type="button" class="v-context-item" @click="mute(child.data.member)" v-if="!child.data.member.muted">{{ $t('context.mute') }}</button>
+          <button type="button" class="v-context-item" @click="unmute(child.data.member)" v-else>{{ $t('context.unmute') }}</button>
         </li>
         <li v-if="child.data.member.id === host && !implicitHosting">
-          <span @click="adminRelease(child.data.member)">{{ $t('context.release') }}</span>
+          <button type="button" class="v-context-item" @click="adminRelease(child.data.member)">{{ $t('context.release') }}</button>
         </li>
         <li v-if="child.data.member.id === host && !implicitHosting">
-          <span @click="adminControl(child.data.member)">{{ $t('context.take') }}</span>
+          <button type="button" class="v-context-item" @click="adminControl(child.data.member)">{{ $t('context.take') }}</button>
         </li>
-        <li>
-          <span v-if="child.data.member.id !== host && !implicitHosting" @click="adminGive(child.data.member)">{{
-            $t('context.give')
-          }}</span>
+        <li v-if="child.data.member.id !== host && !implicitHosting">
+          <button type="button" class="v-context-item" @click="adminGive(child.data.member)">{{ $t('context.give') }}</button>
         </li>
       </template>
       <template v-else>
         <li v-if="hosting && !implicitHosting">
-          <span @click="give(child.data.member)">{{ $t('context.give') }}</span>
+          <button type="button" class="v-context-item" @click="give(child.data.member)">{{ $t('context.give') }}</button>
         </li>
       </template>
 
       <template v-if="admin && !child.data.member.admin">
         <li class="seperator" />
         <li>
-          <span @click="kick(child.data.member)" style="color: #f04747">{{ $t('context.kick') }}</span>
+          <button type="button" class="v-context-item" @click="kick(child.data.member)" style="color: #f04747">{{ $t('context.kick') }}</button>
         </li>
         <li>
-          <span @click="ban(child.data.member)" style="color: #f04747">{{ $t('context.ban') }}</span>
+          <button type="button" class="v-context-item" @click="ban(child.data.member)" style="color: #f04747">{{ $t('context.ban') }}</button>
         </li>
       </template>
     </template>
@@ -113,7 +111,13 @@
         margin: 6px 4px;
       }
 
-      > span {
+      > button {
+        appearance: none;
+        border: none;
+        font-family: inherit;
+        color: inherit;
+        text-align: left;
+        width: 100%;
         cursor: pointer;
         display: block;
         padding: 6px 12px;
@@ -133,7 +137,7 @@
           text-shadow: 0 0 6px var(--color-cyber-mint-glow);
         }
 
-        &:focus {
+        &:focus:not(:focus-visible) {
           outline: 0;
         }
       }
@@ -179,7 +183,15 @@
       return this.$accessor.remote.implicitHosting
     }
 
-    open(event: MouseEvent, data: any) {
+    open(event: MouseEvent | KeyboardEvent, data: any) {
+      // Keyboard activation has no pointer position: anchor the menu below the
+      // element that opened it instead of the top-left corner.
+      const pointer = event as MouseEvent
+      if (!pointer.clientX && !pointer.clientY && event.currentTarget instanceof HTMLElement) {
+        const rect = event.currentTarget.getBoundingClientRect()
+        this.context.open({ clientX: rect.left, clientY: rect.bottom + 4 }, data)
+        return
+      }
       this.context.open(event, data)
     }
 

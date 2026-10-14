@@ -11,7 +11,11 @@
           class="member-item"
           :class="{ host: myMember.id === host, admin: myMember.admin }"
           @contextmenu.stop.prevent="onContext($event, { member: myMember })"
+          tabindex="0"
+          role="button"
+          aria-haspopup="menu"
           @click.stop.prevent="onContext($event, { member: myMember })"
+          @keydown.enter.space.stop.prevent="onContext($event, { member: myMember })"
         >
           <div class="avatar-container">
             <neko-avatar class="avatar" :seed="myMember.displayname" :size="38" />
@@ -41,7 +45,11 @@
             class="member-item"
             :class="{ host: memberItem.id === host, admin: memberItem.admin }"
             @contextmenu.stop.prevent="onContext($event, { member: memberItem })"
+            tabindex="0"
+            role="button"
+            aria-haspopup="menu"
             @click.stop.prevent="onContext($event, { member: memberItem })"
+            @keydown.enter.space.stop.prevent="onContext($event, { member: memberItem })"
           >
             <div class="avatar-container">
               <neko-avatar class="avatar" :seed="memberItem.displayname" :size="38" />
@@ -123,6 +131,11 @@
       list-style: none;
       padding: 0;
       margin: 0;
+    }
+
+    .member-item:focus-visible {
+      outline: 2px solid var(--color-cyber-mint);
+      outline-offset: -2px;
     }
 
     .member-item {
@@ -272,7 +285,7 @@
       return count
     }
 
-    onContext(event: MouseEvent, data: { member: Member }) {
+    onContext(event: MouseEvent | KeyboardEvent, data: { member: Member }) {
       const parent = this.$parent as any
       if (parent && typeof parent.openContext === 'function') {
         parent.openContext(event, data)

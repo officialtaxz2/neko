@@ -1,25 +1,20 @@
 <template>
   <aside class="neko-menu">
     <div class="tabs-container">
-      <ul>
-        <div class="pill-slider" :style="pillStyle" />
-        <li :class="{ active: tab === 'chat' }" @click.stop.prevent="change('chat')">
-          <i class="fas fa-comment-alt" />
-          <span>{{ $t('side.chat') }}</span>
-        </li>
-        <li :class="{ active: tab === 'members' }" @click.stop.prevent="change('members')">
-          <i class="fas fa-users" />
-          <span>{{ $t('side.members') }}</span>
-        </li>
-        <li v-if="filetransferAllowed" :class="{ active: tab === 'files' }" @click.stop.prevent="change('files')">
-          <i class="fas fa-file" />
-          <span>{{ $t('side.files') }}</span>
-        </li>
-        <li :class="{ active: tab === 'settings' }" @click.stop.prevent="change('settings')">
-          <i class="fas fa-sliders-h" />
-          <span>{{ $t('side.settings') }}</span>
-        </li>
-      </ul>
+      <div class="tabs" role="tablist" :aria-label="$t('side.tabs')">
+        <button
+          v-for="t in tabs"
+          :key="t.id"
+          type="button"
+          role="tab"
+          :class="['icon-btn', 'tab', { active: tab === t.id }]"
+          :aria-selected="tab === t.id ? 'true' : 'false'"
+          @click.stop.prevent="change(t.id)"
+        >
+          <i :class="['fas', t.icon]" aria-hidden="true" />
+          <span>{{ $t(`side.${t.id}`) }}</span>
+        </button>
+      </div>
     </div>
     <div class="page-container">
       <neko-chat v-if="tab === 'chat'" />
@@ -45,68 +40,45 @@
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.25);
 
     .tabs-container {
-      background: transparent;
-      border-bottom: 1px solid oklch(from var(--text-subtle) l c h / 0.04);
-      height: 56px;
-      max-height: 100%;
-      max-width: 100%;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
+      border-bottom: 1px solid oklch(from var(--text-subtle) l c h / 0.06);
+      padding: 10px;
       flex-shrink: 0;
 
-      ul {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid oklch(from var(--text-subtle) l c h / 0.04);
-        border-radius: 12px; // outer radius
-        padding: 3px; // spacing padding
-        position: relative;
+      .tabs {
         display: flex;
-        flex-direction: row;
-        margin: 0;
-        width: 100%;
-        list-style: none;
+        gap: 4px;
 
-        .pill-slider {
-          position: absolute;
-          top: 3px;
-          bottom: 3px;
-          border-radius: 9px; // inner-radius = outer (12px) - gap (3px) = 9px! PERFECT Nested Radius!
-          background: linear-gradient(135deg, var(--color-cyber-mint) 0%, var(--color-cyber-mint-active) 100%);
-          box-shadow: 0 4px 12px var(--color-cyber-mint-glow);
-          transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), width 0.35s cubic-bezier(0.16, 1, 0.3, 1), left 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-          z-index: 1;
-        }
-
-        li {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 8px 0;
-          font-size: 13px;
+        .tab {
+          flex: 1 1 0;
+          min-width: 0;
+          flex-direction: column;
+          gap: 4px;
+          padding: 8px 2px 6px;
+          border-radius: 10px;
+          font-size: 11.5px;
           font-weight: 600;
-          color: var(--text-subtle);
-          cursor: pointer;
+          color: var(--text-muted-ok);
           transition: var(--transition-fluid);
-          user-select: none;
-          z-index: 2; // above pill-slider!
-          border: none;
-          background: transparent;
 
           i {
-            font-size: 11px;
-            color: inherit;
+            font-size: 15px;
+          }
+
+          span {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
 
           &:hover {
             color: var(--text-pure);
+            background: rgba(255, 255, 255, 0.04);
           }
 
           &.active {
-            color: #050508;
-            font-weight: 700;
+            color: var(--color-cyber-mint);
+            background: rgba(38, 230, 180, 0.12);
           }
         }
       }
@@ -144,54 +116,31 @@
   export default class NekoSide extends Vue {
     @Ref('context') readonly _context!: any
 
-    openContext(event: MouseEvent, data: any) {
+    openContext(event: MouseEvent | KeyboardEvent, data: any) {
+      // Keyboard activation has no pointer position: anchor below the element.
+      let x = (event as MouseEvent).clientX
+      let y = (event as MouseEvent).clientY
+      if (!x && !y && event.currentTarget instanceof HTMLElement) {
+        const anchor = event.currentTarget.getBoundingClientRect()
+        x = anchor.left
+        y = anchor.bottom + 4
+      }
+      // The context menu is positioned inside the side panel.
       const menuEl = this.$el as HTMLElement
-      if (menuEl) {
-        const rect = menuEl.getBoundingClientRect()
-        const customEvent = new Proxy(event, {
-          get(target, prop) {
-            if (prop === 'clientX') {
-              return event.clientX - rect.left
-            }
-            if (prop === 'clientY') {
-              return event.clientY - rect.top
-            }
-            const value = (target as any)[prop]
-            if (typeof value === 'function') {
-              return value.bind(target)
-            }
-            return value
-          }
-        })
-        this._context.open(customEvent as any, data)
-      } else {
-        this._context.open(event, data)
-      }
+      const rect = menuEl ? menuEl.getBoundingClientRect() : { left: 0, top: 0 }
+      this._context.open({ clientX: x - rect.left, clientY: y - rect.top, target: event.target }, data)
     }
 
-    get currentTabIndex() {
-      const order = ['chat', 'members']
+    get tabs() {
+      const tabs = [
+        { id: 'chat', icon: 'fa-comment-alt' },
+        { id: 'members', icon: 'fa-users' },
+      ]
       if (this.filetransferAllowed) {
-        order.push('files')
+        tabs.push({ id: 'files', icon: 'fa-folder' })
       }
-      order.push('settings')
-      const idx = order.indexOf(this.tab)
-      return idx >= 0 ? idx : 0
-    }
-
-    get totalTabs() {
-      return this.filetransferAllowed ? 4 : 3
-    }
-
-    get pillStyle() {
-      const idx = this.currentTabIndex
-      const total = this.totalTabs
-      const widthPercent = 100 / total
-      const leftPercent = widthPercent * idx
-      return {
-        width: `calc(${widthPercent}% - 6px)`,
-        left: `calc(${leftPercent}% + 3px)`,
-      }
+      tabs.push({ id: 'settings', icon: 'fa-sliders-h' })
+      return tabs
     }
 
     get canDownload() {
