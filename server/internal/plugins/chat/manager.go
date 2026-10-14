@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"unicode/utf8"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -67,6 +68,14 @@ func (m *Manager) settingsForSession(session types.Session) (Settings, error) {
 		resolved.CanSend = false
 	}
 	return resolved, nil
+}
+
+// checkLength rejects text longer than chat.max_length characters.
+func (m *Manager) checkLength(text string) error {
+	if n := utf8.RuneCountInString(text); m.config.MaxLength > 0 && n > m.config.MaxLength {
+		return fmt.Errorf("message has %d characters, limit is %d", n, m.config.MaxLength)
+	}
+	return nil
 }
 
 func (m *Manager) sendMessage(session types.Session, content Content) {
@@ -132,6 +141,11 @@ func (m *Manager) WebSocketHandler(session types.Session, msg types.WebSocketMes
 			// we processed the message, return true
 			return true
 		}
+		if err := m.checkLength(content.Text); err != nil {
+			m.logger.Warn().Err(err).Msg("chat message dropped")
+			// we processed the message, return true
+			return true
+		}
 
 		m.sendMessage(session, content)
 		return true
@@ -159,6 +173,10 @@ func (m *Manager) sendMessageHandler(w http.ResponseWriter, r *http.Request) err
 	content := Content{}
 	if err := utils.HttpJsonRequest(w, r, &content); err != nil {
 		return err
+	}
+
+	if err := m.checkLength(content.Text); err != nil {
+		return utils.HttpBadRequest(err.Error())
 	}
 
 	m.sendMessage(session, content)

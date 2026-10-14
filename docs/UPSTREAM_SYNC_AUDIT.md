@@ -183,3 +183,88 @@ No dependency installation, project script, test, linter, type-checker, build, D
 ## Outcome
 
 The upstream synchronization is Codex-side complete and its reviewed history is on `master`. Runtime/build status remains **NOT EXECUTED IN CODEX** by policy; the operator later confirmed that the applicable target-server build and regression matrix passed after correcting the Brave policy mount filename. The next bounded product unit is defined in [`WORKPLAN.md`](WORKPLAN.md#next).
+
+---
+
+# Follow-up synchronization (2026-10-13)
+
+## Git scope
+
+| Item | Reference |
+|---|---|
+| Pre-sync fork HEAD (`master`) | `d9105ef87e727c12b59dab3034dff958a8376c56` |
+| Upstream HEAD fetched | `c75a2f60b57e544fea8d0f2f305a435980af84cb` |
+| Merge base | `b0f01cedea68893e85a3fd852c0521238c285695` (previous sync) |
+| Pre-sync divergence | 40 fork-only / 19 upstream-only commits |
+| Integration branch | `claude/project-thread-gy8zrw` (draft PR, not merged into `master`) |
+| Post-merge relation to fetched upstream | 41 ahead / 0 behind |
+
+The upstream-only delta covered 82 files (+4,114 / −670). Since the previous sync the fork changed no `server/` file, so all server changes apply unmodified.
+
+## Accepted upstream changes
+
+- OIDC/OAuth member provider with session-bound state, email restrictions and OAuth-only mode; `api/oauth/config` consumed by the login screen.
+- Optional member avatars (`http`/`https` only) in chat, members and context menu.
+- Markdown rendering no longer compiles chat messages as Vue templates (XSS fix); emoji tooltip uses `title`. Fork Open-in-App links keep working because `chat.vue` handles them by click delegation.
+- Safari always shows the clipboard fallback button.
+- Server: sanitized session ids (`utils.SafeID`), `chat.max_length` (default 512, matching the client limit), websocket read limit, internal originless websocket dial, leaky one-frame video queues, capture subscription API, video-id derivation, RTCP PLI goroutine leak and drag-and-drop CString/GFile leak fixes.
+- Tor Browser download URI, example compose configurations, inherited docs.
+
+## Conflict resolution
+
+- `client/src/components/chat.vue`: kept the fork's pilot (active host) highlight; added the upstream avatar prop.
+- `client/src/components/connect.vue`: kept the fork's demo mode, dev-host detection and styling; added upstream OAuth config loading, OAuth button (styled with fork tokens) and `passwordLoginEnabled` gating. The demo checkbox is hidden when password login is disabled.
+
+One upstream trailing blank line in `examples/README.md` was removed so `git diff --check` stays clean.
+
+## Static verification
+
+- no conflict markers; `git diff --check` clean;
+- auto-merged fork files (`avatar.vue`, `markdown.ts`, `members.vue`, `context.vue`, `video.vue`) inspected; fork class names, touch/click handlers and Open-in-App delegation preserved.
+
+Runtime/build/test status: **NOT EXECUTED**. Target-server checks pending: `client` lint/build, `server/build`, login (password and, if configured, OAuth), chat with emoji/links/Open-in-App, demo mode on a dev host, mobile/touch and reconnect regression matrix from [`WORKPLAN.md`](WORKPLAN.md).
+
+---
+
+# Integration of `master` into `testing` (2026-10-14)
+
+The 2026-10-13 synchronization and `setup.sh` landed on `master`, while all fork work since 2026-09-09 lives on `testing`. This merge brings `master` (`a660def`, upstream `c75a2f60` plus `setup.sh`) into `testing` (`d302b4f`).
+
+## Git scope
+
+| Item | Reference |
+|---|---|
+| `testing` HEAD | `d302b4f` |
+| `master` HEAD | `a660def` |
+| Merge base | `d9105ef` |
+| Divergence | 130 `testing`-only / 24 `master`-only commits |
+| Conflicting files | 26 |
+
+## Deliberate divergence: capture subscription API (upstream #699)
+
+Upstream replaced `StreamSinkManager` (`AddListener`/`MoveListenerTo`/`RemoveListener`) with `EncodedStream.Subscribe` and moved `Audio()`/`Video()` into `EncodedMediaSource`. `testing` had independently built its own backend-neutral boundary (`types.EncodedMediaProvider`, `capture/media.go`, see [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md)) on top of the listener API, and WebRTC, WebCodecs and HLS consume that boundary. The `testing` versions of `capture/manager.go`, `streamselector.go`, `streamsink.go`, `pkg/types/capture.go` and `webrtc/{manager,peer,track}.go` were kept; upstream's API rename and its `streamsink_test.go` were not taken. The concrete upstream fixes were ported instead:
+
+- leaky one-frame raw video queues in `VideoConfig.GetPipeline` (#712), including `TestVideoConfigGetPipelineQueues`;
+- video sample duration from the PTS gap plus the `neko_capture_streamsink_frames` counter (#712). Fork adaptation: only valid PTS values count, and gaps above 10 s keep the buffer duration because the media WebSocket rejects unit durations above 10 s;
+- no-copy appsink delivery (`gst_buffer_map` instead of `gst_buffer_extract_dup`; Go copies once), combined with the fork's running-time PTS/DTS, validity flags, caps and codec-config fields;
+- bitrate locking, the RTCP PLI goroutine exit and empty video-id handling were already fixed on `testing` (`bitrateMu`, `pliDone`, the signal-request guard); the fork versions were kept.
+
+Consequence: future upstream syncs will conflict in the same files again. Migrating `capture/media.go` onto upstream's `Subscribe` API is a separate follow-up that needs server-side `go test`.
+
+## Other conflict resolution
+
+- `config/capture.go`: kept the fork's nominal-bitrate-aware id derivation and nil-safe shorthand hook; added upstream's env tests next to the fork tests.
+- `http/manager.go`, `cmd/serve.go`: `http.New` takes both the upstream member config (OAuth auto-redirect) and the fork media WebSocket/HLS routes.
+- `http/legacy`: upstream cookie/whoami session reuse combined with the fork's cancellable context, 15 s API timeout and view-only flag; member payload carries both `avatar` and `view_only`.
+- `member/multiuser`: upstream `utils.SafeID` session ids plus the fork's constant-time view-only token.
+- `websocket/handler/signal_test.go`: kept the fork test; it already covers the empty-selection guard.
+- Client: `connect.vue` combines upstream OAuth/`passwordLoginEnabled` gating with the fork's `isInvitation` (password link or view-only link); `video.vue` takes upstream's Safari clipboard check; `markdown.ts` keeps the fork comments (the XSS fix existed on both sides).
+- `setup.sh`: `testing` runs adaptive/WebCodecs/HLS as Compose overlays. `setup.sh` now reports the active files; overlays are selected with `COMPOSE_FILE` in `.env` (documented in `.env.example` and `README.md`). Without it, `setup.sh` restarts Neko on the base file only.
+
+## Static verification
+
+- no conflict markers; `git diff --check` clean;
+- auto-merged server files (`api/router.go`, `api/session.go`, `session/auth.go`, `member/manager.go`, `websocket/manager.go`, `pkg/types/member.go`) inspected against the fork's view-only and media changes;
+- `bash -n setup.sh`.
+
+Runtime/build/test status: **NOT EXECUTED**. GitHub CI only builds the server image and client; `go test` and the client tests must run on the target server: `cd server && go test ./...`, `cd client && npm ci && npm run lint && npm run build && npm test`, then a Brave image build, password/OAuth login, view-only link login, WebRTC, adaptive quality, and (with overlays) WebCodecs/HLS smoke checks.

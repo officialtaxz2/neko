@@ -1385,7 +1385,9 @@ docker build ./server
 
 It does not replace the focused tests. The complete copy/paste sequence, safe output capture, metrics helper and manual device/role phases are documented in [`IOS_RECOVERY.md`](IOS_RECOVERY.md) and [`VIEW_ONLY_SHARING.md`](VIEW_ONLY_SHARING.md).
 
-From the repository root, build the exact local base and Brave images referenced by Compose:
+The supported path is `bash setup.sh` from the repository root (see `README.md`); it performs the build, `.env` preparation, `docker compose config` and startup below and waits for the healthcheck. `setup.sh` itself was only syntax-checked (`bash -n`) and its `.env` helpers exercised on a scratch copy; its Docker steps are **NOT EXECUTED IN CODEX**. Target-server checks for it: first run on a fresh checkout without `.env`, a second run without changes (no `.env` changes, containers not needlessly recreated), and a run after `git pull`.
+
+Manual equivalent: from the repository root, build the exact local base and Brave images referenced by Compose:
 
 ```bash
 ./build my-neko/base:latest -y

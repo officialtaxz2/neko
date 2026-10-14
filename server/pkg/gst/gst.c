@@ -89,8 +89,7 @@ static GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpoin
   GstSample *sample = NULL;
   GstBuffer *buffer = NULL;
   GstCaps *caps = NULL;
-  gpointer copy = NULL;
-  gsize copy_size = 0;
+  GstMapInfo map = {0};
   gint width = 0;
   gint height = 0;
   gint frame_rate_numerator = 0;
@@ -131,8 +130,13 @@ static GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpoin
         }
       }
 
-      gst_buffer_extract_dup(buffer, 0, gst_buffer_get_size(buffer), &copy, &copy_size);
-      goHandlePipelineBuffer(ctx->pipelineId, copy, (int)copy_size,
+      if (!gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+        g_free(codec_config);
+        gst_sample_unref(sample);
+        return GST_FLOW_OK;
+      }
+
+      goHandlePipelineBuffer(ctx->pipelineId, map.data, (int)map.size,
         pts,
         GST_CLOCK_TIME_IS_VALID(pts),
         dts,
@@ -146,6 +150,7 @@ static GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpoin
         codec_config,
         (int)codec_config_size
       );
+      gst_buffer_unmap(buffer, &map);
     }
     gst_sample_unref(sample);
   }

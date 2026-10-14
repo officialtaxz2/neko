@@ -3,7 +3,6 @@ package multiuser
 import (
 	"crypto/subtle"
 	"errors"
-	"fmt"
 	"regexp"
 
 	"github.com/m1k1o/neko/server/pkg/types"
@@ -49,8 +48,8 @@ func (provider *MemberProviderCtx) Authenticate(username string, password string
 		return "", types.MemberProfile{}, err
 	}
 
-	// id is username with token
-	id := fmt.Sprintf("%s-%s", username, token)
+	// id is username with token; the id ends up in URL paths, the name stays as typed
+	id := utils.SafeID(username) + "-" + token
 
 	// The optional share token creates an ephemeral session with a fixed,
 	// server-enforced profile. Compare it in constant time because it is a

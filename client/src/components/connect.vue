@@ -8,16 +8,35 @@
       <form class="message" v-if="!connecting" @submit.stop.prevent="connect">
         <span v-if="!isInvitation">{{ $t('connect.login_title') }}</span>
         <span v-else>{{ $t('connect.invitation_title') }}</span>
-        <input type="text" :placeholder="$t('connect.displayname')" v-model="displayname" autofocus />
-        <input type="password" :placeholder="$t('connect.password')" v-model="password" v-if="!isInvitation" />
-        
-        <div class="demo-checkbox-container" v-if="!isInvitation && showDemo">
+        <input
+          v-if="passwordLoginEnabled"
+          type="text"
+          :placeholder="$t('connect.displayname')"
+          v-model="displayname"
+          autofocus
+        />
+        <input
+          v-if="passwordLoginEnabled && !isInvitation"
+          type="password"
+          :placeholder="$t('connect.password')"
+          v-model="password"
+        />
+
+        <div class="demo-checkbox-container" v-if="passwordLoginEnabled && !isInvitation && showDemo">
           <input type="checkbox" id="demo-mode" v-model="demoMode" />
           <label for="demo-mode">Demo- / Testmodus (Lokale Sim)</label>
         </div>
 
-        <button type="submit" @click.stop.prevent="login">
+        <button v-if="passwordLoginEnabled" type="submit" @click.stop.prevent="login">
           {{ $t('connect.connect') }}
+        </button>
+        <button
+          v-if="oauthEnabled && !isInvitation"
+          type="button"
+          class="oauth-login"
+          @click.stop.prevent="loginWithOAuth"
+        >
+          {{ oauthName }} Login
         </button>
       </form>
       <div class="loader" v-if="connecting">
@@ -170,6 +189,13 @@
             outline: 2px solid var(--text-pure);
             outline-offset: 2px;
           }
+
+          &.oauth-login {
+            background: transparent;
+            color: var(--color-cyber-mint);
+            border: 1px solid var(--color-cyber-mint);
+            box-shadow: none;
+          }
         }
 
         .demo-checkbox-container {
@@ -258,6 +284,10 @@
 
     private displayname: string = ''
     private password: string = ''
+    private oauthEnabled: boolean = false
+    private oauthName: string = 'OAuth'
+    private oauthLoginURL: string = ''
+    private passwordLoginEnabled: boolean = true
     private demoMode: boolean = false
     private showDemo: boolean = false
 
@@ -286,7 +316,11 @@
       this.demoMode = this.isDev && !this.$client.viewOnlyLink
     }
 
-    mounted() {
+    async mounted() {
+      if (await this.loadOAuthConfig()) {
+        return
+      }
+
       const params = new URLSearchParams(location.search)
       // auto-password fill
       let password = this.$accessor.password
@@ -339,6 +373,36 @@
 
     get connecting() {
       return this.$accessor.connecting
+    }
+
+    async loadOAuthConfig(): Promise<boolean> {
+      try {
+        const response = await this.$http.get('api/oauth/config')
+        const config = response.data
+        this.oauthEnabled = config.enabled === true
+        this.oauthName = config.name || 'OAuth'
+        this.oauthLoginURL = config.login_url || ''
+        this.passwordLoginEnabled = config.password_login_enabled !== false
+
+        if (this.oauthEnabled && !this.passwordLoginEnabled) {
+          try {
+            await this.$http.get('api/whoami')
+            this.$accessor.login({ displayname: '', password: '' })
+          } catch (_) {
+            // No authenticated session yet; leave the OAuth button visible.
+          }
+          return true
+        }
+      } catch (_) {
+        // An unauthenticated OAuth user remains on the OAuth login screen.
+      }
+      return false
+    }
+
+    loginWithOAuth() {
+      if (this.oauthLoginURL !== '') {
+        window.location.assign(this.oauthLoginURL)
+      }
     }
 
     removeUrlParam(param: string) {

@@ -1,0 +1,226 @@
+#!/usr/bin/env bash
+#
+# Install or update the local Brave deployment of this fork.
+#
+# First installation:   git clone ... && cd neko && bash setup.sh
+# Every update:         git pull && bash setup.sh
+#
+# The script is idempotent: it never overwrites existing values in .env,
+# only adds keys that are new in .env.example and generates passwords that
+# are still empty. Images are rebuilt with the Docker cache, so an unchanged
+# checkout rebuilds quickly and Compose only recreates what changed.
+#
+set -euo pipefail
+cd "$(dirname "$0")"
+
+NEKO_UID=1000 # uid/gid of the "neko" user inside the image (runtime/Dockerfile)
+HEALTH_TIMEOUT=180
+
+DO_BUILD=1
+NO_CACHE=""
+
+usage() {
+  cat <<EOF
+Usage: bash setup.sh [options]
+
+Options:
+  --no-build    Skip the image build, only prepare .env/directories and (re)start.
+  --no-cache    Build without Docker cache (also pulls the latest Brave release).
+  -h, --help    Show this help.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --no-build) DO_BUILD=0 ;;
+    --no-cache) NO_CACHE="--no-cache" ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
+  esac
+  shift
+done
+
+log()  { printf '\033[1;34m[setup]\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33m[setup] WARN:\033[0m %s\n' "$*" >&2; }
+die()  { printf '\033[1;31m[setup] ERROR:\033[0m %s\n' "$*" >&2; exit 1; }
+
+# --------------------------------------------------------------------
+# Prerequisites
+
+command -v docker >/dev/null 2>&1 || die "docker is not installed (https://docs.docker.com/engine/install/)."
+docker info >/dev/null 2>&1 || die "Cannot talk to the Docker daemon. Start it, run with sudo, or add your user to the 'docker' group."
+docker compose version >/dev/null 2>&1 || die "Docker Compose v2 ('docker compose') is required (package docker-compose-plugin)."
+
+[[ -f docker-compose.yaml ]] || die "docker-compose.yaml not found; run this script from the repository checkout."
+[[ -f .env.example ]] || die ".env.example not found."
+
+if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
+  log "Checkout: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
+  if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+    warn "The checkout has uncommitted changes to tracked files; they are built as they are."
+  fi
+fi
+
+# --------------------------------------------------------------------
+# .env
+
+# Value of KEY in FILE (last assignment wins, surrounding quotes stripped).
+env_get() {
+  local key="$1" file="$2" line
+  line="$(grep -E "^${key}=" "$file" | tail -n 1 || true)"
+  line="${line#*=}"
+  line="${line%\"}"; line="${line#\"}"
+  line="${line%\'}"; line="${line#\'}"
+  printf '%s' "$line"
+}
+
+env_has() { grep -qE "^$1=" "$2"; }
+
+# Replace the (last) assignment of KEY in .env, keeping file permissions.
+env_set() {
+  local key="$1" value="$2" tmp
+  tmp="$(mktemp)"
+  awk -v k="$key" -v v="$value" '
+    { lines[NR] = $0; if (index($0, k "=") == 1) last = NR }
+    END { for (i = 1; i <= NR; i++) print (i == last ? k "=" v : lines[i]) }
+  ' .env > "$tmp"
+  cat "$tmp" > .env
+  rm -f "$tmp"
+}
+
+gen_password() {
+  local pw=""
+  while [[ ${#pw} -lt 24 ]]; do
+    pw+="$(head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9')"
+  done
+  printf '%s' "${pw:0:24}"
+}
+
+if [[ ! -f .env ]]; then
+  log "Creating .env from .env.example"
+  (umask 077; cp .env.example .env)
+else
+  # Add keys that were introduced in .env.example after the first install.
+  added=()
+  while IFS= read -r line; do
+    key="${line%%=*}"
+    if ! env_has "$key" .env; then
+      [[ -n "$(tail -c 1 .env)" ]] && echo >> .env
+      echo "$line" >> .env
+      added+=("$key")
+    fi
+  done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .env.example)
+  if [[ ${#added[@]} -gt 0 ]]; then
+    log "Added new settings to .env: ${added[*]}"
+  fi
+fi
+chmod 600 .env
+
+generated=()
+for key in NEKO_MEMBER_MULTIUSER_USER_PASSWORD NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD; do
+  if [[ -z "$(env_get "$key" .env)" ]]; then
+    env_set "$key" "$(gen_password)"
+    generated+=("$key")
+  fi
+done
+
+if [[ "$(env_get NEKO_MEMBER_MULTIUSER_USER_PASSWORD .env)" == "$(env_get NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD .env)" ]]; then
+  warn "User and admin password in .env are identical; everyone who logs in becomes admin."
+fi
+
+NEKO_IMAGE="$(env_get NEKO_IMAGE .env)";               NEKO_IMAGE="${NEKO_IMAGE:-my-neko/brave:latest}"
+PROFILE_DIR="$(env_get NEKO_PROFILE_DIR .env)";        PROFILE_DIR="${PROFILE_DIR:-./files}"
+DOWNLOADS_DIR="$(env_get NEKO_DOWNLOADS_DIR .env)";    DOWNLOADS_DIR="${DOWNLOADS_DIR:-./downloads}"
+POLICY_FILE="$(env_get NEKO_POLICY_FILE .env)";        POLICY_FILE="${POLICY_FILE:-./apps/brave/policies.json}"
+HTTP_BIND="$(env_get NEKO_HTTP_BIND .env)";            HTTP_BIND="${HTTP_BIND:-127.0.0.1}"
+HTTP_PORT="$(env_get NEKO_HTTP_PORT .env)";            HTTP_PORT="${HTTP_PORT:-8082}"
+WEBRTC_EPR="$(env_get NEKO_WEBRTC_EPR .env)";          WEBRTC_EPR="${WEBRTC_EPR:-51000-51100}"
+
+# --------------------------------------------------------------------
+# Host directories and files
+
+# Without this check Docker would silently create a directory at that path.
+[[ -f "$POLICY_FILE" ]] || die "Policy file '$POLICY_FILE' (NEKO_POLICY_FILE) does not exist."
+
+for dir in "$PROFILE_DIR" "$DOWNLOADS_DIR"; do
+  [[ -d "$dir" ]] || { log "Creating $dir"; mkdir -p "$dir"; }
+  owner="$(stat -c '%u:%g' "$dir")"
+  if [[ "$owner" != "$NEKO_UID:$NEKO_UID" ]]; then
+    # Done through a container so it works without sudo for docker-group users.
+    log "Setting owner of $dir to $NEKO_UID:$NEKO_UID (was $owner)"
+    docker run --rm -v "$(cd "$dir" && pwd):/target" alpine:latest \
+      chown -R "$NEKO_UID:$NEKO_UID" /target
+  fi
+done
+
+# --------------------------------------------------------------------
+# Images
+
+if [[ "$DO_BUILD" == 1 ]]; then
+  [[ "$NEKO_IMAGE" == */*:* ]] || die "NEKO_IMAGE '$NEKO_IMAGE' must look like <repository>/brave:<tag> to be built here."
+  repository="${NEKO_IMAGE%/*}"
+  tag="${NEKO_IMAGE##*:}"
+  build_args=(-y)
+  [[ -n "$NO_CACHE" ]] && build_args+=("$NO_CACHE")
+
+  log "Building base image $repository/base:$tag"
+  bash ./build "$repository/base:$tag" "${build_args[@]}"
+  log "Building browser image $NEKO_IMAGE"
+  bash ./build "$NEKO_IMAGE" "${build_args[@]}"
+else
+  docker image inspect "$NEKO_IMAGE" >/dev/null 2>&1 \
+    || die "Image $NEKO_IMAGE does not exist yet; run without --no-build."
+fi
+
+# --------------------------------------------------------------------
+# Start
+
+# Compose reads COMPOSE_FILE from .env itself; it selects the opt-in overlays
+# (adaptive quality, WebCodecs, HLS). Without it only docker-compose.yaml runs,
+# and `up` would recreate a container started with overlays without them.
+COMPOSE_FILES="$(env_get COMPOSE_FILE .env)"
+if [[ -n "$COMPOSE_FILES" ]]; then
+  log "Compose files (COMPOSE_FILE in .env): $COMPOSE_FILES"
+else
+  log "Compose files: docker-compose.yaml (no opt-in overlays; set COMPOSE_FILE in .env to add them)"
+fi
+
+log "Validating Compose configuration"
+docker compose config --quiet
+
+log "Starting containers"
+docker compose up -d --remove-orphans
+
+cid="$(docker compose ps -q neko)"
+[[ -n "$cid" ]] || die "The neko container was not created."
+
+log "Waiting for neko to become healthy (up to ${HEALTH_TIMEOUT}s)"
+status=""
+for ((i = 0; i < HEALTH_TIMEOUT; i += 5)); do
+  status="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$cid")"
+  [[ "$status" == healthy || "$status" == unhealthy || "$status" == exited ]] && break
+  sleep 5
+done
+
+if [[ "$status" != healthy ]]; then
+  docker compose logs --tail 80 neko >&2 || true
+  die "neko is '$status' after ${HEALTH_TIMEOUT}s; see the log above."
+fi
+
+# --------------------------------------------------------------------
+# Summary
+
+echo
+log "neko is running: http://$HTTP_BIND:$HTTP_PORT"
+if [[ "$HTTP_BIND" == 127.0.0.1 || "$HTTP_BIND" == localhost ]]; then
+  log "HTTP is bound to localhost only; reach it through your reverse proxy or 'ssh -L $HTTP_PORT:127.0.0.1:$HTTP_PORT'."
+fi
+log "WebRTC needs UDP $WEBRTC_EPR open in the firewall. If video stays black for remote"
+log "clients, set NEKO_WEBRTC_NAT1TO1 in .env and enable it in docker-compose.yaml."
+if [[ ${#generated[@]} -gt 0 ]]; then
+  echo
+  log "Generated passwords (stored in .env):"
+  for key in "${generated[@]}"; do
+    printf '    %s=%s\n' "$key" "$(env_get "$key" .env)"
+  done
+fi

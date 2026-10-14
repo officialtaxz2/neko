@@ -90,5 +90,5 @@ void dragUrisFree(char **uris, int size) {
     g_free(uris[i]);
   }
 
-  free(uris);
+  g_free(uris);
 }

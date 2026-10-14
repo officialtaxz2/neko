@@ -58,6 +58,8 @@ function htmlTag(
   let attributeString = ''
   for (const attr in attributes) {
     if (Object.prototype.hasOwnProperty.call(attributes, attr) && attributes[attr]) {
+      // attribute values must be escaped: they are attacker-controlled and are
+      // rendered as raw HTML (see render() below), never as a compiled template
       attributeString += ` ${attr}="${md.sanitizeText(attributes[attr])}"`
     }
   }
@@ -226,6 +228,8 @@ const rules: MarkdownRules = {
       }
     },
     html(node, output, state) {
+      // rendered as inert HTML (see render() below), so use a plain title
+      // attribute for the tooltip instead of a Vue directive expression
       return htmlTag(
         'span',
         '',

@@ -55,6 +55,7 @@ type StreamSinkManagerCtx struct {
 	currentListeners prometheus.Gauge
 	currentBitrate   prometheus.Gauge
 	totalBytes       prometheus.Counter
+	frames           prometheus.Counter
 	pipelinesCounter prometheus.Counter
 	pipelinesActive  prometheus.Gauge
 }
@@ -108,6 +109,17 @@ func streamSinkNew(codec codec.RTPCodec, pipelineFn func() (string, error), id s
 			Namespace: "neko",
 			Subsystem: "capture",
 			Help:      "Total number of bytes created by the pipeline.",
+			ConstLabels: map[string]string{
+				"video_id":   id,
+				"codec_name": codec.Name,
+				"codec_type": codec.Type.String(),
+			},
+		}),
+		frames: promauto.NewCounter(prometheus.CounterOpts{
+			Name:      "streamsink_frames",
+			Namespace: "neko",
+			Subsystem: "capture",
+			Help:      "Total number of video frames created by the pipeline; a rate below the configured fps means the encoder falls behind.",
 			ConstLabels: map[string]string{
 				"video_id":   id,
 				"codec_name": codec.Name,
@@ -364,14 +376,24 @@ func (manager *StreamSinkManagerCtx) CreatePipeline() error {
 	manager.logger.Info().Msg("capture pipeline play completed")
 
 	pipeline := manager.pipeline
+	video := manager.codec.IsVideo()
 	manager.wg.Go(func() {
 		manager.logger.Debug().Msg("started emitting samples")
 
+		lastPTS := time.Duration(-1)
 		for {
 			sample, ok := <-pipeline.Sample()
 			if !ok {
 				manager.logger.Debug().Msg("stopped emitting samples")
 				return
+			}
+
+			if video {
+				sample.Duration = sampleDuration(lastPTS, sample)
+				if sample.PTSValid {
+					lastPTS = sample.PTS
+				}
+				manager.frames.Inc()
 			}
 
 			manager.onSample(sample)
@@ -407,6 +429,25 @@ func (manager *StreamSinkManagerCtx) saveSampleBitrate(timestamp time.Time, samp
 	// Samples are measured in bytes, while both the Pion bandwidth estimator
 	// and StreamSinkManager.Bitrate use bits per second.
 	manager.brBuckets[curr] += sampleBytes * 8
+}
+
+// maxSampleGap bounds the PTS gap used as a sample duration. Longer gaps mean a
+// stalled source rather than late frames; the media WebSocket rejects unit
+// durations above 10 seconds, so keep the buffer's own duration then.
+const maxSampleGap = 10 * time.Second
+
+// sampleDuration returns how far a consumer's clock (the RTP timestamp) must advance for this
+// video sample: the time since the previous one. A buffer's own duration is not that: ximagesrc
+// gives a frame it captures late only the time left until the next frame slot, and frames
+// dropped before the encoder leave gaps. Advancing by it makes the stream's clock run slow
+// under load, and browsers grow their jitter buffer to compensate (up to seconds).
+// The gap is known only when the next sample arrives, so it is applied one frame late; the
+// clock itself stays right.
+func sampleDuration(lastPTS time.Duration, sample types.Sample) time.Duration {
+	if !sample.PTSValid || lastPTS < 0 || sample.PTS <= lastPTS || sample.PTS-lastPTS > maxSampleGap {
+		return sample.Duration
+	}
+	return sample.PTS - lastPTS
 }
 
 func (manager *StreamSinkManagerCtx) onSample(sample types.Sample) {

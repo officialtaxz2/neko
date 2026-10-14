@@ -303,7 +303,7 @@ func goHandlePipelineBuffer(
 	codecConfig C.gpointer,
 	codecConfigLen C.int,
 ) {
-	defer C.g_free(buf)
+	// buf is mapped by the C caller and only valid during this call.
 	if codecConfig != nil {
 		defer C.g_free(codecConfig)
 	}
