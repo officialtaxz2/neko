@@ -27,7 +27,6 @@
           <label class="select">
             <select v-model="media_backend">
               <option value="webrtc">{{ $t('setting.media_backend_webrtc') }}</option>
-              <option value="webcodecs-ws">{{ $t('setting.media_backend_webcodecs') }}</option>
               <option v-for="mode in hls_modes" :key="mode" :value="mode">{{ mode === 'll-hls' ? 'LL-HLS' : 'HLS' }}</option>
               <option v-if="hls_preference_unavailable" :value="media_backend" disabled>{{ media_backend === 'll-hls' ? 'LL-HLS' : 'HLS' }} — {{ $t('media.unavailable') }}</option>
             </select>
@@ -52,9 +51,6 @@
             {{ $t('setting.media_backend_clear_override') }}
           </button>
         </div>
-        <small v-if="webcodecs_selected" class="media-backend-note">
-          {{ $t('media.webcodecs_limitations') }}
-        </small>
         <small v-if="$accessor.hls.selected" class="media-backend-note">{{ $t('media.hls_limitations') }}</small>
       </li>
       <li>
@@ -589,10 +585,6 @@
       this.$client.changeMediaBackend(value)
     }
 
-    get webcodecs_selected() {
-      return this.$accessor.media.selected
-    }
-
     get hls_modes() {
       return this.$accessor.hls.availableModes
     }
@@ -615,9 +607,7 @@
         const status = this.$accessor.hls.status
         return status === 'streaming' || status === 'paused' ? 'fa-circle' : status === 'terminal' ? 'fa-exclamation-circle' : 'fa-circle-notch fa-spin'
       }
-      if (!this.webcodecs_selected || this.$accessor.media.status === 'streaming') return 'fa-circle'
-      if (this.$accessor.media.status === 'terminal') return 'fa-exclamation-circle'
-      return 'fa-circle-notch fa-spin'
+      return 'fa-circle'
     }
 
     get media_backend_status() {
@@ -625,14 +615,7 @@
         const hls = this.$accessor.hls
         return `${hls.selected === 'll-hls' ? 'LL-HLS' : 'HLS'} — ${this.$t(`media.status.${hls.status}`)}${hls.detail ? `: ${hls.detail}` : ''}`
       }
-      if (!this.webcodecs_selected) {
-        return `${this.$t('setting.media_backend_current')}: ${this.$t('setting.media_backend_webrtc')}`
-      }
-
-      const status = this.$t(`media.status.${this.$accessor.media.status}`)
-      return `${this.$t('setting.media_backend_current')}: ${this.$t(
-        'setting.media_backend_webcodecs',
-      )} — ${status}${this.$accessor.media.detail ? `: ${this.$accessor.media.detail}` : ''}`
+      return `${this.$t('setting.media_backend_current')}: ${this.$t('setting.media_backend_webrtc')}`
     }
 
     get ignore_emotes() {

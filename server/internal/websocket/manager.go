@@ -44,10 +44,6 @@ var nologEvents = []string{
 	event.CLIENT_HEARTBEAT,
 	// Media negotiation can carry a one-time attach ticket and exact source
 	// choices. Never payload-log these credential-adjacent events.
-	event.MEDIA_CAPABILITIES_REQUEST,
-	event.MEDIA_CAPABILITIES,
-	event.MEDIA_CREATE,
-	event.MEDIA_OFFER,
 	event.MEDIA_HLS_CAPABILITIES_REQUEST,
 	event.MEDIA_HLS_CAPABILITIES,
 	event.MEDIA_HLS_CREATE,

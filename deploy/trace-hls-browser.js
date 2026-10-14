@@ -23,10 +23,10 @@
     list.push(row)
   }
   const ui = () => {
-    const node = document.querySelector('.video .webcodecs-status')
+    const node = document.querySelector('.video .media-status')
     const label = node?.querySelector('strong, span')?.textContent?.trim()
     if (!['HLS', 'LL-HLS'].includes(label)) return { selected: false }
-    const terminal = !!node.querySelector('.webcodecs-actions')
+    const terminal = !!node.querySelector('.media-actions')
     const text = terminal ? node.querySelector('small')?.textContent : ''
     const detail = text === 'HLS HTTP connection failed; retry manually' ? 'http_connection' :
       text === 'HLS playback stalled; retry manually' ? 'playback_stalled' :

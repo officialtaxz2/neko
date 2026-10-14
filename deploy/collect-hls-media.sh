@@ -16,7 +16,7 @@ OUTPUT_DIR must be outside the repository. Set NEKO_METRICS_URL for a changed
 loopback port/prefix (default http://127.0.0.1:8082/metrics).
 Only fixed metric families and selected container fields are archived.
 No .env, full docker inspect, response headers, cookies or raw logs are copied.
-The same collector covers WebRTC, WebCodecs and HLS without enabling overlays.
+The same collector covers WebRTC and HLS without enabling overlays.
 sample takes 1..60 snapshots, ten seconds apart (up to roughly ten minutes).
 COUNT is a count, not a duration; slow collection extends elapsed wall time.
 EOF

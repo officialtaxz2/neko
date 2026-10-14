@@ -1,6 +1,6 @@
 <template>
   <ul>
-    <li v-if="!viewOnly && !webCodecsReceiveOnly && !implicitHosting && (!controlLocked || hosting)">
+    <li v-if="!viewOnly && !receiveOnly && !implicitHosting && (!controlLocked || hosting)">
       <i
         :class="[
           !disabeld && shakeKbd ? 'shake' : '',
@@ -20,7 +20,7 @@
         @click.stop.prevent="toggleControl"
       />
     </li>
-    <li class="no-pointer" v-if="!viewOnly && !webCodecsReceiveOnly && implicitHosting">
+    <li class="no-pointer" v-if="!viewOnly && !receiveOnly && implicitHosting">
       <i
         :class="[controlLocked ? 'disabled' : '', 'fas', 'fa-mouse-pointer']"
         v-tooltip="{
@@ -32,7 +32,7 @@
         }"
       />
     </li>
-    <li v-if="!viewOnly && !webCodecsReceiveOnly && (implicitHosting || (!implicitHosting && (!controlLocked || hosting)))">
+    <li v-if="!viewOnly && !receiveOnly && (implicitHosting || (!implicitHosting && (!controlLocked || hosting)))">
       <label
         class="switch"
         v-tooltip="{
@@ -47,7 +47,7 @@
         <span />
       </label>
     </li>
-    <li v-if="!$accessor.media.selected || !playing">
+    <li>
       <i
         :class="[{ disabled: !playable }, playing ? 'fa-pause-circle' : 'fa-play-circle', 'fas', 'play']"
         @click.stop.prevent="toggleMedia"
@@ -391,26 +391,26 @@
     }
 
     get disabeld() {
-      return this.webCodecsReceiveOnly || this.$accessor.remote.hosted
+      return this.receiveOnly || this.$accessor.remote.hosted
     }
 
     get hosting() {
-      return !this.webCodecsReceiveOnly && this.$accessor.remote.hosting
+      return !this.receiveOnly && this.$accessor.remote.hosting
     }
 
     get controlling() {
-      return !this.webCodecsReceiveOnly && this.$accessor.remote.controlling
+      return !this.receiveOnly && this.$accessor.remote.controlling
     }
 
     get implicitHosting() {
-      return !this.webCodecsReceiveOnly && this.$accessor.remote.implicitHosting
+      return !this.receiveOnly && this.$accessor.remote.implicitHosting
     }
 
     get viewOnly() {
       return this.$accessor.user.viewOnly
     }
 
-    get webCodecsReceiveOnly() {
+    get receiveOnly() {
       return this.$client.receiveOnlySelected
     }
 
@@ -420,7 +420,7 @@
     // everyone by default. This prevents multiple users from sharing their
     // microphone simultaneously — only the person in control can.
     get micAllowed() {
-      return !this.viewOnly && !this.webCodecsReceiveOnly && this.controlling
+      return !this.viewOnly && !this.receiveOnly && this.controlling
     }
 
     get volume() {

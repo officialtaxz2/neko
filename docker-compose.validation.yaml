@@ -15,9 +15,7 @@ services:
       - |
         set -eux
         cp -a /source/client /work/client
-        mkdir -p /work/server/internal/mediaws/testdata
         mkdir -p /work/server/internal/mediahls/testdata
-        cp /source/server/internal/mediaws/testdata/neko_media_v1_golden.json /work/server/internal/mediaws/testdata/
         cp /source/server/internal/mediahls/testdata/*.m3u8 /work/server/internal/mediahls/testdata/
         cd /work/client
         npm ci
@@ -44,8 +42,7 @@ services:
       - -c
       - |
         set -eux
-        go test ./pkg/utils ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediahls ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/websocket/handler ./internal/webrtc ./internal/api ./internal/plugins/chat
-        go test ./internal/mediaws -run '^$$' -fuzz '^FuzzParseRecord$$' -fuzztime 30s
+        go test ./pkg/utils ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediahls ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/websocket/handler ./internal/webrtc ./internal/api ./internal/plugins/chat
         go test ./internal/mediahls -run '^$$' -fuzz '^FuzzHLSRequestBoundary$$' -fuzztime 30s
         ./build
 
@@ -66,7 +63,7 @@ services:
       - -ec
       - |
         wget -qO- "$$NEKO_METRICS_URL" |
-          grep -E '^(go_goroutines|go_memstats_heap_alloc_bytes|process_(cpu_seconds_total|resident_memory_bytes)|neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|media_(deliveries|delivery_(opens|closes)_total|hls_|source_generation|subscriptions_active|subscription_(delivered_(bytes|units)_total|discontinuities_total|dropped_units_total|queue_(capacity|depth))|websocket_(connections|handshakes_total|records_total|bytes_total|drops_total|resyncs_total|write_duration_seconds|queue_depth|queue_bytes|client_lag_milliseconds))|webrtc_(connection_state|receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners)))'
+          grep -E '^(go_goroutines|go_memstats_heap_alloc_bytes|process_(cpu_seconds_total|resident_memory_bytes)|neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|media_(deliveries|delivery_(opens|closes)_total|hls_|source_generation|subscriptions_active|subscription_(delivered_(bytes|units)_total|discontinuities_total|dropped_units_total|queue_(capacity|depth)))|webrtc_(connection_state|receiver_estimated_target_bitrate|track_dropped_samples_total|video_listeners)))'
 
   token-generator:
     image: alpine:latest
@@ -84,8 +81,8 @@ services:
     network_mode: host
     read_only: true
     environment:
-      NEKO_PUBLIC_BASE_URL: "${NEKO_PUBLIC_BASE_URL:-${NEKO_MEDIA_HLS_ALLOWED_ORIGINS:-${NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS:-http://127.0.0.1:8082}}}"
-      NEKO_PUBLIC_ORIGIN: "${NEKO_PUBLIC_ORIGIN:-${NEKO_MEDIA_HLS_ALLOWED_ORIGINS:-${NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS:-}}}"
+      NEKO_PUBLIC_BASE_URL: "${NEKO_PUBLIC_BASE_URL:-${NEKO_MEDIA_HLS_ALLOWED_ORIGINS:-http://127.0.0.1:8082}}"
+      NEKO_PUBLIC_ORIGIN: "${NEKO_PUBLIC_ORIGIN:-${NEKO_MEDIA_HLS_ALLOWED_ORIGINS:-}}"
       PYTHONDONTWRITEBYTECODE: "1"
     volumes:
       - type: bind

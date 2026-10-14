@@ -291,6 +291,8 @@ gates without a new reason. Prior results below apply only to their commits.
 
 **Branch status (2026-10-14):** the operator authorized promoting `testing` to `master`. `master` is now the single working branch and contains all `testing` work plus the upstream sync to `c75a2f60` and `setup.sh` (see [`docs/UPSTREAM_SYNC_AUDIT.md`](docs/UPSTREAM_SYNC_AUDIT.md#integration-of-master-into-testing-2026-10-14)). Older notes below that say to keep `master` pinned or to work only on `testing` describe the state before this promotion. Target-server `go test`/client tests for the integrated state are pending.
 
+**WebCodecs removed (2026-10-14):** by operator decision the WebCodecs/media-WebSocket prototype is deleted (server `internal/mediaws`, `/api/media/ws`, `media.webcodecs_ws.*`, client worker/decoder/canvas, `docker-compose.webcodecs-ws.yaml`, its docs and helpers). Direction: WebRTC default plus HLS/LL-HLS, adaptive quality for both. A stored `webcodecs-ws` preference or `?media=webcodecs-ws` resolves to WebRTC; `setup.sh` migrates the old origin/proxy `.env` values to the HLS keys. All WebCodecs statements below, including the resource checkpoints and the Phase 4 invariant, are history.
+
 
 ## Purpose
 
@@ -351,9 +353,6 @@ Read before substantial work:
 - `docs/HLS_LL_HLS_CADDY.md` — host-service proxy trust, streaming and access/runtime-log review before valid HLS media tests.
 - `docs/HLS_LL_HLS_OBSERVABILITY.md` — private evidence collector, fixed HLS metrics and resource interpretation.
 - `docs/STABILITY_REVIEW_2026-10-04.md` — integrated source/configuration findings, bounded repairs and outstanding advisory/device evidence.
-- `docs/WEBCODECS_MEDIA_WEBSOCKET.md` — exact version-1 authentication, wire-format, codec, queueing, A/V synchronization, recovery, security, rollout and acceptance contract for the default-off receive prototype.
-- `docs/WEBCODECS_MEDIA_WEBSOCKET_OBSERVABILITY.md` — credential-safe fixed metrics, PromQL and evidence collection for the opt-in prototype.
-- `docs/WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md` — exact interactive target-server Phase 4 procedure and rollback.
 - `webpage/docs/` — inherited Neko documentation. Current repository code/config wins on conflicts.
 
 ## Truth rules

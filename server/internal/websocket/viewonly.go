@@ -15,8 +15,6 @@ func viewOnlyEventAllowed(eventName string) bool {
 		event.SIGNAL_CANDIDATE,
 		event.SIGNAL_VIDEO,
 		event.SIGNAL_AUDIO,
-		event.MEDIA_CAPABILITIES_REQUEST,
-		event.MEDIA_CREATE,
 		event.MEDIA_HLS_CAPABILITIES_REQUEST,
 		event.MEDIA_HLS_CREATE:
 		return true

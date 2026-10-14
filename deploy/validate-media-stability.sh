@@ -69,7 +69,7 @@ readonly live_image="$(docker inspect --format '{{.Image}}' "$live_container")"
 
 bash -n deploy/collect-hls-media.sh deploy/validate-media-stability.sh
 docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml \
-  -f docker-compose.webcodecs-ws.yaml -f docker-compose.hls.yaml config --quiet
+  -f docker-compose.hls.yaml config --quiet
 assert_source
 mkdir -m 700 -- "$output/source"
 git archive "$selected_commit" | tar -x -C "$output/source"
@@ -108,7 +108,7 @@ git archive "$selected_commit" | tar -x -C "$output/source"
   # but do not repeat unchanged codec/fuzz fixtures or claim their fresh acceptance.
   if [[ "$validation_mode" != --hls-member-access ]]; then
     docker compose -f docker-compose.validation.yaml run --rm -T server-checks sh -ec '
-  go test ./pkg/utils ./pkg/drop ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediahls ./internal/mediaws ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/websocket/handler ./internal/webrtc
+  go test ./pkg/utils ./pkg/drop ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediahls ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/websocket/handler ./internal/webrtc
   go test -race ./pkg/utils ./internal/config ./internal/capture ./internal/http/legacy ./internal/websocket ./internal/websocket/handler ./internal/webrtc
   ./build
 ' </dev/null

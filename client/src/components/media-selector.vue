@@ -1,7 +1,6 @@
 <template>
   <select v-model="backend" :aria-label="$t('setting.media_backend')" class="media-selector">
     <option value="webrtc">WebRTC</option>
-    <option value="webcodecs-ws">WebCodecs</option>
     <option v-for="mode in modes" :key="mode" :value="mode">{{ mode === 'll-hls' ? 'LL-HLS' : 'HLS' }}</option>
     <option v-if="unavailable" :value="backend" disabled>{{ backend === 'll-hls' ? 'LL-HLS' : 'HLS' }} — {{ $t('media.unavailable') }}</option>
   </select>

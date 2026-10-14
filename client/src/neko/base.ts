@@ -3,7 +3,6 @@ import { OPCODE } from './data'
 import { EVENT, WebSocketEvents } from './events'
 import { shouldCreateClientOffer } from './negotiation'
 import { isViewOnlyToken } from './share'
-import type { ScheduledVideoFrame } from './media/controller'
 
 import {
   WebSocketMessages,
@@ -21,8 +20,6 @@ export interface BaseEvents {
   debug: (...message: any[]) => void
   error: (error: Error) => void
   'cursor-position': (position: { x: number; y: number }) => void
-  'media-video-frame': (frame: ScheduledVideoFrame) => void
-  'media-clock-reset': () => void
 }
 
 export abstract class BaseClient extends EventEmitter<BaseEvents> {
@@ -40,7 +37,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   protected _micActive = false
   protected _disconnecting = false
   protected _iceRecoveryTimeout?: number
-  protected _mediaBackend?: 'webcodecs-ws' | 'hls' | 'll-hls'
+  protected _mediaBackend?: 'hls' | 'll-hls'
   protected _eventConnected = false
 
   get id() {
@@ -61,7 +58,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     return this._mediaBackend
   }
 
-  public selectMediaBackend(backend?: 'webcodecs-ws' | 'hls' | 'll-hls') {
+  public selectMediaBackend(backend?: 'hls' | 'll-hls') {
     this._mediaBackend = backend
   }
 

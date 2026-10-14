@@ -14,7 +14,6 @@ import * as user from './user'
 import * as settings from './settings'
 import * as client from './client'
 import * as emoji from './emoji'
-import * as media from './media'
 import * as hls from './hls'
 
 export const state = () => ({
@@ -114,7 +113,7 @@ export const storePattern = {
   mutations,
   actions,
   getters,
-  modules: { video, chat, files, openinapp, user, remote, settings, client, emoji, media, hls },
+  modules: { video, chat, files, openinapp, user, remote, settings, client, emoji, hls },
 }
 
 Vue.use(Vuex)

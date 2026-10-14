@@ -10,8 +10,7 @@
       :style="{ '--horizontal': horizontal, '--vertical': vertical }"
     >
       <div ref="container" class="player-container">
-        <video v-show="!webCodecsSelected" ref="video" playsinline webkit-playsinline />
-        <canvas v-show="webCodecsSelected" ref="webCodecsCanvas" class="webcodecs-canvas" />
+        <video ref="video" playsinline webkit-playsinline />
         <div class="emotes">
           <template v-for="(emote, index) in emotes">
             <neko-emote :id="index" :key="index" />
@@ -45,36 +44,14 @@
         <div v-else-if="mutedOverlay && muted" class="player-overlay" @click.stop.prevent="unmute">
           <i class="fas fa-volume-up" />
         </div>
-        <div
-          v-if="webCodecsSelected"
-          :class="['webcodecs-status', { compact: webCodecsCompactStatus }]"
-          role="status"
-        >
-          <template v-if="webCodecsCompactStatus">
-            <span>{{ $t('media.backend_webcodecs') }}</span>
-          </template>
-          <template v-else>
-            <strong>{{ $t('media.webcodecs_title') }}</strong>
-            <span>{{ webCodecsStatusText }}</span>
-            <small>{{ $t('media.webcodecs_limitations') }}</small>
-            <div v-if="webCodecsTerminal" class="webcodecs-actions">
-              <button type="button" @click.stop.prevent="retryWebCodecs">
-                {{ $t('media.retry_webcodecs') }}
-              </button>
-              <button type="button" @click.stop.prevent="useWebRTC">
-                {{ $t('media.use_webrtc') }}
-              </button>
-            </div>
-          </template>
-        </div>
-        <div v-if="hlsSelected" :class="['webcodecs-status', { compact: hlsStatus === 'streaming' }]" role="status">
+        <div v-if="hlsSelected" :class="['media-status', { compact: hlsStatus === 'streaming' }]" role="status">
           <span v-if="hlsStatus === 'streaming'">{{ hlsLabel }}</span>
           <template v-else>
             <strong>{{ hlsLabel }}</strong>
             <span>{{ $t(`media.status.${hlsStatus}`) }}</span>
             <small v-if="hlsStatus === 'terminal'">{{ $accessor.hls.detail }}</small>
             <small>{{ $t('media.hls_limitations') }}</small>
-            <div v-if="hlsStatus === 'terminal'" class="webcodecs-actions">
+            <div v-if="hlsStatus === 'terminal'" class="media-actions">
               <button type="button" @click.stop.prevent="retryHLS">{{ $t('media.retry_hls') }}</button>
               <button type="button" @click.stop.prevent="useWebRTC">{{ $t('media.use_webrtc') }}</button>
             </div>
@@ -324,8 +301,8 @@
         @include fullscreen-active;
       }
 
-      // iPhone Safari and similar mobile browsers cannot natively fullscreen a
-      // WebCodecs canvas. Keep a user-visible exit control in this viewport
+      // iPhone Safari and similar mobile browsers cannot natively fullscreen
+      // the complete player. Keep a user-visible exit control in this viewport
       // fallback; it does not claim to hide browser chrome.
       &.fallback-fullscreen {
         @include fullscreen-active;
@@ -353,8 +330,7 @@
         transition: border-color var(--transition-fluid), box-shadow var(--transition-fluid);
         isolation: isolate;
 
-        video,
-        .webcodecs-canvas {
+        video {
           position: absolute;
           top: 0;
           bottom: 0;
@@ -369,7 +345,7 @@
           }
         }
 
-        .webcodecs-status {
+        .media-status {
           position: absolute;
           left: 14px;
           bottom: 14px;
@@ -415,7 +391,7 @@
             color: rgba(255, 255, 255, 0.72);
           }
 
-          .webcodecs-actions {
+          .media-actions {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
@@ -555,8 +531,6 @@
   import Resolution from './resolution.vue'
   import Clipboard from './clipboard.vue'
   import KeyboardHelper from './keyboard_helper.vue'
-  import { ScheduledVideoFrame } from '~/neko/media/controller'
-  import { useCompactMediaStatus } from '~/neko/media-selection.js'
   import { samplePlayback, hasPlaybackProgress } from '~/neko/playback-progress.js'
 
   // @ts-ignore
@@ -580,7 +554,6 @@
     @Ref('aspect') readonly _aspect!: HTMLElement
     @Ref('player') readonly _player!: HTMLElement
     @Ref('video') readonly _video!: HTMLVideoElement
-    @Ref('webCodecsCanvas') readonly _webCodecsCanvas!: HTMLCanvasElement
     @Ref('resolution') readonly _resolution!: Resolution
     @Ref('clipboard') readonly _clipboard!: Clipboard
     @Ref('keyboardHelper') readonly _keyboardHelper!: any
@@ -635,16 +608,8 @@
 
     private videoWidth = 0
     private videoHeight = 0
-    private webCodecsFrames: ScheduledVideoFrame[] = []
-    private webCodecsGeneration = 0
-    private webCodecsAnimation?: number
 
     private updateVideoDimensions() {
-      if (this.webCodecsSelected && this._webCodecsCanvas && this.webCodecsGeneration > 0) {
-        this.videoWidth = this._webCodecsCanvas.width
-        this.videoHeight = this._webCodecsCanvas.height
-        return
-      }
       if (this._video) {
         this.videoWidth = this._video.videoWidth
         this.videoHeight = this._video.videoHeight
@@ -878,28 +843,10 @@
       return this.$accessor.user.viewOnly
     }
 
-    get webCodecsSelected() {
-      return this.$accessor.media.selected
-    }
-
     get hlsSelected() { return this.$accessor.hls.selected !== undefined }
-    get receiveOnlySelected() { return this.webCodecsSelected || this.hlsSelected }
+    get receiveOnlySelected() { return this.hlsSelected }
     get hlsStatus() { return this.$accessor.hls.status }
     get hlsLabel() { return this.$accessor.hls.selected === 'll-hls' ? 'LL-HLS' : 'HLS' }
-
-    get webCodecsTerminal() {
-      return this.$accessor.media.status === 'terminal'
-    }
-
-    get webCodecsCompactStatus() {
-      return useCompactMediaStatus(this.$accessor.media.status)
-    }
-
-    get webCodecsStatusText() {
-      const media = this.$accessor.media
-      const attempt = media.retryAttempt > 0 ? ` (attempt ${media.retryAttempt}/4)` : ''
-      return `${this.$t(`media.status.${media.status}`)}${attempt}${media.detail ? ` — ${media.detail}` : ''}`
-    }
 
     get volume() {
       return this.$accessor.video.volume
@@ -951,7 +898,6 @@
     }
 
     get pip_available() {
-      if (this.webCodecsSelected) return false
       const video = this._video as HTMLVideoElement & { webkitSupportsPresentationMode?: (mode: string) => boolean }
       if (this.hlsSelected && video?.webkitSupportsPresentationMode?.('picture-in-picture')) return true
       //@ts-ignore
@@ -1032,7 +978,7 @@
     }
 
     getVideoRect() {
-      const surface = this.webCodecsSelected ? this._webCodecsCanvas : this._video
+      const surface = this._video
       const rect = (surface || this._overlay).getBoundingClientRect()
       const { w, h } = this.$accessor.video.resolution
 
@@ -1119,11 +1065,6 @@
       volume /= 100
       if (this.hlsSelected) { this.$client.setHLSVolume(volume); return }
 
-      if (this.webCodecsSelected) {
-        this.$client.setWebCodecsVolume(volume)
-        return
-      }
-
       if (this._video && this._video.volume != volume) {
         this._video.volume = volume
       }
@@ -1132,12 +1073,6 @@
     @Watch('muted')
     onMutedChanged(muted: boolean) {
       if (this.hlsSelected) this.$client.setHLSMuted(muted)
-      if (this.webCodecsSelected) {
-        this.$client.setWebCodecsMuted(muted)
-        if (!muted) this.mutedOverlay = false
-        return
-      }
-
       if (this._video && this._video.muted != muted) {
         this._video.muted = muted
 
@@ -1283,26 +1218,6 @@
       // HLS owns element playback and reports observed playing/paused state.
       // Gesture handlers call the controller directly, preserving Safari activation.
       if (this.hlsSelected) return
-      if (this.webCodecsSelected) {
-        const health = this.playbackHealth
-        const request = ++health.playRequest
-        const generation = health.generation
-        if (playing) {
-          const audioRunning = await this.$client.playWebCodecs()
-          if (health.destroyed || request !== health.playRequest || generation !== health.generation ||
-            !this.webCodecsSelected || this.hlsSelected || !this.playing) return
-          if (!audioRunning && this.$accessor.media.audioEnabled) {
-            this.$accessor.video.setMuted(true)
-            this.mutedOverlay = true
-          }
-          this.startWebCodecsRenderer()
-        } else {
-          this.stopWebCodecsRenderer()
-          this.clearWebCodecsFrames()
-        }
-        return
-      }
-
       const health = this.playbackHealth
       const video = this._video
       if (!playing) {
@@ -1347,107 +1262,6 @@
       } finally {
         if (request === health.playRequest) health.playPending = false
       }
-    }
-
-    // These WebCodecs callbacks must stay Vue prototype methods. In
-    // vue-class-component 7, class-field arrow functions are created while a
-    // synthetic data instance is collected; their lexical `this` can then
-    // retain primitive renderer state outside the live Vue instance.
-    private onWebCodecsFrame(frame: ScheduledVideoFrame) {
-      if (!this.webCodecsSelected || !this.playing) {
-        this.$client.releaseWebCodecsFrame(frame, false, 0)
-        return
-      }
-      if (this.webCodecsGeneration !== frame.generation) {
-        this.clearWebCodecsFrames()
-        this.webCodecsGeneration = frame.generation
-      }
-      while (this.webCodecsFrames.length >= 2) {
-        const dropped = this.webCodecsFrames.shift()!
-        this.$client.releaseWebCodecsFrame(dropped, false, 0)
-      }
-      this.webCodecsFrames.push(frame)
-      this.webCodecsFrames.sort((left, right) => left.targetTime - right.targetTime)
-      this.startWebCodecsRenderer()
-    }
-
-    private onWebCodecsClockReset() {
-      this.webCodecsGeneration = 0
-      this.videoWidth = 0
-      this.videoHeight = 0
-      this.clearWebCodecsFrames()
-      if (this._webCodecsCanvas) {
-        this._webCodecsCanvas.getContext('2d')?.clearRect(0, 0, this._webCodecsCanvas.width, this._webCodecsCanvas.height)
-      }
-    }
-
-    private clearWebCodecsFrames() {
-      for (const frame of this.webCodecsFrames.splice(0)) {
-        this.$client.releaseWebCodecsFrame(frame, false, 0)
-      }
-    }
-
-    private startWebCodecsRenderer() {
-      if (this.webCodecsAnimation !== undefined || !this.playing) return
-      this.webCodecsAnimation = window.requestAnimationFrame(this.renderWebCodecsFrame)
-    }
-
-    private stopWebCodecsRenderer() {
-      if (this.webCodecsAnimation !== undefined) window.cancelAnimationFrame(this.webCodecsAnimation)
-      this.webCodecsAnimation = undefined
-    }
-
-    private renderWebCodecsFrame() {
-      this.webCodecsAnimation = undefined
-      if (!this.webCodecsSelected || !this.playing) return
-
-      const now = performance.now()
-      while (this.webCodecsFrames.length > 0 && this.webCodecsFrames[0].targetTime < now - 80) {
-        const dropped = this.webCodecsFrames.shift()!
-        this.$client.releaseWebCodecsFrame(dropped, false, now - dropped.targetTime)
-      }
-
-      let chosenIndex = -1
-      let closest = Number.POSITIVE_INFINITY
-      for (let index = 0; index < this.webCodecsFrames.length; index++) {
-        const frame = this.webCodecsFrames[index]
-        const dueAt = Math.min(frame.targetTime, frame.receivedAt + 100)
-        if (dueAt > now) continue
-        const distance = Math.abs(frame.targetTime - now)
-        if (distance < closest) {
-          closest = distance
-          chosenIndex = index
-        }
-      }
-
-      if (chosenIndex >= 0) {
-        for (let index = 0; index < chosenIndex; index++) {
-          const dropped = this.webCodecsFrames.shift()!
-          this.$client.releaseWebCodecsFrame(dropped, false, now - dropped.targetTime)
-        }
-        const scheduled = this.webCodecsFrames.shift()!
-        const canvas = this._webCodecsCanvas
-        const context = canvas?.getContext('2d', { alpha: false })
-        try {
-          if (!canvas || !context) throw new Error('2D canvas is unavailable')
-          const width = scheduled.frame.displayWidth || scheduled.frame.codedWidth
-          const height = scheduled.frame.displayHeight || scheduled.frame.codedHeight
-          if (canvas.width !== width || canvas.height !== height) {
-            canvas.width = width
-            canvas.height = height
-            this.videoWidth = width
-            this.videoHeight = height
-            this.onResize()
-          }
-          context.drawImage(scheduled.frame, 0, 0, canvas.width, canvas.height)
-          this.$client.releaseWebCodecsFrame(scheduled, true, now - scheduled.targetTime)
-        } catch (_) {
-          this.$client.releaseWebCodecsFrame(scheduled, false, 0)
-          this.$client.resyncWebCodecs('decoder_error')
-        }
-      }
-
-      this.startWebCodecsRenderer()
     }
 
     @Watch('clipboard')
@@ -1523,13 +1337,7 @@
       }
       this.keyboard.listenTo(this._overlay)
       this.$client.on('cursor-position', this.onCursorPosition)
-      this.$client.on('media-video-frame', this.onWebCodecsFrame)
-      this.$client.on('media-clock-reset', this.onWebCodecsClockReset)
       window.addEventListener('focus', this._onWindowFocus)
-
-      if (this.webCodecsSelected && this.autoplay) {
-        this.$accessor.video.play()
-      }
     }
 
     beforeDestroy() {
@@ -1582,11 +1390,7 @@
         this.longPressTimer = null
       }
       this.$client.off('cursor-position', this.onCursorPosition)
-      this.$client.off('media-video-frame', this.onWebCodecsFrame)
-      this.$client.off('media-clock-reset', this.onWebCodecsClockReset)
       this.exitFallbackFullscreen(false)
-      this.stopWebCodecsRenderer()
-      this.clearWebCodecsFrames()
       /* Guacamole Keyboard does not provide destroy functions */
     }
 
@@ -1637,10 +1441,6 @@
 
     async play() {
       if (this.hlsSelected) { if (this.playable) await this.$client.playHLS(); return }
-      if (this.webCodecsSelected) {
-        if (this.playable) await this.$client.playWebCodecs()
-        return
-      }
       if (!this._video.paused || !this.playable) {
         return
       }
@@ -1660,10 +1460,6 @@
 
     pause() {
       if (this.hlsSelected) { this.$client.pauseHLS(); return }
-      if (this.webCodecsSelected) {
-        this.$accessor.video.pause()
-        return
-      }
       this.$accessor.video.pause()
       void this.onPlayingChanged(false)
     }
@@ -1676,11 +1472,6 @@
       if (this.hlsSelected) {
         if (this.playing) this.$client.pauseHLS()
         else void this.$client.playHLS()
-        return
-      }
-      if (this.webCodecsSelected) {
-        if (this.playing) this.$accessor.video.pause()
-        else this.$accessor.video.play()
         return
       }
 
@@ -1709,20 +1500,6 @@
     unmute() {
       this.$accessor.video.setMuted(false)
       if (this.hlsSelected) { this.$client.setHLSMuted(false); void this.$client.playHLS() }
-      if (this.webCodecsSelected) {
-        const health = this.playbackHealth
-        const request = ++health.playRequest
-        const generation = health.generation
-        this.$client.playWebCodecs().then((running) => {
-          if (health.destroyed || request !== health.playRequest || generation !== health.generation ||
-            !this.webCodecsSelected || this.hlsSelected || !this.playing) return
-          if (!running && this.$accessor.media.audioEnabled) this.$accessor.video.setMuted(true)
-        })
-      }
-    }
-
-    retryWebCodecs() {
-      this.$client.retryWebCodecs()
     }
 
     retryHLS() { this.$client.retryHLS() }
@@ -1756,27 +1533,26 @@
       // iPhone Safari's video-only API must be invoked during the original
       // user gesture, before awaiting an unsupported container request.
       const videoSurface = this._video as HTMLVideoElement & { webkitEnterFullscreen?: () => void }
-      if (!this.webCodecsSelected && typeof videoSurface.webkitEnterFullscreen === 'function') {
+      if (typeof videoSurface.webkitEnterFullscreen === 'function') {
         if (await elementRequestFullscreen(videoSurface)) {
           this.onResize()
           return
         }
       }
 
-      // Prefer the complete player so canvas/status/controls stay together.
+      // Prefer the complete player so status/controls stay together.
       // A rejected Promise must continue into the mobile surface fallback.
       if (await elementRequestFullscreen(this._player)) {
         this.onFullscreenChangeHandler()
         return
       }
 
-      const surface = this.webCodecsSelected ? this._webCodecsCanvas : videoSurface
-      if (await elementRequestFullscreen(surface)) {
+      if (await elementRequestFullscreen(videoSurface)) {
         this.onResize()
         return
       }
 
-      // Canvas fullscreen is unavailable on iPhone Safari. Fill the visual
+      // Element fullscreen is unavailable on iPhone Safari. Fill the visual
       // viewport while retaining an explicit in-app exit button.
       this.enterFallbackFullscreen()
     }
@@ -1790,7 +1566,6 @@
         } catch (_) { this.$log.debug('HLS Picture-in-Picture request was declined') }
         return
       }
-      if (this.webCodecsSelected) return
       //@ts-ignore
       this._video.requestPictureInPicture()
       this.onResize()
@@ -1830,7 +1605,7 @@
 
     sendMousePos(e: MouseEvent) {
       const { w, h } = this.$accessor.video.resolution
-      const surface = this.webCodecsSelected ? this._webCodecsCanvas : this._video
+      const surface = this._video
       const rect = (surface || this._overlay).getBoundingClientRect()
       const vRect = this.getVideoRect()
 

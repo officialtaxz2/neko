@@ -6,13 +6,10 @@ import { EVENT } from './events'
 import { reconnectDelayForAttempt, shouldReconnect } from './recovery'
 import { viewOnlyTokenFromHash } from './share'
 import { accessor } from '~/store'
-import { ScheduledVideoFrame, WebCodecsMediaController } from './media/controller'
-import { deliverOrReleaseVideoFrame } from './media/recovery.js'
 import { HLSMediaController } from './hls/controller'
 import { hlsModes } from './hls/protocol.js'
 import {
   MEDIA_BACKEND_WEBRTC,
-  MEDIA_BACKEND_WEBCODECS,
   mediaBackendNavigationURL,
   normalizeMediaBackendPreference,
   resolveMediaBackendSelection,
@@ -37,8 +34,6 @@ import {
   SystemInitPayload,
   AdminLockResource,
   FileTransferListPayload,
-  MediaCapabilitiesPayload,
-  MediaOfferPayload,
   HLSCapabilitiesPayload,
   HLSOfferPayload,
   HLSStateMessage,
@@ -64,7 +59,6 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   private reconnectInFlight = false
   private reconnectEligible = false
   private reconnectSuppressed = false
-  private mediaController?: WebCodecsMediaController
   private hlsController?: HLSMediaController
   private hlsVideo?: HTMLVideoElement
   private hlsPrivatePaused = false
@@ -95,10 +89,6 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     return this.viewOnlyToken !== undefined
   }
 
-  public get webCodecsSelected() {
-    return this.mediaBackend === 'webcodecs-ws'
-  }
-
   public get effectiveMediaBackend() {
     return this.mediaBackend || MEDIA_BACKEND_WEBRTC
   }
@@ -116,11 +106,9 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
 
   init(vue: Vue) {
     const mediaSelection = resolveMediaBackendSelection(location.search, vue.$accessor.settings.media_backend)
-    const webCodecsSelected = mediaSelection.backend === MEDIA_BACKEND_WEBCODECS
     this.mediaBackendURLOverride = mediaSelection.overridden
     this.mediaBackendInvalidURLOverride = mediaSelection.invalidOverride
     this.selectMediaBackend(mediaSelection.backend === MEDIA_BACKEND_WEBRTC ? undefined : mediaSelection.backend)
-    vue.$accessor.media.select(webCodecsSelected)
     vue.$accessor.hls.select(isHLSBackend(mediaSelection.backend) ? mediaSelection.backend as HLSMode : undefined)
     this.viewOnlyToken = viewOnlyTokenFromHash(location.hash)
 
@@ -191,13 +179,10 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.$accessor.user.reset()
     this.$accessor.video.reset()
     this.$accessor.chat.reset()
-    this.$accessor.media.reset()
     this.$accessor.hls.reset()
   }
 
   protected disconnect() {
-    this.mediaController?.stop()
-    this.mediaController = undefined
     this.hlsController?.stop()
     this.hlsController = undefined
     this.hlsPrivatePaused = false
@@ -304,11 +289,6 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     super.sendData(event as any, data)
   }
 
-  public retryWebCodecs() {
-    if (!this.webCodecsSelected || !this.mediaController) return
-    this.mediaController.retry()
-  }
-
   public useWebRTC() {
     if (!this.receiveOnlySelected) return
     this.$accessor.settings.setMediaBackend(MEDIA_BACKEND_WEBRTC)
@@ -335,13 +315,8 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   private reloadForMediaBackendSelection() {
     this.reconnectSuppressed = true
     this.stopReconnect(true)
-    this.mediaController?.stop()
     this.hlsController?.stop()
     window.location.assign(mediaBackendNavigationURL(window.location.href))
-  }
-
-  public playWebCodecs() {
-    return this.mediaController?.play() || Promise.resolve(false)
   }
 
   public attachHLSVideo(video: HTMLVideoElement) {
@@ -363,22 +338,6 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   public retryHLS() { this.hlsController?.retry() }
   public setHLSMuted(muted: boolean) { this.hlsController?.setMuted(muted) }
   public setHLSVolume(volume: number) { this.hlsController?.setVolume(volume) }
-
-  public setWebCodecsMuted(muted: boolean) {
-    this.mediaController?.setMuted(muted)
-  }
-
-  public setWebCodecsVolume(volume: number) {
-    this.mediaController?.setVolume(volume)
-  }
-
-  public releaseWebCodecsFrame(frame: ScheduledVideoFrame, rendered: boolean, skewMS: number) {
-    this.mediaController?.releaseVideoFrame(frame, rendered, skewMS)
-  }
-
-  public resyncWebCodecs(reason: 'queue_overflow' | 'decoder_error' | 'timestamp' | 'audio_underflow' | 'av_skew') {
-    this.mediaController?.requestResync(reason)
-  }
 
   login(password: string, displayname: string) {
     this.stopReconnect(true)
@@ -963,44 +922,6 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: 'll-hls' })
     }
 
-    if (this.webCodecsSelected) {
-      this.mediaController?.stop()
-      const controller = new WebCodecsMediaController(this.url, {
-        sendEvent: (event, payload) => this.sendMessage(event, payload),
-        eventSocketOpen: () => this.socketOpen && this.connected,
-        setStatus: (status, detail = '', retryAttempt = 0) =>
-          this.$accessor.media.setStatus({ status, detail, retryAttempt }),
-        setAudioEnabled: (enabled) => this.$accessor.media.setAudioEnabled(enabled),
-        setPlayable: (playable) => {
-          this.$accessor.video.setPlayable(playable)
-          if (playable && this.$accessor.settings.autoplay) this.$accessor.video.play()
-        },
-        onVideoFormat: (format) => this.$accessor.video.setResolution(format),
-        onVideoFrame: (frame) => {
-          // The controller can produce frames before the video component has
-          // mounted and subscribed. EventEmitter reports that race as false;
-          // release the transferred frame so the worker's two-slot hand-off
-          // cannot remain permanently saturated.
-          deliverOrReleaseVideoFrame(
-            () => this.emit('media-video-frame', frame),
-            () => controller.releaseVideoFrame(frame, false, 0),
-          )
-        },
-        onClockReset: () => this.emit('media-clock-reset'),
-      })
-      this.mediaController = controller
-      controller.setMuted(this.$accessor.video.muted)
-      controller.setVolume(this.$accessor.video.volume / 100)
-      controller.start().catch((error) => {
-        if (this.mediaController !== controller) return
-        this.$accessor.video.setPlayable(false)
-        this.$accessor.media.setStatus({
-          status: 'terminal',
-          detail: error instanceof Error ? error.message : String(error),
-        })
-      })
-    }
-
     this.$vue.$notify({
       group: 'neko',
       clean: true,
@@ -1122,14 +1043,6 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       if (this._ws_heartbeat) clearInterval(this._ws_heartbeat)
       this._ws_heartbeat = window.setInterval(() => this.sendMessage(EVENT.CLIENT.HEARTBEAT), heartbeat_interval * 1000)
     }
-  }
-
-  protected [EVENT.MEDIA.CAPABILITIES](payload: MediaCapabilitiesPayload) {
-    this.mediaController?.handleCapabilities(payload)
-  }
-
-  protected [EVENT.MEDIA.OFFER](payload: MediaOfferPayload) {
-    this.mediaController?.handleOffer(payload)
   }
 
   protected [EVENT.HLS.CAPABILITIES](payload: HLSCapabilitiesPayload) {

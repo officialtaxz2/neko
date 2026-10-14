@@ -48,8 +48,6 @@ func TestViewOnlyLegacyEventAllowed(t *testing.T) {
 		oldEvent.SIGNAL_OFFER,
 		oldEvent.SIGNAL_ANSWER,
 		oldEvent.SIGNAL_CANDIDATE,
-		oldEvent.MEDIA_CAPABILITIES_REQUEST,
-		oldEvent.MEDIA_CREATE,
 		oldEvent.MEDIA_HLS_CAPABILITIES_REQUEST,
 		oldEvent.MEDIA_HLS_CREATE,
 	} {

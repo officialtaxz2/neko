@@ -1,21 +1,21 @@
 export const MEDIA_BACKEND_WEBRTC = 'webrtc'
-export const MEDIA_BACKEND_WEBCODECS = 'webcodecs-ws'
 export const MEDIA_BACKEND_HLS = 'hls'
 export const MEDIA_BACKEND_LL_HLS = 'll-hls'
 export const MEDIA_BACKEND_STORAGE_KEY = 'media_backend'
 
 /**
- * @typedef {'webrtc' | 'webcodecs-ws' | 'hls' | 'll-hls'} MediaBackendPreference
+ * @typedef {'webrtc' | 'hls' | 'll-hls'} MediaBackendPreference
  */
 
 /**
- * Invalid and absent persisted values deliberately resolve to WebRTC.
+ * Invalid and absent persisted values deliberately resolve to WebRTC. This
+ * includes the removed 'webcodecs-ws' backend still stored by older clients.
  *
  * @param {unknown} value
  * @returns {MediaBackendPreference}
  */
 export function normalizeMediaBackendPreference(value) {
-  return value === MEDIA_BACKEND_WEBCODECS || value === MEDIA_BACKEND_HLS || value === MEDIA_BACKEND_LL_HLS
+  return value === MEDIA_BACKEND_HLS || value === MEDIA_BACKEND_LL_HLS
     ? value
     : MEDIA_BACKEND_WEBRTC
 }
@@ -74,7 +74,7 @@ export function resolveMediaBackendSelection(search, storedPreference) {
     return { backend: preference, overridden: false, invalidOverride: false }
   }
 
-  if (media.length === 1 && (media[0] === MEDIA_BACKEND_WEBCODECS || isHLSBackend(media[0]))) {
+  if (media.length === 1 && isHLSBackend(media[0])) {
     return { backend: normalizeMediaBackendPreference(media[0]), overridden: true, invalidOverride: false }
   }
 
@@ -93,14 +93,4 @@ export function mediaBackendNavigationURL(href) {
   const url = new URL(href)
   url.searchParams.delete('media')
   return url.toString()
-}
-
-/**
- * Healthy WebCodecs playback uses the compact status treatment. Negotiation,
- * recovery and terminal states remain prominent and actionable.
- *
- * @param {string} status
- */
-export function useCompactMediaStatus(status) {
-  return status === 'streaming'
 }

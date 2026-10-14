@@ -25,7 +25,7 @@ printf 'runtime_error_redaction=pending\n' >"$output/caddy-log-check.txt"
 docker image inspect "my-neko/brave:$image_tag" python:3.12-alpine >/dev/null
 export NEKO_MEDIA_HLS_MODES=hls
 docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml \
-  -f docker-compose.webcodecs-ws.yaml -f docker-compose.hls.yaml config --quiet
+  -f docker-compose.hls.yaml config --quiet
 readonly active=/etc/caddy/Caddyfile
 readonly backup="$output/Caddyfile.before-hls"
 readonly candidate="$output/Caddyfile.hls"

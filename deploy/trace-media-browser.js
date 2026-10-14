@@ -104,7 +104,7 @@
     var vm = bind();
     var selected = vm && vm.$accessor;
     var backend = selected && selected.hls && selected.hls.selected;
-    if (backend !== 'hls' && backend !== 'll-hls') backend = selected && selected.media && selected.media.selected ? 'webcodecs-ws' : 'webrtc';
+    if (backend !== 'hls' && backend !== 'll-hls') backend = 'webrtc';
     keep(samples, { t_ms:elapsed(), backend:backend, visible:document.visibilityState === 'visible',
       socket:client && client._ws ? number(client._ws.readyState) : null,
       ice:peer ? peer.iceConnectionState : null, connection:peer ? peer.connectionState : null,

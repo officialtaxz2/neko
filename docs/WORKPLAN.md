@@ -4,6 +4,23 @@ Current assessment and NEXT consolidated: 2026-10-10.
 
 ## NEXT
 
+**WebCodecs removed (2026-10-14):** the operator decided to delete the
+WebCodecs/media-WebSocket prototype and to continue with WebRTC plus
+HLS/LL-HLS (adaptive quality for both). Deleted: `server/internal/mediaws`,
+the `/api/media/ws` route and `media.webcodecs_ws.*` flags, the
+`media/capabilities`/`media/create`/`media/offer` events, the client
+`src/neko/media/` worker/decoder/canvas path and `store/media.ts`,
+`docker-compose.webcodecs-ws.yaml`, `deploy/collect-webcodecs-media.sh`,
+`deploy/check-media-websocket-http.sh` and the four `WEBCODECS_MEDIA_WEBSOCKET*`
+docs. A stored `webcodecs-ws` preference or `?media=webcodecs-ws` resolves to
+WebRTC. `docker-compose.hls.yaml` reads only `NEKO_MEDIA_HLS_ALLOWED_ORIGINS`/
+`NEKO_MEDIA_HLS_TRUSTED_PROXIES`; `setup.sh` copies existing WebCodecs-named
+values to those keys and removes the overlay from `COMPOSE_FILE`. Historical
+exact-candidate `deploy/prepare-hls-*` helpers still name the old overlay and
+must not be run against the current checkout. WebCodecs items below (B4/B5
+comparisons, `webcodecs-one` resource screens, disablement notes) are closed
+by this removal and kept only as history.
+
 **Implementation authorized on 2026-10-07:** the operator requested the complete
 recommended plan after the comparative review. B1–B3 and the evidence-independent
 part of B6 are IMPLEMENTED/STATICALLY REVIEWED; B4/B9 tools/procedures are ready,
@@ -711,11 +728,9 @@ Splitting `video.vue` or a Vue 3 migration is not a prerequisite for these repai
 **Use existing tooling and acceptance contracts.** The exact procedures remain
 in [adaptive quality](ADAPTIVE_QUALITY.md),
 [iOS recovery](IOS_RECOVERY.md), [view-only sharing](VIEW_ONLY_SHARING.md),
-[WebCodecs validation](WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md),
 [HLS validation](HLS_LL_HLS_VALIDATION.md) and
 [HLS observability](HLS_LL_HLS_OBSERVABILITY.md). Existing
-`docker-compose.validation.yaml`, `deploy/collect-hls-media.sh` and
-`deploy/collect-webcodecs-media.sh` are target-side assets; do not execute them in
+`docker-compose.validation.yaml` and `deploy/collect-hls-media.sh` are target-side assets; do not execute them in
 Codex or run an old image-preparation helper against a different application
 commit without reviewing its pinned assumptions.
 
@@ -796,13 +811,8 @@ configuration through the existing deployment runbook.
 
 - HLS disablement means omitting `docker-compose.hls.yaml` or an explicit reviewed
   `NEKO_MEDIA_HLS_ENABLED=false`; verify disabled routes and normal WebRTC
-  login/picture/audio/control. HLS reads dedicated Origin/proxy settings or falls
-  back to WebCodecs-named deployment variables; do not delete those variables
-  merely because the WebCodecs backend is disabled.
-- WebCodecs disablement means omitting `docker-compose.webcodecs-ws.yaml` or an
-  explicit reviewed `NEKO_MEDIA_WEBCODECS_WS_ENABLED=false`. A saved experimental
-  selection must fail explicitly and allow manual WebRTC selection; do not insert
-  automatic transport fallback. Keep the event socket and view-only fragment.
+  login/picture/audio/control. HLS reads only its dedicated Origin/proxy
+  settings (the WebCodecs-named fallback was removed on 2026-10-14).
 - LL restriction is `NEKO_MEDIA_HLS_MODES='hls'`; it preserves conventional HLS
   and shared encoders. A later LL source removal needs separate advertisement,
   protocol/fixture and runbook cleanup, not a promise of large native CPU savings.
@@ -1161,7 +1171,7 @@ The reported impression of softer video during fast scrolling or high-motion pla
 
 Status: **design complete on `testing` on 2026-09-12 / Phases 1–3 subsequently implemented in the repository / deployment enablement, grouped acceptance and automatic fallback not implemented**.
 
-[`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md) now fixes the first default-off `webcodecs-ws` receive prototype:
+`WEBCODECS_MEDIA_WEBSOCKET.md` (deleted 2026-10-14) now fixes the first default-off `webcodecs-ws` receive prototype:
 
 - an authenticated event-plane negotiation creates a 10-second, 24-byte, single-use ticket without exposing a login/share credential to the backend or a URL;
 - the upgrade path rechecks exact Origin, ticket binding, the current live session and `CanWatch` before opening a credential-free delivery lease;
@@ -1275,8 +1285,8 @@ Status: **repository assets implemented / bounded target-server checkpoint opera
 - Added inactive example values to `.env.example`; the overlay itself contains no credentials and refuses activation when its two security-boundary values are empty.
 - Extended `docker-compose.validation.yaml` with the accumulated 30-second media-record fuzz target and the fixed WebCodecs, central delivery, capture and Go/process metric families.
 - Added `deploy/check-media-websocket-http.sh`, which uses no login credential and only a fixed invalid ticket to verify the disabled route plus query/origin/subprotocol/ticket pre-upgrade statuses without printing response bodies.
-- Added `deploy/collect-webcodecs-media.sh` and [`WEBCODECS_MEDIA_WEBSOCKET_OBSERVABILITY.md`](WEBCODECS_MEDIA_WEBSOCKET_OBSERVABILITY.md) for private exact-commit/container/resource records, fixed-label metrics, PromQL and filtered credential-safe logs. Compose consumes ignored `.env` for normal interpolation, but the collector never prints or archives it, a ticket-bearing URL/header or event/control payload.
-- Added [`WEBCODECS_MEDIA_WEBSOCKET_RESULTS_TEMPLATE.md`](WEBCODECS_MEDIA_WEBSOCKET_RESULTS_TEMPLATE.md) and [`WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md`](WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md) for blockwise operator/Codex execution, the ten-join timing table, role/private-mode/revocation cases, slow-viewer/adaptive isolation, five-minute resource comparison, hostile inputs and state-free rollback.
+- Added `deploy/collect-webcodecs-media.sh` and `WEBCODECS_MEDIA_WEBSOCKET_OBSERVABILITY.md` (deleted 2026-10-14) for private exact-commit/container/resource records, fixed-label metrics, PromQL and filtered credential-safe logs. Compose consumes ignored `.env` for normal interpolation, but the collector never prints or archives it, a ticket-bearing URL/header or event/control payload.
+- Added `WEBCODECS_MEDIA_WEBSOCKET_RESULTS_TEMPLATE.md` (deleted 2026-10-14) and `WEBCODECS_MEDIA_WEBSOCKET_VALIDATION.md` (deleted 2026-10-14) for blockwise operator/Codex execution, the ten-join timing table, role/private-mode/revocation cases, slow-viewer/adaptive isolation, five-minute resource comparison, hostile inputs and state-free rollback.
 - Static inspection found no change to the base Compose, WebRTC signaling/data channels, authorization, REST/event protocol, capture encoder configuration or client backend selection. The overlay does not add a client query, fallback or persistent state.
 
 Per `AGENTS.md`, project code, tests, linters, builds, Docker and the helper scripts were **NOT EXECUTED IN CODEX**. All runtime evidence below was supplied by the operator from the target server. The bounded closure does not convert any omitted acceptance item into a pass.
@@ -2128,7 +2138,7 @@ When fallback work begins, separate the two user classes instead of forcing ever
 
 1. **completed design:** establish the backend-neutral encoded-source/subscription and participant-delivery contract in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md);
 2. **implemented / bounded target-server checkpoint closed:** the migrated WebRTC compatibility path and estimator startup correction, with the repeated full role/recovery and induced down/up matrix deferred to final grouped validation;
-3. **completed design:** the exact protocol, security, queueing, synchronization, rollout and validation contract for **WebCodecs + dedicated WebSocket media** is fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md);
+3. **completed design:** the exact protocol, security, queueing, synchronization, rollout and validation contract for **WebCodecs + dedicated WebSocket media** is fixed in `WEBCODECS_MEDIA_WEBSOCKET.md` (deleted 2026-10-14);
 4. **implemented Phase 1:** strict framing/fixtures, PTS-validity propagation, authenticated negotiation, one-time tickets and default-off server negotiation;
 5. **implemented Phase 2:** credential-free server delivery backend, secure media route, bounded queues, recovery and lifecycle cleanup;
 6. **implemented Phase 3:** isolated strict client parser/worker/WebCodecs/AudioWorklet/canvas receive path, explicit UI actions and bounded same-backend recovery;
@@ -2159,7 +2169,7 @@ The passive path may trade latency for reliability and compatibility. It must st
 - Determine whether fast-motion softness is acceptable at the current 1,996,800-bit/s VP8 `high` tier through a controlled same-content bitrate/quantizer A/B with receiver statistics and comparable captures; current evidence does not identify a subscription-refactor regression.
 - Supported Smart-TV/device matrix, including native HLS, MSE/DASH and WebCodecs capability.
 - Whether the target iPhone validates the implemented same-peer and replacement-session paths without reload; a Safari Play gesture remains an explicitly separate, permitted policy fallback.
-- Target-device and target-server evidence for the specified VP8/Opus WebCodecs/media-WebSocket contract; framing, queue sizes, synchronization, security limits and rollout behavior are fixed in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
+- Target-device and target-server evidence for the specified VP8/Opus WebCodecs/media-WebSocket contract; framing, queue sizes, synchronization, security limits and rollout behavior are fixed in `WEBCODECS_MEDIA_WEBSOCKET.md` (deleted 2026-10-14).
 - Final-commit grouped tests/build plus independent generated playlist/fMP4 inspection for the HLS/LL-HLS Phase 1–3 path; focused automation passed at `e85d8568` and the default-off image deployment started healthy at `741025c3`.
 - Actual HLS/LL-HLS device, latency and resource evidence against the fixed targets in [`HLS_LL_HLS.md`](HLS_LL_HLS.md); the HTTP server and passive client are implemented; deployment assets and runtime/device acceptance remain pending.
 - Whether DASH adds meaningful compatibility beyond HLS for the actual target devices.
