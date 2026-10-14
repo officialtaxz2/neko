@@ -74,7 +74,7 @@ func CreatePipelineWithSampleCapacity(pipelineStr string, sampleCapacity int) (P
 }
 
 // CreatePipelineWithRunningTimeSamples maps encoder output timestamps through
-// each sample's segment. Capture/WebRTC/WebCodecs retain raw sample timestamps.
+// each sample's segment. Capture/WebRTC retain raw sample timestamps.
 func CreatePipelineWithRunningTimeSamples(pipelineStr string, sampleCapacity int) (Pipeline, error) {
 	return createPipeline(pipelineStr, sampleCapacity, true)
 }

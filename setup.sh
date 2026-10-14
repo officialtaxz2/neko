@@ -121,6 +121,26 @@ else
 fi
 chmod 600 .env
 
+# WebCodecs was removed. Its origin/proxy settings used to feed HLS as well,
+# so carry them over to the HLS keys and drop the deleted overlay from
+# COMPOSE_FILE; Compose would otherwise fail on the missing file.
+for pair in ALLOWED_ORIGINS TRUSTED_PROXIES; do
+  legacy="$(env_get "NEKO_MEDIA_WEBCODECS_WS_$pair" .env)"
+  if [[ -n "$legacy" && -z "$(env_get "NEKO_MEDIA_HLS_$pair" .env)" ]]; then
+    env_set "NEKO_MEDIA_HLS_$pair" "$legacy"
+    log "Moved NEKO_MEDIA_WEBCODECS_WS_$pair to NEKO_MEDIA_HLS_$pair in .env"
+  fi
+done
+compose_value="$(env_get COMPOSE_FILE .env)"
+if [[ ":$compose_value:" == *":docker-compose.webcodecs-ws.yaml:"* ]]; then
+  compose_value="$(tr ':' '\n' <<< "$compose_value" | grep -vx 'docker-compose.webcodecs-ws.yaml' | paste -sd: -)"
+  env_set COMPOSE_FILE "${compose_value:-docker-compose.yaml}"
+  log "Removed the deleted docker-compose.webcodecs-ws.yaml from COMPOSE_FILE in .env"
+fi
+if grep -qE '^NEKO_MEDIA_WEBCODECS_WS_' .env; then
+  log "The NEKO_MEDIA_WEBCODECS_WS_* lines in .env are no longer used and can be deleted."
+fi
+
 generated=()
 for key in NEKO_MEMBER_MULTIUSER_USER_PASSWORD NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD; do
   if [[ -z "$(env_get "$key" .env)" ]]; then
@@ -145,8 +165,8 @@ WEBRTC_EPR="$(env_get NEKO_WEBRTC_EPR .env)";          WEBRTC_EPR="${WEBRTC_EPR:
 # Compose files
 
 # Compose reads COMPOSE_FILE from .env itself; it selects the overlays
-# (docker-compose.adaptive.yaml, .webcodecs-ws.yaml, .hls.yaml). .env.example
-# enables all of them; without COMPOSE_FILE only docker-compose.yaml is used.
+# (docker-compose.adaptive.yaml, .hls.yaml). .env.example enables both;
+# without COMPOSE_FILE only docker-compose.yaml is used.
 COMPOSE_FILES="$(env_get COMPOSE_FILE .env)"
 COMPOSE_FILES="${COMPOSE_FILE:-$COMPOSE_FILES}"
 selected=" "
@@ -155,6 +175,11 @@ for f in "${selected_files[@]}"; do selected+="$(basename "$f") "; done
 log "Compose files:${selected% }"
 
 has_file() { [[ "$selected" == *" $1 "* ]]; }
+
+if has_file docker-compose.webcodecs-ws.yaml; then
+  die "COMPOSE_FILE still names docker-compose.webcodecs-ws.yaml, but WebCodecs was removed.
+    Remove it from the COMPOSE_FILE environment variable."
+fi
 
 # Value from the environment first (Compose does the same), then from .env.
 setting() { local key="$1"; printf '%s' "${!key:-$(env_get "$key" .env)}"; }
@@ -173,33 +198,26 @@ if has_file docker-compose.hls.yaml && ! has_file docker-compose.adaptive.yaml; 
   die "docker-compose.hls.yaml needs docker-compose.adaptive.yaml in COMPOSE_FILE as well."
 fi
 
-if has_file docker-compose.webcodecs-ws.yaml || has_file docker-compose.hls.yaml; then
-  ws_origin="$(setting NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS)"
-  ws_proxies="$(setting NEKO_MEDIA_WEBCODECS_WS_TRUSTED_PROXIES)"
-  hls_origin="$(setting NEKO_MEDIA_HLS_ALLOWED_ORIGINS)"; hls_origin="${hls_origin:-$ws_origin}"
-  hls_proxies="$(setting NEKO_MEDIA_HLS_TRUSTED_PROXIES)"; hls_proxies="${hls_proxies:-$ws_proxies}"
+if has_file docker-compose.hls.yaml; then
+  hls_origin="$(setting NEKO_MEDIA_HLS_ALLOWED_ORIGINS)"
+  hls_proxies="$(setting NEKO_MEDIA_HLS_TRUSTED_PROXIES)"
   missing=()
-  if has_file docker-compose.webcodecs-ws.yaml; then
-    [[ -n "$ws_origin" ]] || missing+=(NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS)
-    [[ -n "$ws_proxies" ]] || missing+=(NEKO_MEDIA_WEBCODECS_WS_TRUSTED_PROXIES)
-  elif has_file docker-compose.hls.yaml; then
-    [[ -n "$hls_origin" ]] || missing+=(NEKO_MEDIA_HLS_ALLOWED_ORIGINS)
-    [[ -n "$hls_proxies" ]] || missing+=(NEKO_MEDIA_HLS_TRUSTED_PROXIES)
-  fi
+  [[ -n "$hls_origin" ]] || missing+=(NEKO_MEDIA_HLS_ALLOWED_ORIGINS)
+  [[ -n "$hls_proxies" ]] || missing+=(NEKO_MEDIA_HLS_TRUSTED_PROXIES)
   if [[ ${#missing[@]} -gt 0 ]]; then
     gateway="$(network_gateway)"
     hint=""
     [[ -n "$gateway" ]] && hint="($gateway is the gateway of the Docker network of this setup, right for a proxy on the same host.)"
-    die "WebCodecs/HLS are enabled through COMPOSE_FILE, but .env lacks ${missing[*]}.
+    die "HLS is enabled through COMPOSE_FILE, but .env lacks ${missing[*]}.
     Set the public https address of this Neko, e.g.
-      NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS=https://neko.example
+      NEKO_MEDIA_HLS_ALLOWED_ORIGINS=https://neko.example
     and the reverse proxy address as Neko sees it, e.g.
-      NEKO_MEDIA_WEBCODECS_WS_TRUSTED_PROXIES=${gateway:-172.18.0.1}/32
+      NEKO_MEDIA_HLS_TRUSTED_PROXIES=${gateway:-172.18.0.1}/32
     $hint
-    HLS reuses both values. To run without these features instead, set
-      COMPOSE_FILE=docker-compose.yaml"
+    To run without HLS instead, set
+      COMPOSE_FILE=docker-compose.yaml:docker-compose.adaptive.yaml"
   fi
-  if has_file docker-compose.hls.yaml && [[ "$hls_origin" != https://* ]]; then
+  if [[ "$hls_origin" != https://* ]]; then
     die "HLS requires an https origin, but the configured one is '$hls_origin'."
   fi
 fi
@@ -212,11 +230,16 @@ if [[ -n "$running_cid" ]]; then
   IFS=',' read -r -a running_list <<< "$running_files"
   for f in "${running_list[@]}"; do
     name="$(basename "$f")"
+    # The removed WebCodecs overlay is dropped on purpose.
+    [[ "$name" == docker-compose.webcodecs-ws.yaml ]] && continue
     [[ "$selected" == *" $name "* ]] || missing+=("$name")
   done
   if [[ ${#missing[@]} -gt 0 ]]; then
     running_value=""
-    for f in "${running_list[@]}"; do running_value+="${running_value:+:}$(basename "$f")"; done
+    for f in "${running_list[@]}"; do
+      [[ "$(basename "$f")" == docker-compose.webcodecs-ws.yaml ]] && continue
+      running_value+="${running_value:+:}$(basename "$f")"
+    done
     die "neko is running with ${missing[*]}, which this run would drop. Keep them by adding
     COMPOSE_FILE=$running_value
 to .env (or remove them from the running setup on purpose with 'docker compose down' first)."
@@ -314,17 +337,16 @@ if [[ "$HTTP_BIND" == 127.0.0.1 || "$HTTP_BIND" == localhost ]]; then
 fi
 enabled=()
 has_file docker-compose.adaptive.yaml && enabled+=("adaptive quality")
-has_file docker-compose.webcodecs-ws.yaml && enabled+=("WebCodecs")
 has_file docker-compose.hls.yaml && enabled+=("HLS")
 if [[ ${#enabled[@]} -gt 0 ]]; then
   log "Enabled features: ${enabled[*]} (WebRTC stays the default media path)"
 fi
-if [[ -n "${hls_proxies:-}${ws_proxies:-}" ]]; then
+if [[ -n "${hls_proxies:-}" ]]; then
   gateway="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.Gateway}} {{end}}' "$cid" | awk '{print $1}')"
-  configured="${ws_proxies:-$hls_proxies}"
+  configured="$hls_proxies"
   if [[ -n "$gateway" && "$configured" != "$gateway" && "$configured" != "$gateway/32" ]]; then
     warn "Trusted proxy is '$configured', but the Docker network gateway is $gateway. If your"
-    warn "reverse proxy runs on this host, WebCodecs/HLS will reject it; set $gateway/32 in .env."
+    warn "reverse proxy runs on this host, HLS will reject it; set $gateway/32 in .env."
   fi
 fi
 log "WebRTC needs UDP $WEBRTC_EPR open in the firewall. If video stays black for remote"

@@ -20,8 +20,7 @@ exec > >(tee "$output/$action.log") 2>&1
 printf 'application_commit=%s\noperator_deployer_blob=%s\n' "$commit" "$(git hash-object -- "$helper")"
 
 dc() {
-  docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml \
-    -f docker-compose.webcodecs-ws.yaml "$@"
+  docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml "$@"
 }
 hls_dc() { dc -f docker-compose.hls.yaml "$@"; }
 deploy_dc() {

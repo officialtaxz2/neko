@@ -39,11 +39,7 @@ func (l *logFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
 	req["method"] = r.Method
 	req["remote"] = r.RemoteAddr
 	req["agent"] = r.UserAgent()
-	if strings.HasSuffix(r.URL.Path, "/api/media/ws") {
-		// This route rejects queries, but redact the complete URL before that
-		// validation so an attempted ticket/query credential cannot reach logs.
-		req["route"] = "/api/media/ws"
-	} else if strings.HasPrefix(r.URL.Path, "/api/media/hls/") {
+	if strings.HasPrefix(r.URL.Path, "/api/media/hls/") {
 		// Public lease IDs are bearer-adjacent correlators and playlist queries
 		// carry live-edge state. Keep both out of request logs.
 		req["route"] = "/api/media/hls/:lease/:resource"

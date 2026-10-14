@@ -97,7 +97,6 @@ export const setting = {
   trackpad_cursor_hidden: 'Hide Trackpad Cursor',
   media_backend: 'Default Media Backend',
   media_backend_webrtc: 'WebRTC',
-  media_backend_webcodecs: 'WebCodecs',
   media_backend_current: 'Current',
   media_backend_override: 'The URL diagnostic override is active and takes priority over the saved default.',
   media_backend_invalid_override: 'The URL media selector is invalid, so the safe WebRTC path is active instead of the saved default.',
@@ -107,10 +106,6 @@ export const setting = {
 }
 
 export const media = {
-  backend_webcodecs: 'WebCodecs',
-  webcodecs_title: 'WebCodecs media',
-  webcodecs_limitations: 'Receive-only: no input transport or Picture-in-Picture. WebRTC fallback is never automatic.',
-  retry_webcodecs: 'Retry WebCodecs',
   hls_limitations: 'Passive viewing with buffering delay. Switching to WebRTC is a manual choice.',
   retry_hls: 'Retry HLS',
   unavailable: 'unavailable',

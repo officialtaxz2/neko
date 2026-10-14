@@ -23,12 +23,6 @@ export const EVENT = {
     PROVIDE: 'signal/provide',
     CANDIDATE: 'signal/candidate',
   },
-  MEDIA: {
-    CAPABILITIES_REQUEST: 'media/capabilities/request',
-    CAPABILITIES: 'media/capabilities',
-    CREATE: 'media/create',
-    OFFER: 'media/offer',
-  },
   HLS: {
     CAPABILITIES_REQUEST: 'media/hls/capabilities/request',
     CAPABILITIES: 'media/hls/capabilities',
@@ -120,10 +114,6 @@ export type SignalEvents =
   | typeof EVENT.SIGNAL.CANDIDATE
 
 export type MediaEvents =
-  | typeof EVENT.MEDIA.CAPABILITIES_REQUEST
-  | typeof EVENT.MEDIA.CAPABILITIES
-  | typeof EVENT.MEDIA.CREATE
-  | typeof EVENT.MEDIA.OFFER
   | typeof EVENT.HLS.CAPABILITIES_REQUEST
   | typeof EVENT.HLS.CAPABILITIES
   | typeof EVENT.HLS.CREATE

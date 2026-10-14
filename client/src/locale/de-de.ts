@@ -94,7 +94,6 @@ export const setting = {
   trackpad_cursor_hidden: 'Trackpad-Zeiger ausblenden',
   media_backend: 'Standard-Medienpfad',
   media_backend_webrtc: 'WebRTC',
-  media_backend_webcodecs: 'WebCodecs',
   media_backend_current: 'Aktiv',
   media_backend_override: 'Die URL-Diagnosevorgabe ist aktiv und hat Vorrang vor der gespeicherten Auswahl.',
   media_backend_invalid_override: 'Die Medienauswahl in der URL ist ungültig; deshalb ist statt der gespeicherten Auswahl der sichere WebRTC-Pfad aktiv.',
@@ -104,10 +103,6 @@ export const setting = {
 }
 
 export const media = {
-  backend_webcodecs: 'WebCodecs',
-  webcodecs_title: 'WebCodecs-Medienpfad',
-  webcodecs_limitations: 'Nur Empfang: keine Eingabesteuerung und kein Bild-in-Bild. Ein Wechsel zu WebRTC erfolgt nie automatisch.',
-  retry_webcodecs: 'WebCodecs erneut versuchen',
   hls_limitations: 'Passives Zuschauen mit Pufferverzögerung. Der Wechsel zu WebRTC erfolgt manuell.',
   retry_hls: 'HLS erneut versuchen',
   unavailable: 'nicht verfügbar',

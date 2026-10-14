@@ -25,8 +25,6 @@ export type WebSocketMessages =
   | ScreenResolutionMessage
   | ScreenConfigurationsMessage
   | ChatMessage
-  | MediaCapabilitiesMessage
-  | MediaOfferMessage
   | HLSCapabilitiesMessage
   | HLSOfferMessage
   | HLSStateMessage
@@ -50,8 +48,6 @@ export type WebSocketPayloads =
   | AdminLockPayload
   | BroadcastStatusPayload
   | BroadcastCreatePayload
-  | MediaCapabilitiesRequestPayload
-  | MediaCreatePayload
   | HLSCapabilitiesRequestPayload
   | HLSCreatePayload
 
@@ -73,68 +69,6 @@ export interface SystemInitPayload {
   file_transfer: boolean
   heartbeat_interval: number
   screen_size?: ScreenResolution
-}
-
-/*
-  MEDIA WEBSOCKET NEGOTIATION PAYLOADS
-*/
-export interface MediaCapabilitySource {
-  id: string
-  codec: string
-  mime_type: string
-  clock_rate: number
-  channels: number
-  coded_width: number
-  coded_height: number
-  frame_rate_numerator: number
-  frame_rate_denominator: number
-  nominal_bitrate: number
-  selector: {
-    type: 'exact' | 'nearest' | 'lower' | 'higher'
-    id: string
-    bitrate: number
-  }
-}
-
-export interface MediaCapabilitiesRequestPayload {
-  version: 1
-}
-
-export interface MediaCapabilitiesPayload {
-  version: number
-  backend: string
-  protocol: string
-  audio: MediaCapabilitySource[]
-  video: MediaCapabilitySource[]
-}
-
-export interface MediaCapabilitiesMessage extends WebSocketMessage, MediaCapabilitiesPayload {
-  event: typeof EVENT.MEDIA.CAPABILITIES
-}
-
-export interface MediaCreateChoice {
-  source_id: string
-  codec: string
-}
-
-export interface MediaCreatePayload {
-  version: 1
-  backend: 'webcodecs-ws'
-  audio: MediaCreateChoice | null
-  video: MediaCreateChoice
-}
-
-export interface MediaOfferPayload {
-  version: number
-  backend: string
-  protocol: string
-  path: string
-  ticket: string
-  expires_in_ms: number
-}
-
-export interface MediaOfferMessage extends WebSocketMessage, MediaOfferPayload {
-  event: typeof EVENT.MEDIA.OFFER
 }
 
 export type HLSMode = 'hls' | 'll-hls'

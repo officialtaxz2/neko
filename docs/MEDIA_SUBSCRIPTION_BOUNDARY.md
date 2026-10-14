@@ -1,8 +1,10 @@
 # Backend-neutral encoded-media subscription boundary
 
+> 2026-10-14: the WebCodecs/media-WebSocket backend described here as a specialization was removed by operator decision. WebRTC and HLS/LL-HLS remain the delivery backends behind this boundary; WebCodecs passages are history.
+
 Status: **design and first no-new-transport compatibility implementation complete on `testing`; bounded target-server checkpoint closed at `e5f55bf9` on 2026-09-12 with the repeated full role/recovery and induced three-viewer down/up matrix explicitly deferred to final grouped validation; WebCodecs/media-WebSocket Phases 1–4 reached a separate bounded target checkpoint at `6b6cd328`, and persisted manual per-client selection/compact status passed its focused target checkpoint at `12cfe43b` with live view-only fragment preservation explicitly omitted; no fully accepted alternative transport exists yet**.
 
-This document fixes the architecture contract and records its first compatibility implementation. The WebCodecs/media-WebSocket specialization is specified separately in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md); its protocol/ticket/negotiation Phase 1, credential-free server delivery Phase 2, isolated browser receive Phase 3 and separate Phase 4 deployment/observability assets exist behind one default-off server flag plus explicit client selection. A bounded Phase 4 target checkpoint passed at `6b6cd328`; the deliberately deferred full-acceptance matrix remains open. The client later added a persisted manual WebRTC/WebCodecs default with exact URL override and compact healthy status, and its focused target-server checkpoint passed at `12cfe43b` except for the explicitly omitted live view-only fragment case. The HLS/LL-HLS specialization is now fixed in [`HLS_LL_HLS.md`](HLS_LL_HLS.md), with default-off HLS/LL-HLS server Phases 1–2 and the explicitly selected passive client Phase 3 implemented. HLS has bounded supplied preparation/security and PC coexistence evidence through exact-8d, including ten minutes of moving A/V alongside WebRTC; full device/grouped/resource acceptance remains open in [Workplan NEXT](WORKPLAN.md#next). No DASH or WebTransport delivery backend exists.
+This document fixes the architecture contract and records its first compatibility implementation. The WebCodecs/media-WebSocket specialization is specified separately in `WEBCODECS_MEDIA_WEBSOCKET.md` (deleted 2026-10-14); its protocol/ticket/negotiation Phase 1, credential-free server delivery Phase 2, isolated browser receive Phase 3 and separate Phase 4 deployment/observability assets exist behind one default-off server flag plus explicit client selection. A bounded Phase 4 target checkpoint passed at `6b6cd328`; the deliberately deferred full-acceptance matrix remains open. The client later added a persisted manual WebRTC/WebCodecs default with exact URL override and compact healthy status, and its focused target-server checkpoint passed at `12cfe43b` except for the explicitly omitted live view-only fragment case. The HLS/LL-HLS specialization is now fixed in [`HLS_LL_HLS.md`](HLS_LL_HLS.md), with default-off HLS/LL-HLS server Phases 1–2 and the explicitly selected passive client Phase 3 implemented. HLS has bounded supplied preparation/security and PC coexistence evidence through exact-8d, including ten minutes of moving A/V alongside WebRTC; full device/grouped/resource acceptance remains open in [Workplan NEXT](WORKPLAN.md#next). No DASH or WebTransport delivery backend exists.
 
 ## Scope
 
@@ -17,7 +19,7 @@ It covers:
 - backend registration, capability reporting and observability;
 - a compatibility migration of the existing WebRTC sender.
 
-It deliberately leaves transport-specific contracts to separate documents. [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md) fixes the first interactive-class receive prototype. [`HLS_LL_HLS.md`](HLS_LL_HLS.md) fixes the first passive HTTP-streaming contract, while actual device evidence, automatic fallback and a new control transport remain later work.
+It deliberately leaves transport-specific contracts to separate documents. `WEBCODECS_MEDIA_WEBSOCKET.md` (deleted 2026-10-14) fixes the first interactive-class receive prototype. [`HLS_LL_HLS.md`](HLS_LL_HLS.md) fixes the first passive HTTP-streaming contract, while actual device evidence, automatic fallback and a new control transport remain later work.
 
 ## Pre-refactor code seam
 
@@ -390,7 +392,7 @@ After deployment, verify ordinary member and admin join/audio/video/control, vie
 
 ### WebCodecs plus dedicated media WebSocket
 
-The first interactive-class receive candidate has the exact version-1 contract in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md). It fixes:
+The first interactive-class receive candidate has the exact version-1 contract in `WEBCODECS_MEDIA_WEBSOCKET.md` (deleted 2026-10-14). It fixes:
 
 - a credential-free single-use attachment ticket created through the authenticated event plane;
 - an explicitly versioned VP8/raw-Opus binary protocol carrying format, generation, sequence, PTS/DTS validity, duration, keyframe, discontinuity and bounded payload lengths;
@@ -417,7 +419,7 @@ Fixed by this design:
 - WebRTC remains the default during migration;
 - backend selection is explicit/opt-in before any automatic fallback;
 - WebCodecs/WebSocket is evaluated for interactive compatibility, HLS/LL-HLS separately for passive compatibility, and WebTransport only afterward.
-- `webcodecs-ws` version 1 uses explicit default-off selection, a dedicated socket, VP8 plus raw Opus, fixed binary framing, fixed queue/security limits and no automatic fallback, as specified in [`WEBCODECS_MEDIA_WEBSOCKET.md`](WEBCODECS_MEDIA_WEBSOCKET.md).
+- `webcodecs-ws` version 1 uses explicit default-off selection, a dedicated socket, VP8 plus raw Opus, fixed binary framing, fixed queue/security limits and no automatic fallback, as specified in `WEBCODECS_MEDIA_WEBSOCKET.md` (deleted 2026-10-14).
 - HLS/LL-HLS version 1 uses explicit default-off selection, shared H.264/AAC fMP4 packaging, fixed six-second parents/one-second LL parts, per-viewer cookie leases without URL credentials, bounded in-memory retention and no automatic fallback, as specified in [`HLS_LL_HLS.md`](HLS_LL_HLS.md).
 
 Still open for later evidence-led prototype blocks:

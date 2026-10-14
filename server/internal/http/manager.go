@@ -24,7 +24,7 @@ type HttpManagerCtx struct {
 	http   *http.Server
 }
 
-func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, config *config.Server, memberConfig *config.Member, mediaWebSocket types.RouterHandler, mediaHLS func(types.Router)) *HttpManagerCtx {
+func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, config *config.Server, memberConfig *config.Member, mediaHLS func(types.Router)) *HttpManagerCtx {
 	logger := log.With().Str("module", "http").Logger()
 
 	opts := []RouterOption{
@@ -60,9 +60,6 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 		origin := r.Header.Get("Origin")
 		return origin == "" || config.AllowOrigin(origin)
 	}))
-	if mediaWebSocket != nil {
-		router.Get("/api/media/ws", mediaWebSocket)
-	}
 	if mediaHLS != nil {
 		mediaHLS(router)
 	}
@@ -73,7 +70,6 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 		Excluded: []string{
 			"/api/batch", // do not allow batchception
 			"/api/ws",
-			"/api/media/ws",
 		},
 		ExcludedPrefixes: []string{"/api/media/hls/"},
 	}

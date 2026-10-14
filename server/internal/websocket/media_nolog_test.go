@@ -9,10 +9,6 @@ import (
 
 func TestMediaNegotiationPayloadsAreNotLogged(t *testing.T) {
 	for _, eventName := range []string{
-		event.MEDIA_CAPABILITIES_REQUEST,
-		event.MEDIA_CAPABILITIES,
-		event.MEDIA_CREATE,
-		event.MEDIA_OFFER,
 		event.MEDIA_HLS_CAPABILITIES_REQUEST,
 		event.MEDIA_HLS_CAPABILITIES,
 		event.MEDIA_HLS_CREATE,

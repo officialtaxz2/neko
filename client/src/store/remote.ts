@@ -82,7 +82,7 @@ export const actions = actionTree(
   { state, getters, mutations },
   {
     sendClipboard({ getters }, clipboard: string) {
-      if (!accessor.connected || accessor.user.viewOnly || $client.webCodecsSelected || !getters.hosting) {
+      if (!accessor.connected || accessor.user.viewOnly || !getters.hosting) {
         return
       }
 
@@ -90,7 +90,7 @@ export const actions = actionTree(
     },
 
     toggle({ getters }) {
-      if (!accessor.connected || accessor.user.viewOnly || $client.webCodecsSelected) {
+      if (!accessor.connected || accessor.user.viewOnly) {
         return
       }
 
@@ -102,7 +102,7 @@ export const actions = actionTree(
     },
 
     request({ getters }) {
-      if (!accessor.connected || accessor.user.viewOnly || $client.webCodecsSelected || getters.controlling) {
+      if (!accessor.connected || accessor.user.viewOnly || getters.controlling) {
         return
       }
 
@@ -110,7 +110,7 @@ export const actions = actionTree(
     },
 
     release({ getters }) {
-      if (!accessor.connected || accessor.user.viewOnly || $client.webCodecsSelected || !getters.hosting) {
+      if (!accessor.connected || accessor.user.viewOnly || !getters.hosting) {
         return
       }
 
@@ -118,7 +118,7 @@ export const actions = actionTree(
     },
 
     give({ getters }, member: string | Member) {
-      if (!accessor.connected || accessor.user.viewOnly || $client.webCodecsSelected || !getters.hosting) {
+      if (!accessor.connected || accessor.user.viewOnly || !getters.hosting) {
         return
       }
 
@@ -134,7 +134,7 @@ export const actions = actionTree(
     },
 
     adminControl() {
-      if (!accessor.connected || $client.webCodecsSelected || !accessor.user.admin) {
+      if (!accessor.connected || !accessor.user.admin) {
         return
       }
 
@@ -142,7 +142,7 @@ export const actions = actionTree(
     },
 
     adminRelease() {
-      if (!accessor.connected || $client.webCodecsSelected || !accessor.user.admin) {
+      if (!accessor.connected || !accessor.user.admin) {
         return
       }
 
@@ -150,7 +150,7 @@ export const actions = actionTree(
     },
 
     adminGive(store, member: string | Member) {
-      if (!accessor.connected || $client.webCodecsSelected) {
+      if (!accessor.connected) {
         return
       }
 
@@ -166,7 +166,7 @@ export const actions = actionTree(
     },
 
     changeKeyboard({ getters }) {
-      if (!accessor.connected || accessor.user.viewOnly || $client.webCodecsSelected || !getters.hosting) {
+      if (!accessor.connected || accessor.user.viewOnly || !getters.hosting) {
         return
       }
 
@@ -174,7 +174,7 @@ export const actions = actionTree(
     },
 
     syncKeyboardModifierState({ state }, { capsLock, numLock, scrollLock }) {
-      if (accessor.user.viewOnly || $client.webCodecsSelected) {
+      if (accessor.user.viewOnly) {
         return
       }
       if (state.keyboardModifierState === keyboardModifierState(capsLock, numLock, scrollLock)) {

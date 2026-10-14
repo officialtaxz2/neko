@@ -171,35 +171,6 @@ func (s *session) wsToClient(msg []byte) error {
 	}
 
 	switch data.Event {
-	case event.MEDIA_CAPABILITIES:
-		request := &message.MediaCapabilities{}
-		if err := json.Unmarshal(data.Payload, request); err != nil {
-			return err
-		}
-		return s.toClient(&oldMessage.MediaCapabilities{
-			Event:    oldEvent.MEDIA_CAPABILITIES,
-			Version:  request.Version,
-			Backend:  request.Backend,
-			Protocol: request.Protocol,
-			Audio:    request.Audio,
-			Video:    request.Video,
-		})
-
-	case event.MEDIA_OFFER:
-		request := &message.MediaOffer{}
-		if err := json.Unmarshal(data.Payload, request); err != nil {
-			return err
-		}
-		return s.toClient(&oldMessage.MediaOffer{
-			Event:       oldEvent.MEDIA_OFFER,
-			Version:     request.Version,
-			Backend:     request.Backend,
-			Protocol:    request.Protocol,
-			Path:        request.Path,
-			Ticket:      request.Ticket,
-			ExpiresInMS: request.ExpiresInMS,
-		})
-
 	case event.MEDIA_HLS_CAPABILITIES:
 		request := &message.MediaHLSCapabilities{}
 		if err := json.Unmarshal(data.Payload, request); err != nil {

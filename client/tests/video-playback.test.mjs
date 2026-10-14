@@ -57,7 +57,6 @@ function harness({ autoplay = true, play } = {}) {
       if (path === 'resize-observer-polyfill') return class { observe() {} disconnect() {} }
       if (path === '~/utils/guacamole-keyboard.ts') return () => ({ listenTo() {}, reset() {} })
       if (path === '~/neko/playback-progress.js') return progress
-      if (path === '~/neko/media-selection.js') return { useCompactMediaStatus: () => true }
       if (path === '~/utils') return { isFullscreen: () => false, lockKeyboard() {}, unlockKeyboard() {} }
       if (path.endsWith('.vue')) return {}
       throw new Error(`Unexpected component module: ${path}`)
@@ -65,8 +64,8 @@ function harness({ autoplay = true, play } = {}) {
   })
   const vm = new exports.default({
     beforeCreate() {
-      this.$accessor = { video:state, hls:Vue.observable({ selected:undefined }), media:Vue.observable({ selected:false }), user:{}, remote:{}, locked:{}, chat:{ emotes:[] }, settings:{ autoplay } }
-      this.$client = { on() {}, off() {}, playWebCodecs: () => Promise.resolve(true) }
+      this.$accessor = { video:state, hls:Vue.observable({ selected:undefined }), user:{}, remote:{}, locked:{}, chat:{ emotes:[] }, settings:{ autoplay } }
+      this.$client = { on() {}, off() {} }
       this.$log = { error() {}, debug() {} }
     },
     render: h => h('div'),
@@ -161,36 +160,3 @@ test('the existing object-URL fallback still uses the common playback owner', as
   assert.equal(h.state.playing, true)
 })
 
-test('WebCodecs toggle retains its own store/controller path', async t => {
-  const h = harness({ autoplay:false }); t.after(() => h.vm.$destroy()); await flush()
-  h.vm.$accessor.media.selected = true
-  h.vm.toggle(); await flush()
-  assert.equal(h.state.playing, true)
-  assert.equal(h.video.playCalls, 0)
-  h.vm.toggle(); await flush()
-  assert.equal(h.state.playing, false)
-})
-
-test('late WebCodecs audio resume cannot mutate state after Pause, selection or destruction', async t => {
-  for (const change of ['pause', 'selection', 'destroy', 'unmute']) {
-    const h = harness({ autoplay:false }); t.after(() => h.vm.$destroy()); await flush()
-    h.vm.$accessor.media.selected = true
-    h.vm.$accessor.media.audioEnabled = true
-    const overlay = h.vm.mutedOverlay
-    let complete
-    h.vm.$client.playWebCodecs = () => new Promise(resolve => { complete = resolve })
-    h.state.play(); await flush()
-    if (change === 'pause') { h.state.pause(); await flush() }
-    if (change === 'selection') h.vm.$accessor.media.selected = false
-    if (change === 'destroy') h.vm.$destroy()
-    if (change === 'unmute') {
-      const oldComplete = complete
-      h.vm.unmute()
-      h.state.pause(); await flush()
-      oldComplete(false)
-    }
-    complete(false); await flush()
-    assert.equal(h.state.muted, false, change)
-    assert.equal(h.vm.mutedOverlay, overlay, change)
-  }
-})
