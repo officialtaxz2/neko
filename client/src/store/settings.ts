@@ -20,7 +20,7 @@ export const state = () => {
     scroll_invert: get<boolean>('scroll_invert', true),
     autoplay: get<boolean>('autoplay', true),
     ignore_emotes: get<boolean>('ignore_emotes', false),
-    chat_sound: get<boolean>('chat_sound', true),
+    chat_sound: get<boolean>('chat_sound', false),
     links_in_app: get<boolean>('links_in_app', false),
     keyboard_layout: get<string>('keyboard_layout', 'us'),
     trackpad_mode: get<boolean>('trackpad_mode', false),

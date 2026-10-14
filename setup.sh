@@ -138,8 +138,35 @@ if [[ ":$compose_value:" == *":docker-compose.webcodecs-ws.yaml:"* ]]; then
   env_set COMPOSE_FILE "${compose_value:-docker-compose.yaml}"
   log "Removed the deleted docker-compose.webcodecs-ws.yaml from COMPOSE_FILE in .env"
 fi
+# Delete the now unused NEKO_MEDIA_WEBCODECS_WS_* lines (after the move above),
+# plus the comment block directly above them when it mentions WebCodecs.
 if grep -qE '^NEKO_MEDIA_WEBCODECS_WS_' .env; then
-  log "The NEKO_MEDIA_WEBCODECS_WS_* lines in .env are no longer used and can be deleted."
+  removed="$(grep -E '^NEKO_MEDIA_WEBCODECS_WS_' .env | cut -d= -f1 | paste -sd' ' -)"
+  tmp="$(mktemp)"
+  awk '
+    { line[NR] = $0 }
+    END {
+      for (i = 1; i <= NR; i++) {
+        if (line[i] !~ /^NEKO_MEDIA_WEBCODECS_WS_/) continue
+        drop[i] = 1
+        # Comment block right above this run of keys.
+        if (i > 1 && line[i - 1] ~ /^NEKO_MEDIA_WEBCODECS_WS_/) continue
+        j = i - 1; mentions = 0
+        while (j >= 1 && line[j] ~ /^#/) { if (tolower(line[j]) ~ /webcodecs/) mentions = 1; j-- }
+        if (mentions) for (k = j + 1; k < i; k++) drop[k] = 1
+      }
+      # Avoid leaving two blank lines where a whole block was removed.
+      for (i = 1; i <= NR; i++) {
+        if (drop[i] || line[i] != "") continue
+        p = i - 1; while (p >= 1 && drop[p]) p--
+        if (p < i - 1 && (p < 1 || line[p] == "")) drop[i] = 1
+      }
+      for (i = 1; i <= NR; i++) if (!drop[i]) print line[i]
+    }
+  ' .env > "$tmp"
+  cat "$tmp" > .env
+  rm -f "$tmp"
+  log "Removed the unused WebCodecs settings from .env: $removed"
 fi
 
 # LL-HLS became a default HLS mode next to conventional HLS. Upgrade the old
