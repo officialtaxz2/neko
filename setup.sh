@@ -144,15 +144,65 @@ WEBRTC_EPR="$(env_get NEKO_WEBRTC_EPR .env)";          WEBRTC_EPR="${WEBRTC_EPR:
 # --------------------------------------------------------------------
 # Compose files
 
-# Compose reads COMPOSE_FILE from .env itself; it selects the opt-in overlays
-# (docker-compose.adaptive.yaml, .webcodecs-ws.yaml, .hls.yaml). Without it
-# only docker-compose.yaml is used.
+# Compose reads COMPOSE_FILE from .env itself; it selects the overlays
+# (docker-compose.adaptive.yaml, .webcodecs-ws.yaml, .hls.yaml). .env.example
+# enables all of them; without COMPOSE_FILE only docker-compose.yaml is used.
 COMPOSE_FILES="$(env_get COMPOSE_FILE .env)"
 COMPOSE_FILES="${COMPOSE_FILE:-$COMPOSE_FILES}"
 selected=" "
 IFS=':' read -r -a selected_files <<< "${COMPOSE_FILES:-docker-compose.yaml}"
 for f in "${selected_files[@]}"; do selected+="$(basename "$f") "; done
 log "Compose files:${selected% }"
+
+has_file() { [[ "$selected" == *" $1 "* ]]; }
+
+# Value from the environment first (Compose does the same), then from .env.
+setting() { local key="$1"; printf '%s' "${!key:-$(env_get "$key" .env)}"; }
+
+# Gateway of this project's Docker network: what a reverse proxy on the same
+# host looks like from inside the container.
+network_gateway() {
+  local name
+  name="$(docker compose -f docker-compose.yaml config 2>/dev/null | sed -n 's/^name: *//p' | head -n 1)"
+  [[ -n "$name" ]] || return 0
+  docker network inspect -f '{{range .IPAM.Config}}{{.Gateway}} {{end}}' "${name}_default" 2>/dev/null \
+    | awk '{print $1}' || true
+}
+
+if has_file docker-compose.hls.yaml && ! has_file docker-compose.adaptive.yaml; then
+  die "docker-compose.hls.yaml needs docker-compose.adaptive.yaml in COMPOSE_FILE as well."
+fi
+
+if has_file docker-compose.webcodecs-ws.yaml || has_file docker-compose.hls.yaml; then
+  ws_origin="$(setting NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS)"
+  ws_proxies="$(setting NEKO_MEDIA_WEBCODECS_WS_TRUSTED_PROXIES)"
+  hls_origin="$(setting NEKO_MEDIA_HLS_ALLOWED_ORIGINS)"; hls_origin="${hls_origin:-$ws_origin}"
+  hls_proxies="$(setting NEKO_MEDIA_HLS_TRUSTED_PROXIES)"; hls_proxies="${hls_proxies:-$ws_proxies}"
+  missing=()
+  if has_file docker-compose.webcodecs-ws.yaml; then
+    [[ -n "$ws_origin" ]] || missing+=(NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS)
+    [[ -n "$ws_proxies" ]] || missing+=(NEKO_MEDIA_WEBCODECS_WS_TRUSTED_PROXIES)
+  elif has_file docker-compose.hls.yaml; then
+    [[ -n "$hls_origin" ]] || missing+=(NEKO_MEDIA_HLS_ALLOWED_ORIGINS)
+    [[ -n "$hls_proxies" ]] || missing+=(NEKO_MEDIA_HLS_TRUSTED_PROXIES)
+  fi
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    gateway="$(network_gateway)"
+    hint=""
+    [[ -n "$gateway" ]] && hint="($gateway is the gateway of the Docker network of this setup, right for a proxy on the same host.)"
+    die "WebCodecs/HLS are enabled through COMPOSE_FILE, but .env lacks ${missing[*]}.
+    Set the public https address of this Neko, e.g.
+      NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS=https://neko.example
+    and the reverse proxy address as Neko sees it, e.g.
+      NEKO_MEDIA_WEBCODECS_WS_TRUSTED_PROXIES=${gateway:-172.18.0.1}/32
+    $hint
+    HLS reuses both values. To run without these features instead, set
+      COMPOSE_FILE=docker-compose.yaml"
+  fi
+  if has_file docker-compose.hls.yaml && [[ "$hls_origin" != https://* ]]; then
+    die "HLS requires an https origin, but the configured one is '$hls_origin'."
+  fi
+fi
 
 # A running neko that was started with overlays must not silently lose them.
 running_cid="$(docker compose ps -q neko 2>/dev/null | head -n 1 || true)"
@@ -261,6 +311,21 @@ echo
 log "neko is running: http://$HTTP_BIND:$HTTP_PORT"
 if [[ "$HTTP_BIND" == 127.0.0.1 || "$HTTP_BIND" == localhost ]]; then
   log "HTTP is bound to localhost only; reach it through your reverse proxy or 'ssh -L $HTTP_PORT:127.0.0.1:$HTTP_PORT'."
+fi
+enabled=()
+has_file docker-compose.adaptive.yaml && enabled+=("adaptive quality")
+has_file docker-compose.webcodecs-ws.yaml && enabled+=("WebCodecs")
+has_file docker-compose.hls.yaml && enabled+=("HLS")
+if [[ ${#enabled[@]} -gt 0 ]]; then
+  log "Enabled features: ${enabled[*]} (WebRTC stays the default media path)"
+fi
+if [[ -n "${hls_proxies:-}${ws_proxies:-}" ]]; then
+  gateway="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.Gateway}} {{end}}' "$cid" | awk '{print $1}')"
+  configured="${ws_proxies:-$hls_proxies}"
+  if [[ -n "$gateway" && "$configured" != "$gateway" && "$configured" != "$gateway/32" ]]; then
+    warn "Trusted proxy is '$configured', but the Docker network gateway is $gateway. If your"
+    warn "reverse proxy runs on this host, WebCodecs/HLS will reject it; set $gateway/32 in .env."
+  fi
 fi
 log "WebRTC needs UDP $WEBRTC_EPR open in the firewall. If video stays black for remote"
 log "clients, set NEKO_WEBRTC_NAT1TO1 in .env and enable it in docker-compose.yaml."
