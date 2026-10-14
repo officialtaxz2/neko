@@ -197,7 +197,7 @@ Both modes use individual fMP4 resources, relative URIs and live playlists witho
 | GOP / independent boundary | 2 seconds | 2 seconds |
 | `HOLD-BACK` | 18 seconds | 18 seconds |
 | `PART-HOLD-BACK` | none | 3 seconds |
-| Playlist-visible completed parents | 3 | 3 plus the current partial parent |
+| Playlist-visible completed parents | 3 | 3 plus the current partial parent; the last 2 completed parents keep their `EXT-X-PART` tags |
 | Internally retained completed parents | 6 | 6 plus current parts |
 | Blocking reload | no | yes, `CAN-BLOCK-RELOAD=YES` |
 | Preload hint | no | required for next part |
@@ -214,7 +214,7 @@ The multivariant playlist contains `EXTM3U`, `EXT-X-VERSION:7`, `EXT-X-INDEPENDE
 
 A conventional media playlist contains at least `EXTM3U`, `EXT-X-VERSION:7`, `EXT-X-TARGETDURATION:6`, monotonically increasing `EXT-X-MEDIA-SEQUENCE`, the current `EXT-X-DISCONTINUITY-SEQUENCE`, `EXT-X-SERVER-CONTROL:HOLD-BACK=18`, `EXT-X-MAP`, `EXT-X-PROGRAM-DATE-TIME` and exactly three completed `EXTINF` entries once warm. Conventional backend open becomes ready only after the audio and every advertised video rendition have an init section plus three complete aligned parents. The current server-only candidate waits for at most 28 seconds (24 seconds in the deployed exact-68 image); expiry fails bootstrap with `503` and leaves the prior primary delivery unchanged. The same constant also bounds conventional readiness during private lease resume. The extra four seconds are a bounded startup allowance pending target validation, not a change to segment duration, playback hold-back or the measured acceptance targets below. The outer client bootstrap and server response-write limits remain 30 seconds; earlier work or request cancellation can still end a request sooner.
 
-An LL-HLS media playlist uses version 9 and adds `EXT-X-PART-INF:PART-TARGET=1`, `EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,HOLD-BACK=18,PART-HOLD-BACK=3`, current `EXT-X-PART` entries, one next-part `EXT-X-PRELOAD-HINT`, and `EXT-X-RENDITION-REPORT` for every other ready rendition. Audio parts are independently decodable. Video parts beginning at the aligned 0/2/4-second IDRs carry `INDEPENDENT=YES`; other video parts do not. Normal parts are one second and satisfy the specification's 85%-of-target rule; only the permitted final/independent/gap exceptions may be shorter. LL-HLS backend open becomes ready after the audio and every advertised video rendition have an init section plus three complete aligned parts, including an independent video start. It waits for at most six seconds; expiry has the same fail-without-replacement behavior. Completed parents accumulate into the fixed three-parent window after startup.
+An LL-HLS media playlist uses version 9 and adds `EXT-X-PART-INF:PART-TARGET=1`, `EXT-X-SERVER-CONTROL:CAN-BLOCK-RELOAD=YES,HOLD-BACK=18,PART-HOLD-BACK=3`, current `EXT-X-PART` entries, one next-part `EXT-X-PRELOAD-HINT`, and `EXT-X-RENDITION-REPORT` for every other ready rendition. Audio parts are independently decodable. Video parts beginning at the aligned 0/2/4-second IDRs carry `INDEPENDENT=YES`; other video parts do not. Normal parts are one second and satisfy the specification's 85%-of-target rule; only the permitted final/independent/gap exceptions may be shorter. The two most recent completed parents keep their six `EXT-X-PART` tags before their `EXTINF`, so a player at `PART-HOLD-BACK` crosses a parent rollover part by part instead of re-fetching the whole parent; every listed part stays inside three target durations of the playlist end and inside the aggregate-pressure retention floor. Before the first parent completes, `EXT-X-MEDIA-SEQUENCE` names the parent of the listed parts. LL-HLS backend open becomes ready after the audio and every advertised video rendition have an init section plus three complete aligned parts, including an independent video start. It waits for at most six seconds; expiry has the same fail-without-replacement behavior. Completed parents accumulate into the fixed three-parent window after startup.
 
 Every init object is one valid ISO BMFF initialization section containing `ftyp` and `moov`. Every part/parent object is a self-contained `moof` plus `mdat` fragment whose decode times and sample durations are monotonic and reference the current init section. Parent segments are addressable complete objects, not concatenation instructions over credential-bearing byteranges. Version 1 claims HLS-compatible fragmented MP4, not broader CMAF conformance, until a CMAF validator is part of acceptance.
 
@@ -589,3 +589,18 @@ Still evidence-led after implementation:
 - [W3C Media Source Extensions](https://www.w3.org/TR/media-source-2/)
 - [hls.js compatibility and feature-detection contract](https://github.com/video-dev/hls.js/blob/master/README.md)
 - [Pinned hls.js 1.7.3 player/loader/worker API](https://github.com/video-dev/hls.js/blob/v1.7.3/docs/API.md)
+
+## LL-HLS enablement (2026-10-14)
+
+The operator asked for LL-HLS as a selectable option next to conventional HLS so chat participants see the room with a few seconds instead of 20–30 seconds of delay. `docker-compose.hls.yaml` and `.env.example` now advertise `hls ll-hls`; an existing `.env` with `NEKO_MEDIA_HLS_MODES=hls` keeps only conventional HLS until it is changed. There is still no automatic selection or fallback.
+
+Static review of the LL path found and corrected:
+
+- the pinned hls.js player was configured with `liveSyncDurationCount: 3`; hls.js ignores `PART-HOLD-BACK` whenever any `liveSync*` option is user-set, so LL-HLS would have played 18 seconds (three target durations) behind the live edge. LL-HLS now leaves these unset (3-second target from `PART-HOLD-BACK`) and allows a 1.1× catch-up playback rate; conventional HLS is unchanged;
+- completed parents dropped their parts at rollover, so the player had to re-fetch each six-second parent it had already partly buffered from parts. The last two completed parents now keep their parts (see above), and the aggregate eviction floor for parts was raised from 6 to 18 per rendition to match;
+- the pre-first-parent media sequence used the generation base instead of the parent of the listed parts.
+
+Proxy: Caddy streams by default and has no read/write/response-header timeout unless configured, so the seven-second blocking reloads pass without change; HTTP/2 (and HTTP/3) are Caddy defaults on HTTPS sites. `deploy/check-ll-hls.sh` checks this read-only on the target together with the advertised modes, viewer RTT and, while an LL-HLS stream plays, the held-reload and part results.
+
+Go and client unit tests cover the new playlist shape, retention and player configuration. Target-server playback, latency and device results, including the friend's Smart TV, remain pending.
+

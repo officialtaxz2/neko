@@ -44,7 +44,9 @@ func (playlist MasterPlaylist) Render() ([]byte, error) {
 	return boundedPlaylist(builder.String())
 }
 
-type Segment struct { URI string; Sequence uint64; Duration float64; ProgramDateTime time.Time; Discontinuity bool }
+// Parts lists a completed LL-HLS parent's partial segments. Conventional
+// playlists never carry them; LL-HLS keeps them only for recent parents.
+type Segment struct { URI string; Sequence uint64; Duration float64; ProgramDateTime time.Time; Discontinuity bool; Parts []Part }
 type Part struct { URI string; Duration float64; Independent bool }
 type RenditionReport struct { URI string; LastMSN uint64; LastPart uint64 }
 
@@ -63,6 +65,9 @@ type MediaPlaylist struct {
 func (playlist MediaPlaylist) Render() ([]byte, error) {
 	if !ValidMode(playlist.Mode) || playlist.MediaSequence == 0 || !relativeInitURI(playlist.MapURI) || len(playlist.Segments) > 3 { return nil, ErrInvalidPlaylist }
 	if playlist.Mode == ModeHLS && (len(playlist.Segments) != 3 || len(playlist.Parts) != 0 || playlist.PreloadHint != "" || len(playlist.RenditionReports) != 0) { return nil, ErrInvalidPlaylist }
+	for _, segment := range playlist.Segments {
+		if len(segment.Parts) != 0 && (playlist.Mode != ModeLLHLS || len(segment.Parts) != 6) { return nil, ErrInvalidPlaylist }
+	}
 	if playlist.Mode == ModeLLHLS && ((len(playlist.Segments) == 0 && len(playlist.Parts) < 3) || len(playlist.Parts) > 6 || playlist.PartsProgramDateTime.IsZero() || !relativeMediaURI(playlist.PreloadHint)) { return nil, ErrInvalidPlaylist }
 	version := 7
 	if playlist.Mode == ModeLLHLS { version = 9 }
@@ -77,7 +82,12 @@ func (playlist MediaPlaylist) Render() ([]byte, error) {
 	for _, segment := range playlist.Segments {
 		if !relativeMediaURI(segment.URI) || math.Abs(segment.Duration-6) > 0.0005 || segment.ProgramDateTime.IsZero() { return nil, ErrInvalidPlaylist }
 		if segment.Discontinuity { builder.WriteString("#EXT-X-DISCONTINUITY\n") }
-		fmt.Fprintf(&builder, "#EXT-X-PROGRAM-DATE-TIME:%s\n#EXTINF:%.3f,\n%s\n", segment.ProgramDateTime.UTC().Format(time.RFC3339Nano), segment.Duration, segment.URI)
+		fmt.Fprintf(&builder, "#EXT-X-PROGRAM-DATE-TIME:%s\n", segment.ProgramDateTime.UTC().Format(time.RFC3339Nano))
+		// A parent's EXT-X-PART tags precede its EXTINF and must add up to it.
+		for _, part := range segment.Parts {
+			if err := writePart(&builder, part); err != nil { return nil, err }
+		}
+		fmt.Fprintf(&builder, "#EXTINF:%.3f,\n%s\n", segment.Duration, segment.URI)
 	}
 	if playlist.Mode == ModeLLHLS {
 		if len(playlist.Segments) != 0 {
@@ -87,10 +97,7 @@ func (playlist MediaPlaylist) Render() ([]byte, error) {
 		}
 		fmt.Fprintf(&builder, "#EXT-X-PROGRAM-DATE-TIME:%s\n", playlist.PartsProgramDateTime.UTC().Format(time.RFC3339Nano))
 		for _, part := range playlist.Parts {
-			if !relativeMediaURI(part.URI) || part.Duration < 0.85 || part.Duration > 1 { return nil, ErrInvalidPlaylist }
-			fmt.Fprintf(&builder, "#EXT-X-PART:DURATION=%.3f,URI=\"%s\"", part.Duration, part.URI)
-			if part.Independent { builder.WriteString(",INDEPENDENT=YES") }
-			builder.WriteByte('\n')
+			if err := writePart(&builder, part); err != nil { return nil, err }
 		}
 		fmt.Fprintf(&builder, "#EXT-X-PRELOAD-HINT:TYPE=PART,URI=\"%s\"\n", playlist.PreloadHint)
 		seen := map[string]struct{}{}
@@ -102,6 +109,14 @@ func (playlist MediaPlaylist) Render() ([]byte, error) {
 		}
 	}
 	return boundedPlaylist(builder.String())
+}
+
+func writePart(builder *strings.Builder, part Part) error {
+	if !relativeMediaURI(part.URI) || part.Duration < 0.85 || part.Duration > 1 { return ErrInvalidPlaylist }
+	fmt.Fprintf(builder, "#EXT-X-PART:DURATION=%.3f,URI=\"%s\"", part.Duration, part.URI)
+	if part.Independent { builder.WriteString(",INDEPENDENT=YES") }
+	builder.WriteByte('\n')
+	return nil
 }
 
 func relativePlaylistURI(value string) bool { return relativeURI(value) && strings.HasSuffix(value, ".m3u8") }

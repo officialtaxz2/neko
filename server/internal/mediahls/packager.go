@@ -20,6 +20,9 @@ const (
 	ConventionalReadyWindow = 28 * time.Second
 	LowLatencyReadyWindow   = 6 * time.Second
 	PartDuration            = time.Second
+	// Completed parents whose parts stay listed in LL-HLS playlists. Two
+	// parents keep every listed part within three target durations of the end.
+	LowLatencyPartParents   = 2
 	ParentDuration          = 6 * time.Second
 )
 
@@ -835,10 +838,15 @@ func (packager *Packager) finishPartLocked(track *trackState, anchorWall time.Ti
 		if err := packager.publishLocked(track, ObjectSegment, segmentURI, sequence, 0, track.segmentData, track.partCapturedAt); err != nil {
 			return err
 		}
+		parentParts := make([]Part, 0, len(track.parts))
+		for _, part := range track.parts {
+			parentParts = append(parentParts, part.part)
+		}
 		track.segments = append(track.segments, Segment{
 			URI: segmentURI, Sequence: sequence, Duration: 6,
 			ProgramDateTime: anchorWall.Add(time.Duration(sequence-track.baseMSN) * ParentDuration),
 			Discontinuity: len(track.segments) == 0,
+			Parts: parentParts,
 		})
 		if len(track.segments) > 3 {
 			removed := len(track.segments) - 3
@@ -935,7 +943,8 @@ func (packager *Packager) evictUnadvertisedLocked() bool {
 	found := false
 	minimum := map[ObjectKind]int{
 		ObjectInit:    1,
-		ObjectPart:    6,
+		// LL-HLS advertises the parts of the recent parents plus current.
+		ObjectPart:    (LowLatencyPartParents + 1) * 6,
 		ObjectSegment: 3,
 	}
 	for _, variant := range []string{"audio", "high", "medium", "low"} {
@@ -1169,6 +1178,19 @@ func (packager *Packager) Playlist(ctx context.Context, mode, variant string, di
 	}
 	if len(playlist.Segments) > 0 {
 		playlist.MediaSequence = track.segments[0].Sequence
+	} else {
+		// Before the first parent completes, the listed parts belong to the
+		// current parent; a rendition may join one parent after baseMSN.
+		playlist.MediaSequence = track.nextMSN
+	}
+	for index := range playlist.Segments {
+		// Keep completed parents' parts only in LL-HLS and only for the last
+		// LowLatencyPartParents parents. A player at PART-HOLD-BACK continues
+		// part-by-part across a parent rollover instead of re-fetching the
+		// whole six-second parent it has already partly buffered.
+		if mode == ModeHLS || index < len(playlist.Segments)-LowLatencyPartParents {
+			playlist.Segments[index].Parts = nil
+		}
 	}
 	if mode == ModeHLS {
 		return playlist.Render()

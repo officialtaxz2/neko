@@ -2,6 +2,7 @@ package mediahls
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -33,8 +34,21 @@ func TestConventionalPlaylistGolden(t *testing.T) {
 	if expected:=readGolden(t,"conventional.m3u8"); !bytes.Equal(actual,expected) { t.Fatalf("playlist mismatch\nactual:\n%s\nexpected:\n%s",actual,expected) }
 }
 
+func goldenParentParts(sequence int) []Part {
+	parts:=make([]Part,0,6)
+	for index:=0; index<6; index++ { parts=append(parts,Part{URI:fmt.Sprintf("part-%d-%d.m4s",sequence,index),Duration:1,Independent:index%2==0}) }
+	return parts
+}
+
+func goldenLowLatencySegments() []Segment {
+	segments:=goldenSegments()
+	segments[1].Parts=goldenParentParts(43)
+	segments[2].Parts=goldenParentParts(44)
+	return segments
+}
+
 func TestLowLatencyPlaylistGolden(t *testing.T) {
-	actual,err:=(MediaPlaylist{Mode:ModeLLHLS,MediaSequence:42,DiscontinuitySequence:3,MapURI:"init-7.mp4",Segments:goldenSegments(),PartsProgramDateTime:time.Date(2026,9,23,7,0,18,0,time.UTC),Parts:[]Part{{URI:"part-45-0.m4s",Duration:1,Independent:true},{URI:"part-45-1.m4s",Duration:1},{URI:"part-45-2.m4s",Duration:1,Independent:true}},PreloadHint:"part-45-3.m4s",RenditionReports:[]RenditionReport{{URI:"../medium/index.m3u8",LastMSN:45,LastPart:2},{URI:"../low/index.m3u8",LastMSN:45,LastPart:2}}}).Render()
+	actual,err:=(MediaPlaylist{Mode:ModeLLHLS,MediaSequence:42,DiscontinuitySequence:3,MapURI:"init-7.mp4",Segments:goldenLowLatencySegments(),PartsProgramDateTime:time.Date(2026,9,23,7,0,18,0,time.UTC),Parts:[]Part{{URI:"part-45-0.m4s",Duration:1,Independent:true},{URI:"part-45-1.m4s",Duration:1},{URI:"part-45-2.m4s",Duration:1,Independent:true}},PreloadHint:"part-45-3.m4s",RenditionReports:[]RenditionReport{{URI:"../medium/index.m3u8",LastMSN:45,LastPart:2},{URI:"../low/index.m3u8",LastMSN:45,LastPart:2}}}).Render()
 	if err!=nil { t.Fatal(err) }
 	if expected:=readGolden(t,"low-latency.m3u8"); !bytes.Equal(actual,expected) { t.Fatalf("playlist mismatch\nactual:\n%s\nexpected:\n%s",actual,expected) }
 }
@@ -43,4 +57,11 @@ func TestPlaylistRejectsAbsoluteCredentialsAndOversizedModel(t *testing.T) {
 	if _,err:=(MasterPlaylist{AudioURI:"https://example/audio.m3u8",Variants:[]MasterVariant{{ID:"high",URI:"high/index.m3u8",Bandwidth:2,AverageBandwidth:1,Width:1,Height:1,FrameRate:1,VideoCodec:"avc1.64001f"}}}).Render(); err==nil { t.Fatal("absolute URI accepted") }
 	if _,err:=(MediaPlaylist{Mode:ModeLLHLS,MediaSequence:1,MapURI:"init-1.mp4",Segments:goldenSegments(),PartsProgramDateTime:time.Now(),Parts:[]Part{{URI:"part-1-0.m4s",Duration:.5}},PreloadHint:"part-1-1.m4s"}).Render(); err==nil { t.Fatal("undersized normal part accepted") }
 	if _,err:=(MediaPlaylist{Mode:ModeHLS,MediaSequence:1,MapURI:"seg-1.m4s",Segments:goldenSegments()}).Render(); err==nil { t.Fatal("media object accepted as init map") }
+}
+
+func TestPlaylistRejectsMisplacedParentParts(t *testing.T) {
+	conventional:=goldenSegments(); conventional[2].Parts=goldenParentParts(44)
+	if _,err:=(MediaPlaylist{Mode:ModeHLS,MediaSequence:42,MapURI:"init-7.mp4",Segments:conventional}).Render(); err==nil { t.Fatal("conventional playlist accepted parent parts") }
+	incomplete:=goldenLowLatencySegments(); incomplete[2].Parts=incomplete[2].Parts[:5]
+	if _,err:=(MediaPlaylist{Mode:ModeLLHLS,MediaSequence:42,MapURI:"init-7.mp4",Segments:incomplete,PartsProgramDateTime:time.Date(2026,9,23,7,0,18,0,time.UTC),PreloadHint:"part-45-0.m4s"}).Render(); err==nil { t.Fatal("incomplete parent parts accepted") }
 }
