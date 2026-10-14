@@ -3,7 +3,21 @@ import EventEmitter from 'eventemitter3'
 import { BaseClient, BaseEvents } from './base'
 import { Member } from './types'
 import { EVENT } from './events'
+import { reconnectDelayForAttempt, shouldReconnect } from './recovery'
+import { viewOnlyTokenFromHash } from './share'
 import { accessor } from '~/store'
+import { ScheduledVideoFrame, WebCodecsMediaController } from './media/controller'
+import { deliverOrReleaseVideoFrame } from './media/recovery.js'
+import { HLSMediaController } from './hls/controller'
+import { hlsModes } from './hls/protocol.js'
+import {
+  MEDIA_BACKEND_WEBRTC,
+  MEDIA_BACKEND_WEBCODECS,
+  mediaBackendNavigationURL,
+  normalizeMediaBackendPreference,
+  resolveMediaBackendSelection,
+  isHLSBackend,
+} from './media-selection.js'
 
 import {
   SystemMessagePayload,
@@ -23,14 +37,39 @@ import {
   SystemInitPayload,
   AdminLockResource,
   FileTransferListPayload,
+  MediaCapabilitiesPayload,
+  MediaOfferPayload,
+  HLSCapabilitiesPayload,
+  HLSOfferPayload,
+  HLSStateMessage,
+  HLSMode,
 } from './messages'
 
 interface NekoEvents extends BaseEvents {}
+
+interface ReconnectCredentials {
+  password?: string
+  viewOnlyToken?: string
+  displayname: string
+}
 
 export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   private $vue!: Vue
   private $accessor!: typeof accessor
   private url!: string
+  private reconnectCredentials?: ReconnectCredentials
+  private viewOnlyToken?: string
+  private reconnectTimer?: number
+  private reconnectAttempt = 0
+  private reconnectInFlight = false
+  private reconnectEligible = false
+  private reconnectSuppressed = false
+  private mediaController?: WebCodecsMediaController
+  private hlsController?: HLSMediaController
+  private hlsVideo?: HTMLVideoElement
+  private hlsPrivatePaused = false
+  private mediaBackendURLOverride = false
+  private mediaBackendInvalidURLOverride = false
 
   public isDemo = false
   private demoInterval?: any
@@ -44,7 +83,47 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.isDemo = isDemo
   }
 
+  public get recovering() {
+    return this.reconnectTimer !== undefined || this.reconnectInFlight
+  }
+
+  public get automaticLoginAllowed() {
+    return !this.reconnectSuppressed && !this.recovering
+  }
+
+  public get viewOnlyLink() {
+    return this.viewOnlyToken !== undefined
+  }
+
+  public get webCodecsSelected() {
+    return this.mediaBackend === 'webcodecs-ws'
+  }
+
+  public get effectiveMediaBackend() {
+    return this.mediaBackend || MEDIA_BACKEND_WEBRTC
+  }
+
+  public get hlsSelected() { return isHLSBackend(this.mediaBackend) }
+  public get receiveOnlySelected() { return this.mediaBackend !== undefined }
+
+  public get mediaBackendOverridden() {
+    return this.mediaBackendURLOverride
+  }
+
+  public get mediaBackendOverrideInvalid() {
+    return this.mediaBackendInvalidURLOverride
+  }
+
   init(vue: Vue) {
+    const mediaSelection = resolveMediaBackendSelection(location.search, vue.$accessor.settings.media_backend)
+    const webCodecsSelected = mediaSelection.backend === MEDIA_BACKEND_WEBCODECS
+    this.mediaBackendURLOverride = mediaSelection.overridden
+    this.mediaBackendInvalidURLOverride = mediaSelection.invalidOverride
+    this.selectMediaBackend(mediaSelection.backend === MEDIA_BACKEND_WEBRTC ? undefined : mediaSelection.backend)
+    vue.$accessor.media.select(webCodecsSelected)
+    vue.$accessor.hls.select(isHLSBackend(mediaSelection.backend) ? mediaSelection.backend as HLSMode : undefined)
+    this.viewOnlyToken = viewOnlyTokenFromHash(location.hash)
+
     let port: string | undefined = undefined
     try {
       if (typeof process !== 'undefined' && process.env) {
@@ -112,6 +191,96 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.$accessor.user.reset()
     this.$accessor.video.reset()
     this.$accessor.chat.reset()
+    this.$accessor.media.reset()
+    this.$accessor.hls.reset()
+  }
+
+  protected disconnect() {
+    this.mediaController?.stop()
+    this.mediaController = undefined
+    this.hlsController?.stop()
+    this.hlsController = undefined
+    this.hlsPrivatePaused = false
+    super.disconnect()
+  }
+
+  private clearReconnectTimer() {
+    if (this.reconnectTimer !== undefined) {
+      window.clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = undefined
+    }
+  }
+
+  private stopReconnect(forgetCredentials = false) {
+    this.clearReconnectTimer()
+    this.reconnectAttempt = 0
+    this.reconnectInFlight = false
+    this.reconnectEligible = false
+
+    if (forgetCredentials) {
+      this.reconnectCredentials = undefined
+    }
+  }
+
+  private canReconnect() {
+    return shouldReconnect({
+      previouslyConnected: this.reconnectEligible,
+      credentialsAvailable: this.reconnectCredentials !== undefined,
+      supported: this.supported,
+      demo: this.isDemo,
+      suppressed: this.reconnectSuppressed,
+    })
+  }
+
+  private scheduleReconnect() {
+    if (!this.canReconnect()) {
+      return false
+    }
+
+    // A disconnect can be reported by WebSocket, ICE and the data channel in
+    // close succession. One pending timer owns the application-level retry.
+    if (this.reconnectTimer !== undefined) {
+      return true
+    }
+
+    const delay = reconnectDelayForAttempt(this.reconnectAttempt)
+    if (delay === null) {
+      this.emit('warn', `application reconnect exhausted after ${this.reconnectAttempt} attempts`)
+      this.reconnectEligible = false
+      this.reconnectInFlight = false
+      return false
+    }
+
+    const attempt = this.reconnectAttempt + 1
+    const credentials = this.reconnectCredentials!
+    this.reconnectAttempt = attempt
+    this.reconnectInFlight = false
+    this.emit('debug', `scheduling application reconnect attempt ${attempt} in ${delay}ms`)
+
+    this.reconnectTimer = window.setTimeout(() => {
+      this.reconnectTimer = undefined
+
+      if (!this.canReconnect() || this.connected || this.socketOpen) {
+        this.reconnectInFlight = false
+        return
+      }
+
+      this.reconnectInFlight = true
+      this.emit('debug', `starting application reconnect attempt ${attempt}`)
+      this[EVENT.RECONNECTING]()
+      this.connectWithCredentials(credentials)
+    }, delay)
+
+    return true
+  }
+
+  private connectWithCredentials(credentials: ReconnectCredentials) {
+    if (credentials.viewOnlyToken !== undefined) {
+      this.connectViewOnly(this.url, credentials.viewOnlyToken, credentials.displayname)
+      return
+    }
+
+    this.connect(this.url, credentials.password || '', credentials.displayname)
   }
 
   sendData(event: string, data: any) {
@@ -128,18 +297,107 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       }
       return
     }
+    if (this.receiveOnlySelected) {
+      this.emit('warn', 'selected media path is receive-only; no replacement input transport is implemented')
+      return
+    }
     super.sendData(event as any, data)
   }
 
+  public retryWebCodecs() {
+    if (!this.webCodecsSelected || !this.mediaController) return
+    this.mediaController.retry()
+  }
+
+  public useWebRTC() {
+    if (!this.receiveOnlySelected) return
+    this.$accessor.settings.setMediaBackend(MEDIA_BACKEND_WEBRTC)
+    this.changeMediaBackend(MEDIA_BACKEND_WEBRTC)
+  }
+
+  public changeMediaBackend(backend: string) {
+    const normalized = normalizeMediaBackendPreference(backend)
+    if (!this.canSelectMediaBackend(normalized)) return
+    if (normalized === this.effectiveMediaBackend && !this.mediaBackendURLOverride) return
+
+    this.reloadForMediaBackendSelection()
+  }
+
+  public canSelectMediaBackend(backend: string) {
+    return !isHLSBackend(backend) || this.$accessor.hls.availableModes.includes(backend as HLSMode)
+  }
+
+  public clearMediaBackendOverride() {
+    if (!this.mediaBackendURLOverride) return
+    this.reloadForMediaBackendSelection()
+  }
+
+  private reloadForMediaBackendSelection() {
+    this.reconnectSuppressed = true
+    this.stopReconnect(true)
+    this.mediaController?.stop()
+    this.hlsController?.stop()
+    window.location.assign(mediaBackendNavigationURL(window.location.href))
+  }
+
+  public playWebCodecs() {
+    return this.mediaController?.play() || Promise.resolve(false)
+  }
+
+  public attachHLSVideo(video: HTMLVideoElement) {
+    if (!this.hlsSelected || !video) return
+    this.hlsVideo = video
+    this.hlsController?.attach(video)
+    if (this.connected && this.$accessor.hls.status === 'idle') this.hlsController?.start()
+  }
+
+  public detachHLSVideo(video: HTMLVideoElement) {
+    if (!video || this.hlsVideo !== video) return
+    this.hlsController?.detach(video)
+    this.hlsVideo = undefined
+    if (this.$accessor.hls.status !== 'terminal') this.$accessor.hls.setStatus({ status: 'idle' })
+  }
+
+  public playHLS() { return this.hlsController?.play() || Promise.resolve(false) }
+  public pauseHLS() { this.hlsController?.pause() }
+  public retryHLS() { this.hlsController?.retry() }
+  public setHLSMuted(muted: boolean) { this.hlsController?.setMuted(muted) }
+  public setHLSVolume(volume: number) { this.hlsController?.setVolume(volume) }
+
+  public setWebCodecsMuted(muted: boolean) {
+    this.mediaController?.setMuted(muted)
+  }
+
+  public setWebCodecsVolume(volume: number) {
+    this.mediaController?.setVolume(volume)
+  }
+
+  public releaseWebCodecsFrame(frame: ScheduledVideoFrame, rendered: boolean, skewMS: number) {
+    this.mediaController?.releaseVideoFrame(frame, rendered, skewMS)
+  }
+
+  public resyncWebCodecs(reason: 'queue_overflow' | 'decoder_error' | 'timestamp' | 'audio_underflow' | 'av_skew') {
+    this.mediaController?.requestResync(reason)
+  }
+
   login(password: string, displayname: string) {
+    this.stopReconnect(true)
+    this.reconnectSuppressed = false
+
     if (this.isDemo || password.toLowerCase() === 'demo') {
       this.startDemo(displayname)
     } else {
-      this.connect(this.url, password, displayname)
+      this.reconnectCredentials =
+        this.viewOnlyToken !== undefined
+          ? { viewOnlyToken: this.viewOnlyToken, displayname }
+          : { password, displayname }
+      this.connectWithCredentials(this.reconnectCredentials)
     }
   }
 
   logout() {
+    this.reconnectSuppressed = true
+    this.stopReconnect(true)
     this.stopDemo()
     this.disconnect()
     this.cleanup()
@@ -190,10 +448,10 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
       })
 
       this.simMembers = [
-        { id: 'demo-user-id', displayname, admin: true, muted: false },
-        { id: 'nekobot', displayname: 'NekoBot 🐱', admin: false, muted: false },
-        { id: 'alice', displayname: 'Alice 🌸', admin: false, muted: false },
-        { id: 'bob', displayname: 'Bob 🚀', admin: true, muted: false },
+        { id: 'demo-user-id', displayname, admin: true, muted: false, view_only: false },
+        { id: 'nekobot', displayname: 'NekoBot 🐱', admin: false, muted: false, view_only: false },
+        { id: 'alice', displayname: 'Alice 🌸', admin: false, muted: false, view_only: false },
+        { id: 'bob', displayname: 'Bob 🚀', admin: true, muted: false, view_only: false },
       ]
 
       // Set initial player list
@@ -667,8 +925,81 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   protected [EVENT.CONNECTED]() {
+    this.clearReconnectTimer()
+    this.reconnectAttempt = 0
+    this.reconnectInFlight = false
+    this.reconnectEligible = !this.isDemo && this.reconnectCredentials !== undefined
+
     this.$accessor.user.setMember(this.id)
     this.$accessor.setConnected(true)
+
+    if (this.hlsSelected) {
+      this.hlsController?.stop()
+      const controller = new HLSMediaController(this.url, this.mediaBackend as HLSMode, {
+        sendEvent: (event, payload) => this.sendMessage(event, payload),
+        eventSocketOpen: () => this.socketOpen && this.connected,
+        autoplay: () => this.$accessor.settings.autoplay,
+        setStatus: (status, detail = '') => this.$accessor.hls.setStatus({ status, detail }),
+        setPlayer: (player) => this.$accessor.hls.setPlayer(player),
+        setPlayable: (playable) => this.$accessor.video.setPlayable(playable),
+        setPlaying: (playing) => playing ? this.$accessor.video.play() : this.$accessor.video.pause(),
+        setMuted: (muted) => this.$accessor.video.setMuted(muted),
+        resolution: (width, height) => {
+          if (width && height) this.$accessor.video.setResolution({ width, height, rate: height <= 360 ? 15 : height <= 480 ? 20 : 25 })
+        },
+      })
+      this.hlsController = controller
+      controller.setPrivatePaused(this.hlsPrivatePaused)
+      controller.setMuted(this.$accessor.video.muted)
+      controller.setVolume(this.$accessor.video.volume / 100)
+      if (this.hlsVideo) controller.attach(this.hlsVideo)
+      controller.start()
+      if (location.protocol === 'https:') {
+        this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: this.mediaBackend === 'hls' ? 'll-hls' : 'hls' })
+      }
+    } else if (location.protocol === 'https:') {
+      // Discovery allocates no lease/packager. An installation may advertise just one mode.
+      this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: 'hls' })
+      this.sendMessage(EVENT.HLS.CAPABILITIES_REQUEST, { version: 1, mode: 'll-hls' })
+    }
+
+    if (this.webCodecsSelected) {
+      this.mediaController?.stop()
+      const controller = new WebCodecsMediaController(this.url, {
+        sendEvent: (event, payload) => this.sendMessage(event, payload),
+        eventSocketOpen: () => this.socketOpen && this.connected,
+        setStatus: (status, detail = '', retryAttempt = 0) =>
+          this.$accessor.media.setStatus({ status, detail, retryAttempt }),
+        setAudioEnabled: (enabled) => this.$accessor.media.setAudioEnabled(enabled),
+        setPlayable: (playable) => {
+          this.$accessor.video.setPlayable(playable)
+          if (playable && this.$accessor.settings.autoplay) this.$accessor.video.play()
+        },
+        onVideoFormat: (format) => this.$accessor.video.setResolution(format),
+        onVideoFrame: (frame) => {
+          // The controller can produce frames before the video component has
+          // mounted and subscribed. EventEmitter reports that race as false;
+          // release the transferred frame so the worker's two-slot hand-off
+          // cannot remain permanently saturated.
+          deliverOrReleaseVideoFrame(
+            () => this.emit('media-video-frame', frame),
+            () => controller.releaseVideoFrame(frame, false, 0),
+          )
+        },
+        onClockReset: () => this.emit('media-clock-reset'),
+      })
+      this.mediaController = controller
+      controller.setMuted(this.$accessor.video.muted)
+      controller.setVolume(this.$accessor.video.volume / 100)
+      controller.start().catch((error) => {
+        if (this.mediaController !== controller) return
+        this.$accessor.video.setPlayable(false)
+        this.$accessor.media.setStatus({
+          status: 'terminal',
+          detail: error instanceof Error ? error.message : String(error),
+        })
+      })
+    }
 
     this.$vue.$notify({
       group: 'neko',
@@ -685,7 +1016,14 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   }
 
   protected [EVENT.DISCONNECTED](reason?: Error) {
+    this.reconnectInFlight = false
+    const reconnectScheduled = this.scheduleReconnect()
     this.cleanup()
+
+    if (reconnectScheduled) {
+      this[EVENT.RECONNECTING]()
+      return
+    }
 
     this.$vue.$notify({
       group: 'neko',
@@ -706,7 +1044,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
           hostname.includes('127.0.0.1') ||
           hostname.includes('0.0.0.0')
         ) {
-          const isRealAttempt = this._displayname && !this.isDemo
+          const isRealAttempt = this.reconnectCredentials?.displayname && !this.isDemo
           if (isRealAttempt) {
             (this.$vue as any).$swal({
               title: 'Verbindung fehlgeschlagen',
@@ -717,7 +1055,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
               cancelButtonText: 'Nein, abbrechen',
             }).then((result: any) => {
               if (result && result.value) {
-                this.startDemo(this._displayname || 'neko')
+                this.startDemo(this.reconnectCredentials?.displayname || 'neko')
               }
             })
           }
@@ -786,7 +1124,34 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     }
   }
 
+  protected [EVENT.MEDIA.CAPABILITIES](payload: MediaCapabilitiesPayload) {
+    this.mediaController?.handleCapabilities(payload)
+  }
+
+  protected [EVENT.MEDIA.OFFER](payload: MediaOfferPayload) {
+    this.mediaController?.handleOffer(payload)
+  }
+
+  protected [EVENT.HLS.CAPABILITIES](payload: HLSCapabilitiesPayload) {
+    if (!this.connected || !this.socketOpen) return
+    this.$accessor.hls.advertise(hlsModes(payload) as HLSMode[])
+    this.hlsController?.handleCapabilities(payload)
+  }
+
+  protected [EVENT.HLS.OFFER](payload: HLSOfferPayload) { this.hlsController?.handleOffer(payload) }
+
+  protected [EVENT.HLS.STATE](payload: HLSStateMessage) {
+    if (!this.hlsSelected || payload.version !== 1 || payload.backend !== 'hls' || typeof payload.paused !== 'boolean') return
+    this.hlsPrivatePaused = payload.paused
+    this.hlsController?.setPrivatePaused(payload.paused)
+  }
+
   protected [EVENT.SYSTEM.DISCONNECT]({ message }: SystemMessagePayload) {
+    // Server-directed disconnects carry authentication/authorization/session
+    // intent. Do not fight them with an automatic login loop.
+    this.reconnectSuppressed = true
+    this.stopReconnect()
+
     if (message == 'kicked') {
       this.$accessor.logout()
       message = this.$vue.$t('connection.kicked') as string

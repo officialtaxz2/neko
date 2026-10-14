@@ -290,13 +290,9 @@ export default class NekoMarkdown extends Vue {
       cssModuleNames: null,
       openInApp: this.openInApp,
     }
-
-    // IMPORTANT: never compile the rendered markdown as a Vue template (e.g. via
-    // `h({ template: ... })`). Doing so would let attacker-controlled chat
-    // messages be parsed as Vue template syntax (e.g. `{{ constructor... }}`),
-    // resulting in arbitrary JavaScript execution in other users' browsers.
-    // Setting innerHTML directly renders the sanitized markup as inert HTML
-    // without ever running it through the Vue compiler.
+    // Room messages are data, never Vue templates: HTML escaping does not
+    // neutralize Vue interpolation or expressions embedded in directives.
+    // Only this renderer's escaped text and fixed Markdown tags reach the DOM.
     return h('div', { domProps: { innerHTML: htmlOutput(parser(this.source, state), state) } })
   }
 }

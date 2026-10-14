@@ -4,13 +4,13 @@ package drop
 #cgo pkg-config: gtk+-3.0
 
 #include "drop.h"
+#include <stdlib.h>
 */
 import "C"
 
 import (
-	"unsafe"
-
 	"sync"
+	"unsafe"
 
 	"github.com/kataras/go-events"
 )

@@ -8,7 +8,7 @@ import (
 )
 
 func (h *MessageHandlerCtx) clipboardSet(session types.Session, payload *message.ClipboardData) error {
-	if !session.Profile().CanAccessClipboard {
+	if !session.Profile().IsInteractive() || !session.Profile().CanAccessClipboard {
 		return errors.New("cannot access clipboard")
 	}
 

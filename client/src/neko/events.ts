@@ -23,6 +23,19 @@ export const EVENT = {
     PROVIDE: 'signal/provide',
     CANDIDATE: 'signal/candidate',
   },
+  MEDIA: {
+    CAPABILITIES_REQUEST: 'media/capabilities/request',
+    CAPABILITIES: 'media/capabilities',
+    CREATE: 'media/create',
+    OFFER: 'media/offer',
+  },
+  HLS: {
+    CAPABILITIES_REQUEST: 'media/hls/capabilities/request',
+    CAPABILITIES: 'media/hls/capabilities',
+    CREATE: 'media/hls/create',
+    OFFER: 'media/hls/offer',
+    STATE: 'media/hls/state',
+  },
   MEMBER: {
     LIST: 'member/list',
     CONNECTED: 'member/connected',
@@ -80,6 +93,7 @@ export type WebSocketEvents =
   | ControlEvents
   | MemberEvents
   | SignalEvents
+  | MediaEvents
   | ChatEvents
   | FileTransferEvents
   | OpenInAppEvents
@@ -104,6 +118,17 @@ export type SignalEvents =
   | typeof EVENT.SIGNAL.ANSWER
   | typeof EVENT.SIGNAL.PROVIDE
   | typeof EVENT.SIGNAL.CANDIDATE
+
+export type MediaEvents =
+  | typeof EVENT.MEDIA.CAPABILITIES_REQUEST
+  | typeof EVENT.MEDIA.CAPABILITIES
+  | typeof EVENT.MEDIA.CREATE
+  | typeof EVENT.MEDIA.OFFER
+  | typeof EVENT.HLS.CAPABILITIES_REQUEST
+  | typeof EVENT.HLS.CAPABILITIES
+  | typeof EVENT.HLS.CREATE
+  | typeof EVENT.HLS.OFFER
+  | typeof EVENT.HLS.STATE
 
 export type ChatEvents = typeof EVENT.CHAT.MESSAGE | typeof EVENT.CHAT.EMOTE
 

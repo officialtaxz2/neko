@@ -2,11 +2,16 @@
   <div ref="component" class="video">
     <div
       ref="player"
-      :class="['player', hosted ? 'has-control' : 'no-control', { fullscreen: fullscreen }]"
+      :class="[
+        'player',
+        hosted ? 'has-control' : 'no-control',
+        { fullscreen: fullscreen, 'fallback-fullscreen': fallbackFullscreen },
+      ]"
       :style="{ '--horizontal': horizontal, '--vertical': vertical }"
     >
       <div ref="container" class="player-container">
-        <video ref="video" playsinline webkit-playsinline />
+        <video v-show="!webCodecsSelected" ref="video" playsinline webkit-playsinline />
+        <canvas v-show="webCodecsSelected" ref="webCodecsCanvas" class="webcodecs-canvas" />
         <div class="emotes">
           <template v-for="(emote, index) in emotes">
             <neko-emote :id="index" :key="index" />
@@ -41,16 +46,61 @@
           <i class="fas fa-volume-up" />
         </div>
         <div
+          v-if="webCodecsSelected"
+          :class="['webcodecs-status', { compact: webCodecsCompactStatus }]"
+          role="status"
+        >
+          <template v-if="webCodecsCompactStatus">
+            <span>{{ $t('media.backend_webcodecs') }}</span>
+          </template>
+          <template v-else>
+            <strong>{{ $t('media.webcodecs_title') }}</strong>
+            <span>{{ webCodecsStatusText }}</span>
+            <small>{{ $t('media.webcodecs_limitations') }}</small>
+            <div v-if="webCodecsTerminal" class="webcodecs-actions">
+              <button type="button" @click.stop.prevent="retryWebCodecs">
+                {{ $t('media.retry_webcodecs') }}
+              </button>
+              <button type="button" @click.stop.prevent="useWebRTC">
+                {{ $t('media.use_webrtc') }}
+              </button>
+            </div>
+          </template>
+        </div>
+        <div v-if="hlsSelected" :class="['webcodecs-status', { compact: hlsStatus === 'streaming' }]" role="status">
+          <span v-if="hlsStatus === 'streaming'">{{ hlsLabel }}</span>
+          <template v-else>
+            <strong>{{ hlsLabel }}</strong>
+            <span>{{ $t(`media.status.${hlsStatus}`) }}</span>
+            <small v-if="hlsStatus === 'terminal'">{{ $accessor.hls.detail }}</small>
+            <small>{{ $t('media.hls_limitations') }}</small>
+            <div v-if="hlsStatus === 'terminal'" class="webcodecs-actions">
+              <button type="button" @click.stop.prevent="retryHLS">{{ $t('media.retry_hls') }}</button>
+              <button type="button" @click.stop.prevent="useWebRTC">{{ $t('media.use_webrtc') }}</button>
+            </div>
+          </template>
+        </div>
+        <div
           v-if="trackpadActive && hosting && !locked && !trackpadCursorHidden"
           :class="['trackpad-cursor', { active: trackpadTouching }]"
           :style="trackpadCursorStyle"
         />
         <div ref="aspect" class="player-aspect" />
       </div>
-      <ul v-if="!fullscreen && !hideControls" class="video-menu top">
-        <li><i @click.stop.prevent="requestFullscreen" class="fas fa-expand"></i></li>
-        <li v-if="admin"><i @click.stop.prevent="openResolution" class="fas fa-desktop"></i></li>
-        <li v-if="!controlLocked && !implicitHosting" :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]">
+      <ul v-if="(!fullscreen || fallbackFullscreen) && !hideControls" class="video-menu top">
+        <li>
+          <i
+            @click.stop.prevent="requestFullscreen"
+            :class="['fas', fallbackFullscreen ? 'fa-compress' : 'fa-expand']"
+          ></i>
+        </li>
+        <li v-if="!fallbackFullscreen && admin && !receiveOnlySelected">
+          <i @click.stop.prevent="openResolution" class="fas fa-desktop"></i>
+        </li>
+        <li
+          v-if="!fallbackFullscreen && !receiveOnlySelected && !controlLocked && !implicitHosting"
+          :class="[extraControls || 'extra-control', { 'force-show': is_touch_device }]"
+        >
           <i
             :class="[
               hosted && !hosting ? 'disabled' : '',
@@ -62,7 +112,7 @@
           />
         </li>
       </ul>
-      <ul v-if="!fullscreen && !hideControls" class="video-menu bottom">
+      <ul v-if="!fullscreen && !fallbackFullscreen && !hideControls" class="video-menu bottom">
         <li v-if="hosting">
           <i
             @click.stop.prevent="openClipboard"
@@ -96,7 +146,7 @@
           <i class="fas fa-keyboard" />
         </li>
       </ul>
-      <neko-resolution ref="resolution" v-if="admin" />
+      <neko-resolution ref="resolution" v-if="admin && !receiveOnlySelected" />
       <neko-clipboard ref="clipboard" v-if="hosting" />
       <neko-keyboard-helper ref="keyboardHelper" :keyboard="keyboard" />
     </div>
@@ -274,6 +324,25 @@
         @include fullscreen-active;
       }
 
+      // iPhone Safari and similar mobile browsers cannot natively fullscreen a
+      // WebCodecs canvas. Keep a user-visible exit control in this viewport
+      // fallback; it does not claim to hide browser chrome.
+      &.fallback-fullscreen {
+        @include fullscreen-active;
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        z-index: 2147483647;
+
+        .video-menu.top {
+          display: flex !important;
+          top: max(18px, env(safe-area-inset-top));
+          right: max(18px, env(safe-area-inset-right));
+        }
+      }
+
       .player-container {
         position: relative;
         width: 100%;
@@ -284,7 +353,8 @@
         transition: border-color var(--transition-fluid), box-shadow var(--transition-fluid);
         isolation: isolate;
 
-        video {
+        video,
+        .webcodecs-canvas {
           position: absolute;
           top: 0;
           bottom: 0;
@@ -296,6 +366,69 @@
 
           &::-webkit-media-controls {
             display: none !important;
+          }
+        }
+
+        .webcodecs-status {
+          position: absolute;
+          left: 14px;
+          bottom: 14px;
+          z-index: 22;
+          max-width: min(440px, calc(100% - 28px));
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding: 10px 12px;
+          color: #fff;
+          background: rgba(5, 5, 8, 0.82);
+          border: 1px solid rgba(124, 58, 237, 0.45);
+          border-radius: 10px;
+          pointer-events: auto;
+
+          &.compact {
+            max-width: calc(100% - 28px);
+            flex-direction: row;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 9px;
+            color: rgba(255, 255, 255, 0.84);
+            background: rgba(5, 5, 8, 0.7);
+            border-color: rgba(38, 230, 180, 0.3);
+            border-radius: 999px;
+            pointer-events: none;
+
+            span {
+              overflow: hidden;
+              font-size: 11px;
+              line-height: 1.2;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+          }
+
+          span,
+          small {
+            line-height: 1.35;
+          }
+
+          small {
+            color: rgba(255, 255, 255, 0.72);
+          }
+
+          .webcodecs-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+
+            button {
+              padding: 6px 10px;
+              color: #fff;
+              background: rgba(99, 102, 241, 0.35);
+              border: 1px solid rgba(255, 255, 255, 0.24);
+              border-radius: 7px;
+              cursor: pointer;
+            }
           }
         }
 
@@ -422,6 +555,9 @@
   import Resolution from './resolution.vue'
   import Clipboard from './clipboard.vue'
   import KeyboardHelper from './keyboard_helper.vue'
+  import { ScheduledVideoFrame } from '~/neko/media/controller'
+  import { useCompactMediaStatus } from '~/neko/media-selection.js'
+  import { samplePlayback, hasPlaybackProgress } from '~/neko/playback-progress.js'
 
   // @ts-ignore
   import GuacamoleKeyboard from '~/utils/guacamole-keyboard.ts'
@@ -444,6 +580,7 @@
     @Ref('aspect') readonly _aspect!: HTMLElement
     @Ref('player') readonly _player!: HTMLElement
     @Ref('video') readonly _video!: HTMLVideoElement
+    @Ref('webCodecsCanvas') readonly _webCodecsCanvas!: HTMLCanvasElement
     @Ref('resolution') readonly _resolution!: Resolution
     @Ref('clipboard') readonly _clipboard!: Clipboard
     @Ref('keyboardHelper') readonly _keyboardHelper!: any
@@ -457,6 +594,8 @@
     private observer = new ResizeObserver(this.onResize.bind(this))
     private focused = false
     private fullscreen = false
+    private fallbackFullscreen = false
+    private bodyOverflowBeforeFallback: string | null = null
     private mutedOverlay = true
     private lastTextAreaValue = ''
 
@@ -475,111 +614,165 @@
     // --- Stream health monitoring ---
     private _trackCleanup: (() => void) | null = null
     private _streamCleanup: (() => void) | null = null
-    private _stalledTimer: any = null
-    private _recoveryAttempts = 0
-    private _hasEverPlayed = false // Guard: only run recovery if video played at least once
+    // A non-reserved data property belongs to the live Vue instance. Sealing
+    // keeps polling state out of reactive rendering on resource-limited devices.
+    private playbackHealth = Object.seal({
+      timer: null as number | null,
+      attempts: 0,
+      lastProgress: 0,
+      sample: null as ReturnType<typeof samplePlayback> | null,
+      generation: 0,
+      watchdog: 0,
+      playRequest: 0,
+      playPending: false,
+      sourcePending: false,
+      source: null as MediaStream | null,
+      destroyed: false,
+      hidden: false,
+    })
     private static readonly MAX_RECOVERY_ATTEMPTS = 3
     private static readonly STALLED_TIMEOUT_MS = 8000 // 8s — give mobile browsers more time
 
     private videoWidth = 0
     private videoHeight = 0
+    private webCodecsFrames: ScheduledVideoFrame[] = []
+    private webCodecsGeneration = 0
+    private webCodecsAnimation?: number
 
     private updateVideoDimensions() {
+      if (this.webCodecsSelected && this._webCodecsCanvas && this.webCodecsGeneration > 0) {
+        this.videoWidth = this._webCodecsCanvas.width
+        this.videoHeight = this._webCodecsCanvas.height
+        return
+      }
       if (this._video) {
         this.videoWidth = this._video.videoWidth
         this.videoHeight = this._video.videoHeight
       }
     }
 
-    private onVideoCanPlayThrough = () => {
-      if (!this._video) return
+    // Prototype methods are bound by Vue, rather than capturing the synthetic
+    // vue-class-component data instance in class-field arrow callbacks.
+    private onVideoCanPlayThrough() {
+      if (!this.currentWebRTCVideo()) return
       this.updateVideoDimensions()
       this.$accessor.video.setPlayable(true)
-      if (this.autoplay || this.playing) {
-        this.$nextTick(() => {
-          if (this._video) {
-            if (this.playing) {
-              // Direct play call since Watch('playing') won't fire if already true.
-              // If it fails (e.g. autoplay policies on mobile), delegate to watcher.
-              this._video.play().catch((err) => {
-                console.warn('[Neko] Direct play failed in canplaythrough, delegating to watcher:', err)
-                this.onPlayingChanged(true)
-              })
-            } else {
-              this.$accessor.video.play()
-            }
-          }
-        })
-      }
+      if (this.playing) void this.onPlayingChanged(true)
     }
 
-    private onVideoEnded = () => {
-      this.$accessor.video.setPlayable(false)
+    private onVideoMetadata() {
+      if (!this.currentWebRTCVideo()) return
+      this.playbackHealth.sample = samplePlayback(this._video)
+      this.updateVideoDimensions()
     }
 
-    private onVideoError = (event: ErrorEvent) => {
-      this.$log.error(event.error)
-      this.$accessor.video.setPlayable(false)
+    private onVideoSeeking() {
+      if (this.currentWebRTCVideo()) this.playbackHealth.sample = null
     }
 
-    private onVideoVolumeChange = () => {
+    private onVideoSeeked() {
+      if (this.currentWebRTCVideo()) this.playbackHealth.sample = samplePlayback(this._video)
+    }
+
+    private onVideoEnded() {
+      if (this.currentWebRTCVideo()) this.startStalledTimer()
+    }
+
+    private onVideoError(event: ErrorEvent) {
+      if (!this.currentWebRTCVideo()) return
+      this.$log.error(event.error || this._video.error)
+      this.startStalledTimer()
+    }
+
+    private onVideoVolumeChange() {
       if (!this._video) return
       this.$accessor.video.setMuted(this._video.muted)
       this.$accessor.video.setVolume(this._video.volume * 100)
     }
 
-    private onVideoPlaying = () => {
-      this._hasEverPlayed = true
-      this.$accessor.video.play()
+    private onVideoPlaying() {
+      if (!this.currentWebRTCVideo() || !this.playing) return
+      this.playbackHealth.sourcePending = false
+      this.observePlaybackProgress()
+      this.startStalledTimer()
     }
 
-    private onVideoPause = () => {
-      this.$accessor.video.pause()
+    private onVideoPause() {
+      if (!this.currentWebRTCVideo() || !this._video.paused) return
+      if (this.playbackHealth.sourcePending || this.playbackHealth.playPending) {
+        this.startStalledTimer()
+      } else {
+        // Native fullscreen/PiP Pause is user intent too. Only a known source
+        // attachment or pending play operation may defer its pause event.
+        this.$accessor.video.pause()
+        void this.onPlayingChanged(false)
+      }
     }
 
     // --- Stream health: stalled / waiting handlers ---
-    private onVideoStalled = () => {
-      // Only start recovery if we previously had a working stream.
-      // On mobile, 'stalled' fires during normal WebRTC startup buffering
-      // and triggering recovery there would kill the stream.
-      if (this._hasEverPlayed) {
-        console.warn('[Neko] Video stalled – starting recovery timer')
-        this.startStalledTimer()
-      }
+    private onVideoStalled() {
+      this.startStalledTimer()
     }
 
-    private onVideoWaiting = () => {
-      // 'waiting' fires when playback stops due to lack of data.
-      // On mobile this is normal during initial buffering — only act if
-      // we had a working stream before.
-      if (this._hasEverPlayed) {
-        console.warn('[Neko] Video waiting for data')
-        this.startStalledTimer()
-      }
+    private onVideoWaiting() {
+      this.startStalledTimer()
     }
 
-    private onVideoTimeUpdate = () => {
-      // If we receive a timeupdate the stream is alive – cancel any recovery timer.
-      // Optimize to avoid calling timer manipulation on every single timeupdate frame.
-      if (this._stalledTimer !== null || this._recoveryAttempts > 0 || !this._hasEverPlayed) {
-        this._hasEverPlayed = true
-        this.cancelStalledTimer()
-        this._recoveryAttempts = 0
+    private onVideoTimeUpdate() {
+      if (this.currentWebRTCVideo() && this.playing) this.observePlaybackProgress()
+    }
+
+    private currentWebRTCVideo() {
+      return !this.playbackHealth.destroyed && !this.receiveOnlySelected &&
+        !!this._video && !!this.stream && (this._video.srcObject === this.stream ||
+          (!('srcObject' in this._video) && this.playbackHealth.source === this.stream))
+    }
+
+    private observePlaybackProgress() {
+      const health = this.playbackHealth
+      const current = samplePlayback(this._video)
+      if (hasPlaybackProgress(health.sample, current)) {
+        health.lastProgress = Date.now()
+        health.attempts = 0
       }
+      health.sample = current
     }
 
     private startStalledTimer() {
-      if (this._stalledTimer) return // already ticking
-      this._stalledTimer = window.setTimeout(() => {
-        this._stalledTimer = null
-        this.attemptStreamRecovery('stalled timeout')
-      }, NekoVideo.STALLED_TIMEOUT_MS)
+      const health = this.playbackHealth
+      if (health.timer !== null || !this.currentWebRTCVideo() || !this.playing) return
+      health.lastProgress = Date.now()
+      health.sample = samplePlayback(this._video)
+      const generation = health.generation
+      const watchdog = health.watchdog
+      const poll = () => {
+        if (health.watchdog !== watchdog) return
+        health.timer = null
+        if (health.generation !== generation || !this.currentWebRTCVideo() || !this.playing) return
+        // Background throttling is not evidence of a broken foreground decoder.
+        if (document.hidden || health.hidden) {
+          health.hidden = document.hidden
+          health.lastProgress = Date.now()
+          health.sample = samplePlayback(this._video)
+        } else {
+          this.observePlaybackProgress()
+          if (Date.now() - health.lastProgress >= NekoVideo.STALLED_TIMEOUT_MS) {
+            health.lastProgress = Date.now()
+            void this.attemptStreamRecovery('no playback progress')
+          }
+        }
+        if (health.watchdog === watchdog && health.timer === null && health.generation === generation && this.currentWebRTCVideo() && this.playing) {
+          health.timer = window.setTimeout(poll, 500)
+        }
+      }
+      health.timer = window.setTimeout(poll, 500)
     }
 
     private cancelStalledTimer() {
-      if (this._stalledTimer) {
-        clearTimeout(this._stalledTimer)
-        this._stalledTimer = null
+      this.playbackHealth.watchdog++
+      if (this.playbackHealth.timer !== null) {
+        window.clearTimeout(this.playbackHealth.timer)
+        this.playbackHealth.timer = null
       }
     }
 
@@ -587,47 +780,70 @@
      * Attempt to recover a dead/stalled video stream.
      * Strategy:
      *  1. Re-assign srcObject (forces browser to re-evaluate the stream)
-     *  2. Call play() — first muted (which mobile browsers allow), then unmuted
+     *  2. Let the common play owner retry playback after attachment. If Safari
+     *     rejects autoplay even while muted, keep the central Play fallback.
      *
-     * IMPORTANT: We NEVER call video.load() on a WebRTC stream.
-     * load() resets the media element, discarding the srcObject's internal state.
-     * On iOS Safari this permanently kills the stream — the video stays black
-     * and no amount of play() calls will revive it.
+     * Keep the existing no-video.load() boundary for WebRTC and Safari Play.
+     * Reloading the element is a distinct lifecycle operation, not proof of
+     * recovery; actual device behavior remains a target acceptance case.
      *
-     * Gives up after MAX_RECOVERY_ATTEMPTS to avoid infinite loops.
+     * Attempts reset only after playback progress or a new stream. Neither
+     * unmute nor successful srcObject assignment alone proves recovery.
      */
     private async attemptStreamRecovery(reason: string) {
+      if (!this.currentWebRTCVideo() || !this.playing) return
+      const health = this.playbackHealth
       const max = NekoVideo.MAX_RECOVERY_ATTEMPTS
-      if (this._recoveryAttempts >= max) {
+      if (health.attempts >= max) {
         console.error(`[Neko] Stream recovery failed after ${max} attempts (${reason})`)
+        this.cancelStalledTimer()
+        this.$accessor.video.pause() // Explicit Play remains available; no network relogin here.
         return
       }
-      this._recoveryAttempts++
-      console.warn(`[Neko] Attempting stream recovery #${this._recoveryAttempts} (${reason})`)
-
-      if (!this._video || !this.stream) return
-
+      health.attempts++
+      console.warn(`[Neko] Attempting stream recovery #${health.attempts} (${reason})`)
+      const generation = health.generation
+      const video = this._video
+      const stream = this.stream
+      health.playRequest++
+      health.playPending = false
+      health.sourcePending = true
       try {
-        // Re-assign srcObject to force the browser to re-evaluate the stream
-        this._video.srcObject = this.stream
+        if ('srcObject' in video) video.srcObject = stream
+        health.sample = samplePlayback(video)
         await this.$nextTick()
-
-        // We do NOT call play() here immediately.
-        // Re-assigning srcObject triggers the browser to load the stream.
-        // Once the stream is loaded and ready, it fires 'canplay' or 'canplaythrough',
-        // calling onVideoCanPlayThrough. Since this.playing is true, the handler
-        // will safely and automatically call play() when the stream is ready.
-        console.log('[Neko] Stream recovery srcObject re-assignment completed')
-        this._recoveryAttempts = 0
+        if (generation === health.generation && video === this._video && stream === this.stream && this.currentWebRTCVideo() && this.playing) {
+          void this.onPlayingChanged(true)
+        }
       } catch (err) {
         console.warn('[Neko] Stream recovery srcObject assignment failed', err)
       }
     }
 
-    private onFullscreenChangeHandler = () => {
+    private onFullscreenChangeHandler() {
       this.fullscreen = isFullscreen()
-      this.fullscreen ? lockKeyboard() : unlockKeyboard()
+      this.fullscreen || this.fallbackFullscreen ? lockKeyboard() : unlockKeyboard()
       this.onResize()
+    }
+
+    private enterFallbackFullscreen() {
+      if (this.fallbackFullscreen) return
+      this.bodyOverflowBeforeFallback = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      this.fallbackFullscreen = true
+      lockKeyboard()
+      this.$nextTick(() => this.onResize())
+    }
+
+    private exitFallbackFullscreen(resize = true) {
+      if (!this.fallbackFullscreen) return
+      this.fallbackFullscreen = false
+      if (this.bodyOverflowBeforeFallback !== null) {
+        document.body.style.overflow = this.bodyOverflowBeforeFallback
+        this.bodyOverflowBeforeFallback = null
+      }
+      unlockKeyboard()
+      if (resize) this.$nextTick(() => this.onResize())
     }
 
     get admin() {
@@ -643,19 +859,46 @@
     }
 
     get controlling() {
-      return this.$accessor.remote.controlling
+      return !this.viewOnly && !this.receiveOnlySelected && this.$accessor.remote.controlling
     }
 
     get hosting() {
-      return this.$accessor.remote.hosting
+      return !this.viewOnly && !this.receiveOnlySelected && this.$accessor.remote.hosting
     }
 
     get implicitHosting() {
-      return this.$accessor.remote.implicitHosting
+      return !this.viewOnly && !this.receiveOnlySelected && this.$accessor.remote.implicitHosting
     }
 
     get hosted() {
-      return this.$accessor.remote.hosted
+      return !this.viewOnly && !this.receiveOnlySelected && this.$accessor.remote.hosted
+    }
+
+    get viewOnly() {
+      return this.$accessor.user.viewOnly
+    }
+
+    get webCodecsSelected() {
+      return this.$accessor.media.selected
+    }
+
+    get hlsSelected() { return this.$accessor.hls.selected !== undefined }
+    get receiveOnlySelected() { return this.webCodecsSelected || this.hlsSelected }
+    get hlsStatus() { return this.$accessor.hls.status }
+    get hlsLabel() { return this.$accessor.hls.selected === 'll-hls' ? 'LL-HLS' : 'HLS' }
+
+    get webCodecsTerminal() {
+      return this.$accessor.media.status === 'terminal'
+    }
+
+    get webCodecsCompactStatus() {
+      return useCompactMediaStatus(this.$accessor.media.status)
+    }
+
+    get webCodecsStatusText() {
+      const media = this.$accessor.media
+      const attempt = media.retryAttempt > 0 ? ` (attempt ${media.retryAttempt}/4)` : ''
+      return `${this.$t(`media.status.${media.status}`)}${attempt}${media.detail ? ` — ${media.detail}` : ''}`
     }
 
     get volume() {
@@ -708,6 +951,9 @@
     }
 
     get pip_available() {
+      if (this.webCodecsSelected) return false
+      const video = this._video as HTMLVideoElement & { webkitSupportsPresentationMode?: (mode: string) => boolean }
+      if (this.hlsSelected && video?.webkitSupportsPresentationMode?.('picture-in-picture')) return true
       //@ts-ignore
       return typeof document.createElement('video').requestPictureInPicture === 'function'
     }
@@ -786,7 +1032,8 @@
     }
 
     getVideoRect() {
-      const rect = (this._video || this._overlay).getBoundingClientRect()
+      const surface = this.webCodecsSelected ? this._webCodecsCanvas : this._video
+      const rect = (surface || this._overlay).getBoundingClientRect()
       const { w, h } = this.$accessor.video.resolution
 
       if (rect.width <= 0 || rect.height <= 0 || w <= 0 || h <= 0) {
@@ -870,6 +1117,12 @@
     @Watch('volume')
     onVolumeChanged(volume: number) {
       volume /= 100
+      if (this.hlsSelected) { this.$client.setHLSVolume(volume); return }
+
+      if (this.webCodecsSelected) {
+        this.$client.setWebCodecsVolume(volume)
+        return
+      }
 
       if (this._video && this._video.volume != volume) {
         this._video.volume = volume
@@ -878,6 +1131,13 @@
 
     @Watch('muted')
     onMutedChanged(muted: boolean) {
+      if (this.hlsSelected) this.$client.setHLSMuted(muted)
+      if (this.webCodecsSelected) {
+        this.$client.setWebCodecsMuted(muted)
+        if (!muted) this.mutedOverlay = false
+        return
+      }
+
       if (this._video && this._video.muted != muted) {
         this._video.muted = muted
 
@@ -889,12 +1149,31 @@
 
     @Watch('stream')
     onStreamChanged(stream?: MediaStream) {
-      if (!this._video || !stream) {
+      // Detach from the previous stream even when the store is being reset.
+      // Otherwise an old removetrack callback can race a replacement peer.
+      this.detachStreamListeners()
+      this.cancelStalledTimer()
+      const health = this.playbackHealth
+      health.generation++
+      health.playRequest++
+      health.playPending = false
+      health.sourcePending = !!stream
+      health.source = stream || null
+      health.attempts = 0
+      health.sample = null
+      health.hidden = false
+
+      if (health.destroyed || this.receiveOnlySelected || !this._video) {
         return
       }
 
-      // Clean up old stream listeners before attaching new ones
-      this.detachStreamListeners()
+      if (!stream) {
+        if ('srcObject' in this._video) {
+          this._video.srcObject = null
+        }
+
+        return
+      }
 
       if ('srcObject' in this._video) {
         this._video.srcObject = stream
@@ -907,7 +1186,6 @@
       this.attachStreamListeners(stream)
 
       this.updateVideoDimensions()
-      this._recoveryAttempts = 0
 
       // Proactively mark the stream as playable to unlock overlay controls
       // if browser media events get delayed or blocked by autoplay detection.
@@ -918,21 +1196,17 @@
       // The onPlayingChanged watcher handles the muted fallback.
       if (this.autoplay) {
         this.$accessor.video.play()
-      } else if (this.playing) {
-        this.$nextTick(() => {
-          if (this._video) {
-            this._video.play().catch((err) => {
-              console.warn('[Neko] Failed to play new stream:', err)
-            })
-          }
-        })
       }
+      // A replacement stream may arrive while the playing store flag is true.
+      // Use the same play owner; no canplay-dependent startup deadlock.
+      if (this.playing) void this.onPlayingChanged(true)
     }
 
     @Watch('track')
     onTrackChanged(track?: MediaStreamTrack) {
       // Detach old track listeners and attach to the new track
       this.detachTrackListeners()
+      if (this.receiveOnlySelected) return
       if (track && track.kind === 'video') {
         this.attachTrackListeners(track)
       }
@@ -940,20 +1214,23 @@
 
     private attachTrackListeners(track: MediaStreamTrack) {
       this.detachTrackListeners()
+      const current = () => !this.playbackHealth.destroyed && !this.receiveOnlySelected && track === this.track
 
       const onEnded = () => {
+        if (!current()) return
         console.warn(`[Neko] Video track ended: ${track.id}`)
-        this.attemptStreamRecovery('track ended')
+        this.startStalledTimer()
       }
       const onMute = () => {
+        if (!current()) return
         console.warn(`[Neko] Video track muted (media pipeline stall): ${track.id}`)
         // A muted track may recover on its own – start a timer
         this.startStalledTimer()
       }
       const onUnmute = () => {
-        console.log(`[Neko] Video track unmuted (recovered): ${track.id}`)
-        this.cancelStalledTimer()
-        this._recoveryAttempts = 0
+        if (!current()) return
+        // Delivery resumed; only observed playback progress proves recovery.
+        this.startStalledTimer()
       }
 
       track.addEventListener('ended', onEnded)
@@ -978,16 +1255,12 @@
       this.detachStreamListeners()
 
       const onRemoveTrack = (event: MediaStreamTrackEvent) => {
+        if (this.playbackHealth.destroyed || this.receiveOnlySelected || this.stream !== stream) return
         if (event.track.kind === 'video') {
           console.warn(`[Neko] Video track removed from stream: ${event.track.id}`)
-          // Don't immediately recover – a new track should arrive shortly via onTrack.
-          // But if nothing arrives within 3s, attempt recovery.
-          window.setTimeout(() => {
-            if (this.stream && this.stream.getVideoTracks().length === 0) {
-              console.warn('[Neko] No video tracks in stream after removetrack – triggering recovery')
-              this.attemptStreamRecovery('removetrack with no replacement')
-            }
-          }, 3000)
+          // Replacement tracks may arrive normally. The same progress owner
+          // supplies the grace; no second removetrack timer or immediate repair.
+          this.startStalledTimer()
         }
       }
 
@@ -1007,41 +1280,174 @@
 
     @Watch('playing')
     async onPlayingChanged(playing: boolean) {
-      if (this._video && this._video.paused && playing) {
-        // if autoplay is disabled, play() will throw an error
-        // and we need to properly save the state otherwise we
-        // would be thinking we're playing when we're not
-        try {
-          await this._video.play()
-        } catch (err: any) {
-          if (!this._video.muted) {
-            // video.play() can fail if audio is set due restrictive
-            // browsers autoplay policy -> retry with muted audio.
-            // This is the PRIMARY mobile fix: iOS Safari and mobile Chrome
-            // block unmuted autoplay but allow muted autoplay.
-            try {
-              this.$accessor.video.setMuted(true)
-              this._video.muted = true
-              await this._video.play()
-              // Show the muted overlay so user can tap to unmute
-              this.mutedOverlay = true
-            } catch (err2: any) {
-              // if it still fails, show the play overlay instead of
-              // silently staying black
-              console.warn('[Neko] Autoplay blocked even muted, showing play overlay', err2)
+      // HLS owns element playback and reports observed playing/paused state.
+      // Gesture handlers call the controller directly, preserving Safari activation.
+      if (this.hlsSelected) return
+      if (this.webCodecsSelected) {
+        const health = this.playbackHealth
+        const request = ++health.playRequest
+        const generation = health.generation
+        if (playing) {
+          const audioRunning = await this.$client.playWebCodecs()
+          if (health.destroyed || request !== health.playRequest || generation !== health.generation ||
+            !this.webCodecsSelected || this.hlsSelected || !this.playing) return
+          if (!audioRunning && this.$accessor.media.audioEnabled) {
+            this.$accessor.video.setMuted(true)
+            this.mutedOverlay = true
+          }
+          this.startWebCodecsRenderer()
+        } else {
+          this.stopWebCodecsRenderer()
+          this.clearWebCodecsFrames()
+        }
+        return
+      }
+
+      const health = this.playbackHealth
+      const video = this._video
+      if (!playing) {
+        health.playRequest++
+        health.playPending = false
+        health.attempts = 0
+        this.cancelStalledTimer()
+        if (video && !video.paused) video.pause()
+        return
+      }
+      if (!this.currentWebRTCVideo()) return
+      this.startStalledTimer()
+      if (!video.paused || health.playPending) return
+      const stream = this.stream
+      const generation = health.generation
+      const request = ++health.playRequest
+      health.playPending = true
+      const current = () => request === health.playRequest && generation === health.generation &&
+        this.currentWebRTCVideo() && video === this._video && stream === this.stream && this.playing
+      try {
+        await video.play() // Old browsers may return undefined; await is safe.
+      } catch (err: any) {
+        if (!current() || err?.name === 'AbortError') return
+        if (!video.muted && err?.name !== 'NotSupportedError') {
+          try {
+            video.muted = true
+            this.$accessor.video.setMuted(true)
+            await video.play()
+            if (current()) this.mutedOverlay = true
+          } catch (mutedError: any) {
+            if (current() && mutedError?.name !== 'AbortError') {
+              this.cancelStalledTimer()
               this.$accessor.video.pause()
             }
-          } else {
-            // Already muted but still failing — show play overlay
-            console.warn('[Neko] Play failed even muted, showing play overlay', err)
-            this.$accessor.video.pause()
           }
+        } else if (err?.name !== 'NotSupportedError') {
+          this.cancelStalledTimer()
+          this.$accessor.video.pause()
+        }
+        // A decode/source error keeps the bounded progress owner active. An
+        // autoplay denial ends at the user-operated Play fallback instead.
+      } finally {
+        if (request === health.playRequest) health.playPending = false
+      }
+    }
+
+    // These WebCodecs callbacks must stay Vue prototype methods. In
+    // vue-class-component 7, class-field arrow functions are created while a
+    // synthetic data instance is collected; their lexical `this` can then
+    // retain primitive renderer state outside the live Vue instance.
+    private onWebCodecsFrame(frame: ScheduledVideoFrame) {
+      if (!this.webCodecsSelected || !this.playing) {
+        this.$client.releaseWebCodecsFrame(frame, false, 0)
+        return
+      }
+      if (this.webCodecsGeneration !== frame.generation) {
+        this.clearWebCodecsFrames()
+        this.webCodecsGeneration = frame.generation
+      }
+      while (this.webCodecsFrames.length >= 2) {
+        const dropped = this.webCodecsFrames.shift()!
+        this.$client.releaseWebCodecsFrame(dropped, false, 0)
+      }
+      this.webCodecsFrames.push(frame)
+      this.webCodecsFrames.sort((left, right) => left.targetTime - right.targetTime)
+      this.startWebCodecsRenderer()
+    }
+
+    private onWebCodecsClockReset() {
+      this.webCodecsGeneration = 0
+      this.videoWidth = 0
+      this.videoHeight = 0
+      this.clearWebCodecsFrames()
+      if (this._webCodecsCanvas) {
+        this._webCodecsCanvas.getContext('2d')?.clearRect(0, 0, this._webCodecsCanvas.width, this._webCodecsCanvas.height)
+      }
+    }
+
+    private clearWebCodecsFrames() {
+      for (const frame of this.webCodecsFrames.splice(0)) {
+        this.$client.releaseWebCodecsFrame(frame, false, 0)
+      }
+    }
+
+    private startWebCodecsRenderer() {
+      if (this.webCodecsAnimation !== undefined || !this.playing) return
+      this.webCodecsAnimation = window.requestAnimationFrame(this.renderWebCodecsFrame)
+    }
+
+    private stopWebCodecsRenderer() {
+      if (this.webCodecsAnimation !== undefined) window.cancelAnimationFrame(this.webCodecsAnimation)
+      this.webCodecsAnimation = undefined
+    }
+
+    private renderWebCodecsFrame() {
+      this.webCodecsAnimation = undefined
+      if (!this.webCodecsSelected || !this.playing) return
+
+      const now = performance.now()
+      while (this.webCodecsFrames.length > 0 && this.webCodecsFrames[0].targetTime < now - 80) {
+        const dropped = this.webCodecsFrames.shift()!
+        this.$client.releaseWebCodecsFrame(dropped, false, now - dropped.targetTime)
+      }
+
+      let chosenIndex = -1
+      let closest = Number.POSITIVE_INFINITY
+      for (let index = 0; index < this.webCodecsFrames.length; index++) {
+        const frame = this.webCodecsFrames[index]
+        const dueAt = Math.min(frame.targetTime, frame.receivedAt + 100)
+        if (dueAt > now) continue
+        const distance = Math.abs(frame.targetTime - now)
+        if (distance < closest) {
+          closest = distance
+          chosenIndex = index
         }
       }
 
-      if (this._video && !this._video.paused && !playing) {
-        this.pause()
+      if (chosenIndex >= 0) {
+        for (let index = 0; index < chosenIndex; index++) {
+          const dropped = this.webCodecsFrames.shift()!
+          this.$client.releaseWebCodecsFrame(dropped, false, now - dropped.targetTime)
+        }
+        const scheduled = this.webCodecsFrames.shift()!
+        const canvas = this._webCodecsCanvas
+        const context = canvas?.getContext('2d', { alpha: false })
+        try {
+          if (!canvas || !context) throw new Error('2D canvas is unavailable')
+          const width = scheduled.frame.displayWidth || scheduled.frame.codedWidth
+          const height = scheduled.frame.displayHeight || scheduled.frame.codedHeight
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width
+            canvas.height = height
+            this.videoWidth = width
+            this.videoHeight = height
+            this.onResize()
+          }
+          context.drawImage(scheduled.frame, 0, 0, canvas.width, canvas.height)
+          this.$client.releaseWebCodecsFrame(scheduled, true, now - scheduled.targetTime)
+        } catch (_) {
+          this.$client.releaseWebCodecsFrame(scheduled, false, 0)
+          this.$client.resyncWebCodecs('decoder_error')
+        }
       }
+
+      this.startWebCodecsRenderer()
     }
 
     @Watch('clipboard')
@@ -1061,6 +1467,7 @@
     }
 
     mounted() {
+      if (this.hlsSelected) this.$client.attachHLSVideo(this._video)
       this._container.addEventListener('resize', this.onResize)
       window.addEventListener('resize', this.onResize)
       this.onVolumeChanged(this.volume)
@@ -1080,7 +1487,9 @@
       this._video.addEventListener('resize', this.onResize)
       this._video.addEventListener('canplaythrough', this.onVideoCanPlayThrough)
       this._video.addEventListener('canplay', this.onVideoCanPlayThrough)
-      this._video.addEventListener('loadedmetadata', this.onVideoCanPlayThrough)
+      this._video.addEventListener('loadedmetadata', this.onVideoMetadata)
+      this._video.addEventListener('seeking', this.onVideoSeeking)
+      this._video.addEventListener('seeked', this.onVideoSeeked)
       this._video.addEventListener('ended', this.onVideoEnded)
       this._video.addEventListener('error', this.onVideoError)
       this._video.addEventListener('volumechange', this.onVideoVolumeChange)
@@ -1114,10 +1523,22 @@
       }
       this.keyboard.listenTo(this._overlay)
       this.$client.on('cursor-position', this.onCursorPosition)
+      this.$client.on('media-video-frame', this.onWebCodecsFrame)
+      this.$client.on('media-clock-reset', this.onWebCodecsClockReset)
       window.addEventListener('focus', this._onWindowFocus)
+
+      if (this.webCodecsSelected && this.autoplay) {
+        this.$accessor.video.play()
+      }
     }
 
     beforeDestroy() {
+      this.playbackHealth.destroyed = true
+      this.playbackHealth.generation++
+      this.playbackHealth.playRequest++
+      this.playbackHealth.source = null
+      this.cancelStalledTimer()
+      if (this.hlsSelected) this.$client.detachHLSVideo(this._video)
       window.removeEventListener('focus', this._onWindowFocus)
       this.observer.disconnect()
       this.$accessor.video.setPlayable(false)
@@ -1131,7 +1552,9 @@
         this._video.removeEventListener('resize', this.onResize)
         this._video.removeEventListener('canplaythrough', this.onVideoCanPlayThrough)
         this._video.removeEventListener('canplay', this.onVideoCanPlayThrough)
-        this._video.removeEventListener('loadedmetadata', this.onVideoCanPlayThrough)
+        this._video.removeEventListener('loadedmetadata', this.onVideoMetadata)
+        this._video.removeEventListener('seeking', this.onVideoSeeking)
+        this._video.removeEventListener('seeked', this.onVideoSeeked)
         this._video.removeEventListener('ended', this.onVideoEnded)
         this._video.removeEventListener('error', this.onVideoError)
         this._video.removeEventListener('volumechange', this.onVideoVolumeChange)
@@ -1159,6 +1582,11 @@
         this.longPressTimer = null
       }
       this.$client.off('cursor-position', this.onCursorPosition)
+      this.$client.off('media-video-frame', this.onWebCodecsFrame)
+      this.$client.off('media-clock-reset', this.onWebCodecsClockReset)
+      this.exitFallbackFullscreen(false)
+      this.stopWebCodecsRenderer()
+      this.clearWebCodecsFrames()
       /* Guacamole Keyboard does not provide destroy functions */
     }
 
@@ -1208,12 +1636,18 @@
     }
 
     async play() {
+      if (this.hlsSelected) { if (this.playable) await this.$client.playHLS(); return }
+      if (this.webCodecsSelected) {
+        if (this.playable) await this.$client.playWebCodecs()
+        return
+      }
       if (!this._video.paused || !this.playable) {
         return
       }
 
       try {
-        await this._video.play()
+        this.$accessor.video.play()
+        await this.onPlayingChanged(true)
         this.onResize()
       } catch (err: any) {
         if (err && (err.name === 'NotAllowedError' || String(err.message).includes('user didn\'t interact'))) {
@@ -1225,11 +1659,13 @@
     }
 
     pause() {
-      if (this._video.paused || !this.playable) {
+      if (this.hlsSelected) { this.$client.pauseHLS(); return }
+      if (this.webCodecsSelected) {
+        this.$accessor.video.pause()
         return
       }
-
-      this._video.pause()
+      this.$accessor.video.pause()
+      void this.onPlayingChanged(false)
     }
 
     toggle() {
@@ -1237,20 +1673,62 @@
         return
       }
 
+      if (this.hlsSelected) {
+        if (this.playing) this.$client.pauseHLS()
+        else void this.$client.playHLS()
+        return
+      }
+      if (this.webCodecsSelected) {
+        if (this.playing) this.$accessor.video.pause()
+        else this.$accessor.video.play()
+        return
+      }
+
       if (!this.playing) {
-        this.$accessor.video.play()
+        void this.play()
       } else {
-        this.$accessor.video.pause()
+        this.pause()
       }
     }
 
     playAndUnmute() {
+      if (this.hlsSelected) {
+        this.$accessor.video.setMuted(false)
+        this.$client.setHLSMuted(false)
+        void this.$client.playHLS()
+        return
+      }
       this.$accessor.video.play()
       this.$accessor.video.setMuted(false)
+      if (!this.receiveOnlySelected && this._video) {
+        this._video.muted = false
+        void this.onPlayingChanged(true)
+      }
     }
 
     unmute() {
       this.$accessor.video.setMuted(false)
+      if (this.hlsSelected) { this.$client.setHLSMuted(false); void this.$client.playHLS() }
+      if (this.webCodecsSelected) {
+        const health = this.playbackHealth
+        const request = ++health.playRequest
+        const generation = health.generation
+        this.$client.playWebCodecs().then((running) => {
+          if (health.destroyed || request !== health.playRequest || generation !== health.generation ||
+            !this.webCodecsSelected || this.hlsSelected || !this.playing) return
+          if (!running && this.$accessor.media.audioEnabled) this.$accessor.video.setMuted(true)
+        })
+      }
+    }
+
+    retryWebCodecs() {
+      this.$client.retryWebCodecs()
+    }
+
+    retryHLS() { this.$client.retryHLS() }
+
+    useWebRTC() {
+      this.$client.useWebRTC()
     }
 
     toggleControl() {
@@ -1269,45 +1747,50 @@
       this.$accessor.remote.request()
     }
 
-    requestFullscreen() {
-      // Try to fullscreen the player element.
-      // Use the Promise returned by requestFullscreen() to guarantee
-      // state is updated, since the fullscreenchange event may not
-      // fire reliably in all browsers.
-      if (typeof this._player.requestFullscreen === 'function') {
-        this._player.requestFullscreen().then(() => {
-          this.onFullscreenChangeHandler()
-        }).catch(() => {})
-        return
-        //@ts-ignore
-      } else if (typeof this._player.webkitRequestFullscreen === 'function') {
-        //@ts-ignore
-        this._player.webkitRequestFullscreen()
-        // Prefixed variants don't return Promises, use a short delay
-        setTimeout(() => this.onFullscreenChangeHandler(), 100)
-        return
-        //@ts-ignore
-      } else if (typeof this._player.mozRequestFullScreen === 'function') {
-        //@ts-ignore
-        this._player.mozRequestFullScreen()
-        setTimeout(() => this.onFullscreenChangeHandler(), 100)
-        return
-        //@ts-ignore
-      } else if (typeof this._player.msRequestFullScreen === 'function') {
-        //@ts-ignore
-        this._player.msRequestFullScreen()
-        setTimeout(() => this.onFullscreenChangeHandler(), 100)
+    async requestFullscreen() {
+      if (this.fallbackFullscreen) {
+        this.exitFallbackFullscreen()
         return
       }
 
-      // Fallback: fullscreen the video itself (mobile devices)
-      if (elementRequestFullscreen(this._video)) {
+      // iPhone Safari's video-only API must be invoked during the original
+      // user gesture, before awaiting an unsupported container request.
+      const videoSurface = this._video as HTMLVideoElement & { webkitEnterFullscreen?: () => void }
+      if (!this.webCodecsSelected && typeof videoSurface.webkitEnterFullscreen === 'function') {
+        if (await elementRequestFullscreen(videoSurface)) {
+          this.onResize()
+          return
+        }
+      }
+
+      // Prefer the complete player so canvas/status/controls stay together.
+      // A rejected Promise must continue into the mobile surface fallback.
+      if (await elementRequestFullscreen(this._player)) {
+        this.onFullscreenChangeHandler()
+        return
+      }
+
+      const surface = this.webCodecsSelected ? this._webCodecsCanvas : videoSurface
+      if (await elementRequestFullscreen(surface)) {
         this.onResize()
         return
       }
+
+      // Canvas fullscreen is unavailable on iPhone Safari. Fill the visual
+      // viewport while retaining an explicit in-app exit button.
+      this.enterFallbackFullscreen()
     }
 
-    requestPictureInPicture() {
+    async requestPictureInPicture() {
+      if (this.hlsSelected) {
+        const video = this._video as HTMLVideoElement & { webkitSetPresentationMode?: (mode: string) => void }
+        try {
+          if (typeof video.requestPictureInPicture === 'function') await video.requestPictureInPicture()
+          else video.webkitSetPresentationMode?.('picture-in-picture')
+        } catch (_) { this.$log.debug('HLS Picture-in-Picture request was declined') }
+        return
+      }
+      if (this.webCodecsSelected) return
       //@ts-ignore
       this._video.requestPictureInPicture()
       this.onResize()
@@ -1347,7 +1830,8 @@
 
     sendMousePos(e: MouseEvent) {
       const { w, h } = this.$accessor.video.resolution
-      const rect = (this._video || this._overlay).getBoundingClientRect()
+      const surface = this.webCodecsSelected ? this._webCodecsCanvas : this._video
+      const rect = (surface || this._overlay).getBoundingClientRect()
       const vRect = this.getVideoRect()
 
       if (vRect.width <= 0 || vRect.height <= 0) return
@@ -1705,7 +2189,7 @@
       let offsetWidth: number
       let offsetHeight: number
 
-      if (this.fullscreen) {
+      if (this.fullscreen || this.fallbackFullscreen) {
         // In fullscreen, use the actual viewport dimensions.
         // Clear inline width/height on the player so the browser's
         // native fullscreen sizing takes effect unobstructed.

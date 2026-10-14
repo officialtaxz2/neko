@@ -24,7 +24,7 @@ func GetSession(r *http.Request) (types.Session, bool) {
 
 func AdminsOnly(w http.ResponseWriter, r *http.Request) (context.Context, error) {
 	session, ok := GetSession(r)
-	if !ok || !session.Profile().IsAdmin {
+	if !ok || !session.Profile().IsInteractive() || !session.Profile().IsAdmin {
 		return nil, utils.HttpForbidden("session is not admin")
 	}
 
@@ -33,7 +33,7 @@ func AdminsOnly(w http.ResponseWriter, r *http.Request) (context.Context, error)
 
 func HostsOnly(w http.ResponseWriter, r *http.Request) (context.Context, error) {
 	session, ok := GetSession(r)
-	if !ok || !session.IsHost() {
+	if !ok || !session.Profile().IsInteractive() || !session.IsHost() {
 		return nil, utils.HttpForbidden("session is not host")
 	}
 
@@ -42,7 +42,7 @@ func HostsOnly(w http.ResponseWriter, r *http.Request) (context.Context, error) 
 
 func HostsOrAdminsOnly(w http.ResponseWriter, r *http.Request) (context.Context, error) {
 	session, ok := GetSession(r)
-	if !ok || (!session.IsHost() && !session.Profile().IsAdmin) {
+	if !ok || !session.Profile().IsInteractive() || (!session.IsHost() && !session.Profile().IsAdmin) {
 		return nil, utils.HttpForbidden("session is not host or admin")
 	}
 
@@ -60,7 +60,7 @@ func CanWatchOnly(w http.ResponseWriter, r *http.Request) (context.Context, erro
 
 func CanHostOnly(w http.ResponseWriter, r *http.Request) (context.Context, error) {
 	session, ok := GetSession(r)
-	if !ok || !session.Profile().CanHost {
+	if !ok || !session.Profile().IsInteractive() || !session.Profile().CanHost {
 		return nil, utils.HttpForbidden("session cannot host")
 	}
 
@@ -73,8 +73,17 @@ func CanHostOnly(w http.ResponseWriter, r *http.Request) (context.Context, error
 
 func CanAccessClipboardOnly(w http.ResponseWriter, r *http.Request) (context.Context, error) {
 	session, ok := GetSession(r)
-	if !ok || !session.Profile().CanAccessClipboard {
+	if !ok || !session.Profile().IsInteractive() || !session.Profile().CanAccessClipboard {
 		return nil, utils.HttpForbidden("session cannot access clipboard")
+	}
+
+	return nil, nil
+}
+
+func InteractiveOnly(w http.ResponseWriter, r *http.Request) (context.Context, error) {
+	session, ok := GetSession(r)
+	if !ok || !session.Profile().IsInteractive() {
+		return nil, utils.HttpForbidden("session is view-only")
 	}
 
 	return nil, nil
@@ -85,6 +94,9 @@ func PluginsGenericOnly[V comparable](key string, exp V) func(w http.ResponseWri
 		session, ok := GetSession(r)
 		if !ok {
 			return nil, utils.HttpForbidden("session not found")
+		}
+		if !session.Profile().IsInteractive() {
+			return nil, utils.HttpForbidden("session is view-only")
 		}
 
 		plugins := session.Profile().Plugins

@@ -1,6 +1,6 @@
 <template>
   <ul>
-    <li v-if="!implicitHosting && (!controlLocked || hosting)">
+    <li v-if="!viewOnly && !webCodecsReceiveOnly && !implicitHosting && (!controlLocked || hosting)">
       <i
         :class="[
           !disabeld && shakeKbd ? 'shake' : '',
@@ -20,7 +20,7 @@
         @click.stop.prevent="toggleControl"
       />
     </li>
-    <li class="no-pointer" v-if="implicitHosting">
+    <li class="no-pointer" v-if="!viewOnly && !webCodecsReceiveOnly && implicitHosting">
       <i
         :class="[controlLocked ? 'disabled' : '', 'fas', 'fa-mouse-pointer']"
         v-tooltip="{
@@ -32,7 +32,7 @@
         }"
       />
     </li>
-    <li v-if="implicitHosting || (!implicitHosting && (!controlLocked || hosting))">
+    <li v-if="!viewOnly && !webCodecsReceiveOnly && (implicitHosting || (!implicitHosting && (!controlLocked || hosting)))">
       <label
         class="switch"
         v-tooltip="{
@@ -47,7 +47,7 @@
         <span />
       </label>
     </li>
-    <li>
+    <li v-if="!$accessor.media.selected || !playing">
       <i
         :class="[{ disabled: !playable }, playing ? 'fa-pause-circle' : 'fa-play-circle', 'fas', 'play']"
         @click.stop.prevent="toggleMedia"
@@ -80,6 +80,7 @@
         <input type="range" min="0" max="100" v-model="volume" />
       </div>
     </li>
+    <li v-if="viewOnly"><neko-media-selector /></li>
   </ul>
 </template>
 
@@ -379,8 +380,9 @@
 
 <script lang="ts">
   import { Vue, Component, Prop, Watch } from 'vue-property-decorator'
+  import NekoMediaSelector from './media-selector.vue'
 
-  @Component({ name: 'neko-controls' })
+  @Component({ name: 'neko-controls', components: { NekoMediaSelector } })
   export default class NekoControls extends Vue {
     @Prop(Boolean) readonly shakeKbd!: boolean
 
@@ -389,19 +391,27 @@
     }
 
     get disabeld() {
-      return this.$accessor.remote.hosted
+      return this.webCodecsReceiveOnly || this.$accessor.remote.hosted
     }
 
     get hosting() {
-      return this.$accessor.remote.hosting
+      return !this.webCodecsReceiveOnly && this.$accessor.remote.hosting
     }
 
     get controlling() {
-      return this.$accessor.remote.controlling
+      return !this.webCodecsReceiveOnly && this.$accessor.remote.controlling
     }
 
     get implicitHosting() {
-      return this.$accessor.remote.implicitHosting
+      return !this.webCodecsReceiveOnly && this.$accessor.remote.implicitHosting
+    }
+
+    get viewOnly() {
+      return this.$accessor.user.viewOnly
+    }
+
+    get webCodecsReceiveOnly() {
+      return this.$client.receiveOnlySelected
     }
 
     // Microphone is allowed when the user is actively controlling (has host).
@@ -410,7 +420,7 @@
     // everyone by default. This prevents multiple users from sharing their
     // microphone simultaneously — only the person in control can.
     get micAllowed() {
-      return this.controlling
+      return !this.viewOnly && !this.webCodecsReceiveOnly && this.controlling
     }
 
     get volume() {
@@ -463,6 +473,11 @@
 
     toggleMedia() {
       if (!this.playable) {
+        return
+      }
+      if (this.$client.hlsSelected) {
+        if (this.playing) this.$client.pauseHLS()
+        else void this.$client.playHLS()
         return
       }
       this.$accessor.video.togglePlay()

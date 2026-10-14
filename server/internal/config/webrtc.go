@@ -35,8 +35,19 @@ type WebRTCEstimator struct {
 	DowngradeBackoff time.Duration
 	// how long to wait before upgrading again after previous upgrade
 	UpgradeBackoff time.Duration
-	// how bigger the difference between estimated and stream bitrate must be to trigger upgrade/downgrade
-	DiffThreshold float64
+	// minimum time before a clean application-limited tier may probe exactly
+	// one higher tier when the estimator cannot observe that tier's capacity
+	RecoveryProbeInterval time.Duration
+	// maximum exponential retry delay after a recovery probe fails
+	RecoveryProbeMaxBackoff time.Duration
+	// how much sustained estimated-bitrate deficit below the current delivery
+	// requirement is tolerated before downgrading
+	DowngradeDeficitThreshold float64
+	// fractional RTP/RTCP and network-overhead reserve added to media bitrate
+	// references before downgrade and upgrade thresholds are evaluated
+	TransportReserve float64
+	// how much spare estimated bitrate over the upgrade stream reference is required before upgrading
+	UpgradeDiffThreshold float64
 }
 
 type WebRTC struct {
@@ -159,8 +170,28 @@ func (WebRTC) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().Float64("webrtc.estimator.diff_threshold", 0.15, "how bigger the difference between estimated and stream bitrate must be to trigger upgrade/downgrade")
+	cmd.PersistentFlags().Duration("webrtc.estimator.recovery_probe_interval", 30*time.Second, "minimum interval between peer-local one-tier recovery probes, zero disables probes")
+	if err := viper.BindPFlag("webrtc.estimator.recovery_probe_interval", cmd.PersistentFlags().Lookup("webrtc.estimator.recovery_probe_interval")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Duration("webrtc.estimator.recovery_probe_max_backoff", 5*time.Minute, "maximum exponential retry delay after a failed recovery probe")
+	if err := viper.BindPFlag("webrtc.estimator.recovery_probe_max_backoff", cmd.PersistentFlags().Lookup("webrtc.estimator.recovery_probe_max_backoff")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Float64("webrtc.estimator.diff_threshold", 0.15, "maximum sustained estimated-bitrate deficit below the current delivery requirement before downgrading")
 	if err := viper.BindPFlag("webrtc.estimator.diff_threshold", cmd.PersistentFlags().Lookup("webrtc.estimator.diff_threshold")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Float64("webrtc.estimator.transport_reserve", 0.05, "fractional RTP/RTCP and network-overhead reserve added to media bitrate references")
+	if err := viper.BindPFlag("webrtc.estimator.transport_reserve", cmd.PersistentFlags().Lookup("webrtc.estimator.transport_reserve")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Float64("webrtc.estimator.upgrade_diff_threshold", 0.15, "how much spare estimated bitrate over the upgrade stream reference is required before upgrading")
+	if err := viper.BindPFlag("webrtc.estimator.upgrade_diff_threshold", cmd.PersistentFlags().Lookup("webrtc.estimator.upgrade_diff_threshold")); err != nil {
 		return err
 	}
 
@@ -314,7 +345,11 @@ func (s *WebRTC) Set() {
 	s.Estimator.StalledDuration = viper.GetDuration("webrtc.estimator.stalled_duration")
 	s.Estimator.DowngradeBackoff = viper.GetDuration("webrtc.estimator.downgrade_backoff")
 	s.Estimator.UpgradeBackoff = viper.GetDuration("webrtc.estimator.upgrade_backoff")
-	s.Estimator.DiffThreshold = viper.GetFloat64("webrtc.estimator.diff_threshold")
+	s.Estimator.RecoveryProbeInterval = viper.GetDuration("webrtc.estimator.recovery_probe_interval")
+	s.Estimator.RecoveryProbeMaxBackoff = viper.GetDuration("webrtc.estimator.recovery_probe_max_backoff")
+	s.Estimator.DowngradeDeficitThreshold = viper.GetFloat64("webrtc.estimator.diff_threshold")
+	s.Estimator.TransportReserve = viper.GetFloat64("webrtc.estimator.transport_reserve")
+	s.Estimator.UpgradeDiffThreshold = viper.GetFloat64("webrtc.estimator.upgrade_diff_threshold")
 }
 
 func (s *WebRTC) SetV2() {

@@ -21,18 +21,46 @@ typedef struct GstPipelineCtx {
   GstElement *pipeline;
   GstElement *appsink;
   GstElement *appsrc;
+  gboolean runningTimeSamples;
 } GstPipelineCtx;
 
-extern void goHandlePipelineBuffer(int pipelineId, void *buffer, int bufferLen, guint64 pts, guint64 dts, guint64 duration, gboolean deltaUnit);
+extern void goHandlePipelineBuffer(
+  int pipelineId,
+  void *buffer,
+  int bufferLen,
+  guint64 pts,
+  gboolean ptsValid,
+  guint64 dts,
+  gboolean dtsValid,
+  guint64 duration,
+  gboolean deltaUnit,
+  gint width,
+  gint height,
+  gint frameRateNumerator,
+  gint frameRateDenominator,
+  void *codecConfig,
+  int codecConfigLen
+);
 extern void goPipelineLog(int pipelineId, char *level, char *msg);
 
-GstPipelineCtx *gstreamer_pipeline_create(char *pipelineStr, int pipelineId, GError **error);
+GstPipelineCtx *gstreamer_pipeline_create(char *pipelineStr, int pipelineId, gboolean runningTimeSamples, GError **error);
 void gstreamer_pipeline_attach_appsink(GstPipelineCtx *ctx, char *sinkName);
 void gstreamer_pipeline_attach_appsrc(GstPipelineCtx *ctx, char *srcName);
 void gstreamer_pipeline_play(GstPipelineCtx *ctx);
 void gstreamer_pipeline_pause(GstPipelineCtx *ctx);
 void gstreamer_pipeline_destory(GstPipelineCtx *ctx);
 void gstreamer_pipeline_push(GstPipelineCtx *ctx, void *buffer, int bufferLen);
+gboolean gstreamer_pipeline_push_sample(
+  GstPipelineCtx *ctx,
+  void *buffer,
+  int bufferLen,
+  guint64 pts,
+  gboolean ptsValid,
+  guint64 dts,
+  gboolean dtsValid,
+  guint64 duration,
+  gboolean deltaUnit
+);
 
 gboolean gstreamer_pipeline_set_prop_int(GstPipelineCtx *ctx, char *binName, char *prop, gint value);
 gboolean gstreamer_pipeline_set_caps_framerate(GstPipelineCtx *ctx, const gchar* binName, gint numerator, gint denominator);

@@ -36,6 +36,7 @@
       --member.multiuser.admin_profile string         member multiuser provider: profile template for admin users (default "{}")
       --member.multiuser.user_password string         member multiuser provider: password for regular users (default "neko")
       --member.multiuser.user_profile string          member multiuser provider: profile template for regular users (default "{}")
+      --member.multiuser.view_only_token string       member multiuser provider: optional 16-character URL-safe token for view-only share links
       --member.object.users string                    member object provider: list of users with their passwords and profiles (default "[]")
       --member.provider string                        selected member provider (default "multiuser")
       --plugins.dir string                            path to neko plugins to load (default "./bin/plugins")
@@ -69,16 +70,20 @@
       --session.private_mode                          whether private mode should be enabled initially
       --webrtc.epr string                             limits the pool of ephemeral ports that ICE UDP connections can allocate from
       --webrtc.estimator.debug                        enables debug logging for the bandwidth estimator
-      --webrtc.estimator.diff_threshold float         how bigger the difference between estimated and stream bitrate must be to trigger upgrade/downgrade (default 0.15)
+      --webrtc.estimator.diff_threshold float         maximum sustained estimated-bitrate deficit below the current delivery requirement before downgrading (default 0.15)
       --webrtc.estimator.downgrade_backoff duration   how long to wait before downgrading again after previous downgrade (default 10s)
       --webrtc.estimator.enabled                      enables the bandwidth estimator
       --webrtc.estimator.initial_bitrate int          initial bitrate for the bandwidth estimator (default 1000000)
       --webrtc.estimator.passive                      passive estimator mode, when it does not switch pipelines, only estimates
       --webrtc.estimator.read_interval duration       how often to read and process bandwidth estimation reports (default 2s)
+      --webrtc.estimator.recovery_probe_interval duration minimum interval between peer-local one-tier recovery probes, zero disables probes (default 30s)
+      --webrtc.estimator.recovery_probe_max_backoff duration maximum exponential retry delay after a failed recovery probe (default 5m0s)
       --webrtc.estimator.stable_duration duration     how long to wait for stable connection (upward or neutral trend) before upgrading (default 12s)
       --webrtc.estimator.stalled_duration duration    how long to wait for stalled bandwidth estimation before downgrading (default 24s)
+      --webrtc.estimator.transport_reserve float      fractional RTP/RTCP and network-overhead reserve added to media bitrate references (default 0.05)
       --webrtc.estimator.unstable_duration duration   how long to wait for stalled connection (neutral trend with low bandwidth) before downgrading (default 6s)
       --webrtc.estimator.upgrade_backoff duration     how long to wait before upgrading again after previous upgrade (default 5s)
+      --webrtc.estimator.upgrade_diff_threshold float how much spare estimated bitrate over the upgrade stream reference is required before upgrading (default 0.15)
       --webrtc.icelite                                configures whether or not the ICE agent should be a lite agent
       --webrtc.iceservers.backend string              STUN and TURN servers used by the backend (default "[]")
       --webrtc.iceservers.frontend string             STUN and TURN servers used by the frontend (default "[]")

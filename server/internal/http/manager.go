@@ -24,11 +24,17 @@ type HttpManagerCtx struct {
 	http   *http.Server
 }
 
-func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, config *config.Server, memberConfig *config.Member) *HttpManagerCtx {
+func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, config *config.Server, memberConfig *config.Member, mediaWebSocket types.RouterHandler, mediaHLS func(types.Router)) *HttpManagerCtx {
 	logger := log.With().Str("module", "http").Logger()
 
 	opts := []RouterOption{
 		WithRequestID(), // create a request id for each request
+		WithOriginalRemoteAddr(),
+	}
+	// Canonicalize before logging/CORS so prefixed media requests retain the
+	// same redaction and strict no-CORS boundary as root deployments.
+	if config.PathPrefix != "/" {
+		opts = append(opts, WithPathPrefix(config.PathPrefix))
 	}
 
 	// use real ip if behind proxy
@@ -46,10 +52,6 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 		opts = append(opts, WithCORS(config.AllowOrigin))
 	}
 
-	if config.PathPrefix != "/" {
-		opts = append(opts, WithPathPrefix(config.PathPrefix))
-	}
-
 	router := newRouter(opts...)
 
 	router.Route("/api", ApiManager.Route)
@@ -58,6 +60,12 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 		origin := r.Header.Get("Origin")
 		return origin == "" || config.AllowOrigin(origin)
 	}))
+	if mediaWebSocket != nil {
+		router.Get("/api/media/ws", mediaWebSocket)
+	}
+	if mediaHLS != nil {
+		mediaHLS(router)
+	}
 
 	batch := batchHandler{
 		Router:     router,
@@ -65,7 +73,9 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 		Excluded: []string{
 			"/api/batch", // do not allow batchception
 			"/api/ws",
+			"/api/media/ws",
 		},
+		ExcludedPrefixes: []string{"/api/media/hls/"},
 	}
 	router.Post("/api/batch", batch.Handle)
 

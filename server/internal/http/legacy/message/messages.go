@@ -12,6 +12,7 @@ type Message struct {
 
 type SystemInit struct {
 	Event             string            `json:"event"`
+	SessionID         string            `json:"session_id,omitempty"`
 	Locks             map[string]string `json:"locks"`
 	ImplicitHosting   bool              `json:"implicit_hosting"`
 	FileTransfer      bool              `json:"file_transfer"`

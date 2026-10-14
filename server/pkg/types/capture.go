@@ -20,35 +20,32 @@ var (
 type Sample struct {
 	// timing information
 	Timestamp time.Time
-	// PTS, DTS, and Duration use -1 for GST_CLOCK_TIME_NONE.
-	PTS      time.Duration
-	DTS      time.Duration
-	Duration time.Duration
+	PTS       time.Duration
+	DTS       time.Duration
+	PTSValid  bool
+	DTSValid  bool
+	Duration  time.Duration
+	// source lifecycle
+	Generation uint64
+	Sequence   uint64
+	// encoded caps observed at the appsink
+	Width                uint32
+	Height               uint32
+	FrameRateNumerator   uint32
+	FrameRateDenominator uint32
+	// CodecConfig is an immutable copy of the codec initialization payload
+	// exposed by the appsink caps (for example avcC or AudioSpecificConfig).
+	CodecConfig []byte
 	// metadata
 	DeltaUnit bool // this unit cannot be decoded independently.
 	// buffer length
 	Length int
-	// Data is immutable and remains valid while referenced. Consumers may retain
-	// it after WriteSample returns.
+	// buffer with encoded media
 	Data []byte
 }
 
-type SampleConsumer interface {
+type SampleListener interface {
 	WriteSample(Sample)
-}
-
-type EncodedStream interface {
-	ID() string
-	Codec() codec.RTPCodec
-	Bitrate() uint64
-
-	Subscribe(SampleConsumer) (StreamSubscription, error)
-}
-
-type StreamSubscription interface {
-	Stream() EncodedStream
-	Switch(EncodedStream) error
-	Close() error
 }
 
 type BroadcastManager interface {
@@ -64,73 +61,48 @@ type ScreencastManager interface {
 	Image() ([]byte, error)
 }
 
-type StreamSelectorType int
+// Legacy names remain aliases so every existing JSON/API/configuration shape
+// stays unchanged while selection itself belongs to the media contract.
+type StreamSelectorType = MediaSelectorType
 
 const (
-	// select exact stream
-	StreamSelectorTypeExact StreamSelectorType = iota
-	// select nearest stream (in either direction) if exact stream is not available
-	StreamSelectorTypeNearest
-	// if exact stream is found select the next lower stream, otherwise select the nearest lower stream
-	StreamSelectorTypeLower
-	// if exact stream is found select the next higher stream, otherwise select the nearest higher stream
-	StreamSelectorTypeHigher
+	StreamSelectorTypeExact   = MediaSelectorTypeExact
+	StreamSelectorTypeNearest = MediaSelectorTypeNearest
+	StreamSelectorTypeLower   = MediaSelectorTypeLower
+	StreamSelectorTypeHigher  = MediaSelectorTypeHigher
 )
 
-func (s StreamSelectorType) String() string {
-	switch s {
-	case StreamSelectorTypeExact:
-		return "exact"
-	case StreamSelectorTypeNearest:
-		return "nearest"
-	case StreamSelectorTypeLower:
-		return "lower"
-	case StreamSelectorTypeHigher:
-		return "higher"
-	default:
-		return fmt.Sprintf("%d", int(s))
-	}
-}
+type StreamSelector = MediaSelector
 
-func (s *StreamSelectorType) UnmarshalText(text []byte) error {
-	switch strings.ToLower(string(text)) {
-	case "exact", "":
-		*s = StreamSelectorTypeExact
-	case "nearest":
-		*s = StreamSelectorTypeNearest
-	case "lower":
-		*s = StreamSelectorTypeLower
-	case "higher":
-		*s = StreamSelectorTypeHigher
-	default:
-		return fmt.Errorf("invalid stream selector type: %s", string(text))
-	}
-	return nil
-}
-
-func (s StreamSelectorType) MarshalText() ([]byte, error) {
-	return []byte(s.String()), nil
-}
-
-type StreamSelector struct {
-	// type of stream selector
-	Type StreamSelectorType `json:"type"`
-	// select stream by its ID
-	ID string `json:"id"`
-	// select stream by its bitrate
-	Bitrate uint64 `json:"bitrate"`
-}
-
-type EncodedStreamSelector interface {
+type StreamSelectorManager interface {
 	IDs() []string
 	Codec() codec.RTPCodec
 
-	GetStream(selector StreamSelector) (EncodedStream, bool)
+	GetStream(selector StreamSelector) (StreamSinkManager, bool)
 }
 
-type EncodedMediaSource interface {
-	Audio() EncodedStream
-	Video() EncodedStreamSelector
+type StreamSinkManager interface {
+	ID() string
+	Codec() codec.RTPCodec
+	// Bitrate returns the current encoded stream rate in bits per second.
+	Bitrate() uint64
+
+	AddListener(listener SampleListener) error
+	RemoveListener(listener SampleListener) error
+	MoveListenerTo(listener SampleListener, targetStream StreamSinkManager) error
+
+	ListenersCount() int
+	Started() bool
+
+	CreatePipeline() error
+	DestroyPipeline()
+}
+
+// StreamSinkNominalBitrateProvider is implemented by stream sinks that expose
+// a stable, configured bitrate reference. It remains optional so existing sink
+// implementations retain their measured-bitrate behavior.
+type StreamSinkNominalBitrateProvider interface {
+	NominalBitrate() uint64
 }
 
 type StreamSrcManager interface {
@@ -144,29 +116,31 @@ type StreamSrcManager interface {
 }
 
 type CaptureManager interface {
-	EncodedMediaSource
-
 	Start()
 	Shutdown() error
 
 	Broadcast() BroadcastManager
 	Screencast() ScreencastManager
+	Audio() StreamSinkManager
+	Video() StreamSelectorManager
+	Media() EncodedMediaProvider
 
 	Webcam() StreamSrcManager
 	Microphone() StreamSrcManager
 }
 
 type VideoConfig struct {
-	Width       string            `mapstructure:"width"`        // expression
-	Height      string            `mapstructure:"height"`       // expression
-	Fps         string            `mapstructure:"fps"`          // expression
-	Bitrate     int               `mapstructure:"bitrate"`      // pipeline bitrate (not used currently)
-	GstPrefix   string            `mapstructure:"gst_prefix"`   // pipeline prefix, starts with !
-	GstEncoder  string            `mapstructure:"gst_encoder"`  // gst encoder name
-	GstParams   map[string]string `mapstructure:"gst_params"`   // map of expressions
-	GstSuffix   string            `mapstructure:"gst_suffix"`   // pipeline suffix, starts with !
-	GstPipeline string            `mapstructure:"gst_pipeline"` // whole pipeline as a string
-	ShowPointer bool              `mapstructure:"show_pointer"` // show pointer in the video
+	Width          string            `mapstructure:"width"`           // expression
+	Height         string            `mapstructure:"height"`          // expression
+	Fps            string            `mapstructure:"fps"`             // expression
+	Bitrate        int               `mapstructure:"bitrate"`         // pipeline bitrate (not used currently)
+	NominalBitrate int               `mapstructure:"nominal_bitrate"` // nominal encoded rate in bits per second
+	GstPrefix      string            `mapstructure:"gst_prefix"`      // pipeline prefix, starts with !
+	GstEncoder     string            `mapstructure:"gst_encoder"`     // gst encoder name
+	GstParams      map[string]string `mapstructure:"gst_params"`      // map of expressions
+	GstSuffix      string            `mapstructure:"gst_suffix"`      // pipeline suffix, starts with !
+	GstPipeline    string            `mapstructure:"gst_pipeline"`    // whole pipeline as a string
+	ShowPointer    bool              `mapstructure:"show_pointer"`    // show pointer in the video
 }
 
 func (config *VideoConfig) GetPipeline(screen ScreenSize) (string, error) {

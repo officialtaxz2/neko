@@ -90,6 +90,8 @@ type SessionManagerCtx struct {
 }
 
 func (manager *SessionManagerCtx) Create(id string, profile types.MemberProfile) (types.Session, string, error) {
+	profile = profile.RestrictViewOnly()
+
 	token, err := utils.NewUID(64)
 	if err != nil {
 		return nil, "", err
@@ -132,6 +134,12 @@ func (manager *SessionManagerCtx) Update(id string, profile types.MemberProfile)
 		manager.sessionsMu.Unlock()
 		return types.ErrSessionNotFound
 	}
+	// A passive identity is assigned by authentication and cannot be removed
+	// through a later profile update, including an administrator update.
+	if session.profile.IsViewOnly {
+		profile.IsViewOnly = true
+	}
+	profile = profile.RestrictViewOnly()
 
 	old := session.profile
 	session.profile = profile
@@ -160,8 +168,8 @@ func (manager *SessionManagerCtx) Delete(id string) error {
 		session.DestroyWebSocketPeer("session deleted")
 	}
 
-	if session.State().IsWatching {
-		session.GetWebRTCPeer().Destroy()
+	if delivery := session.GetMediaDelivery(); delivery != nil {
+		closeMediaDelivery(delivery, types.MediaDeliveryCloseRevoked)
 	}
 
 	manager.emmiter.Emit("deleted", session)
@@ -183,8 +191,8 @@ func (manager *SessionManagerCtx) Disconnect(id string) error {
 		session.DestroyWebSocketPeer("session disconnected")
 	}
 
-	if session.State().IsWatching {
-		session.GetWebRTCPeer().Destroy()
+	if delivery := session.GetMediaDelivery(); delivery != nil {
+		closeMediaDelivery(delivery, types.MediaDeliveryCloseRevoked)
 	}
 
 	return nil
@@ -245,6 +253,13 @@ func (manager *SessionManagerCtx) Range(f func(session types.Session) bool) {
 func (manager *SessionManagerCtx) setHost(session, host types.Session) {
 	var hostId string
 	if host != nil {
+		if !host.Profile().IsInteractive() || !host.Profile().CanHost {
+			manager.logger.Warn().
+				Str("session_id", session.ID()).
+				Str("target_session_id", host.ID()).
+				Msg("refusing to grant control to non-interactive session")
+			return
+		}
 		hostId = host.ID()
 	}
 
@@ -262,6 +277,9 @@ func (manager *SessionManagerCtx) GetHost() (types.Session, bool) {
 }
 
 func (manager *SessionManagerCtx) isHost(host types.Session) bool {
+	if !host.Profile().IsInteractive() || !host.Profile().CanHost {
+		return false
+	}
 	hostId, ok := manager.hostId.Load().(string)
 	return ok && hostId == host.ID()
 }
@@ -430,9 +448,9 @@ func (manager *SessionManagerCtx) updateSettings(session types.Session, new, old
 				session.ClearHost()
 			}
 
-			// its webrtc connection will be paused or unpaused
-			if webrtcPeer := s.GetWebRTCPeer(); webrtcPeer != nil {
-				webrtcPeer.SetPaused(enabled)
+			// its receive-media delivery will be paused or unpaused
+			if delivery := s.GetMediaDelivery(); delivery != nil {
+				_ = delivery.SetPaused(enabled)
 			}
 		}
 	}

@@ -4,6 +4,7 @@ export interface Member {
   avatar?: string
   admin: boolean
   muted: boolean
+  view_only: boolean
   connected?: boolean
   ignored?: boolean
 }

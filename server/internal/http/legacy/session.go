@@ -2,18 +2,20 @@ package legacy
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"path"
 	"strings"
-	"sync"
+	"time"
 
 	oldTypes "github.com/m1k1o/neko/server/internal/http/legacy/types"
 
 	"github.com/m1k1o/neko/server/internal/api"
 	"github.com/m1k1o/neko/server/pkg/types"
+	"github.com/m1k1o/neko/server/pkg/utils"
 
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog"
@@ -31,19 +33,22 @@ type memberStruct struct {
 }
 
 type session struct {
-	r *http.Request
-	h *LegacyHandler
+	r      *http.Request
+	h      *LegacyHandler
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	logger     zerolog.Logger
 	serverAddr string
 	pathPrefix string
 
-	id, ip  string
-	token   string
-	cookie  string
-	name    string
-	isAdmin bool
-	client  *http.Client
+	id, ip     string
+	token      string
+	cookie     string
+	name       string
+	isAdmin    bool
+	isViewOnly bool
+	client     *http.Client
 
 	lastHostID         string
 	lockedControls     bool
@@ -51,19 +56,23 @@ type session struct {
 	lockedFileTransfer bool
 	sessions           map[string]*memberStruct
 
-	muClient    sync.Mutex
-	connClient  *websocket.Conn
-	muBackend   sync.Mutex
-	connBackend *websocket.Conn
+	connClient    *websocket.Conn
+	connBackend   *websocket.Conn
+	clientWriter  *utils.WebSocketWriter
+	backendWriter *utils.WebSocketWriter
 }
 
 func (h *LegacyHandler) newSession(r *http.Request) *session {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.Proxy = nil // disable proxy for local requests
+	transport.ResponseHeaderTimeout = 15 * time.Second
+	ctx, cancel := context.WithCancel(r.Context())
 
 	return &session{
 		r:          r,
 		h:          h,
+		ctx:        ctx,
+		cancel:     cancel,
 		logger:     h.logger,
 		serverAddr: h.serverAddr,
 		pathPrefix: h.pathPrefix,
@@ -75,7 +84,11 @@ func (h *LegacyHandler) newSession(r *http.Request) *session {
 }
 
 func (s *session) req(method, reqPath string, headers http.Header, request io.Reader) (io.ReadCloser, http.Header, error) {
-	req, err := http.NewRequest(method, "http://"+s.serverAddr+path.Join(s.pathPrefix, reqPath), request)
+	return s.reqWithContext(s.ctx, method, reqPath, headers, request)
+}
+
+func (s *session) reqWithContext(ctx context.Context, method, reqPath string, headers http.Header, request io.Reader) (io.ReadCloser, http.Header, error) {
+	req, err := http.NewRequestWithContext(ctx, method, "http://"+s.serverAddr+path.Join(s.pathPrefix, reqPath), request)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,6 +131,12 @@ func (s *session) apiReq(method, path string, request, response any) error {
 }
 
 func (s *session) apiReqWithHeaders(method, path string, request, response any, headers http.Header) error {
+	ctx, cancel := context.WithTimeout(s.ctx, 15*time.Second)
+	defer cancel()
+	return s.apiReqWithContext(ctx, method, path, request, response, headers)
+}
+
+func (s *session) apiReqWithContext(ctx context.Context, method, path string, request, response any, headers http.Header) error {
 	reqBody, err := json.Marshal(request)
 	if err != nil {
 		return err
@@ -128,7 +147,7 @@ func (s *session) apiReqWithHeaders(method, path string, request, response any, 
 	}
 	headers.Set("Content-Type", "application/json")
 
-	resBody, _, err := s.req(method, path, headers, bytes.NewReader(reqBody))
+	resBody, _, err := s.reqWithContext(ctx, method, path, headers, bytes.NewReader(reqBody))
 	if err != nil {
 		return err
 	}
@@ -148,10 +167,7 @@ func (s *session) apiReqWithHeaders(method, path string, request, response any, 
 
 // send message to client (in old format)
 func (s *session) toClient(payload any) error {
-	s.muClient.Lock()
-	defer s.muClient.Unlock()
-
-	err := s.connClient.WriteJSON(payload)
+	err := s.clientWriter.SendJSON(payload)
 	if err != nil {
 		return fmt.Errorf("%w: %s", ErrWebsocketSend, err)
 	}
@@ -161,15 +177,12 @@ func (s *session) toClient(payload any) error {
 
 // send message to backend (in new format)
 func (s *session) toBackend(event string, payload any) error {
-	s.muBackend.Lock()
-	defer s.muBackend.Unlock()
-
 	rawPayload, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
 
-	err = s.connBackend.WriteJSON(types.WebSocketMessage{
+	err = s.backendWriter.SendJSON(types.WebSocketMessage{
 		Event:   event,
 		Payload: rawPayload,
 	})
@@ -212,21 +225,30 @@ func (s *session) create(username, password string) error {
 
 func (s *session) setSessionData(data api.SessionDataPayload) {
 	s.id, s.ip = data.ID, getIp(s.r)
+	s.h.mu.Lock()
 	s.h.sessionIPs[s.id] = s.ip // save session ip by id
+	s.h.mu.Unlock()
 	s.token = data.Token
 	s.name = data.Profile.Name
 	s.isAdmin = data.Profile.IsAdmin
+	s.isViewOnly = data.Profile.IsViewOnly
 }
 
 func (s *session) destroy() {
 	defer s.client.CloseIdleConnections()
+	s.cancel()
 
-	// logout session
-	err := s.apiReq(http.MethodPost, "/api/logout", nil, nil)
+	// Session cleanup must survive the canceled bridge/request context, but
+	// cannot wait indefinitely. File bodies retain their request lifetime.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := s.apiReqWithContext(ctx, http.MethodPost, "/api/logout", nil, nil, nil)
 	if err != nil {
 		s.logger.Error().Err(err).Msg("failed to logout")
 	}
 
 	// remove session id from ip map
+	s.h.mu.Lock()
 	delete(s.h.sessionIPs, s.id)
+	s.h.mu.Unlock()
 }

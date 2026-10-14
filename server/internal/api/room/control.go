@@ -87,7 +87,7 @@ func (h *RoomHandler) controlGive(w http.ResponseWriter, r *http.Request) error 
 		return utils.HttpNotFound("target session was not found")
 	}
 
-	if !target.Profile().CanHost {
+	if !target.Profile().IsInteractive() || !target.Profile().CanHost {
 		return utils.HttpBadRequest("target session is not allowed to host")
 	}
 

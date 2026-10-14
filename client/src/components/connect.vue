@@ -6,7 +6,7 @@
         <span><b>n</b>.eko</span>
       </div>
       <form class="message" v-if="!connecting" @submit.stop.prevent="connect">
-        <span v-if="!autoPassword">{{ $t('connect.login_title') }}</span>
+        <span v-if="!isInvitation">{{ $t('connect.login_title') }}</span>
         <span v-else>{{ $t('connect.invitation_title') }}</span>
         <input
           v-if="passwordLoginEnabled"
@@ -16,13 +16,13 @@
           autofocus
         />
         <input
-          v-if="passwordLoginEnabled && !autoPassword"
+          v-if="passwordLoginEnabled && !isInvitation"
           type="password"
           :placeholder="$t('connect.password')"
           v-model="password"
         />
 
-        <div class="demo-checkbox-container" v-if="passwordLoginEnabled && !autoPassword && showDemo">
+        <div class="demo-checkbox-container" v-if="passwordLoginEnabled && !isInvitation && showDemo">
           <input type="checkbox" id="demo-mode" v-model="demoMode" />
           <label for="demo-mode">Demo- / Testmodus (Lokale Sim)</label>
         </div>
@@ -31,7 +31,7 @@
           {{ $t('connect.connect') }}
         </button>
         <button
-          v-if="oauthEnabled && !autoPassword"
+          v-if="oauthEnabled && !isInvitation"
           type="button"
           class="oauth-login"
           @click.stop.prevent="loginWithOAuth"
@@ -291,6 +291,10 @@
     private demoMode: boolean = false
     private showDemo: boolean = false
 
+    private get isInvitation(): boolean {
+      return this.autoPassword !== null || this.$client.viewOnlyLink
+    }
+
     private get isDev(): boolean {
       if (typeof window !== 'undefined' && window.location) {
         const hostname = window.location.hostname
@@ -308,8 +312,8 @@
     }
 
     created() {
-      this.showDemo = this.isDev
-      this.demoMode = this.isDev
+      this.showDemo = this.isDev && !this.$client.viewOnlyLink
+      this.demoMode = this.isDev && !this.$client.viewOnlyLink
     }
 
     async mounted() {
@@ -324,6 +328,11 @@
         this.removeUrlParam('pwd')
         password = this.autoPassword
       }
+      if (this.$client.viewOnlyLink) {
+        // The bearer token stays in the URL fragment and the client instance;
+        // never copy it into Vuex or persistent browser storage.
+        password = ''
+      }
 
       // auto-user fill
       let displayname = this.$accessor.displayname
@@ -333,8 +342,19 @@
         displayname = this.$accessor.displayname || usr
       }
 
-      if (displayname !== '' && password !== '') {
+      // Keep the form usable if bounded recovery is exhausted or suppressed.
+      this.displayname = displayname
+      this.password = password
+
+      if (displayname !== '' && (password !== '' || this.$client.viewOnlyLink)) {
         const client = this.$client as any
+        // The singleton client owns transient-session retries. A newly mounted
+        // login form must not start a parallel connection or override a
+        // server-directed disconnect.
+        if (client && client.automaticLoginAllowed === false) {
+          return
+        }
+
         if (this.demoMode) {
           if (client && typeof client.setDemoMode === 'function') {
             client.setDemoMode(true)
@@ -386,30 +406,18 @@
     }
 
     removeUrlParam(param: string) {
-      let url = document.location.href
-      let urlparts = url.split('?')
-
-      if (urlparts.length >= 2) {
-        let urlBase = urlparts.shift()
-        let queryString = urlparts.join('?')
-
-        let prefix = encodeURIComponent(param) + '='
-        let pars = queryString.split(/[&;]/g)
-        for (let i = pars.length; i-- > 0; ) {
-          if (pars[i].lastIndexOf(prefix, 0) !== -1) {
-            pars.splice(i, 1)
-          }
-        }
-
-        url = urlBase + (pars.length > 0 ? '?' + pars.join('&') : '')
-        window.history.pushState('', document.title, url)
-      }
+      const url = new URL(document.location.href)
+      url.searchParams.delete(param)
+      window.history.pushState('', document.title, url.toString())
     }
 
     login() {
       let password = this.password
       if (this.autoPassword !== null) {
         password = this.autoPassword
+      }
+      if (this.$client.viewOnlyLink) {
+        password = ''
       }
 
       if (this.displayname == '') {

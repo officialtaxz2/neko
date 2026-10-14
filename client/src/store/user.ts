@@ -20,6 +20,7 @@ export const getters = getterTree(state, {
   member: (state) => state.members[state.id] || null,
   admin: (state) => (state.members[state.id] ? state.members[state.id].admin : false),
   muted: (state) => (state.members[state.id] ? state.members[state.id].muted : false),
+  viewOnly: (state) => (state.members[state.id] ? state.members[state.id].view_only : false),
 })
 
 export const mutations = mutationTree(state, {

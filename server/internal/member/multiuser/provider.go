@@ -1,11 +1,15 @@
 package multiuser
 
 import (
+	"crypto/subtle"
 	"errors"
+	"regexp"
 
 	"github.com/m1k1o/neko/server/pkg/types"
 	"github.com/m1k1o/neko/server/pkg/utils"
 )
+
+var viewOnlyTokenPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{16}$`)
 
 func New(config Config) types.MemberProvider {
 	return &MemberProviderCtx{
@@ -18,6 +22,18 @@ type MemberProviderCtx struct {
 }
 
 func (provider *MemberProviderCtx) Connect() error {
+	if provider.config.ViewOnlyToken == "" {
+		return nil
+	}
+
+	if !viewOnlyTokenPattern.MatchString(provider.config.ViewOnlyToken) {
+		return errors.New("view-only token must contain exactly 16 URL-safe characters")
+	}
+	if provider.config.ViewOnlyToken == provider.config.AdminPassword ||
+		provider.config.ViewOnlyToken == provider.config.UserPassword {
+		return errors.New("view-only token must differ from member and admin passwords")
+	}
+
 	return nil
 }
 
@@ -34,6 +50,14 @@ func (provider *MemberProviderCtx) Authenticate(username string, password string
 
 	// id is username with token; the id ends up in URL paths, the name stays as typed
 	id := utils.SafeID(username) + "-" + token
+
+	// The optional share token creates an ephemeral session with a fixed,
+	// server-enforced profile. Compare it in constant time because it is a
+	// bearer credential rather than an ordinary user-selected password.
+	if provider.config.ViewOnlyToken != "" &&
+		subtle.ConstantTimeCompare([]byte(provider.config.ViewOnlyToken), []byte(password)) == 1 {
+		return id, types.NewViewOnlyMemberProfile(username), nil
+	}
 
 	// if logged in as administrator
 	if provider.config.AdminPassword == password {

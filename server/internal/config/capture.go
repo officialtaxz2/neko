@@ -325,11 +325,9 @@ func (Capture) InitV2(cmd *cobra.Command) error {
 	return nil
 }
 
-// videoPipelineShorthandHook accepts a bare pipeline string in place of a full
-// video pipeline config, mirroring the capture.video.pipeline shorthand.
 func videoPipelineShorthandHook() mapstructure.DecodeHookFunc {
 	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		if from.Kind() == reflect.String && to == reflect.TypeOf(types.VideoConfig{}) {
+		if from != nil && from.Kind() == reflect.String && to == reflect.TypeOf(types.VideoConfig{}) {
 			return types.VideoConfig{GstPipeline: data.(string)}, nil
 		}
 		return data, nil
@@ -424,18 +422,27 @@ func (s *Capture) Set() {
 		log.Warn().Msg("you are setting both single video pipeline and multiple video pipelines, ignoring single video pipeline")
 	}
 
-	// If no video ids were configured explicitly, derive them from the configured
-	// pipelines so the capture manager always has at least one stream to select.
-	// Without this, NEKO_CAPTURE_VIDEO_PIPELINES alone left VideoIDs empty and the
-	// first WebRTC signal request panicked on videos[0].
 	if len(s.VideoIDs) == 0 && len(s.VideoPipelines) > 0 {
+		// Preserve explicit IDs; otherwise known nominal rates define quality
+		// order. Names alone do not imply a quality tier.
 		ids := make([]string, 0, len(s.VideoPipelines))
-		for id := range s.VideoPipelines {
+		allRatesKnown := true
+		for id, pipeline := range s.VideoPipelines {
 			ids = append(ids, id)
+			allRatesKnown = allRatesKnown && pipeline.NominalBitrate > 0
 		}
-		sort.Strings(ids)
+		sort.Slice(ids, func(i, j int) bool {
+			left, right := s.VideoPipelines[ids[i]], s.VideoPipelines[ids[j]]
+			if allRatesKnown && left.NominalBitrate != right.NominalBitrate {
+				return left.NominalBitrate > right.NominalBitrate
+			}
+			return ids[i] < ids[j]
+		})
 		s.VideoIDs = ids
-		log.Warn().Strs("video_ids", ids).Msg("no capture.video.ids configured, using all video pipelines sorted by id")
+		if !allRatesKnown && len(ids) > 1 {
+			log.Warn().Msg("derived alphabetical video ids are not a quality ladder; configure capture.video.ids explicitly")
+		}
+		log.Warn().Strs("video_ids", ids).Msg("no capture.video.ids configured, deriving video pipeline ids")
 	}
 
 	s.VideoShowPointer = viper.GetBool("capture.video.show_pointer")

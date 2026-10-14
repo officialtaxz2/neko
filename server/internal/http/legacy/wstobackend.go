@@ -11,6 +11,8 @@ import (
 	oldMessage "github.com/m1k1o/neko/server/internal/http/legacy/message"
 
 	"github.com/m1k1o/neko/server/internal/api/room"
+	"github.com/m1k1o/neko/server/internal/mediahls"
+	"github.com/m1k1o/neko/server/internal/mediaws"
 	"github.com/m1k1o/neko/server/internal/plugins/chat"
 	"github.com/m1k1o/neko/server/internal/plugins/filetransfer"
 	"github.com/m1k1o/neko/server/internal/plugins/openinapp"
@@ -24,6 +26,11 @@ func (s *session) wsToBackend(msg []byte) error {
 	err := json.Unmarshal(msg, &header)
 	if err != nil {
 		return err
+	}
+
+	if s.isViewOnly && !viewOnlyLegacyEventAllowed(header.Event) {
+		s.logger.Warn().Str("event", header.Event).Msg("view-only session denied legacy websocket event")
+		return nil
 	}
 
 	switch header.Event {
@@ -96,6 +103,60 @@ func (s *session) wsToBackend(msg []byte) error {
 
 		return s.toBackend(event.SIGNAL_CANDIDATE, &message.SignalCandidate{
 			ICECandidateInit: candidate,
+		})
+
+	case oldEvent.MEDIA_CAPABILITIES_REQUEST:
+		request := &oldMessage.MediaCapabilitiesRequest{}
+		if err := mediaws.DecodeStrictJSON(msg, request); err != nil {
+			return err
+		}
+		if err := mediaws.RequireJSONFields(msg, "event", "version"); err != nil {
+			return err
+		}
+		return s.toBackend(event.MEDIA_CAPABILITIES_REQUEST, &message.MediaCapabilitiesRequest{
+			Version: request.Version,
+		})
+
+	case oldEvent.MEDIA_CREATE:
+		request := &oldMessage.MediaCreate{}
+		if err := mediaws.DecodeStrictJSON(msg, request); err != nil {
+			return err
+		}
+		if err := mediaws.RequireJSONFields(msg, "event", "version", "backend", "audio", "video"); err != nil {
+			return err
+		}
+		return s.toBackend(event.MEDIA_CREATE, &message.MediaCreate{
+			Version: request.Version,
+			Backend: request.Backend,
+			Audio:   request.Audio,
+			Video:   request.Video,
+		})
+
+	case oldEvent.MEDIA_HLS_CAPABILITIES_REQUEST:
+		request := &oldMessage.MediaHLSCapabilitiesRequest{}
+		if err := mediahls.DecodeStrictJSON(msg, request); err != nil {
+			return err
+		}
+		if err := mediahls.RequireJSONFields(msg, "event", "version", "mode"); err != nil {
+			return err
+		}
+		return s.toBackend(event.MEDIA_HLS_CAPABILITIES_REQUEST, &message.MediaHLSCapabilitiesRequest{
+			Version: request.Version,
+			Mode:    request.Mode,
+		})
+
+	case oldEvent.MEDIA_HLS_CREATE:
+		request := &oldMessage.MediaHLSCreate{}
+		if err := mediahls.DecodeStrictJSON(msg, request); err != nil {
+			return err
+		}
+		if err := mediahls.RequireJSONFields(msg, "event", "version", "backend", "mode"); err != nil {
+			return err
+		}
+		return s.toBackend(event.MEDIA_HLS_CREATE, &message.MediaHLSCreate{
+			Version: request.Version,
+			Backend: request.Backend,
+			Mode:    request.Mode,
 		})
 
 	// Control Events
@@ -382,5 +443,21 @@ func (s *session) wsToBackend(msg []byte) error {
 
 	default:
 		return fmt.Errorf("unknown event type: %s", header.Event)
+	}
+}
+
+func viewOnlyLegacyEventAllowed(eventName string) bool {
+	switch eventName {
+	case oldEvent.CLIENT_HEARTBEAT,
+		oldEvent.SIGNAL_OFFER,
+		oldEvent.SIGNAL_ANSWER,
+		oldEvent.SIGNAL_CANDIDATE,
+		oldEvent.MEDIA_CAPABILITIES_REQUEST,
+		oldEvent.MEDIA_CREATE,
+		oldEvent.MEDIA_HLS_CAPABILITIES_REQUEST,
+		oldEvent.MEDIA_HLS_CREATE:
+		return true
+	default:
+		return false
 	}
 }

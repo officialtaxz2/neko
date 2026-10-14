@@ -1,0 +1,17 @@
+# Host dependencies must never overwrite the container's Linux installation.
+**/node_modules
+
+# Keep local credentials and deployment/runtime state out of the build context.
+.git
+.env
+.env.*
+!.env.example
+MyNekoProjekt
+files
+downloads
+policy.json
+.logs
+logs
+*.log
+
+# Keep dist directories available: ./build supports prebuilt CLIENT_DIST input.

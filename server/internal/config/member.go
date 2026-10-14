@@ -81,6 +81,11 @@ func (Member) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	cmd.PersistentFlags().String("member.multiuser.view_only_token", "", "member multiuser provider: optional 16-character URL-safe token for view-only share links")
+	if err := viper.BindPFlag("member.multiuser.view_only_token", cmd.PersistentFlags().Lookup("member.multiuser.view_only_token")); err != nil {
+		return err
+	}
+
 	cmd.PersistentFlags().String("member.multiuser.user_profile", "{}", "member multiuser provider: profile template for regular users")
 	if err := viper.BindPFlag("member.multiuser.user_profile", cmd.PersistentFlags().Lookup("member.multiuser.user_profile")); err != nil {
 		return err
@@ -216,6 +221,7 @@ func (s *Member) Set() {
 	// multiuser provider
 	s.Multiuser.UserPassword = viper.GetString("member.multiuser.user_password")
 	s.Multiuser.AdminPassword = viper.GetString("member.multiuser.admin_password")
+	s.Multiuser.ViewOnlyToken = viper.GetString("member.multiuser.view_only_token")
 
 	s.Multiuser.UserProfile = DefaultUserProfile
 	if err := viper.UnmarshalKey("member.multiuser.user_profile", &s.Multiuser.UserProfile, viper.DecodeHook(

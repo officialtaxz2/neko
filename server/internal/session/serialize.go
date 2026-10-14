@@ -16,6 +16,11 @@ func (manager *SessionManagerCtx) save() {
 	// serialize sessions
 	sessions := make([]types.SessionProfile, 0, len(manager.sessions))
 	for _, session := range manager.sessions {
+		// Share-link sessions are intentionally process-local. A restart is the
+		// hard revocation boundary for a rotated or removed view-only token.
+		if session.profile.IsViewOnly {
+			continue
+		}
 		sessions = append(sessions, types.SessionProfile{
 			Id:      session.id,
 			Token:   session.token,
@@ -78,7 +83,12 @@ func (manager *SessionManagerCtx) load() {
 
 	// create sessions
 	manager.sessionsMu.Lock()
+	loaded := 0
 	for _, session := range sessions {
+		if session.Profile.IsViewOnly {
+			continue
+		}
+		session.Profile = session.Profile.RestrictViewOnly()
 		manager.tokens[session.Token] = session.Id
 		manager.sessions[session.Id] = &SessionCtx{
 			id:      session.Id,
@@ -87,11 +97,12 @@ func (manager *SessionManagerCtx) load() {
 			logger:  manager.logger.With().Str("session_id", session.Id).Logger(),
 			profile: session.Profile,
 		}
+		loaded++
 	}
 	manager.sessionsMu.Unlock()
 
 	manager.logger.Info().
-		Int("sessions", len(sessions)).
+		Int("sessions", loaded).
 		Str("file", manager.config.File).
 		Msg("loaded sessions from a file")
 }

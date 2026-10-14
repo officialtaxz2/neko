@@ -280,6 +280,48 @@ func TestCanAccessClipboardOnly(t *testing.T) {
 	}
 }
 
+func TestInteractiveOnly(t *testing.T) {
+	interactiveRequest, _, err := rWithSession(types.MemberProfile{CanHost: true})
+	if err != nil {
+		t.Fatalf("could not create interactive session: %v", err)
+	}
+
+	viewOnlyRequest, session, err := rWithSession(types.MemberProfile{
+		IsViewOnly:         true,
+		IsAdmin:            true,
+		CanHost:            true,
+		CanShareMedia:      true,
+		CanAccessClipboard: true,
+		Plugins:             types.PluginSettings{"plugin.enabled": true},
+	})
+	if err != nil {
+		t.Fatalf("could not create view-only session: %v", err)
+	}
+
+	if _, err := InteractiveOnly(nil, interactiveRequest); err != nil {
+		t.Fatalf("interactive session rejected: %v", err)
+	}
+	if _, err := InteractiveOnly(nil, viewOnlyRequest); err == nil {
+		t.Fatal("view-only session passed interactive middleware")
+	}
+	if _, err := AdminsOnly(nil, viewOnlyRequest); err == nil {
+		t.Fatal("view-only session passed admin middleware")
+	}
+	if _, err := CanHostOnly(nil, viewOnlyRequest); err == nil {
+		t.Fatal("view-only session passed host middleware")
+	}
+	if _, err := CanAccessClipboardOnly(nil, viewOnlyRequest); err == nil {
+		t.Fatal("view-only session passed clipboard middleware")
+	}
+	if _, err := PluginsGenericOnly("plugin.enabled", true)(nil, viewOnlyRequest); err == nil {
+		t.Fatal("view-only session passed plugin middleware")
+	}
+	if profile := session.Profile(); profile.IsAdmin || profile.CanHost ||
+		profile.CanShareMedia || profile.CanAccessClipboard {
+		t.Fatalf("view-only profile was not normalized: %+v", profile)
+	}
+}
+
 func TestPluginsGenericOnly(t *testing.T) {
 	r1, _, err := rWithSession(types.MemberProfile{
 		Plugins: map[string]any{

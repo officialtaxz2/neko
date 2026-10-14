@@ -32,11 +32,12 @@ func profileToMember(id string, profile types.MemberProfile) (*oldTypes.Member, 
 	}
 
 	return &oldTypes.Member{
-		ID:     id,
-		Name:   profile.Name,
-		Avatar: profile.Avatar,
-		Admin:  profile.IsAdmin,
-		Muted:  !settings.CanSend,
+		ID:       id,
+		Name:     profile.Name,
+		Avatar:   profile.Avatar,
+		Admin:    profile.IsAdmin,
+		Muted:    !settings.CanSend,
+		ViewOnly: profile.IsViewOnly,
 	}, nil
 }
 
@@ -170,6 +171,68 @@ func (s *session) wsToClient(msg []byte) error {
 	}
 
 	switch data.Event {
+	case event.MEDIA_CAPABILITIES:
+		request := &message.MediaCapabilities{}
+		if err := json.Unmarshal(data.Payload, request); err != nil {
+			return err
+		}
+		return s.toClient(&oldMessage.MediaCapabilities{
+			Event:    oldEvent.MEDIA_CAPABILITIES,
+			Version:  request.Version,
+			Backend:  request.Backend,
+			Protocol: request.Protocol,
+			Audio:    request.Audio,
+			Video:    request.Video,
+		})
+
+	case event.MEDIA_OFFER:
+		request := &message.MediaOffer{}
+		if err := json.Unmarshal(data.Payload, request); err != nil {
+			return err
+		}
+		return s.toClient(&oldMessage.MediaOffer{
+			Event:       oldEvent.MEDIA_OFFER,
+			Version:     request.Version,
+			Backend:     request.Backend,
+			Protocol:    request.Protocol,
+			Path:        request.Path,
+			Ticket:      request.Ticket,
+			ExpiresInMS: request.ExpiresInMS,
+		})
+
+	case event.MEDIA_HLS_CAPABILITIES:
+		request := &message.MediaHLSCapabilities{}
+		if err := json.Unmarshal(data.Payload, request); err != nil {
+			return err
+		}
+		return s.toClient(&oldMessage.MediaHLSCapabilities{
+			Event:      oldEvent.MEDIA_HLS_CAPABILITIES,
+			Version:    request.Version,
+			Backend:    request.Backend,
+			Modes:      request.Modes,
+			Container:  request.Container,
+			VideoCodec: request.VideoCodec,
+			AudioCodec: request.AudioCodec,
+			AudioRate:  request.AudioRate,
+			Variants:   request.Variants,
+			Limits:     request.Limits,
+		})
+
+	case event.MEDIA_HLS_OFFER:
+		request := &message.MediaHLSOffer{}
+		if err := json.Unmarshal(data.Payload, request); err != nil {
+			return err
+		}
+		return s.toClient(&oldMessage.MediaHLSOffer{
+			Event:       oldEvent.MEDIA_HLS_OFFER,
+			Version:     request.Version,
+			Backend:     request.Backend,
+			Mode:        request.Mode,
+			Path:        request.Path,
+			Ticket:      request.Ticket,
+			ExpiresInMS: request.ExpiresInMS,
+		})
+
 	// System Events
 	case event.SYSTEM_DISCONNECT:
 		request := &message.SystemDisconnect{}
@@ -256,12 +319,21 @@ func (s *session) wsToClient(msg []byte) error {
 			return err
 		}
 
+		sessionID := ""
+		if receiveOnlyMediaSelected(s.r) {
+			sessionID = request.SessionId
+		}
+		if err := s.sendHLSState(request.Settings); err != nil {
+			return err
+		}
+
 		return s.toClient(&oldMessage.SystemInit{
 			Event:           oldEvent.SYSTEM_INIT,
+			SessionID:       sessionID,
 			ImplicitHosting: request.Settings.ImplicitHosting,
 			Locks:           locks,
 			// TODO: hack - we don't know if file transfer is enabled, we would need to check the global config.
-			FileTransfer:      viper.GetBool("filetransfer.enabled") || (viper.GetBool("legacy") && viper.GetBool("file_transfer_enabled")),
+			FileTransfer:      !s.isViewOnly && (viper.GetBool("filetransfer.enabled") || (viper.GetBool("legacy") && viper.GetBool("file_transfer_enabled"))),
 			HeartbeatInterval: request.Settings.HeartbeatInterval,
 		})
 
@@ -666,6 +738,9 @@ func (s *session) wsToClient(msg []byte) error {
 		request := &message.SystemSettingsUpdate{}
 		err := json.Unmarshal(data.Payload, request)
 		if err != nil {
+			return err
+		}
+		if err := s.sendHLSState(request.Settings); err != nil {
 			return err
 		}
 

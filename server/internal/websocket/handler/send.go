@@ -9,6 +9,10 @@ import (
 )
 
 func (h *MessageHandlerCtx) sendUnicast(session types.Session, payload *message.SendUnicast) error {
+	if !session.Profile().IsInteractive() {
+		return errors.New("view-only session cannot send messages")
+	}
+
 	receiver, ok := h.sessions.Get(payload.Receiver)
 	if !ok {
 		return errors.New("receiver session ID not found")
@@ -27,6 +31,10 @@ func (h *MessageHandlerCtx) sendUnicast(session types.Session, payload *message.
 }
 
 func (h *MessageHandlerCtx) sendBroadcast(session types.Session, payload *message.SendBroadcast) error {
+	if !session.Profile().IsInteractive() {
+		return errors.New("view-only session cannot send messages")
+	}
+
 	h.sessions.Broadcast(
 		event.SEND_BROADCAST,
 		message.SendBroadcast{

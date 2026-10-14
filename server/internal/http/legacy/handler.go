@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/m1k1o/neko/server/internal/api"
@@ -27,6 +29,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const viewOnlySubprotocolPrefix = "neko-view."
+
+var viewOnlySubprotocolPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{16}$`)
+
 var (
 	// DefaultUpgrader specifies the parameters for upgrading an HTTP
 	// connection to a WebSocket connection.
@@ -40,6 +46,7 @@ var (
 )
 
 type LegacyHandler struct {
+	mu         sync.RWMutex
 	logger     zerolog.Logger
 	serverAddr string
 	pathPrefix string
@@ -59,7 +66,7 @@ func New(serverAddr, pathPrefix string) *LegacyHandler {
 		sessionIPs: make(map[string]string),
 		wsDialer: &websocket.Dialer{
 			Proxy:            nil, // disable proxy for local requests
-			HandshakeTimeout: 45 * time.Second,
+			HandshakeTimeout: 15 * time.Second,
 		},
 	}
 }
@@ -67,16 +74,30 @@ func New(serverAddr, pathPrefix string) *LegacyHandler {
 func (h *LegacyHandler) Route(r types.Router) {
 	r.Get("/ws", func(w http.ResponseWriter, r *http.Request) error {
 		s := h.newSession(r)
+		defer s.cancel()
+		viewOnlyToken, selectedSubprotocol, err := viewOnlyTokenFromRequest(r)
+		if err != nil {
+			return utils.HttpBadRequest("invalid view-only websocket subprotocol").WithInternalErr(err)
+		}
+
+		responseHeaders := http.Header{}
+		if selectedSubprotocol != "" {
+			responseHeaders.Set("Sec-WebSocket-Protocol", selectedSubprotocol)
+		}
 
 		// create a new websocket connection
-		connClient, err := DefaultUpgrader.Upgrade(w, r, nil)
+		connClient, err := DefaultUpgrader.Upgrade(w, r, responseHeaders)
 		if err != nil {
 			return utils.HttpError(http.StatusInternalServerError).
 				WithInternalErr(err).
 				Msg("couldn't upgrade connection to websocket")
 		}
-		defer connClient.Close()
 		s.connClient = connClient
+		s.clientWriter = utils.NewWebSocketWriter(connClient)
+		defer func() {
+			s.clientWriter.CloseGracefully()
+			<-s.clientWriter.Done()
+		}()
 
 		if h.isBanned(r) {
 			s.toClient(&oldMessage.SystemMessage{
@@ -84,11 +105,15 @@ func (h *LegacyHandler) Route(r types.Router) {
 				Title:   "banned ip",
 				Message: "you are banned",
 			})
+			return nil
 		}
 
 		// create a new session
 		username := r.URL.Query().Get("username")
 		password := r.URL.Query().Get("password")
+		if viewOnlyToken != "" {
+			password = viewOnlyToken
+		}
 		err = s.create(username, password)
 		if err != nil {
 			h.logger.Error().Err(err).Msg("couldn't create a new session")
@@ -112,7 +137,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		} else {
 			backendHeaders.Set("Cookie", s.cookie)
 		}
-		connBackend, _, err := h.wsDialer.Dial(backendURL, backendHeaders)
+		connBackend, _, err := h.wsDialer.DialContext(s.ctx, backendURL, backendHeaders)
 		if err != nil {
 			h.logger.Error().Err(err).Msg("couldn't dial to the remote backend")
 
@@ -127,40 +152,48 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 		defer connBackend.Close()
 		s.connBackend = connBackend
+		s.backendWriter = utils.NewWebSocketWriter(connBackend)
+		defer s.backendWriter.Close()
 
-		// request signal
-		videoAuto := true
-		if err = s.toBackend(event.SIGNAL_REQUEST, message.SignalRequest{
-			Video: types.PeerVideoRequest{
-				Auto: &videoAuto,
-			},
-		}); err != nil {
-			h.logger.Error().Err(err).Msg("couldn't request signal")
-			s.toClient(&oldMessage.SystemMessage{
-				Event:   oldEvent.SYSTEM_DISCONNECT,
-				Title:   "couldn't request signal",
-				Message: err.Error(),
-			})
+		// Explicit receive-only media keeps this authenticated event
+		// socket but must not start the normal WebRTC signaling path. With no
+		// exact opt-in the existing WebRTC signaling behavior remains unchanged.
+		if !receiveOnlyMediaSelected(r) {
+			videoAuto := true
+			if err = s.toBackend(event.SIGNAL_REQUEST, message.SignalRequest{
+				Video: types.PeerVideoRequest{
+					Auto: &videoAuto,
+				},
+			}); err != nil {
+				h.logger.Error().Err(err).Msg("couldn't request signal")
+				s.toClient(&oldMessage.SystemMessage{
+					Event:   oldEvent.SYSTEM_DISCONNECT,
+					Title:   "couldn't request signal",
+					Message: err.Error(),
+				})
 
-			// we can't return HTTP error here because the connection is already upgraded
-			return nil
+				// we can't return HTTP error here because the connection is already upgraded
+				return nil
+			}
 		}
 
 		// copy messages between the client and the backend
 		errClient := make(chan error, 1)
 		errBackend := make(chan error, 1)
-		replicateWebsocketConn := func(dst, src *websocket.Conn, errc chan error, rewriteTextMessage func([]byte) error) {
+		var bridgeWorkers sync.WaitGroup
+		defer func() {
+			s.cancel()
+			s.backendWriter.Close()
+			s.clientWriter.CloseGracefully()
+			<-s.clientWriter.Done()
+			bridgeWorkers.Wait()
+		}()
+		replicateWebsocketConn := func(dst *utils.WebSocketWriter, src *websocket.Conn, errc chan error, rewriteTextMessage func([]byte) error) {
+			defer bridgeWorkers.Done()
 			for {
 				msgType, msg, err := src.ReadMessage()
 				if err != nil {
-					m := websocket.FormatCloseMessage(websocket.CloseNormalClosure, fmt.Sprintf("%v", err))
-					if e, ok := err.(*websocket.CloseError); ok {
-						if e.Code != websocket.CloseNoStatusReceived {
-							m = websocket.FormatCloseMessage(e.Code, e.Text)
-						}
-					}
 					errc <- fmt.Errorf("src read message error: %w", err)
-					dst.WriteMessage(websocket.CloseMessage, m)
 					break
 				}
 
@@ -195,7 +228,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 				// forward ping pong messages
 				if msgType == websocket.PingMessage ||
 					msgType == websocket.PongMessage {
-					err = dst.WriteMessage(msgType, msg)
+					err = dst.Send(msgType, msg)
 					if err != nil {
 						errc <- err
 						break
@@ -206,10 +239,11 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		// backend -> client
-		go replicateWebsocketConn(connClient, connBackend, errClient, s.wsToClient)
+		bridgeWorkers.Add(2)
+		go replicateWebsocketConn(s.clientWriter, connBackend, errClient, s.wsToClient)
 
 		// client -> backend
-		go replicateWebsocketConn(connBackend, connClient, errBackend, s.wsToBackend)
+		go replicateWebsocketConn(s.backendWriter, connClient, errBackend, s.wsToBackend)
 
 		var message string
 		select {
@@ -232,6 +266,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -309,6 +344,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -330,6 +366,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		if err != nil {
 			return utils.HttpInternalServerError().WithInternalErr(err)
 		}
+		defer body.Close()
 
 		// copy headers
 		w.Header().Set("Content-Length", headers.Get("Content-Length"))
@@ -347,6 +384,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -363,6 +401,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		if err != nil {
 			return utils.HttpInternalServerError().WithInternalErr(err)
 		}
+		defer body.Close()
 
 		// copy headers
 		w.Header().Set("Content-Length", headers.Get("Content-Length"))
@@ -379,6 +418,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -393,6 +433,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		if err != nil {
 			return utils.HttpInternalServerError().WithInternalErr(err)
 		}
+		defer body.Close()
 
 		// copy the body to the response writer
 		_, err = io.Copy(w, body)
@@ -405,6 +446,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		}
 
 		s := h.newSession(r)
+		defer s.cancel()
 
 		// create a new session
 		username := r.URL.Query().Get("usr")
@@ -421,6 +463,7 @@ func (h *LegacyHandler) Route(r types.Router) {
 		if err != nil {
 			return utils.HttpInternalServerError().WithInternalErr(err)
 		}
+		defer body.Close()
 
 		// copy the body to the response writer
 		_, err = io.Copy(w, body)
@@ -433,7 +476,28 @@ func (h *LegacyHandler) Route(r types.Router) {
 	})
 }
 
+func viewOnlyTokenFromRequest(r *http.Request) (token, selectedSubprotocol string, err error) {
+	for _, subprotocol := range websocket.Subprotocols(r) {
+		if !strings.HasPrefix(subprotocol, viewOnlySubprotocolPrefix) {
+			continue
+		}
+		if selectedSubprotocol != "" {
+			return "", "", errors.New("multiple view-only subprotocols provided")
+		}
+
+		token = strings.TrimPrefix(subprotocol, viewOnlySubprotocolPrefix)
+		if !viewOnlySubprotocolPattern.MatchString(token) {
+			return "", "", errors.New("view-only token must contain exactly 16 URL-safe characters")
+		}
+		selectedSubprotocol = subprotocol
+	}
+
+	return token, selectedSubprotocol, nil
+}
+
 func (h *LegacyHandler) ban(sessionId string) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	// find session by id
 	ip, ok := h.sessionIPs[sessionId]
 	if !ok {
@@ -445,6 +509,8 @@ func (h *LegacyHandler) ban(sessionId string) error {
 }
 
 func (h *LegacyHandler) isBanned(r *http.Request) bool {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	ip := getIp(r)
 	_, ok := h.bannedIPs[ip]
 	return ok

@@ -11,7 +11,7 @@
           <li
             v-if="member.id !== id && member.connected"
             :key="index"
-            v-tooltip="{ content: member.displayname, placement: 'bottom', offset: -15, boundariesElement: 'body' }"
+            v-tooltip="{ content: member.displayname, html: false, placement: 'bottom', offset: -15, boundariesElement: 'body' }"
           >
             <div
               :class="[{ host: member.id === host, admin: member.admin }, 'member']"

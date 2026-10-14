@@ -1,0 +1,25 @@
+# Reviewed proposal for the supplied minimal Neko Caddyfile, Caddy 2.6.2.
+# Not installed/reloaded by Codex. Preserve other sites/options if present.
+# Change neko.example to the actual public hostname before target validation.
+{
+    log default {
+        format filter {
+            fields {
+                request>uri regexp "^(/[^?]*)?/api/media/hls.*$" "/api/media/hls/:redacted"
+                uri regexp "^(/[^?]*)?/api/media/hls.*$" "/api/media/hls/:redacted"
+                request>headers delete
+                resp_headers delete
+            }
+            wrap json
+        }
+    }
+}
+
+neko.example {
+    reverse_proxy 127.0.0.1:8082 {
+        header_up -Forwarded
+        transport http {
+            compression off
+        }
+    }
+}

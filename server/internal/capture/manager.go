@@ -24,6 +24,7 @@ type CaptureManagerCtx struct {
 	screencast *ScreencastManagerCtx
 	audio      *StreamSinkManagerCtx
 	video      *StreamSelectorManagerCtx
+	media      *captureMediaProvider
 
 	// sources
 	webcam     *StreamSrcManagerCtx
@@ -33,7 +34,7 @@ type CaptureManagerCtx struct {
 func New(desktop types.DesktopManager, config *config.Capture) *CaptureManagerCtx {
 	logger := log.With().Str("module", "capture").Logger()
 
-	videos := map[string]*StreamSinkManagerCtx{}
+	videos := map[string]types.StreamSinkManager{}
 	for video_id, cnf := range config.VideoPipelines {
 		pipelineConf := cnf
 
@@ -69,10 +70,10 @@ func New(desktop types.DesktopManager, config *config.Capture) *CaptureManagerCt
 			Msg("syntax check for video stream pipeline passed")
 
 		// append to videos
-		videos[video_id] = streamSinkNew(config.VideoCodec, createPipeline, video_id)
+		videos[video_id] = streamSinkNew(config.VideoCodec, createPipeline, video_id, pipelineConf.NominalBitrate)
 	}
 
-	return &CaptureManagerCtx{
+	manager := &CaptureManagerCtx{
 		logger:  logger,
 		desktop: desktop,
 		config:  config,
@@ -139,7 +140,7 @@ func New(desktop types.DesktopManager, config *config.Capture) *CaptureManagerCt
 					"! %s "+
 					"! appsink name=appsink", config.AudioDevice, config.AudioCodec.Pipeline,
 			), nil
-		}, "audio"),
+		}, "audio", 0),
 		video: streamSelectorNew(config.VideoCodec, videos, config.VideoIDs),
 
 		// sources
@@ -191,6 +192,8 @@ func New(desktop types.DesktopManager, config *config.Capture) *CaptureManagerCt
 				fmt.Sprintf("! pulsesink device=%s", config.MicrophoneDevice),
 		}, "microphone"),
 	}
+	manager.media = newMediaProvider(manager.audio, manager.video)
+	return manager
 }
 
 func (manager *CaptureManagerCtx) Start() {
@@ -257,12 +260,16 @@ func (manager *CaptureManagerCtx) Screencast() types.ScreencastManager {
 	return manager.screencast
 }
 
-func (manager *CaptureManagerCtx) Audio() types.EncodedStream {
+func (manager *CaptureManagerCtx) Audio() types.StreamSinkManager {
 	return manager.audio
 }
 
-func (manager *CaptureManagerCtx) Video() types.EncodedStreamSelector {
+func (manager *CaptureManagerCtx) Video() types.StreamSelectorManager {
 	return manager.video
+}
+
+func (manager *CaptureManagerCtx) Media() types.EncodedMediaProvider {
+	return manager.media
 }
 
 func (manager *CaptureManagerCtx) Webcam() types.StreamSrcManager {

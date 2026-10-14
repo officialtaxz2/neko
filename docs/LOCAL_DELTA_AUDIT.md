@@ -60,6 +60,8 @@ The repository compose now preserves the desired reusable behavior: local `my-ne
 
 The local-only root `policy.json` is an empty instance policy mount target. It was not copied; the compose defaults to the reusable `apps/brave/policies.json` and allows an ignored instance policy path through `NEKO_POLICY_FILE`.
 
+The first target-server smoke test found that the sanitized reconstruction had changed the original Brave policy destination from `/etc/brave/policies/managed/policies.json` to the singular filename `policy.json`. The plural destination from the audited local compose, Brave image and inherited browser documentation has been restored. The operator then confirmed that the external policy and persistent profile load as intended.
+
 Any credentials present in the supplied deployment artifact must be considered exposed and rotated operationally if they are still active.
 
 ### Runtime data
@@ -76,7 +78,7 @@ Static manifest/lock inspection found a pre-existing mismatch: `client/package.j
 
 Static checks confirm that the lockfile root dependency and dev-dependency declarations now match `package.json`, the obsolete Vue CLI dependency graph is removed, and the existing runtime event name/payload matches its consumers in `video.vue`.
 
-Target-server verification status: **NOT EXECUTED**. Run these commands on the real server:
+Target-server verification status: **OPERATOR-CONFIRMED PASSED on 2026-09-09** for the target deployment. The reported client commands were:
 
 ```bash
 cd client
@@ -85,8 +87,12 @@ npm run lint
 npm run build
 ```
 
-A server build is not required for this local reconciliation because no server, root build, runtime configuration, or application-image source changed. No live server, WebRTC, multi-user, mobile, Smart-TV, or browser-device regression test was performed; those behaviors must not be claimed as newly verified.
+A server build was not required specifically for this earlier local reconciliation because no server, root build, runtime configuration, or application-image source changed in that unit. The later integrated-baseline verification covered the checks applicable to the target deployment; no universal support is claimed for unreported devices or architectures.
 
 ## Outcome
 
 The source delta audit is closed: no missing application source change was found. The original all-or-nothing exclusion of the local compose was corrected after the operator identified it as the desired deployment baseline. Its reusable structure is now tracked without copying credentials, browser-profile contents, downloads or instance-policy data. The semantic upstream synchronization is recorded separately in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md); current work status and `NEXT` remain in [`WORKPLAN.md`](WORKPLAN.md#next).
+
+## Snapshot removal
+
+On 2026-10-04, the operator explicitly requested deletion of `MyNekoProjekt/` after being informed that it contained its own persistent Brave profile. The exact workspace subdirectory, including its excluded instance/runtime contents, was deleted and its absence verified. This audit remains the historical record; the sanitized root deployment and current application source were retained. No target-server data was accessed or deleted.

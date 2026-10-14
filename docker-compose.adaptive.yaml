@@ -1,0 +1,9 @@
+# Opt-in overlay for per-viewer adaptive video quality.
+# Start it together with docker-compose.yaml; the stable base file remains
+# single-pipeline when this overlay is not supplied.
+services:
+  neko:
+    volumes:
+      - "./deploy/adaptive-quality.yaml:/etc/neko/adaptive-quality.yaml:ro"
+    environment:
+      NEKO_CONFIG: "/etc/neko/adaptive-quality.yaml"

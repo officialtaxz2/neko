@@ -42,6 +42,16 @@ var nologEvents = []string{
 	// don't log heartbeats
 	event.SYSTEM_HEARTBEAT,
 	event.CLIENT_HEARTBEAT,
+	// Media negotiation can carry a one-time attach ticket and exact source
+	// choices. Never payload-log these credential-adjacent events.
+	event.MEDIA_CAPABILITIES_REQUEST,
+	event.MEDIA_CAPABILITIES,
+	event.MEDIA_CREATE,
+	event.MEDIA_OFFER,
+	event.MEDIA_HLS_CAPABILITIES_REQUEST,
+	event.MEDIA_HLS_CAPABILITIES,
+	event.MEDIA_HLS_CREATE,
+	event.MEDIA_HLS_OFFER,
 	// don't log every cursor update
 	event.SESSION_CURSORS,
 }
@@ -229,10 +239,13 @@ func (manager *WebSocketManagerCtx) Upgrade(checkOrigin types.CheckOrigin) types
 }
 
 func (manager *WebSocketManagerCtx) connect(connection *websocket.Conn, r *http.Request) {
+	defer connection.Close()
 	session, err := manager.sessions.Authenticate(r)
 	if err != nil {
 		manager.logger.Warn().Err(err).Msg("authentication failed")
-		newPeer(manager.logger, connection).Destroy(err.Error())
+		peer := newPeer(manager.logger, connection)
+		peer.Destroy(err.Error())
+		<-peer.writer.Done()
 		return
 	}
 
@@ -241,6 +254,10 @@ func (manager *WebSocketManagerCtx) connect(connection *websocket.Conn, r *http.
 
 	// create new peer
 	peer := newPeer(logger, connection)
+	defer func() {
+		peer.writer.CloseGracefully()
+		<-peer.writer.Done()
+	}()
 
 	if !session.Profile().CanConnect {
 		logger.Warn().Msg("connection disabled")
@@ -313,7 +330,11 @@ func (manager *WebSocketManagerCtx) handle(connection *websocket.Conn, peer type
 	logger := manager.logger.With().Str("session_id", session.ID()).Logger()
 
 	bytes := make(chan []byte)
-	cancel := make(chan error)
+	cancel := make(chan error, 1)
+	done := make(chan struct{})
+	// connect's writer cleanup closes the transport after a bounded terminal
+	// flush. Closing it here would discard SYSTEM_DISCONNECT on shutdown.
+	defer close(done)
 
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
@@ -322,11 +343,18 @@ func (manager *WebSocketManagerCtx) handle(connection *websocket.Conn, peer type
 		for {
 			_, raw, err := connection.ReadMessage()
 			if err != nil {
-				cancel <- err
-				break
+				select {
+				case cancel <- err:
+				case <-done:
+				}
+				return
 			}
 
-			bytes <- raw
+			select {
+			case bytes <- raw:
+			case <-done:
+				return
+			}
 		}
 	})
 
@@ -351,6 +379,13 @@ func (manager *WebSocketManagerCtx) handle(connection *websocket.Conn, peer type
 					Str("event", data.Event).
 					Str("payload", string(payload)).
 					Msg("received message from client")
+			}
+
+			if session.Profile().IsViewOnly && !viewOnlyEventAllowed(data.Event) {
+				logger.Warn().
+					Str("event", data.Event).
+					Msg("view-only session denied websocket event")
+				continue
 			}
 
 			handled := manager.handler.Message(session, data)

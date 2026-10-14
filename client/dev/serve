@@ -1,11 +1,10 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
-if [ -z $VUE_APP_SERVER_PORT ]; then
-    VUE_APP_SERVER_PORT="3000"
-fi
+set -e
+VITE_APP_SERVER_PORT="${VITE_APP_SERVER_PORT:-${VUE_APP_SERVER_PORT:-3000}}"
 
-echo "Using VUE_APP_SERVER_PORT: ${VUE_APP_SERVER_PORT}"
+echo "Using VITE_APP_SERVER_PORT: ${VITE_APP_SERVER_PORT}"
 
 # use -i to install
 if [ ! -d "${PWD}/../node_modules" ] || [ "$1" == "-i" ]; then
@@ -13,15 +12,15 @@ if [ ! -d "${PWD}/../node_modules" ] || [ "$1" == "-i" ]; then
     --volume "${PWD}/../:/app" \
     --workdir="/app" \
     --entrypoint="npm" \
-    node:18-bullseye-slim install
+    node:18-bullseye-slim ci
 fi
 
-# npm run serve
+# Vite launcher; retain the legacy environment variable as an input alias.
 docker run --rm -it \
-    -p 3001:3001 \
-    -e "VUE_APP_SERVER_PORT=$VUE_APP_SERVER_PORT" \
+    -p 3001:3000 \
+    -e "VITE_APP_SERVER_PORT=$VITE_APP_SERVER_PORT" \
     --user "$(id -u):$(id -g)" \
     --volume "${PWD}/../:/app" \
     --entrypoint="npm" \
     --workdir="/app" \
-    node:18-bullseye-slim run serve -- --port 3001
+    node:18-bullseye-slim run dev

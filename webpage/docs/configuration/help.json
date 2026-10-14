@@ -368,6 +368,15 @@
   {
     "key": [
       "member",
+      "multiuser",
+      "view_only_token"
+    ],
+    "type": "string",
+    "description": "member multiuser provider: optional 16-character URL-safe token for view-only share links"
+  },
+  {
+    "key": [
+      "member",
       "object",
       "users"
     ],
@@ -670,7 +679,7 @@
     ],
     "type": "float",
     "defaultValue": "0.15",
-    "description": "how bigger the difference between estimated and stream bitrate must be to trigger upgrade/downgrade"
+    "description": "maximum sustained estimated-bitrate deficit below the current delivery requirement before downgrading"
   },
   {
     "key": [
@@ -726,6 +735,26 @@
     "key": [
       "webrtc",
       "estimator",
+      "recovery_probe_interval"
+    ],
+    "type": "duration",
+    "defaultValue": "30s",
+    "description": "minimum interval between peer-local one-tier recovery probes, zero disables probes"
+  },
+  {
+    "key": [
+      "webrtc",
+      "estimator",
+      "recovery_probe_max_backoff"
+    ],
+    "type": "duration",
+    "defaultValue": "5m0s",
+    "description": "maximum exponential retry delay after a failed recovery probe"
+  },
+  {
+    "key": [
+      "webrtc",
+      "estimator",
       "stable_duration"
     ],
     "type": "duration",
@@ -746,6 +775,16 @@
     "key": [
       "webrtc",
       "estimator",
+      "transport_reserve"
+    ],
+    "type": "float",
+    "defaultValue": "0.05",
+    "description": "fractional RTP/RTCP and network-overhead reserve added to media bitrate references"
+  },
+  {
+    "key": [
+      "webrtc",
+      "estimator",
       "unstable_duration"
     ],
     "type": "duration",
@@ -761,6 +800,16 @@
     "type": "duration",
     "defaultValue": "5s",
     "description": "how long to wait before upgrading again after previous upgrade"
+  },
+  {
+    "key": [
+      "webrtc",
+      "estimator",
+      "upgrade_diff_threshold"
+    ],
+    "type": "float",
+    "defaultValue": "0.15",
+    "description": "how much spare estimated bitrate over the upgrade stream reference is required before upgrading"
   },
   {
     "key": [

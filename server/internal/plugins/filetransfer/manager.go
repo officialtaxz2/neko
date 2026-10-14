@@ -46,6 +46,10 @@ type Manager struct {
 }
 
 func (m *Manager) isEnabledForSession(session types.Session) (bool, error) {
+	if !session.Profile().IsInteractive() {
+		return false, nil
+	}
+
 	settings := Settings{
 		Enabled: true, // defaults to true
 	}
@@ -98,21 +102,23 @@ func (m *Manager) refresh() (error, bool) {
 }
 
 func (m *Manager) broadcastUpdate() {
-	m.mu.RLock()
-	fileList := m.fileList
-	m.mu.RUnlock()
-
-	m.sessions.Broadcast(FILETRANSFER_UPDATE, Message{
-		Enabled:      m.config.Enabled,
-		RootDir:      m.config.RootDir,
-		UserDownload: m.config.UserDownload,
-		UserUpload:   m.config.UserUpload,
-		UserDelete:   m.config.UserDelete,
-		Files:        fileList,
+	m.sessions.Range(func(session types.Session) bool {
+		if session.State().IsConnected {
+			m.sendUpdate(session)
+		}
+		return true
 	})
 }
 
 func (m *Manager) sendUpdate(session types.Session) {
+	if !session.Profile().IsInteractive() {
+		session.Send(FILETRANSFER_UPDATE, Message{
+			Enabled: false,
+			Files:   []Item{},
+		})
+		return
+	}
+
 	m.mu.RLock()
 	fileList := m.fileList
 	m.mu.RUnlock()
@@ -213,6 +219,9 @@ func (m *Manager) deleteFileHandler(w http.ResponseWriter, r *http.Request) erro
 	if !ok {
 		return utils.HttpUnauthorized("session not found")
 	}
+	if !session.Profile().IsInteractive() {
+		return utils.HttpForbidden("file transfer is unavailable to view-only sessions")
+	}
 
 	enabled, err := m.isEnabledForSession(session)
 	if err != nil {
@@ -299,6 +308,9 @@ func (m *Manager) downloadFileHandler(w http.ResponseWriter, r *http.Request) er
 	if !ok {
 		return utils.HttpUnauthorized("session not found")
 	}
+	if !session.Profile().IsInteractive() {
+		return utils.HttpForbidden("file transfer is unavailable to view-only sessions")
+	}
 
 	enabled, err := m.isEnabledForSession(session)
 	if err != nil {
@@ -336,6 +348,9 @@ func (m *Manager) uploadFileHandler(w http.ResponseWriter, r *http.Request) erro
 	session, ok := auth.GetSession(r)
 	if !ok {
 		return utils.HttpUnauthorized("session not found")
+	}
+	if !session.Profile().IsInteractive() {
+		return utils.HttpForbidden("file transfer is unavailable to view-only sessions")
 	}
 
 	enabled, err := m.isEnabledForSession(session)

@@ -25,6 +25,11 @@ export type WebSocketMessages =
   | ScreenResolutionMessage
   | ScreenConfigurationsMessage
   | ChatMessage
+  | MediaCapabilitiesMessage
+  | MediaOfferMessage
+  | HLSCapabilitiesMessage
+  | HLSOfferMessage
+  | HLSStateMessage
 
 export type WebSocketPayloads =
   | SignalProvidePayload
@@ -45,6 +50,10 @@ export type WebSocketPayloads =
   | AdminLockPayload
   | BroadcastStatusPayload
   | BroadcastCreatePayload
+  | MediaCapabilitiesRequestPayload
+  | MediaCreatePayload
+  | HLSCapabilitiesRequestPayload
+  | HLSCreatePayload
 
 export interface WebSocketMessage {
   event: WebSocketEvents | string
@@ -58,11 +67,111 @@ export interface SystemInit extends WebSocketMessage, SystemInitPayload {
   event: typeof EVENT.SYSTEM.INIT
 }
 export interface SystemInitPayload {
+  session_id?: string
   implicit_hosting: boolean
   locks: Record<string, string>
   file_transfer: boolean
   heartbeat_interval: number
   screen_size?: ScreenResolution
+}
+
+/*
+  MEDIA WEBSOCKET NEGOTIATION PAYLOADS
+*/
+export interface MediaCapabilitySource {
+  id: string
+  codec: string
+  mime_type: string
+  clock_rate: number
+  channels: number
+  coded_width: number
+  coded_height: number
+  frame_rate_numerator: number
+  frame_rate_denominator: number
+  nominal_bitrate: number
+  selector: {
+    type: 'exact' | 'nearest' | 'lower' | 'higher'
+    id: string
+    bitrate: number
+  }
+}
+
+export interface MediaCapabilitiesRequestPayload {
+  version: 1
+}
+
+export interface MediaCapabilitiesPayload {
+  version: number
+  backend: string
+  protocol: string
+  audio: MediaCapabilitySource[]
+  video: MediaCapabilitySource[]
+}
+
+export interface MediaCapabilitiesMessage extends WebSocketMessage, MediaCapabilitiesPayload {
+  event: typeof EVENT.MEDIA.CAPABILITIES
+}
+
+export interface MediaCreateChoice {
+  source_id: string
+  codec: string
+}
+
+export interface MediaCreatePayload {
+  version: 1
+  backend: 'webcodecs-ws'
+  audio: MediaCreateChoice | null
+  video: MediaCreateChoice
+}
+
+export interface MediaOfferPayload {
+  version: number
+  backend: string
+  protocol: string
+  path: string
+  ticket: string
+  expires_in_ms: number
+}
+
+export interface MediaOfferMessage extends WebSocketMessage, MediaOfferPayload {
+  event: typeof EVENT.MEDIA.OFFER
+}
+
+export type HLSMode = 'hls' | 'll-hls'
+export interface HLSCapabilitiesRequestPayload { version: 1; mode: HLSMode }
+export interface HLSCreatePayload { version: 1; backend: 'hls'; mode: HLSMode }
+export interface HLSCapabilitiesPayload {
+  version: number
+  backend: string
+  modes: string[]
+  container: string
+  video_codec: string
+  audio_codec: string
+  audio_rate: number
+  variants: Array<{
+    id: string; source_id: string; video_codec: string; container: string
+    width: number; height: number; frame_rate: number; average_bandwidth: number; bandwidth: number
+  }>
+  limits: {
+    max_leases: number; max_requests: number; max_requests_per_lease: number
+    max_blocking_per_lease: number; max_blocking_requests: number; idle_expires_in_ms: number
+    blocking_reload_wait_ms: number; maximum_playlist_bytes: number
+  }
+}
+export interface HLSCapabilitiesMessage extends WebSocketMessage, HLSCapabilitiesPayload {
+  event: typeof EVENT.HLS.CAPABILITIES
+}
+export interface HLSOfferPayload {
+  version: number; backend: string; mode: string; path: string; ticket: string; expires_in_ms: number
+}
+export interface HLSOfferMessage extends WebSocketMessage, HLSOfferPayload {
+  event: typeof EVENT.HLS.OFFER
+}
+export interface HLSStateMessage extends WebSocketMessage {
+  event: typeof EVENT.HLS.STATE
+  version: number
+  backend: string
+  paused: boolean
 }
 
 // system/disconnect

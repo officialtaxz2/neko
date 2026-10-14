@@ -17,6 +17,9 @@ declare module 'vue/types/vue' {
 
 const plugin: PluginObject<undefined> = {
   install(Vue) {
+    // Neko does not use Axios's XSRF cookie/header mechanism. Keep unrelated
+    // origin cookies out of requests, including the external About endpoints.
+    axios.defaults.xsrfCookieName = ''
     window.$http = axios
     Vue.prototype.$http = window.$http
   },

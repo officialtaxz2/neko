@@ -1,0 +1,15 @@
+# Explicit, default-off WebCodecs/media-WebSocket receive prototype overlay.
+# The stable docker-compose.yaml path is unchanged when this file is omitted.
+#
+# Before activation, set the exact public origin and immediate trusted-proxy
+# address/CIDR in the ignored deployment .env. Do not use wildcard origins or
+# a broad private network merely to make a failed security check pass.
+
+services:
+  neko:
+    environment:
+      NEKO_MEDIA_WEBCODECS_WS_ENABLED: "true"
+      NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS: "${NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS:?set the exact public origin, for example https://neko.example}"
+      NEKO_MEDIA_WEBCODECS_WS_TRUSTED_PROXIES: "${NEKO_MEDIA_WEBCODECS_WS_TRUSTED_PROXIES:?set only the immediate reverse-proxy IP or CIDR as seen by Neko}"
+      NEKO_MEDIA_WEBCODECS_WS_ALLOW_INSECURE_LOOPBACK: "${NEKO_MEDIA_WEBCODECS_WS_ALLOW_INSECURE_LOOPBACK:-false}"
+      NEKO_MEDIA_WEBCODECS_WS_MAX_CONNECTIONS: "${NEKO_MEDIA_WEBCODECS_WS_MAX_CONNECTIONS:-128}"

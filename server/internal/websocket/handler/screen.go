@@ -9,7 +9,7 @@ import (
 )
 
 func (h *MessageHandlerCtx) screenSet(session types.Session, payload *message.ScreenSize) error {
-	if !session.Profile().IsAdmin {
+	if !session.Profile().IsInteractive() || !session.Profile().IsAdmin {
 		return errors.New("is not the admin")
 	}
 
