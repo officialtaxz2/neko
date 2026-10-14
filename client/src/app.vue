@@ -21,15 +21,16 @@
         </div>
         <div v-if="!videoOnly || viewOnly" :class="['room-container', { 'view-only-controls': viewOnly }]">
           <div class="room-menu">
-            <div v-if="!viewOnly" class="room-left">
-              <neko-members />
+            <div class="room-left">
+              <neko-members v-if="!viewOnly" />
             </div>
             <div class="controls">
               <neko-controls :shakeKbd="shakeKbd" />
             </div>
-            <div v-if="!viewOnly" class="room-right">
-              <neko-emotes />
-              <neko-menu />
+            <div class="room-right">
+              <neko-emotes v-if="!viewOnly" />
+              <neko-room-tools :pipAvailable="pipAvailable" @action="onDockAction" />
+              <neko-menu v-if="!viewOnly" />
             </div>
           </div>
         </div>
@@ -135,10 +136,6 @@
             gap: 10px;
           }
         }
-
-        &.view-only-controls .room-menu {
-          grid-template-columns: 1fr;
-        }
       }
     }
   }
@@ -210,8 +207,7 @@
       display: none;
     }
 
-    // Phones: video on top, the dock right below it. Player tools that now
-    // live in the dock's "More" sheet are hidden on the video.
+    // Phones: video on top, the dock right below it.
     #neko.has-dock {
       .neko-main {
         height: auto;
@@ -221,10 +217,6 @@
       &:not(.expanded) .neko-main {
         height: 100vh;
         height: 100dvh;
-      }
-
-      .video-menu.bottom {
-        display: none;
       }
     }
   }
@@ -357,6 +349,7 @@
   import Header from '~/components/header.vue'
   import Unsupported from '~/components/unsupported.vue'
   import MobileDock, { DockAction } from '~/components/mobile-dock.vue'
+  import RoomTools from '~/components/room-tools.vue'
 
   @Component({
     name: 'neko',
@@ -372,6 +365,7 @@
       'neko-header': Header,
       'neko-unsupported': Unsupported,
       'neko-mobile-dock': MobileDock,
+      'neko-room-tools': RoomTools,
     },
   })
   export default class Neko extends Vue {

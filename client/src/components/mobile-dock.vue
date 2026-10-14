@@ -62,52 +62,7 @@
             <span v-else class="sound-label">{{ muted ? $t('controls.unmute') : $t('controls.mute') }}</span>
           </div>
 
-          <div class="grid">
-            <button
-              v-if="showPill && hosting"
-              type="button"
-              :class="['icon-btn', 'tile', { on: inputLocked }]"
-              :aria-pressed="inputLocked ? 'true' : 'false'"
-              @click.stop.prevent="inputLocked = !inputLocked"
-            >
-              <i :class="['fas', inputLocked ? 'fa-lock' : 'fa-lock-open']" aria-hidden="true" />
-              <span>{{ inputLocked ? $t('controls.resume_input') : $t('controls.pause_input') }}</span>
-            </button>
-            <button v-if="micAllowed" type="button" :class="['icon-btn', 'tile', { on: microphoneActive }]" :aria-pressed="microphoneActive ? 'true' : 'false'" @click.stop.prevent="toggleMicrophone">
-              <i :class="['fas', microphoneActive ? 'fa-microphone' : 'fa-microphone-slash']" aria-hidden="true" />
-              <span>{{ $t('controls.microphone') }}</span>
-            </button>
-            <button type="button" class="icon-btn tile" @click.stop.prevent="run('fullscreen')">
-              <i class="fas fa-expand" aria-hidden="true" />
-              <span>{{ $t('controls.fullscreen') }}</span>
-            </button>
-            <template v-if="hosting && touchDevice">
-              <button type="button" class="icon-btn tile" @click.stop.prevent="run('keyboard')">
-                <i class="fas fa-keyboard" aria-hidden="true" />
-                <span>{{ $t('controls.keyboard') }}</span>
-              </button>
-              <button type="button" class="icon-btn tile" @click.stop.prevent="run('keyboard-helper')">
-                <i class="fas fa-sliders-h" aria-hidden="true" />
-                <span>{{ $t('controls.keyboard_helper') }}</span>
-              </button>
-            </template>
-            <button v-if="hosting" type="button" class="icon-btn tile" @click.stop.prevent="run('clipboard')">
-              <i class="fas fa-clipboard" aria-hidden="true" />
-              <span>{{ $t('controls.clipboard') }}</span>
-            </button>
-            <button v-if="pipAvailable" type="button" class="icon-btn tile" @click.stop.prevent="run('pip')">
-              <i class="fas fa-external-link-alt" aria-hidden="true" />
-              <span>{{ $t('controls.pip') }}</span>
-            </button>
-            <button v-if="admin && !receiveOnly" type="button" class="icon-btn tile" @click.stop.prevent="run('resolution', $event)">
-              <i class="fas fa-desktop" aria-hidden="true" />
-              <span>{{ $t('controls.resolution') }}</span>
-            </button>
-            <button type="button" class="icon-btn tile" @click.stop.prevent="openStreamSettings">
-              <i class="fas fa-broadcast-tower" aria-hidden="true" />
-              <span>{{ $t('controls.stream', { name: streamName }) }}</span>
-            </button>
-          </div>
+          <neko-more-tools sheet :pipAvailable="pipAvailable" @action="run" @done="open = false" />
 
           <button type="button" class="icon-btn close" @click.stop.prevent="close">{{ $t('controls.close') }}</button>
         </div>
@@ -261,38 +216,6 @@
     }
   }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-
-  .tile {
-    flex-direction: column;
-    gap: 7px;
-    min-height: 76px;
-    padding: 10px 6px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    color: var(--text-subtle);
-
-    i {
-      font-size: 18px;
-    }
-
-    span {
-      font-size: 12px;
-      line-height: 1.25;
-      text-align: center;
-    }
-
-    &.on {
-      color: var(--color-cyber-mint);
-      border-color: rgba(38, 230, 180, 0.4);
-    }
-  }
-
   .close {
     width: 100%;
     height: 46px;
@@ -327,8 +250,9 @@
   import MediaControls from './mixins/media-controls'
   import ControlPill from './control-pill.vue'
   import Emotes from './emotes.vue'
+  import MoreTools, { ToolAction } from './more-tools.vue'
 
-  export type DockAction = 'fullscreen' | 'keyboard' | 'keyboard-helper' | 'clipboard' | 'pip' | 'resolution'
+  export type DockAction = ToolAction
 
   // Phone layout: control pill, pause, emotes and a "More" bottom sheet for
   // everything else (sound, microphone, fullscreen, keyboard, clipboard, ...).
@@ -336,7 +260,7 @@
   // them to the video component that owns them.
   @Component({
     name: 'neko-mobile-dock',
-    components: { 'neko-control-pill': ControlPill, 'neko-emotes': Emotes },
+    components: { 'neko-control-pill': ControlPill, 'neko-emotes': Emotes, 'neko-more-tools': MoreTools },
   })
   export default class NekoMobileDock extends Mixins(MediaControls) {
     @Prop(Boolean) readonly shakeKbd!: boolean
@@ -350,32 +274,11 @@
       return !this.viewOnly && !this.receiveOnly
     }
 
-    // Local input pause for the current host (same flag as the desktop pill).
-    get inputLocked() {
-      return this.$accessor.remote.locked && this.hosting
-    }
-
-    set inputLocked(locked: boolean) {
-      this.$accessor.remote.setLocked(locked)
-    }
-
-    get touchDevice() {
-      if (this.$accessor.settings.force_touch) return true
-      return 'ontouchstart' in window || navigator.maxTouchPoints > 0
-    }
-
     // iOS ignores scripted volume changes; only mute works there.
     get volumeAdjustable() {
       const ua = navigator.userAgent || ''
       const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua))
       return !iOS
-    }
-
-    get streamName() {
-      const selected = this.$accessor.hls.selected
-      if (selected === 'll-hls') return 'LL-HLS'
-      if (selected === 'hls') return 'HLS'
-      return 'WebRTC'
     }
 
     @Watch('open')
@@ -393,12 +296,6 @@
     run(action: DockAction, event?: MouseEvent) {
       this.open = false
       this.$emit('action', action, event)
-    }
-
-    openStreamSettings() {
-      this.open = false
-      this.$accessor.client.setTab('settings')
-      this.$accessor.client.setSide(true)
     }
   }
 </script>

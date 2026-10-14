@@ -77,7 +77,10 @@
         />
         <div ref="aspect" class="player-aspect" />
       </div>
-      <ul v-if="(!fullscreen || fallbackFullscreen) && !hideControls" class="video-menu top">
+      <!-- Player tools live in the bottom bar and the "More" menu. The video only
+           keeps them in embed mode (no bar) and keeps the exit button in the
+           viewport fullscreen fallback (iPhone). -->
+      <ul v-if="!hideControls && (fallbackFullscreen || (extraControls && !fullscreen))" class="video-menu top">
         <li>
           <button
             type="button"
@@ -100,7 +103,6 @@
             <i class="fas fa-desktop" aria-hidden="true" />
           </button>
         </li>
-        <!-- Embed mode has no control bar, so the control toggle lives on the player. -->
         <li v-if="extraControls && !fallbackFullscreen && !receiveOnlySelected && !controlLocked && !implicitHosting">
           <button
             type="button"
@@ -113,7 +115,7 @@
           </button>
         </li>
       </ul>
-      <ul v-if="!fullscreen && !fallbackFullscreen && !hideControls" class="video-menu bottom">
+      <ul v-if="extraControls && !fullscreen && !fallbackFullscreen && !hideControls" class="video-menu bottom">
         <li v-if="hosting">
           <button
             type="button"
@@ -549,6 +551,7 @@
 
 <script lang="ts">
   import { Component, Ref, Watch, Vue, Prop } from 'vue-property-decorator'
+  import { isTouchDevice } from '~/utils/touch'
   import ResizeObserver from 'resize-observer-polyfill'
   import { elementRequestFullscreen, isFullscreen, lockKeyboard, unlockKeyboard } from '~/utils'
 
@@ -977,17 +980,7 @@
     }
 
     get is_touch_device() {
-      if (typeof window === 'undefined') return false
-      if (this.$accessor.settings.force_touch) return true
-      return (
-        'ontouchstart' in window ||
-        navigator.maxTouchPoints > 0 ||
-        /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) ||
-        (navigator.maxTouchPoints > 1 && /Macintosh|MacIntel/i.test(navigator.userAgent || navigator.platform)) ||
-        (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
-        (window.matchMedia && window.matchMedia('(any-pointer: coarse)').matches) ||
-        window.innerWidth <= 1024
-      )
+      return isTouchDevice(this.$accessor.settings.force_touch)
     }
 
     get trackpad_mode() {
