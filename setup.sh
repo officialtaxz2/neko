@@ -7,7 +7,8 @@
 #
 # The script is idempotent: it never overwrites existing values in .env,
 # only adds keys that are new in .env.example and generates passwords that
-# are still empty. Images are rebuilt with the Docker cache, so an unchanged
+# are still empty. One-time migrations of old defaults are logged and marked
+# in .env, so a later deliberate change is kept. Images are rebuilt with the Docker cache, so an unchanged
 # checkout rebuilds quickly and Compose only recreates what changed.
 #
 set -euo pipefail
@@ -139,6 +140,19 @@ if [[ ":$compose_value:" == *":docker-compose.webcodecs-ws.yaml:"* ]]; then
 fi
 if grep -qE '^NEKO_MEDIA_WEBCODECS_WS_' .env; then
   log "The NEKO_MEDIA_WEBCODECS_WS_* lines in .env are no longer used and can be deleted."
+fi
+
+# LL-HLS became a default HLS mode next to conventional HLS. Upgrade the old
+# default 'hls' once; the marker keeps a later deliberate 'hls' untouched.
+ll_marker='# setup.sh: LL-HLS default applied'
+if ! grep -qxF "$ll_marker" .env; then
+  modes="$(env_get NEKO_MEDIA_HLS_MODES .env)"
+  if [[ -z "$modes" || "$modes" == hls ]]; then
+    env_set NEKO_MEDIA_HLS_MODES "hls ll-hls"
+    log "Set NEKO_MEDIA_HLS_MODES to 'hls ll-hls' in .env (LL-HLS is now offered by default)"
+  fi
+  [[ -n "$(tail -c 1 .env)" ]] && echo >> .env
+  echo "$ll_marker" >> .env
 fi
 
 generated=()
