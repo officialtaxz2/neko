@@ -9,8 +9,6 @@ package drop
 import "C"
 
 import (
-	"unsafe"
-
 	"sync"
 	"unsafe"
 
