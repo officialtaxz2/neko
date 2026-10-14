@@ -592,7 +592,7 @@ Still evidence-led after implementation:
 
 ## LL-HLS enablement (2026-10-14)
 
-The operator asked for LL-HLS as a selectable option next to conventional HLS so chat participants see the room with a few seconds instead of 20–30 seconds of delay. `docker-compose.hls.yaml` and `.env.example` now advertise `hls ll-hls`; an existing `.env` with `NEKO_MEDIA_HLS_MODES=hls` keeps only conventional HLS until it is changed. There is still no automatic selection or fallback.
+The operator asked for LL-HLS as a selectable option next to conventional HLS so chat participants see the room with a few seconds instead of 20–30 seconds of delay. `docker-compose.hls.yaml` and `.env.example` now advertise `hls ll-hls`; `setup.sh` upgrades an existing `.env` that still has the old default `NEKO_MEDIA_HLS_MODES=hls` (or an empty value) to `hls ll-hls` once and appends the marker `# setup.sh: LL-HLS default applied`; a deliberate `hls` set after that marker is kept. There is still no automatic selection or fallback.
 
 Static review of the LL path found and corrected:
 
