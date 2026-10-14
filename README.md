@@ -6,6 +6,8 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 
 ## Status
 
+**Branch status (2026-10-14):** the operator authorized promoting `testing` to `master`. `master` is now the single working branch and contains all `testing` work plus the upstream sync to `c75a2f60` and `setup.sh` (see [`docs/UPSTREAM_SYNC_AUDIT.md`](docs/UPSTREAM_SYNC_AUDIT.md#integration-of-master-into-testing-2026-10-14)). Older notes below that say to keep `master` pinned or to work only on `testing` describe the state before this promotion. Target-server `go test`/client tests for the integrated state are pending.
+
 Comparative architecture assessment (2026-10-07):
 [source findings and media-path comparison](docs/STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07),
 [current upstream triage](docs/UPSTREAM_SYNC_AUDIT.md#read-only-upstream-comparison--2026-10-07)
