@@ -259,7 +259,7 @@ Consequence: future upstream syncs will conflict in the same files again. Migrat
 - `member/multiuser`: upstream `utils.SafeID` session ids plus the fork's constant-time view-only token.
 - `websocket/handler/signal_test.go`: kept the fork test; it already covers the empty-selection guard.
 - Client: `connect.vue` combines upstream OAuth/`passwordLoginEnabled` gating with the fork's `isInvitation` (password link or view-only link); `video.vue` takes upstream's Safari clipboard check; `markdown.ts` keeps the fork comments (the XSS fix existed on both sides).
-- `setup.sh`: `testing` runs adaptive/WebCodecs/HLS as Compose overlays. `setup.sh` now reports the active files; overlays are selected with `COMPOSE_FILE` in `.env` (documented in `.env.example` and `README.md`). Without it, `setup.sh` restarts Neko on the base file only.
+- `setup.sh`: `testing` runs adaptive/WebCodecs/HLS as Compose overlays. `setup.sh` now reports the active files; overlays are selected with `COMPOSE_FILE` in `.env` (documented in `.env.example` and `README.md`). If the running `neko` container was started with overlay files that the current selection lacks (Compose label `com.docker.compose.project.config_files`), `setup.sh` stops before building and prints the `COMPOSE_FILE=` value that keeps them.
 
 ## Static verification
 

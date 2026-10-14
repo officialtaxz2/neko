@@ -137,6 +137,38 @@ HTTP_PORT="$(env_get NEKO_HTTP_PORT .env)";            HTTP_PORT="${HTTP_PORT:-8
 WEBRTC_EPR="$(env_get NEKO_WEBRTC_EPR .env)";          WEBRTC_EPR="${WEBRTC_EPR:-51000-51100}"
 
 # --------------------------------------------------------------------
+# Compose files
+
+# Compose reads COMPOSE_FILE from .env itself; it selects the opt-in overlays
+# (docker-compose.adaptive.yaml, .webcodecs-ws.yaml, .hls.yaml). Without it
+# only docker-compose.yaml is used.
+COMPOSE_FILES="$(env_get COMPOSE_FILE .env)"
+COMPOSE_FILES="${COMPOSE_FILE:-$COMPOSE_FILES}"
+selected=" "
+IFS=':' read -r -a selected_files <<< "${COMPOSE_FILES:-docker-compose.yaml}"
+for f in "${selected_files[@]}"; do selected+="$(basename "$f") "; done
+log "Compose files:${selected% }"
+
+# A running neko that was started with overlays must not silently lose them.
+running_cid="$(docker compose ps -q neko 2>/dev/null | head -n 1 || true)"
+if [[ -n "$running_cid" ]]; then
+  running_files="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project.config_files"}}' "$running_cid")"
+  missing=()
+  IFS=',' read -r -a running_list <<< "$running_files"
+  for f in "${running_list[@]}"; do
+    name="$(basename "$f")"
+    [[ "$selected" == *" $name "* ]] || missing+=("$name")
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    running_value=""
+    for f in "${running_list[@]}"; do running_value+="${running_value:+:}$(basename "$f")"; done
+    die "neko is running with ${missing[*]}, which this run would drop. Keep them by adding
+    COMPOSE_FILE=$running_value
+to .env (or remove them from the running setup on purpose with 'docker compose down' first)."
+  fi
+fi
+
+# --------------------------------------------------------------------
 # Host directories and files
 
 # Without this check Docker would silently create a directory at that path.
@@ -174,16 +206,6 @@ fi
 
 # --------------------------------------------------------------------
 # Start
-
-# Compose reads COMPOSE_FILE from .env itself; it selects the opt-in overlays
-# (adaptive quality, WebCodecs, HLS). Without it only docker-compose.yaml runs,
-# and `up` would recreate a container started with overlays without them.
-COMPOSE_FILES="$(env_get COMPOSE_FILE .env)"
-if [[ -n "$COMPOSE_FILES" ]]; then
-  log "Compose files (COMPOSE_FILE in .env): $COMPOSE_FILES"
-else
-  log "Compose files: docker-compose.yaml (no opt-in overlays; set COMPOSE_FILE in .env to add them)"
-fi
 
 log "Validating Compose configuration"
 docker compose config --quiet

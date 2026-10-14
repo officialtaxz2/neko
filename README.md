@@ -224,7 +224,7 @@ bash setup.sh
 
 `setup.sh` is idempotent. It creates `.env` from `.env.example` on first run (generating both passwords and printing them once), adds keys that later appear in `.env.example` without touching existing values, prepares the profile/download directories for uid `1000`, builds the base and Brave images with the Docker cache, validates and starts Compose, and waits for the `neko` healthcheck. `--no-cache` forces a full rebuild, which also picks up a newer Brave release; `--no-build` only restarts.
 
-Adaptive quality, WebCodecs and HLS are opt-in Compose overlays. `setup.sh` starts only `docker-compose.yaml` unless `.env` sets `COMPOSE_FILE` (see `.env.example`); a server that runs with overlays must set it before using `setup.sh`, otherwise the update restarts Neko without them.
+Adaptive quality, WebCodecs and HLS are opt-in Compose overlays. `setup.sh` starts only `docker-compose.yaml` unless `.env` sets `COMPOSE_FILE` (see `.env.example`); if the running `neko` container was started with overlays that `COMPOSE_FILE` does not list, `setup.sh` stops before building and prints the exact `COMPOSE_FILE=` line to add.
 
 The equivalent manual steps:
 
