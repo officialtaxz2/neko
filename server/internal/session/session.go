@@ -20,7 +20,11 @@ type SessionCtx struct {
 	logger  zerolog.Logger
 	manager *SessionManagerCtx
 	profile types.MemberProfile
+
+	// state is written from websocket and WebRTC callbacks and read by
+	// broadcasts and API handlers on other goroutines.
 	state   types.SessionState
+	stateMu sync.RWMutex
 
 	websocketPeer types.WebSocketPeer
 	websocketMu   sync.Mutex
@@ -49,7 +53,7 @@ func (session *SessionCtx) profileChanged() {
 		session.ClearHost()
 	}
 
-	if (!session.profile.CanConnect || !session.profile.CanLogin || !session.profile.CanWatch) && session.state.IsWatching {
+	if (!session.profile.CanConnect || !session.profile.CanLogin || !session.profile.CanWatch) && session.State().IsWatching {
 		// TODO: Needed for legacy implementation. Websocket must die before webrtc and deliver signal close message
 		// otherwise webrtc destroy would trigger websocket reconnect. In case of kick event, webrtc destroy is called
 		// before websocket destroy that delivers the information about the kick.
@@ -62,7 +66,7 @@ func (session *SessionCtx) profileChanged() {
 		})
 	}
 
-	if (!session.profile.CanConnect || !session.profile.CanLogin) && session.state.IsConnected {
+	if (!session.profile.CanConnect || !session.profile.CanLogin) && session.State().IsConnected {
 		session.DestroyWebSocketPeer("profile changed")
 	}
 
@@ -73,6 +77,8 @@ func (session *SessionCtx) profileChanged() {
 }
 
 func (session *SessionCtx) State() types.SessionState {
+	session.stateMu.RLock()
+	defer session.stateMu.RUnlock()
 	return session.state
 }
 
@@ -135,9 +141,11 @@ func (session *SessionCtx) ConnectWebSocketPeer(websocketPeer types.WebSocketPee
 
 	// update state
 	now := time.Now()
+	session.stateMu.Lock()
 	session.state.IsConnected = true
 	session.state.ConnectedSince = &now
 	session.state.NotConnectedSince = nil
+	session.stateMu.Unlock()
 
 	if session.profile.IsAdmin {
 		session.manager.totalAdmins.Add(1)
@@ -202,9 +210,11 @@ func (session *SessionCtx) DisconnectWebSocketPeer(websocketPeer types.WebSocket
 	session.logger.Info().Msg("set websocket disconnected")
 
 	now := time.Now()
+	session.stateMu.Lock()
 	session.state.IsConnected = false
 	session.state.ConnectedSince = nil
 	session.state.NotConnectedSince = &now
+	session.stateMu.Unlock()
 
 	if session.profile.IsAdmin {
 		if session.manager.totalAdmins.Add(-1) == 0 {
@@ -298,14 +308,7 @@ func (session *SessionCtx) SetWebRTCConnected(webrtcPeer types.WebRTCPeer, conne
 		Msg("set webrtc connected")
 
 	// update state
-	session.state.IsWatching = connected
-	if now := time.Now(); connected {
-		session.state.WatchingSince = &now
-		session.state.NotWatchingSince = nil
-	} else {
-		session.state.WatchingSince = nil
-		session.state.NotWatchingSince = &now
-	}
+	session.setWatching(connected)
 
 	session.manager.emmiter.Emit("state_changed", session)
 
@@ -350,16 +353,24 @@ func (session *SessionCtx) SetMediaDeliveryActive(delivery types.MediaDelivery, 
 		Bool("active", active).
 		Msg("set media delivery active")
 
-	session.state.IsWatching = active
-	if now := time.Now(); active {
+	session.setWatching(active)
+	session.manager.emmiter.Emit("state_changed", session)
+	return true
+}
+
+func (session *SessionCtx) setWatching(watching bool) {
+	now := time.Now()
+	session.stateMu.Lock()
+	defer session.stateMu.Unlock()
+
+	session.state.IsWatching = watching
+	if watching {
 		session.state.WatchingSince = &now
 		session.state.NotWatchingSince = nil
 	} else {
 		session.state.WatchingSince = nil
 		session.state.NotWatchingSince = &now
 	}
-	session.manager.emmiter.Emit("state_changed", session)
-	return true
 }
 
 func (session *SessionCtx) GetMediaDelivery() types.MediaDelivery {

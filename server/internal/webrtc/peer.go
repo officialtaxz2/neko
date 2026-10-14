@@ -265,8 +265,14 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			break
 		}
 
+		// Signaling handlers change these flags under peer.mu, so read one
+		// consistent snapshot per tick.
+		peer.mu.Lock()
+		videoAuto, videoDisabled, paused, audioDisabled := peer.videoAuto, peer.videoDisabled, peer.paused, peer.audioDisabled
+		peer.mu.Unlock()
+
 		// if estimation or video is disabled, do nothing
-		if !peer.videoAuto || peer.videoDisabled || peer.paused || conf.Passive {
+		if !videoAuto || videoDisabled || paused || conf.Passive {
 			state.deferRecoveryProbeObservation(now)
 			continue
 		}
@@ -294,7 +300,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		}
 
 		audioBitrate := uint64(0)
-		if !peer.audioDisabled && peer.audioTrack != nil {
+		if !audioDisabled && peer.audioTrack != nil {
 			if audioStream, ok := peer.audioTrack.Source(); ok {
 				audioBitrate = audioStream.Bitrate
 			}
