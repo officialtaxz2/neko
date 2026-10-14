@@ -61,7 +61,16 @@ See `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
 The tracked `docker-compose.yaml` is the sanitized deployment structure from `MyNekoProjekt`. It uses the locally built `my-neko/brave:latest` with pulling disabled, cleans stale Brave singleton locks before startup, and mounts the ignored profile/download directories.
 
-On the target server, from the repository root:
+On the target server, first installation and every update are the same command from the repository root:
+
+```bash
+git pull
+bash setup.sh
+```
+
+`setup.sh` is idempotent. It creates `.env` from `.env.example` on first run (generating both passwords and printing them once), adds keys that later appear in `.env.example` without touching existing values, prepares the profile/download directories for uid `1000`, builds the base and Brave images with the Docker cache, validates and starts Compose, and waits for the `neko` healthcheck. `--no-cache` forces a full rebuild, which also picks up a newer Brave release; `--no-build` only restarts.
+
+The equivalent manual steps:
 
 ```bash
 ./build my-neko/base:latest -y
