@@ -1,0 +1,31 @@
+name: Test Helium image
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - apps/helium/**
+      - .github/workflows/helium_test.yml
+
+jobs:
+  build:
+    name: Build Helium image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Same distribution as runtime/Dockerfile, without building the Neko
+      # base: this checks the package source, libraries and file layout.
+      - name: Build
+        run: >-
+          docker build
+          --build-arg BASE_IMAGE=debian:trixie-slim
+          -t helium-test apps/helium
+
+      - name: Check binary and policy path
+        run: |
+          docker run --rm --entrypoint /usr/bin/helium helium-test --version
+          docker run --rm --entrypoint sh helium-test -c \
+            'test -f /etc/chromium/policies/managed/policies.json && test -f /etc/neko/supervisord/helium.conf'

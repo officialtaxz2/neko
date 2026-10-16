@@ -217,9 +217,9 @@ Continue exclusively on `testing` with **HLS/LL-HLS Phase 4 target-server valida
 
 See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md), [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md), [`docs/MEDIA_SUBSCRIPTION_BOUNDARY.md`](docs/MEDIA_SUBSCRIPTION_BOUNDARY.md), [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md), `docs/WORKPLAN.md` and `docs/UPSTREAM_SYNC_AUDIT.md`.
 
-## Local Brave deployment
+## Local deployment (Brave, optionally Helium)
 
-The tracked `docker-compose.yaml` is the sanitized deployment structure from `MyNekoProjekt`. It uses the locally built `my-neko/brave:latest` with pulling disabled, cleans stale Brave singleton locks before startup, and mounts the ignored profile/download directories. The managed policy is mounted at Brave's expected `/etc/brave/policies/managed/policies.json` path.
+The tracked `docker-compose.yaml` is the sanitized deployment structure from `MyNekoProjekt`. It uses the locally built `my-neko/<NEKO_BROWSER>:latest` image with pulling disabled, cleans stale browser singleton locks before startup, and mounts the ignored profile/download directories. `NEKO_BROWSER` in `.env` selects the browser: `brave` (default, unchanged behaviour) or `helium` (`apps/helium`, see [Helium](#helium-optional)). The managed policy is mounted at `/etc/<NEKO_BROWSER>/policies/managed/policies.json`.
 
 On the target server, first installation and every update are the same command from the repository root:
 
@@ -228,7 +228,7 @@ git pull
 bash setup.sh
 ```
 
-`setup.sh` is idempotent. It creates `.env` from `.env.example` on first run (generating both passwords and printing them once), adds keys that later appear in `.env.example` without touching existing values, prepares the profile/download directories for uid `1000`, builds the base and Brave images with the Docker cache, validates and starts Compose, and waits for the `neko` healthcheck. `--no-cache` forces a full rebuild, which also picks up a newer Brave release; `--no-build` only restarts. `--check` first runs the server and client tests in containers (`docker-compose.validation.yaml`, a few minutes) and stops before building if they fail; use it after a pull that changed `server/` or `client/`.
+`setup.sh` is idempotent. It creates `.env` from `.env.example` on first run (generating both passwords and printing them once), adds keys that later appear in `.env.example` without touching existing values, prepares the profile/download directories for uid `1000`, builds the base and browser images with the Docker cache, validates and starts Compose, and waits for the `neko` healthcheck. `--no-cache` forces a full rebuild, which also picks up a newer browser release; `--no-build` only restarts. `--check` first runs the server and client tests in containers (`docker-compose.validation.yaml`, a few minutes) and stops before building if they fail; use it after a pull that changed `server/` or `client/`.
 
 Adaptive quality and HLS are Compose overlays that this deployment enables by default through `COMPOSE_FILE` in `.env.example` (existing `.env` files receive the key on the next `setup.sh` run). WebRTC stays the default media path for every client; HLS is offered as a manual choice. HLS needs `NEKO_MEDIA_HLS_ALLOWED_ORIGINS` (public https origin) and `NEKO_MEDIA_HLS_TRUSTED_PROXIES` (reverse-proxy address as Neko sees it); `setup.sh` stops with the Docker network gateway as a suggestion when they are missing and warns after start when the trusted proxy differs from that gateway. `COMPOSE_FILE=docker-compose.yaml` runs without the overlays. If the running `neko` container was started with overlays that `COMPOSE_FILE` does not list, `setup.sh` stops before building and prints the exact `COMPOSE_FILE=` line to add.
 
@@ -243,7 +243,15 @@ docker compose config --quiet
 docker compose up -d
 ```
 
-Use `NEKO_POLICY_FILE=./policy.json` in `.env` only when an instance-specific ignored policy file is desired; otherwise the tracked Brave policy is used.
+Use `NEKO_POLICY_FILE=./policy.json` in `.env` only when an instance-specific ignored policy file is desired; otherwise the tracked `apps/<NEKO_BROWSER>/policies.json` is used.
+
+### Helium (optional)
+
+`apps/helium` installs [Helium](https://helium.computer) (`helium-bin` from its official signed apt repository, amd64/arm64). To switch, set `NEKO_BROWSER=helium` in `.env` and run `bash setup.sh`; set `NEKO_BROWSER=brave` and run it again to switch back. `NEKO_IMAGE` and `NEKO_POLICY_FILE` must be empty or name the same browser; `setup.sh` clears their old Brave defaults once and stops on a mismatch. Helium keeps its profile in the `helium/` subdirectory of `NEKO_PROFILE_DIR`, so Brave's profile stays untouched. Updates arrive with `bash setup.sh --no-cache`, as for Brave.
+
+Helium is kept close to a normal desktop installation: its built-in uBlock Origin stays, no extension is force-installed or blocked, and no bookmarks or start pages are preset. `apps/helium/policies.json` only keeps what the shared session needs: autoplay and fullscreen, no local file access or downloads (as for Brave), no developer tools, no password manager or autofill, no extra profiles and no default-browser prompt.
+
+Not yet verified on the target server: whether Helium reads the policy file (it is placed at `/etc/helium/policies/managed`, with `/etc/chromium/policies` linked to it, Chromium's path for non-Google builds), whether Widevine/DRM is downloaded without Helium services enabled, whether `--no-first-run` suppresses Helium's onboarding page, and whether the Openbox window rule matches Helium's window class. Hardware encoding is unaffected: Neko encodes with GStreamer, not the browser. The `deploy/` HLS helpers follow `NEKO_BROWSER` as well; the `prepare-hls-*` helpers are pinned to historical Brave images.
 
 Adaptive quality is opt-in and requires the second Compose file:
 

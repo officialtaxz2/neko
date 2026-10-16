@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Install or update the local Brave deployment of this fork.
+# Install or update the local deployment of this fork. The browser image is
+# chosen with NEKO_BROWSER in .env: brave (default) or helium.
 #
 # First installation:   git clone ... && cd neko && bash setup.sh
 # Every update:         git pull && bash setup.sh
@@ -27,7 +28,7 @@ Usage: bash setup.sh [options]
 
 Options:
   --no-build    Skip the image build, only prepare .env/directories and (re)start.
-  --no-cache    Build without Docker cache (also pulls the latest Brave release).
+  --no-cache    Build without Docker cache (also pulls the latest browser release).
   --check       Run the server and client tests in containers first
                 (docker-compose.validation.yaml, a few minutes); stop if they fail.
                 Useful after a git pull that changed server/ or client/.
@@ -182,6 +183,24 @@ if ! grep -qxF "$ll_marker" .env; then
   echo "$ll_marker" >> .env
 fi
 
+# NEKO_IMAGE and NEKO_POLICY_FILE used to name the Brave files explicitly.
+# Clear those old defaults once, so both follow NEKO_BROWSER; Brave resolves
+# to the same image and policy file as before. The marker keeps a later
+# deliberate value untouched.
+browser_marker='# setup.sh: browser defaults follow NEKO_BROWSER'
+if ! grep -qxF "$browser_marker" .env; then
+  if [[ "$(env_get NEKO_IMAGE .env)" == my-neko/brave:latest ]]; then
+    env_set NEKO_IMAGE ""
+    log "Cleared NEKO_IMAGE in .env; it now defaults to my-neko/<NEKO_BROWSER>:latest"
+  fi
+  if [[ "$(env_get NEKO_POLICY_FILE .env)" == ./apps/brave/policies.json ]]; then
+    env_set NEKO_POLICY_FILE ""
+    log "Cleared NEKO_POLICY_FILE in .env; it now defaults to ./apps/<NEKO_BROWSER>/policies.json"
+  fi
+  [[ -n "$(tail -c 1 .env)" ]] && echo >> .env
+  echo "$browser_marker" >> .env
+fi
+
 generated=()
 for key in NEKO_MEMBER_MULTIUSER_USER_PASSWORD NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD; do
   if [[ -z "$(env_get "$key" .env)" ]]; then
@@ -194,10 +213,24 @@ if [[ "$(env_get NEKO_MEMBER_MULTIUSER_USER_PASSWORD .env)" == "$(env_get NEKO_M
   warn "User and admin password in .env are identical; everyone who logs in becomes admin."
 fi
 
-NEKO_IMAGE="$(env_get NEKO_IMAGE .env)";               NEKO_IMAGE="${NEKO_IMAGE:-my-neko/brave:latest}"
+# Compose prefers NEKO_BROWSER from the environment over .env; so does this.
+BROWSER="${NEKO_BROWSER:-$(env_get NEKO_BROWSER .env)}"; BROWSER="${BROWSER:-brave}"
+[[ "$BROWSER" =~ ^[a-z][a-z0-9-]*$ && -f "apps/$BROWSER/Dockerfile" ]] \
+  || die "NEKO_BROWSER '$BROWSER' has no apps/$BROWSER/Dockerfile; use brave or helium."
+NEKO_IMAGE="$(env_get NEKO_IMAGE .env)";               NEKO_IMAGE="${NEKO_IMAGE:-my-neko/$BROWSER:latest}"
 PROFILE_DIR="$(env_get NEKO_PROFILE_DIR .env)";        PROFILE_DIR="${PROFILE_DIR:-./files}"
 DOWNLOADS_DIR="$(env_get NEKO_DOWNLOADS_DIR .env)";    DOWNLOADS_DIR="${DOWNLOADS_DIR:-./downloads}"
-POLICY_FILE="$(env_get NEKO_POLICY_FILE .env)";        POLICY_FILE="${POLICY_FILE:-./apps/brave/policies.json}"
+POLICY_FILE="$(env_get NEKO_POLICY_FILE .env)";        POLICY_FILE="${POLICY_FILE:-./apps/$BROWSER/policies.json}"
+
+# The container mounts the profile and policy paths of NEKO_BROWSER, so an
+# image or policy file of another browser would start with the wrong setup.
+image_app="${NEKO_IMAGE##*/}"; image_app="${image_app%%:*}"
+[[ "$image_app" == "$BROWSER" ]] \
+  || die "NEKO_IMAGE '$NEKO_IMAGE' does not match NEKO_BROWSER '$BROWSER'; clear NEKO_IMAGE in .env or name a my-neko/$BROWSER:<tag> image."
+if [[ "$POLICY_FILE" =~ (^|/)apps/([^/]+)/policies\.json$ && "${BASH_REMATCH[2]}" != "$BROWSER" ]]; then
+  die "NEKO_POLICY_FILE '$POLICY_FILE' belongs to ${BASH_REMATCH[2]}, not NEKO_BROWSER '$BROWSER'; clear it in .env."
+fi
+log "Browser: $BROWSER ($NEKO_IMAGE)"
 HTTP_BIND="$(env_get NEKO_HTTP_BIND .env)";            HTTP_BIND="${HTTP_BIND:-127.0.0.1}"
 HTTP_PORT="$(env_get NEKO_HTTP_PORT .env)";            HTTP_PORT="${HTTP_PORT:-8082}"
 WEBRTC_EPR="$(env_get NEKO_WEBRTC_EPR .env)";          WEBRTC_EPR="${WEBRTC_EPR:-51000-51100}"
@@ -328,7 +361,7 @@ fi
 # Images
 
 if [[ "$DO_BUILD" == 1 ]]; then
-  [[ "$NEKO_IMAGE" == */*:* ]] || die "NEKO_IMAGE '$NEKO_IMAGE' must look like <repository>/brave:<tag> to be built here."
+  [[ "$NEKO_IMAGE" == */*:* ]] || die "NEKO_IMAGE '$NEKO_IMAGE' must look like <repository>/$BROWSER:<tag> to be built here."
   repository="${NEKO_IMAGE%/*}"
   tag="${NEKO_IMAGE##*:}"
   build_args=(-y)
