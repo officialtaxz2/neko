@@ -7,11 +7,14 @@ services:
     command: >-
       sh -c "rm -f /cleanup-dir/SingletonLock
       /cleanup-dir/SingletonCookie
-      /cleanup-dir/SingletonSocket"
+      /cleanup-dir/SingletonSocket
+      /cleanup-dir/helium/SingletonLock
+      /cleanup-dir/helium/SingletonCookie
+      /cleanup-dir/helium/SingletonSocket"
 
   neko:
-    # This is the locally built Brave image used by this fork's deployment.
-    image: "${NEKO_IMAGE:-my-neko/brave:latest}"
+    # The locally built browser image (apps/<NEKO_BROWSER>, default brave).
+    image: "${NEKO_IMAGE:-my-neko/${NEKO_BROWSER:-brave}:latest}"
     pull_policy: never
     restart: "unless-stopped"
     depends_on:
@@ -27,9 +30,11 @@ services:
       - "${NEKO_HTTP_BIND:-127.0.0.1}:${NEKO_HTTP_PORT:-8082}:8080"
       - "${NEKO_WEBRTC_EPR:-51000-51100}:${NEKO_WEBRTC_EPR:-51000-51100}/udp"
     volumes:
-      - "${NEKO_PROFILE_DIR:-./files}:/home/neko/.config/brave"
+      # Brave keeps its profile directly in this directory, Helium in its
+      # helium/ subdirectory, so switching NEKO_BROWSER never mixes profiles.
+      - "${NEKO_PROFILE_DIR:-./files}:/home/neko/.config/${NEKO_BROWSER:-brave}"
       - "${NEKO_DOWNLOADS_DIR:-./downloads}:/home/neko/Downloads"
-      - "${NEKO_POLICY_FILE:-./apps/brave/policies.json}:/etc/brave/policies/managed/policies.json:ro"
+      - "${NEKO_POLICY_FILE:-./apps/${NEKO_BROWSER:-brave}/policies.json}:/etc/${NEKO_BROWSER:-brave}/policies/managed/policies.json:ro"
     environment:
       NEKO_DESKTOP_SCREEN: "${NEKO_DESKTOP_SCREEN:-1920x1080@30}"
       NEKO_MEMBER_MULTIUSER_USER_PASSWORD: "${NEKO_MEMBER_MULTIUSER_USER_PASSWORD:?set in .env}"

@@ -8,6 +8,9 @@ set -Eeuo pipefail
 }
 readonly helper="$(realpath -- "${BASH_SOURCE[0]}")"
 cd -- "${3:-$(dirname -- "$helper")/..}"
+source deploy/neko-browser.sh
+browser="$(neko_browser)"
+readonly browser
 readonly action="$1"
 readonly commit="$(git rev-parse HEAD)"
 readonly image_tag="hls-${commit:0:12}"
@@ -29,22 +32,22 @@ deploy_dc() {
 
 if [[ "$action" == rollback ]]; then
   rollback_image="$(cat "$output/rollback-image.txt")"
-  [[ "$rollback_image" =~ ^my-neko/brave:rollback-hls-[0-9a-f]{12}$ ]]
+  [[ "$rollback_image" =~ ^my-neko/$browser:rollback-hls-[0-9a-f]{12}$ ]]
   docker image inspect "$rollback_image" >/dev/null
   dc stop neko
   NEKO_IMAGE="$rollback_image" dc up -d --force-recreate --wait --wait-timeout 180
   dc ps
 else
-  rollback_image="my-neko/brave:rollback-$image_tag"
+  rollback_image="my-neko/$browser:rollback-$image_tag"
   test "$(cat "$output/validation-commit.txt")" = "$commit"
-  docker image inspect "my-neko/brave:$image_tag" >/dev/null
+  docker image inspect "my-neko/$browser:$image_tag" >/dev/null
   # Compare against the exact preparation record before touching the service.
-  image_record="$(grep -E "^image=(docker.io/)?my-neko/brave:$image_tag id=sha256:[0-9a-f]{64} created=" "$output/images.txt")"
+  image_record="$(grep -E "^image=(docker.io/)?my-neko/$browser:$image_tag id=sha256:[0-9a-f]{64} created=" "$output/images.txt")"
   [[ "$image_record" != *$'\n'* ]]
   prepared_image_id="${image_record#* id=}"
   prepared_image_id="${prepared_image_id%% *}"
-  test "$(docker image inspect --format '{{.Id}}' "my-neko/brave:$image_tag")" = "$prepared_image_id"
-  NEKO_IMAGE="my-neko/brave:$image_tag" deploy_dc config --quiet
+  test "$(docker image inspect --format '{{.Id}}' "my-neko/$browser:$image_tag")" = "$prepared_image_id"
+  NEKO_IMAGE="my-neko/$browser:$image_tag" deploy_dc config --quiet
   if ! docker image inspect "$rollback_image" >/dev/null 2>&1; then
     container="$(dc ps -q neko)"
     test -n "$container"
@@ -52,7 +55,7 @@ else
   fi
   printf '%s\n' "$rollback_image" >"$output/rollback-image.txt"
   dc stop neko
-  if NEKO_IMAGE="my-neko/brave:$image_tag" deploy_dc up -d --force-recreate --wait --wait-timeout 180; then
+  if NEKO_IMAGE="my-neko/$browser:$image_tag" deploy_dc up -d --force-recreate --wait --wait-timeout 180; then
     deploy_dc ps
   else
     dc stop neko

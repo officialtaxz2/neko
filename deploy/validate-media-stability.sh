@@ -3,6 +3,9 @@
 # Target server only. Prepare one exact reviewed commit; never deploy/restart it.
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source deploy/neko-browser.sh
+browser="$(neko_browser)"
+readonly browser
 [[ $# -eq 1 || ( $# -eq 2 && ( "${2:-}" == --capture-ordering-repair || "${2:-}" == --hls-member-access ) ) ]] || {
   printf 'Usage: bash deploy/validate-media-stability.sh NEW_OUTPUT_DIR [--capture-ordering-repair|--hls-member-access]\n' >&2; exit 2;
 }
@@ -32,7 +35,7 @@ if [[ "$validation_mode" == --capture-ordering-repair ]]; then
 fi
 if [[ "$validation_mode" == --hls-member-access ]]; then
   # Inherit only the supplied exact-8d backend/race/ordering evidence. Fresh
-  # client tests/type/build and Base/Brave images remain required below.
+  # client tests/type/build and Base/browser images remain required below.
   git merge-base --is-ancestor "$member_access_base" "$selected_commit"
   member_access_paths="$(git diff --no-renames --name-only "$member_access_base" "$selected_commit")"
   while IFS= read -r changed_path; do
@@ -119,8 +122,8 @@ git archive "$selected_commit" | tar -x -C "$output/source"
   unset PUSH CLIENT_DIST BASE_IMAGE FLAVOR PLATFORM REPOSITORY TAG TAGS APPLICATION YES NO_CACHE USE_BUILDX RUNTIME_DOCKERFILE
   USE_BUILDX=0 bash -o pipefail ./build "my-neko/base:$image_tag" -b "my-neko/base:$image_tag" -y </dev/null
   assert_source
-  USE_BUILDX=0 bash -o pipefail ./build "my-neko/brave:$image_tag" -b "my-neko/base:$image_tag" -y </dev/null
-  docker image inspect "my-neko/base:$image_tag" "my-neko/brave:$image_tag" \
+  USE_BUILDX=0 bash -o pipefail ./build "my-neko/$browser:$image_tag" -b "my-neko/base:$image_tag" -y </dev/null
+  docker image inspect "my-neko/base:$image_tag" "my-neko/$browser:$image_tag" \
     --format 'image={{index .RepoTags 0}} id={{.Id}} created={{.Created}}' >"$output/images.txt"
 )
 cd -- "$repository"
@@ -132,9 +135,9 @@ assert_source
 bash deploy/collect-hls-media.sh snapshot "$output" preparation-live-retained
 printf '%s\n' "$NEKO_VALIDATION_COMMIT" >"$output/validation-commit.txt"
 if [[ "$validation_mode" == --capture-ordering-repair ]]; then
-  printf 'ORDERING GATE PASSED: old defect reproduced; repaired subscriptions passed 100 race repetitions; backend/race/server/Base/Brave checks passed; client evidence inherited from exact-f03.\n'
+  printf 'ORDERING GATE PASSED: old defect reproduced; repaired subscriptions passed 100 race repetitions; backend/race/server/Base/%s checks passed; client evidence inherited from exact-f03.\n' "$browser"
 fi
 if [[ "$validation_mode" == --hls-member-access ]]; then
-  printf 'MEMBER ACCESS PREPARATION PASSED: fresh client tests/type/build and Base/Brave images; backend evidence inherited from unchanged exact-8d; live role/device gates pending.\n'
+  printf 'MEMBER ACCESS PREPARATION PASSED: fresh client tests/type/build and Base/%s images; backend evidence inherited from unchanged exact-8d; live role/device gates pending.\n' "$browser"
 fi
 printf 'PREPARATION PASSED; live service retained; device/comparison acceptance pending. Evidence: %s\n' "$output"

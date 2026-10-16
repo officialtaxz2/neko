@@ -13,6 +13,9 @@ done
 helper_source="$(realpath -- "${BASH_SOURCE[0]}")"
 cd -- "$1"
 [[ -f docker-compose.yaml ]] || fail 'repository Compose file missing'
+source deploy/neko-browser.sh
+browser="$(neko_browser)"
+readonly browser
 repository="$(realpath -- "$(git rev-parse --show-toplevel)")"
 output="$(realpath -m -- "$2")"
 case "$output/" in "$repository/"*) fail 'OUTPUT_DIR must be outside Git';; esac
@@ -26,7 +29,7 @@ if [[ "$progress" == true ]]; then
   application_commit="$(git rev-parse HEAD)"
   image_tag="hls-${application_commit:0:12}"
   [[ -f "$output/images.txt" ]] || fail 'prepared image record missing'
-  image_record="$(grep -E "^image=(docker.io/)?my-neko/brave:$image_tag id=sha256:[0-9a-f]{64} created=" "$output/images.txt")" || fail 'prepared application image not recorded'
+  image_record="$(grep -E "^image=(docker.io/)?my-neko/$browser:$image_tag id=sha256:[0-9a-f]{64} created=" "$output/images.txt")" || fail 'prepared application image not recorded'
   [[ "$image_record" != *$'\n'* ]] || fail 'ambiguous prepared image record'
   expected_image="${image_record#* id=}"
   expected_image="${expected_image%% *}"
