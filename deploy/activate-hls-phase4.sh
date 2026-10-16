@@ -6,6 +6,9 @@ set -Eeuo pipefail
 [[ $# -eq 2 ]] || { printf 'Usage: bash activate-hls-phase4.sh REPOSITORY OUTPUT_DIR\n' >&2; exit 2; }
 readonly helper="$(realpath -- "${BASH_SOURCE[0]}")"
 cd -- "$1"
+source deploy/neko-browser.sh
+browser="$(neko_browser)"
+readonly browser
 umask 077
 fail() { printf 'error: %s\n' "$*" >&2; exit 1; }
 [[ $EUID -eq 0 ]] || fail 'run as root for the host Caddy service'
@@ -22,7 +25,7 @@ test "$(cat "$output/validation-commit.txt")" = "$commit"
 exec > >(tee -a "$output/activation.log") 2>&1
 printf 'application_commit=%s\noperator_helper_blob=%s\n' "$commit" "$(git hash-object -- "$helper")"
 printf 'runtime_error_redaction=pending\n' >"$output/caddy-log-check.txt"
-docker image inspect "my-neko/brave:$image_tag" python:3.12-alpine >/dev/null
+docker image inspect "my-neko/$browser:$image_tag" python:3.12-alpine >/dev/null
 export NEKO_MEDIA_HLS_MODES=hls
 docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml \
   -f docker-compose.hls.yaml config --quiet
@@ -78,7 +81,7 @@ systemctl is-active --quiet caddy
 readonly container="$(docker compose -f docker-compose.yaml ps -q neko)"
 test -n "$container"
 readonly old_image="$(docker inspect -f '{{.Image}}' "$container")"
-readonly rollback_image="my-neko/brave:rollback-$image_tag"
+readonly rollback_image="my-neko/$browser:rollback-$image_tag"
 if docker image inspect "$rollback_image" >/dev/null 2>&1; then
   test "$(docker image inspect -f '{{.Id}}' "$rollback_image")" = "$old_image"
 else

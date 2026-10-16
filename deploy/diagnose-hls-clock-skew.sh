@@ -28,7 +28,7 @@ case "$repository/" in "$output/"*) fail 'OUTPUT_DIR must not contain the reposi
 readonly report="$output/clock-skew-diagnostic-$(date -u +%Y%m%dT%H%M%S%NZ)"
 mkdir -m 700 -- "$report"
 # Resolve the mutable validation tag once, then verify recorded sources and
-# use only its immutable ID. Never substitute the Brave application image.
+# use only its immutable ID. Never substitute the browser application image.
 readonly image="$(docker image inspect --format '{{.Id}}' my-neko/hls-validation:testing)"
 [[ "$image" =~ ^sha256:[0-9a-f]{64}$ ]] || fail 'existing codec-validation image missing'
 for source in pkg/gst/gst.go pkg/gst/gst.c pkg/gst/gst.h internal/capture/streamsink.go internal/mediahls/packager.go internal/mediahls/transcoder.go internal/mediahls/codec_integration_test.go internal/mediahls/packager_startup_test.go; do

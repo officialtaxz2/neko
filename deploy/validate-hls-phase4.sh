@@ -3,6 +3,9 @@
 # Real target server only. This prepares images; it never replaces the service.
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
+source deploy/neko-browser.sh
+browser="$(neko_browser)"
+readonly browser
 [[ $# -eq 1 ]] || { printf 'Usage: bash deploy/validate-hls-phase4.sh OUTPUT_DIR\n' >&2; exit 2; }
 test "$(git branch --show-current)" = testing
 test -z "$(git status --porcelain=v1)"
@@ -37,8 +40,8 @@ printf 'dependency_audit_exit_code=%s (report requires review)\n' "$audit_status
 printf '%s\n' "$audit_status" >"$output/dependency-audit-exit-code.txt"
 
 ./build "my-neko/base:$image_tag" -y </dev/null
-./build "my-neko/brave:$image_tag" -y </dev/null
-docker image inspect "my-neko/base:$image_tag" "my-neko/brave:$image_tag" \
+./build "my-neko/$browser:$image_tag" -y </dev/null
+docker image inspect "my-neko/base:$image_tag" "my-neko/$browser:$image_tag" \
   --format 'image={{index .RepoTags 0}} id={{.Id}} created={{.Created}}' >"$output/images.txt"
 bash deploy/collect-hls-media.sh snapshot "$output" default-off-baseline
 printf '%s\n' "$NEKO_VALIDATION_COMMIT" >"$output/validation-commit.txt"
