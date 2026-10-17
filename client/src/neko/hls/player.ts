@@ -126,8 +126,9 @@ export function createMSEPlayer(video: HTMLVideoElement, master: string, mode: '
   const retry = { maxNumRetry: 2, retryDelayMs: 1000, maxRetryDelayMs: 2000 }
   const policy = { default: { maxTimeToFirstByteMs: 10000, maxLoadTimeMs: 12000, timeoutRetry: retry, errorRetry: retry } }
   // Any user liveSync* value overrides PART-HOLD-BACK in hls.js, so LL-HLS
-  // leaves them unset (3 s target) and catches up drift by playback rate.
-  const latency = mode === 'll-hls' ? { maxLiveSyncPlaybackRate: 1.1 } :
+  // leaves them unset (3 s target). Playback-rate catch-up stays off: the
+  // 1.1x rate change paused WebKit (MSE) playback right after it started.
+  const latency = mode === 'll-hls' ? {} :
     { liveSyncDurationCount: 3, liveMaxLatencyDurationCount: 5 }
   const hls = new Hls({ debug: false, enableWorker: true, workerPath: workerURL, loader: ScopedLoader,
     lowLatencyMode: mode === 'll-hls', progressive: false, startLevel: -1,

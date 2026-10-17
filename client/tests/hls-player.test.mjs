@@ -100,7 +100,8 @@ test('LL-HLS uses the server PART-HOLD-BACK instead of a segment-count live sync
     assert.equal(key in low, false, key)
   }
   assert.equal(low.lowLatencyMode, true)
-  assert.ok(low.maxLiveSyncPlaybackRate > 1 && low.maxLiveSyncPlaybackRate <= 1.25)
+  // A rate change paused WebKit MSE playback; keep the 1x default.
+  assert.equal('maxLiveSyncPlaybackRate' in low, false)
   const conventional = harness('hls').config()
   assert.equal(conventional.lowLatencyMode, false)
   assert.equal(conventional.liveSyncDurationCount, 3)
