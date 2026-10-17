@@ -14,7 +14,8 @@ export function hlsModes(payload) {
       !Array.isArray(payload.variants) || payload.variants.length !== 3 ||
       !payload.limits || payload.limits.idle_expires_in_ms !== HLS_IDLE_MS ||
       payload.limits.maximum_playlist_bytes !== HLS_PLAYLIST_BYTES ||
-      payload.limits.max_requests_per_lease !== 4 || payload.limits.max_blocking_per_lease !== 2) return []
+      // The player needs at least four requests (two blocking) per lease.
+      !(payload.limits.max_requests_per_lease >= 4) || !(payload.limits.max_blocking_per_lease >= 2)) return []
   const sizes = { high: [1280, 720, 25], medium: [854, 480, 20], low: [640, 360, 15] }
   const seen = new Set()
   for (const variant of payload.variants) {

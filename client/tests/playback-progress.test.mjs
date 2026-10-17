@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { samplePlayback, hasPlaybackProgress } from '../src/neko/playback-progress.js'
+import { samplePlayback, hasPlaybackProgress, framesAdvanced } from '../src/neko/playback-progress.js'
 
 test('metadata, paused and seeking samples cannot masquerade as playback', () => {
   const video = { currentTime:0, paused:false, seeking:false, readyState:0 }
@@ -40,4 +40,16 @@ test('old browsers retain time progress without requiring frame APIs', () => {
   const before = samplePlayback(video)
   video.currentTime += 0.25
   assert.equal(hasPlaybackProgress(before, samplePlayback(video)), true)
+})
+
+test('an untrusted frame counter falls back to time progress', () => {
+  // iPad WebKit leaves MediaStream frame counters unchanged while playing.
+  const video = { currentTime:1, paused:false, seeking:false, readyState:4,
+    getVideoPlaybackQuality: () => ({ totalVideoFrames:0, droppedVideoFrames:0 }) }
+  const before = samplePlayback(video)
+  video.currentTime = 1.5
+  const after = samplePlayback(video)
+  assert.equal(framesAdvanced(before, after), false)
+  assert.equal(hasPlaybackProgress(before, after, false), true)
+  assert.equal(hasPlaybackProgress(before, after, true), false)
 })

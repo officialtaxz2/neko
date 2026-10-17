@@ -21,8 +21,12 @@ const (
 
 	MaximumLeases           = 128
 	MaximumRequests         = 512
-	MaximumLeaseRequests    = 4
-	MaximumLeaseBlocking    = 2
+	// Native Safari LL-HLS holds a blocking playlist reload and a blocking
+	// preload-hint part per rendition (video plus alternate audio) at once,
+	// next to the client's master watchdog. Two blocking slots rejected those
+	// requests with 429 and AVPlayer stopped playback.
+	MaximumLeaseRequests    = 8
+	MaximumLeaseBlocking    = 4
 	MaximumBlockingRequests = 64
 	MaximumBootstrapBody    = 2 * 1024
 	MaximumPlaylistBytes    = 64 * 1024

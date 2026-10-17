@@ -193,3 +193,94 @@ func TestPackagerLowLatencyListsRecentParentParts(t *testing.T) {
 		}
 	}
 }
+
+// A cold LL-HLS start lists the first parent's parts before that parent
+// completes. Once it completes, its segment carries the generation's
+// EXT-X-DISCONTINUITY; the parts must already carry the same number, or
+// hls.js reports "discontinuity sequence mismatch" and Safari stops.
+func TestPackagerLowLatencyStartupPartsKeepDiscontinuityNumber(t *testing.T) {
+	provider := newFakeHLSProvider()
+	packager := newPackager(provider, fakeTranscoderFactory{})
+	var workers []*packagerWorker
+	for _, id := range []string{"high", "audio", "medium", "low"} {
+		kind := types.MediaKindVideo
+		if id == "audio" {
+			kind = types.MediaKindAudio
+		}
+		source := provider.Sources(kind)[0]
+		var variant Variant
+		for _, candidate := range FixedVariants() {
+			if candidate.ID == id {
+				variant = candidate
+			}
+		}
+		worker, err := packager.newRenditionWorker(id, variant, source, 1, 7, 1, time.Unix(0, 0))
+		if err != nil {
+			t.Fatal(err)
+		}
+		workers = append(workers, worker)
+		packager.tracks[id] = worker.track
+	}
+	t.Cleanup(func() {
+		closePackagerWorkers(workers, false)
+		packager.Shutdown()
+	})
+	seen := make(map[string]map[string]uint64)
+	for second := 0; second <= 13; second++ {
+		for _, worker := range workers {
+			if !worker.transcoder.Push(startupUnit(second)) {
+				t.Fatal("fixture transcoder rejected sample")
+			}
+			if err := packager.acceptSample(worker.track, <-worker.transcoder.Samples()); err != nil {
+				t.Fatalf("%s at %ds: %v", worker.track.id, second, err)
+			}
+		}
+		if second < 3 {
+			continue
+		}
+		for _, worker := range workers {
+			id := worker.track.id
+			data, err := packager.Playlist(context.Background(), ModeLLHLS, id, PlaylistDirectives{})
+			if err != nil {
+				t.Fatalf("%s at %ds: %v", id, second, err)
+			}
+			if seen[id] == nil {
+				seen[id] = make(map[string]uint64)
+			}
+			for uri, number := range playlistMediaDiscontinuities(t, string(data)) {
+				if old, found := seen[id][uri]; found && old != number {
+					t.Fatalf("%s %s at %ds: discontinuity number %d -> %d\n%s", id, uri, second, old, number, data)
+				}
+				seen[id][uri] = number
+			}
+		}
+	}
+	if _, found := seen["high"]["seg-1.m4s"]; !found {
+		t.Fatal("first parent never completed")
+	}
+}
+
+// Discontinuity number of every listed part and segment URI.
+func playlistMediaDiscontinuities(t *testing.T, playlist string) map[string]uint64 {
+	t.Helper()
+	numbers := make(map[string]uint64)
+	var number uint64
+	for _, line := range strings.Split(playlist, "\n") {
+		switch {
+		case strings.HasPrefix(line, "#EXT-X-DISCONTINUITY-SEQUENCE:"):
+			parsed, err := strconv.ParseUint(strings.TrimPrefix(line, "#EXT-X-DISCONTINUITY-SEQUENCE:"), 10, 64)
+			if err != nil {
+				t.Fatal(err)
+			}
+			number = parsed
+		case line == "#EXT-X-DISCONTINUITY":
+			number++
+		case strings.HasPrefix(line, "#EXT-X-PART:"):
+			uri := line[strings.Index(line, `URI="`)+5:]
+			numbers[uri[:strings.Index(uri, `"`)]] = number
+		case strings.HasPrefix(line, "seg-") && strings.HasSuffix(line, ".m4s"):
+			numbers[line] = number
+		}
+	}
+	return numbers
+}
