@@ -559,7 +559,7 @@
   import Resolution from './resolution.vue'
   import Clipboard from './clipboard.vue'
   import KeyboardHelper from './keyboard_helper.vue'
-  import { samplePlayback, hasPlaybackProgress } from '~/neko/playback-progress.js'
+  import { samplePlayback, hasPlaybackProgress, framesAdvanced } from '~/neko/playback-progress.js'
 
   // @ts-ignore
   import GuacamoleKeyboard from '~/utils/guacamole-keyboard.ts'
@@ -622,6 +622,7 @@
       attempts: 0,
       lastProgress: 0,
       sample: null as ReturnType<typeof samplePlayback> | null,
+      framesTrusted: false,
       generation: 0,
       watchdog: 0,
       playRequest: 0,
@@ -724,7 +725,8 @@
     private observePlaybackProgress() {
       const health = this.playbackHealth
       const current = samplePlayback(this._video)
-      if (hasPlaybackProgress(health.sample, current)) {
+      if (framesAdvanced(health.sample, current)) health.framesTrusted = true
+      if (hasPlaybackProgress(health.sample, current, health.framesTrusted)) {
         health.lastProgress = Date.now()
         health.attempts = 0
       }
@@ -1114,6 +1116,7 @@
       health.source = stream || null
       health.attempts = 0
       health.sample = null
+      health.framesTrusted = false
       health.hidden = false
 
       if (health.destroyed || this.receiveOnlySelected || !this._video) {
