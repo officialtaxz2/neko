@@ -2,6 +2,7 @@ package mediahls
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 	"testing"
@@ -148,14 +149,10 @@ func TestPackagerLowLatencyListsRecentParentParts(t *testing.T) {
 			}
 		}
 		if second == 4 {
-			// Before the first parent completes, the media sequence names the
-			// parent of the listed parts.
-			data, err := packager.Playlist(context.Background(), ModeLLHLS, "high", PlaylistDirectives{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !strings.Contains(string(data), "#EXT-X-MEDIA-SEQUENCE:1\n") || !strings.Contains(string(data), `URI="part-1-0.m4s"`) {
-				t.Fatalf("startup LL-HLS playlist:\n%s", data)
+			// hls.js rejects a parts-only playlist, so LL-HLS is not served
+			// before the first parent completes.
+			if _, err := packager.Playlist(context.Background(), ModeLLHLS, "high", PlaylistDirectives{}); !errors.Is(err, ErrPackagerNotReady) {
+				t.Fatalf("parts-only LL-HLS playlist served: %v", err)
 			}
 		}
 	}
@@ -194,10 +191,9 @@ func TestPackagerLowLatencyListsRecentParentParts(t *testing.T) {
 	}
 }
 
-// A cold LL-HLS start lists the first parent's parts before that parent
-// completes. Once it completes, its segment carries the generation's
-// EXT-X-DISCONTINUITY; the parts must already carry the same number, or
-// hls.js reports "discontinuity sequence mismatch" and Safari stops.
+// Every listed part and segment keeps its discontinuity number across LL-HLS
+// reloads from the first served playlist on; a change makes hls.js report
+// "discontinuity sequence mismatch" and stop.
 func TestPackagerLowLatencyStartupPartsKeepDiscontinuityNumber(t *testing.T) {
 	provider := newFakeHLSProvider()
 	packager := newPackager(provider, fakeTranscoderFactory{})
@@ -241,6 +237,9 @@ func TestPackagerLowLatencyStartupPartsKeepDiscontinuityNumber(t *testing.T) {
 		for _, worker := range workers {
 			id := worker.track.id
 			data, err := packager.Playlist(context.Background(), ModeLLHLS, id, PlaylistDirectives{})
+			if errors.Is(err, ErrPackagerNotReady) && second < 6 {
+				continue
+			}
 			if err != nil {
 				t.Fatalf("%s at %ds: %v", id, second, err)
 			}

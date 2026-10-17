@@ -57,9 +57,6 @@ type MediaPlaylist struct {
 	MapURI string
 	Segments []Segment
 	Parts []Part
-	// The in-progress first parent of a generation carries the discontinuity
-	// its completed segment will carry, so listed parts keep their number.
-	PartsDiscontinuity bool
 	PartsProgramDateTime time.Time
 	PreloadHint string
 	RenditionReports []RenditionReport
@@ -71,7 +68,6 @@ func (playlist MediaPlaylist) Render() ([]byte, error) {
 	for _, segment := range playlist.Segments {
 		if len(segment.Parts) != 0 && (playlist.Mode != ModeLLHLS || len(segment.Parts) != 6) { return nil, ErrInvalidPlaylist }
 	}
-	if playlist.PartsDiscontinuity && (playlist.Mode != ModeLLHLS || len(playlist.Segments) != 0) { return nil, ErrInvalidPlaylist }
 	if playlist.Mode == ModeLLHLS && ((len(playlist.Segments) == 0 && len(playlist.Parts) < 3) || len(playlist.Parts) > 6 || playlist.PartsProgramDateTime.IsZero() || !relativeMediaURI(playlist.PreloadHint)) { return nil, ErrInvalidPlaylist }
 	version := 7
 	if playlist.Mode == ModeLLHLS { version = 9 }
@@ -99,7 +95,6 @@ func (playlist MediaPlaylist) Render() ([]byte, error) {
 			expected := last.ProgramDateTime.Add(time.Duration(last.Duration * float64(time.Second)))
 			if !playlist.PartsProgramDateTime.Equal(expected) { return nil, ErrInvalidPlaylist }
 		}
-		if playlist.PartsDiscontinuity { builder.WriteString("#EXT-X-DISCONTINUITY\n") }
 		fmt.Fprintf(&builder, "#EXT-X-PROGRAM-DATE-TIME:%s\n", playlist.PartsProgramDateTime.UTC().Format(time.RFC3339Nano))
 		for _, part := range playlist.Parts {
 			if err := writePart(&builder, part); err != nil { return nil, err }

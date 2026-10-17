@@ -18,7 +18,8 @@ const (
 	PackagerIdleGrace       = 15 * time.Second
 	RenditionFailureWindow  = 12 * time.Second
 	ConventionalReadyWindow = 28 * time.Second
-	LowLatencyReadyWindow   = 6 * time.Second
+	// One complete six-second parent plus cold encoder start.
+	LowLatencyReadyWindow   = 12 * time.Second
 	PartDuration            = time.Second
 	// Completed parents whose parts stay listed in LL-HLS playlists. Two
 	// parents keep every listed part within three target durations of the end.
@@ -864,7 +865,10 @@ func (packager *Packager) finishPartLocked(track *trackState, anchorWall time.Ti
 		track.nextMSN = sequence + 1
 		track.nextPart = 0
 	}
-	if len(track.parts) >= 3 || len(track.segments) > 0 {
+	// hls.js rejects a playlist without a completed segment ("No Segments
+	// found in Playlist") and stops after its retries, so LL-HLS waits for
+	// the first parent instead of three parts.
+	if len(track.segments) > 0 {
 		track.llReady = true
 	}
 	if len(track.segments) == 3 {
@@ -1199,9 +1203,6 @@ func (packager *Packager) Playlist(ctx context.Context, mode, variant string, di
 	for _, part := range track.parts {
 		playlist.Parts = append(playlist.Parts, part.part)
 	}
-	// finishPartLocked marks the generation's first completed parent as a
-	// discontinuity; its parts must carry the same number before it completes.
-	playlist.PartsDiscontinuity = len(playlist.Segments) == 0
 	playlist.PartsProgramDateTime = track.startedAt.Add(time.Duration(track.nextMSN-track.baseMSN) * ParentDuration)
 	playlist.PreloadHint = fmt.Sprintf("part-%d-%d.m4s", track.nextMSN, track.nextPart)
 	playlist.RenditionReports = packager.renditionReportsLocked(variant)
