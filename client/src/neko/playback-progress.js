@@ -19,6 +19,9 @@ export function hasPlaybackProgress(previous, current) {
   if (!previous || !current || current.paused || current.seeking || previous.seeking || !current.ready) return false
   // A seek, metadata or repeated playing/timeupdate event cannot reset recovery.
   // Where frame counters exist, audio/time advancement alone is insufficient.
-  if (current.frames !== null && previous.frames !== null) return current.frames > previous.frames
+  // A counter that still reads zero once data is ready is not reporting
+  // (seen with WebKit MediaStream video, e.g. iPad); judge by time instead of
+  // recovering a stream that is actually playing.
+  if (current.frames && previous.frames !== null) return current.frames > previous.frames
   return Number.isFinite(current.time) && Number.isFinite(previous.time) && current.time > previous.time + 0.001
 }

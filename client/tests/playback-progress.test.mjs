@@ -41,3 +41,12 @@ test('old browsers retain time progress without requiring frame APIs', () => {
   video.currentTime += 0.25
   assert.equal(hasPlaybackProgress(before, samplePlayback(video)), true)
 })
+
+test('a frame counter stuck at zero falls back to time progress', () => {
+  const video = { currentTime:1, paused:false, seeking:false, readyState:4,
+    getVideoPlaybackQuality: () => ({ totalVideoFrames:0, droppedVideoFrames:0 }) }
+  const before = samplePlayback(video)
+  assert.equal(hasPlaybackProgress(before, samplePlayback(video)), false)
+  video.currentTime = 1.5
+  assert.equal(hasPlaybackProgress(before, samplePlayback(video)), true)
+})

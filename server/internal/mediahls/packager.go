@@ -1199,6 +1199,9 @@ func (packager *Packager) Playlist(ctx context.Context, mode, variant string, di
 	for _, part := range track.parts {
 		playlist.Parts = append(playlist.Parts, part.part)
 	}
+	// finishPartLocked marks the generation's first completed parent as a
+	// discontinuity; its parts must carry the same number before it completes.
+	playlist.PartsDiscontinuity = len(playlist.Segments) == 0
 	playlist.PartsProgramDateTime = track.startedAt.Add(time.Duration(track.nextMSN-track.baseMSN) * ParentDuration)
 	playlist.PreloadHint = fmt.Sprintf("part-%d-%d.m4s", track.nextMSN, track.nextPart)
 	playlist.RenditionReports = packager.renditionReportsLocked(variant)
