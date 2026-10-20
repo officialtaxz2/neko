@@ -378,3 +378,9 @@ Gemeldet: Auf dem iPhone (Brave) bleibt WebRTC nach LL-HLS → WebRTC schwarz, o
 Weil iPhone-Browser keine erreichbare Konsole haben, zeigt der Link-Parameter `debug` (z. B. `&debug=1`) oben links im Video eine Textzeile mit Zustand: gewähltes Medium, `playing` im Store, die gespeicherten Seiteneinstellungen ohne Passwort, die letzten drei Seitenfehler, Ergebnis des letzten `play()`-Aufrufs (`pending`, `ok`, Fehlername, mit Zusatz für den stummen Versuch), `paused`, `readyState`, `currentTime`, Videogröße, `muted`/Lautstärke, gezeigte und dekodierte Bilder, Wiederherstellungsversuche, Quelle samt Tracks (`readyState`, `muted`) und Sichtbarkeit der Seite. Die Anzeige liest nur und fängt keine Eingaben ab. Ohne den Parameter ändert sich nichts.
 
 Ziel-Server-Prüfung und iPhone-Screenshot: ausstehend.
+
+### Ergebnis: veraltete Seite aus dem Browser-Cache
+
+Nach dem Deploy der Diagnose blieb der betroffene iPhone-Tab schwarz und zeigte die Anzeige gar nicht, auch in einem neuen normalen Tab. Dort lief also noch der alte Client. Nach dem Löschen der Website-Daten erschien die Anzeige, und LL-HLS → WebRTC lieferte Bild (`play ok`, `ready enough`, 697 gezeigte Bilder). Gespeichert waren nur gewöhnliche Einstellungen; die gemeldeten Seitenfehler stammen von Braves eingebauter Wallet (`window.ethereum`), nicht von Neko.
+
+Ursache: Der Server lieferte die Client-Dateien ohne `Cache-Control`. Browser schätzen die Gültigkeit dann aus `Last-Modified` und dürfen `index.html` stundenlang ohne Nachfrage aus dem Cache nehmen; ein Reload oder neuer Tab startete so weiter einen alten Client. Jetzt bekommt `index.html` und alles außerhalb von `/assets/` `no-cache` (bei jedem Laden kurz beim Server nachfragen, unverändert kommt 304), die gehashten Dateien unter `/assets/` `max-age=31536000, immutable`. Eine schon im Cache liegende alte Seite verschwindet erst, wenn sie abläuft oder die Website-Daten gelöscht werden. Ziel-Server-Prüfung: ausstehend.
