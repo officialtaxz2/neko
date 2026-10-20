@@ -139,14 +139,28 @@ export function createMSEPlayer(video: HTMLVideoElement, master: string, mode: '
     // Error objects include URLs; only fixed messages may reach state/UI/logs.
     if (alive && (data.fatal || terminalHLSStatus(data.response?.code))) terminal('HLS player stopped; retry manually')
   })
+  // LL-HLS starts at an independent part up to two seconds before the
+  // 3-second target and, without rate catch-up, stays that far behind. After
+  // each start or stall, skip forward within the already-buffered media.
+  const catchUp = () => {
+    const target = hls.liveSyncPosition
+    const end = video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0
+    if (alive && target !== null && !video.paused && !video.seeking &&
+        target - video.currentTime > 0.5 && target < end - 0.5) video.currentTime = target
+  }
+  const stop = () => {
+    alive = false
+    queue.length = 0
+    video.removeEventListener('playing', catchUp)
+    hls.destroy()
+  }
+  if (mode === 'll-hls') video.addEventListener('playing', catchUp)
   try {
     hls.attachMedia(video)
     hls.loadSource(master)
   } catch (_) {
-    alive = false
-    queue.length = 0
-    hls.destroy()
+    stop()
     throw new Error('HLS player initialization failed')
   }
-  return { destroy() { alive = false; queue.length = 0; hls.destroy() } }
+  return { destroy: stop }
 }

@@ -1,0 +1,61 @@
+name: Test HLS Playback
+
+# Plays the real packager output (GStreamer codec fixtures) through the
+# production hls.js player in WebKitGTK, so a playlist or player change that
+# stops playback fails here instead of on the server.
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - server/internal/mediahls/**
+      - server/pkg/gst/**
+      - client/src/neko/hls/**
+      - client/tests/browser/**
+      - client/package-lock.json
+      - .github/workflows/hls_browser_test.yml
+
+jobs:
+  hls-playback:
+    name: HLS / LL-HLS browser playback
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GStreamer, WebKitGTK and Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+            gstreamer1.0-plugins-ugly gstreamer1.0-libav \
+            python3-gi gir1.2-webkit2-4.1 xvfb xauth
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Cold LL-HLS start and browser playback
+        working-directory: server
+        env:
+          HLS_BROWSER_PYTHON: /usr/bin/python3
+          HLS_BROWSER_REQUIRED: "1"
+        run: >
+          go test -count=1 -v -timeout 15m -tags 'hlsintegration hlsbrowser'
+          -run 'TestRealCodecsLowLatencyReadyAfterSlowSourceStart|TestBrowserPlayback'
+          ./internal/mediahls/

@@ -9,7 +9,8 @@ package mediahls
 // terminal error the UI shows.
 //
 // Requires node (client dependencies installed), xvfb-run and python3 with
-// WebKit2 4.1 GObject bindings (Ubuntu: gir1.2-webkit2-4.1, python3-gi):
+// WebKit2 4.1 GObject bindings (Ubuntu: gir1.2-webkit2-4.1, python3-gi); see
+// .github/workflows/hls_browser_test.yml:
 //
 //	go test -tags 'hlsintegration hlsbrowser' -run TestBrowserPlayback ./internal/mediahls/
 
@@ -40,13 +41,18 @@ func TestBrowserPlayback(t *testing.T) {
 	if python == "" {
 		python = "python3"
 	}
+	// CI sets HLS_BROWSER_REQUIRED so a missing tool fails instead of skipping.
+	unavailable := t.Skipf
+	if os.Getenv("HLS_BROWSER_REQUIRED") != "" {
+		unavailable = t.Fatalf
+	}
 	for _, tool := range []string{"node", "xvfb-run", python} {
 		if _, err := exec.LookPath(tool); err != nil {
-			t.Skipf("%s not available", tool)
+			unavailable("%s not available", tool)
 		}
 	}
 	if err := exec.Command(python, "-c", "import gi; gi.require_version('WebKit2', '4.1')").Run(); err != nil {
-		t.Skip("WebKit2 4.1 GObject bindings not available")
+		unavailable("WebKit2 4.1 GObject bindings not available")
 	}
 	static := t.TempDir()
 	build := exec.Command("node", filepath.Join("tests", "browser", "build.mjs"), static)
@@ -146,7 +152,7 @@ func browserPlayback(t *testing.T, script, python, static, mode string) {
 			t.Errorf("player failed: %s", line)
 		}
 		fields := strings.Fields(line)
-		if len(fields) == 4 && fields[0] == "PROGRESS" {
+		if len(fields) >= 4 && fields[0] == "PROGRESS" {
 			value, _ := strconv.ParseFloat(fields[1], 64)
 			if first < 0 && value > 0 {
 				first = value

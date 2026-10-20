@@ -619,3 +619,9 @@ cd server && go test -tags 'hlsintegration hlsbrowser' -run TestBrowserPlayback 
 ### Cold-start window (2026-10-20)
 
 Operator logs from the target at `5a72d3d2` showed a desktop LL-HLS start at 9:53 that started packager generation 3 and scheduled the idle stop without ever logging readiness; the next cold LL-HLS start at 10:08 became ready, and switching between modes while the packager was still warm also worked. The cold source/encoder start plus the first six-second parent therefore exceeded the twelve-second LL window. `TestRealCodecsLowLatencyReadyAfterSlowSourceStart` (tag `hlsintegration`) starts the codec fixtures eight seconds late: LL-HLS becomes ready after about 14 seconds, which fails with the old window and passes with the 28-second window. The LL-HLS sessions of the second client in the same logs (presumably the iPad) did become ready and served playlists before their leases closed, so their failure is a separate, still unexplained client/native-player issue.
+
+### Start latency and CI (2026-10-20)
+
+hls.js starts LL-HLS at an independent part up to two seconds before the 3-second `PART-HOLD-BACK` target and, with playback-rate catch-up off, stays that far behind. In the browser harness the measured hls.js latency was 4.38 seconds at a 3.00-second target. On each `playing` event (start or end of a stall) the MSE player now moves to `liveSyncPosition` when that is more than 0.5 seconds ahead and still at least 0.5 seconds inside the buffered range; the harness then measured 3.65 seconds. The native Apple player is unaffected.
+
+`.github/workflows/hls_browser_test.yml` runs the browser playback test and the cold-start test on pull requests that touch the HLS server or client code; `HLS_BROWSER_REQUIRED=1` makes a missing tool fail instead of skip. Run the browser test with `-count=1` locally: Go does not see the client bundle as a test input and would otherwise return a cached result after client-only changes.

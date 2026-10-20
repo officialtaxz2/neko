@@ -559,7 +559,7 @@
   import Resolution from './resolution.vue'
   import Clipboard from './clipboard.vue'
   import KeyboardHelper from './keyboard_helper.vue'
-  import { samplePlayback, hasPlaybackProgress, framesAdvanced } from '~/neko/playback-progress.js'
+  import { samplePlayback, hasPlaybackProgress, framesAdvanced, trackPresentedFrames } from '~/neko/playback-progress.js'
 
   // @ts-ignore
   import GuacamoleKeyboard from '~/utils/guacamole-keyboard.ts'
@@ -631,6 +631,7 @@
       source: null as MediaStream | null,
       destroyed: false,
       hidden: false,
+      stopFrames: null as (() => void) | null,
     })
     private static readonly MAX_RECOVERY_ATTEMPTS = 3
     private static readonly STALLED_TIMEOUT_MS = 8000 // 8s — give mobile browsers more time
@@ -1303,6 +1304,7 @@
 
     mounted() {
       if (this.hlsSelected) this.$client.attachHLSVideo(this._video)
+      else this.playbackHealth.stopFrames = trackPresentedFrames(this._video)
       this._container.addEventListener('resize', this.onResize)
       window.addEventListener('resize', this.onResize)
       this.onVolumeChanged(this.volume)
@@ -1367,6 +1369,8 @@
       this.playbackHealth.playRequest++
       this.playbackHealth.source = null
       this.cancelStalledTimer()
+      this.playbackHealth.stopFrames?.()
+      this.playbackHealth.stopFrames = null
       if (this.hlsSelected) this.$client.detachHLSVideo(this._video)
       window.removeEventListener('focus', this._onWindowFocus)
       this.observer.disconnect()
