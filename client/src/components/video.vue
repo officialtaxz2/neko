@@ -1341,9 +1341,9 @@
     }
 
     mounted() {
+      if (this.debugVideo) this.debugTimer = window.setInterval(this.updateDebugText, 1000)
       if (this.hlsSelected) this.$client.attachHLSVideo(this._video)
       else this.playbackHealth.stopFrames = trackPresentedFrames(this._video)
-      if (this.debugVideo) this.debugTimer = window.setInterval(this.updateDebugText, 1000)
       this._container.addEventListener('resize', this.onResize)
       window.addEventListener('resize', this.onResize)
       this.onVolumeChanged(this.volume)

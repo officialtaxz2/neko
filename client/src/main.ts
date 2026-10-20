@@ -14,8 +14,10 @@ import Anime from './plugins/anime'
 import { i18n } from './plugins/i18n'
 import store from './store'
 import app from './app.vue'
+import { captureErrors, debugEnabled } from './neko/video-debug.js'
 
 Vue.config.productionTip = false
+if (debugEnabled(location.search)) captureErrors(window, Vue.config)
 
 Vue.use(Logger)
 Vue.use(Notifications)

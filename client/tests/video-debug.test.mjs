@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { debugEnabled, describeVideo } from '../src/neko/video-debug.js'
+import { captureErrors, debugEnabled, describeVideo, noteError } from '../src/neko/video-debug.js'
 
 test('debug display is opt-in by query', () => {
   assert.equal(debugEnabled('?usr=guest&debug=1'), true)
@@ -28,4 +28,21 @@ test('describes a paused stream element with its tracks', () => {
 
 test('missing element is reported, not thrown', () => {
   assert.equal(describeVideo(undefined), 'video: none')
+})
+
+test('lists stored settings without the password, and recent errors', () => {
+  const data = { volume: '100', muted: '0', password: 'secret', media_backend: 'webrtc' }
+  const storage = { get length() { return Object.keys(data).length }, key: (i) => Object.keys(data)[i], getItem: (k) => data[k] }
+  const video = { paused: false, readyState: 4, currentTime: 1, videoWidth: 1, videoHeight: 1, muted: false, volume: 1, srcObject: null, currentSrc: '' }
+  const handlers = {}
+  const config = {}
+  captureErrors({ addEventListener: (name, fn) => { handlers[name] = fn } }, config)
+  config.errorHandler(new Error('boom'), null, 'mounted hook')
+  handlers.unhandledrejection({ reason: 'nope' })
+  for (const n of [1, 2]) noteError(`later ${n}`)
+  const text = describeVideo(video, {}, storage)
+  assert.match(text, /stored media_backend=webrtc muted=0 volume=100/)
+  assert.doesNotMatch(text, /secret|password/)
+  assert.doesNotMatch(text, /boom/)
+  assert.match(text, /error unhandled: nope\nerror later 1\nerror later 2$/)
 })
