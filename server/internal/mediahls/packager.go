@@ -18,8 +18,10 @@ const (
 	PackagerIdleGrace       = 15 * time.Second
 	RenditionFailureWindow  = 12 * time.Second
 	ConventionalReadyWindow = 28 * time.Second
-	// One complete six-second parent plus cold encoder start.
-	LowLatencyReadyWindow   = 12 * time.Second
+	// One complete six-second parent plus a cold source/encoder start, which
+	// took longer than six seconds on the target server; same bound as the
+	// conventional window, inside the client's 30-second bootstrap limit.
+	LowLatencyReadyWindow   = 28 * time.Second
 	PartDuration            = time.Second
 	// Completed parents whose parts stay listed in LL-HLS playlists. Two
 	// parents keep every listed part within three target durations of the end.
@@ -176,6 +178,9 @@ func (packager *Packager) Acquire(ctx context.Context, mode string) error {
 	waitCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	if err := packager.waitReady(waitCtx, mode); err != nil {
+		if ctx.Err() == nil && errors.Is(err, ErrPackagerNotReady) {
+			packager.logger.Warn().Str("mode", mode).Dur("window", timeout).Msg("HLS packager not ready within startup window")
+		}
 		packager.Release()
 		return err
 	}

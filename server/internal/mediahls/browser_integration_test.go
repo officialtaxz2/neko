@@ -135,7 +135,7 @@ func browserPlayback(t *testing.T, script, python, static, mode string) {
 	}
 	t.Logf("%5.1fs packager ready", time.Since(provider.origin).Seconds())
 	close(ready)
-	<-done
+	output := <-done
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -155,6 +155,6 @@ func browserPlayback(t *testing.T, script, python, static, mode string) {
 		}
 	}
 	if first < 0 || last-first < 5 || paused != "false" {
-		t.Errorf("playback did not keep progressing: first %.2fs, last %.2fs, paused %q", first, last, paused)
+		t.Errorf("playback did not keep progressing: first %.2fs, last %.2fs, paused %q\nbrowser output:\n%s", first, last, paused, output)
 	}
 }

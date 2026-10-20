@@ -24,6 +24,11 @@ type codecFixtureProvider struct {
 	sceneCuts bool
 	// Optional synthetic source phases; nil retains the aligned fixture.
 	clockOffsets map[string]time.Duration
+	// Optional delay before the first subscription starts, like cold capture
+	// pipelines on a loaded server. Later subscriptions start right after it,
+	// so audio and video still begin together.
+	sourceStartDelay time.Duration
+	delayed          bool
 	mu sync.Mutex
 	subscriptions map[string]int
 }
@@ -58,6 +63,19 @@ func (provider *codecFixtureProvider) Subscribe(ctx context.Context, request typ
 				rate = variant.FrameRate
 				pipelineSource = fmt.Sprintf("videotestsrc name=fixture_video is-live=true pattern=%s ! video/x-raw,format=I420,width=%d,height=%d,framerate=%d/1 ! vp8enc deadline=1 cpu-used=8 keyframe-max-dist=%d ! appsink name=appsink max-buffers=8 drop=true sync=false", pattern, variant.Width, variant.Height, rate, rate*2)
 			}
+		}
+	}
+	provider.mu.Lock()
+	delay := time.Duration(0)
+	if !provider.delayed {
+		delay, provider.delayed = provider.sourceStartDelay, true
+	}
+	provider.mu.Unlock()
+	if delay > 0 {
+		select {
+		case <-time.After(delay):
+		case <-ctx.Done():
+			return nil, ctx.Err()
 		}
 	}
 	pipeline, err := gst.CreatePipelineWithSampleCapacity(pipelineSource, 64)
@@ -166,6 +184,28 @@ func (subscription *codecFixtureSubscription) Close() error {
 
 func TestRealCodecsReachConventionalPackagerReadiness(t *testing.T) {
 	testRealCodecsReachConventionalPackagerReadiness(t, 0)
+}
+
+// On the target server a cold LL-HLS bootstrap timed out without "HLS packager
+// ready" while the same server reached conventional readiness: the source and
+// encoder start before the first six-second parent did not fit the LL window.
+func TestRealCodecsLowLatencyReadyAfterSlowSourceStart(t *testing.T) {
+	provider := &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4), sourceStartDelay: 8 * time.Second}
+	packager := newPackager(provider, gstTranscoderFactory{})
+	started := time.Now()
+	if err := packager.Acquire(context.Background(), ModeLLHLS); err != nil {
+		// No Shutdown here: closing the fixture's GStreamer pipelines while a
+		// video subscription is still starting can block the test process.
+		t.Fatalf("LL-HLS not ready after %s: %v", time.Since(started).Round(time.Millisecond), err)
+	}
+	defer packager.Shutdown()
+	defer packager.Release()
+	t.Logf("LL-HLS ready after %s", time.Since(started).Round(time.Millisecond))
+	select {
+	case err := <-provider.errors:
+		t.Fatal(err)
+	default:
+	}
 }
 
 func TestRealDelayedHighAnchorPreservesPackagerGeneration(t *testing.T) {
