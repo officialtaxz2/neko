@@ -370,3 +370,11 @@ Betreiber-Logs einer iPad-Sitzung (Brave) zeigten nach dem Wechsel zwischen HLS,
 ## Gezeigte Bilder als Fortschritt (2026-10-20)
 
 WebKit auf dem iPad zählt dekodierte MediaStream-Bilder nicht; der WebRTC-Wächter konnte dort nur die Wiedergabezeit prüfen und ein eingefrorenes Bild mit weiterlaufendem Ton nicht erkennen. Wo `requestVideoFrameCallback` verfügbar ist, zählt der Client jetzt die tatsächlich gezeigten Bilder und nutzt diesen Zähler statt der Decoder-Zähler (`trackPresentedFrames` in `client/src/neko/playback-progress.js`). Wie bisher gilt ein Zähler erst, nachdem er für den aktuellen Stream einmal gestiegen ist. In nativem Vollbild und Bild-in-Bild rendert iOS außerhalb der Seite; dort fällt die Prüfung auf die Wiedergabezeit zurück. Geräteprüfungen auf iPad/iPhone stehen aus.
+
+## Video-Diagnose mit `?debug` (2026-10-20)
+
+Gemeldet: Auf dem iPhone (Brave) bleibt WebRTC nach LL-HLS → WebRTC schwarz, ohne Ton und ohne Play- oder Lautsprecher-Knopf, auch nach einem Reload im selben Tab. In einem privaten Tab funktioniert WebRTC. Laut Server-Log bekam die Sitzung rund 2 Mbit/s Video, und der Empfänger meldete keinen Verlust; das Bild erreicht das Gerät, wird aber nicht gezeigt. Die Ursache ist offen.
+
+Weil iPhone-Browser keine erreichbare Konsole haben, zeigt der Link-Parameter `debug` (z. B. `&debug=1`) oben links im Video eine Textzeile mit Zustand: gewähltes Medium, `playing` im Store, die gespeicherten Seiteneinstellungen ohne Passwort, die letzten drei Seitenfehler, Ergebnis des letzten `play()`-Aufrufs (`pending`, `ok`, Fehlername, mit Zusatz für den stummen Versuch), `paused`, `readyState`, `currentTime`, Videogröße, `muted`/Lautstärke, gezeigte und dekodierte Bilder, Wiederherstellungsversuche, Quelle samt Tracks (`readyState`, `muted`) und Sichtbarkeit der Seite. Die Anzeige liest nur und fängt keine Eingaben ab. Ohne den Parameter ändert sich nichts.
+
+Ziel-Server-Prüfung und iPhone-Screenshot: ausstehend.
