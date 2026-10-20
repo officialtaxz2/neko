@@ -362,3 +362,7 @@ docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml ps
 ```
 
 Kein `down -v` verwenden. Die Recovery-Änderung benötigt keine Datenmigration. Nach einem Rollback Login, Video, Audio, Kontrolle, Profil und Policy erneut kurz prüfen.
+
+## Verlassene Seiten und der Back/Forward-Cache (2026-10-20)
+
+Betreiber-Logs einer iPad-Sitzung (Brave) zeigten nach dem Wechsel zwischen HLS, LL-HLS und WebRTC zwei gleichzeitig verbundene WebRTC-Sitzungen desselben Geräts; die ältere empfing weiter Medien und verlor mehrfach die ICE-Verbindung, während der Betreiber nach dem Wechsel von HLS zurück auf WebRTC nur ein schwarzes Bild sah. iOS-WebKit kann eine verlassene Seite im Back/Forward-Cache behalten, sodass deren Event-WebSocket und Peer-Verbindung offen bleiben können. Der Client schließt deshalb Peer, Event-Socket und HLS-Player, bevor ein Wechsel des Medien-Backends navigiert, schließt sie bei `pagehide`, wenn die Seite in diesen Cache geht, und lädt bei `pageshow` neu, wenn eine solche Seite wiederhergestellt wird (`client/src/neko/page-lifecycle.js`, `tests/page-lifecycle.test.mjs`). Dass die verbliebene Sitzung das schwarze Bild verursacht hat, ist aus den Logs abgeleitet und nicht auf einem iPad reproduziert; Ziel- und Geräteprüfungen stehen aus.

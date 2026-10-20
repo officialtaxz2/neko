@@ -8,6 +8,7 @@ import { viewOnlyTokenFromHash } from './share'
 import { accessor } from '~/store'
 import { HLSMediaController } from './hls/controller'
 import { hlsModes } from './hls/protocol.js'
+import { bindPageLifecycle } from './page-lifecycle.js'
 import {
   MEDIA_BACKEND_WEBRTC,
   mediaBackendNavigationURL,
@@ -171,6 +172,14 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     this.url = url
     // convert ws url to http url
     this.$vue.$http.defaults.baseURL = url.replace(/^ws/, 'http').replace(/\/ws$/, '')
+    bindPageLifecycle(window, {
+      leave: () => {
+        this.reconnectSuppressed = true
+        this.stopReconnect()
+        this.disconnect()
+      },
+      restore: () => window.location.reload(),
+    })
   }
 
   private cleanup() {
@@ -315,7 +324,9 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
   private reloadForMediaBackendSelection() {
     this.reconnectSuppressed = true
     this.stopReconnect(true)
-    this.hlsController?.stop()
+    // Close the peer and event socket now, so the left page cannot linger as
+    // a second session (see page-lifecycle.js).
+    this.disconnect()
     window.location.assign(mediaBackendNavigationURL(window.location.href))
   }
 
