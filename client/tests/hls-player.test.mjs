@@ -13,9 +13,11 @@ const flush = async () => { await new Promise(setImmediate); await new Promise(s
 function harness(mode = 'll-hls') {
   const exports = {}, requests = [], terminal = [], success = []
   let instance, player
+  const video = Object.assign(new EventTarget(), { currentTime:3, paused:false, seeking:false,
+    buffered:{ length:1, end: () => 7 } })
   class MockHls {
     static Events = { ERROR:'error' }
-    constructor(config) { this.config = config; this.loaders = []; instance = this }
+    constructor(config) { this.config = config; this.loaders = []; this.liveSyncPosition = null; instance = this }
     on() {}
     attachMedia() {}
     loadSource() {}
@@ -32,7 +34,7 @@ function harness(mode = 'll-hls') {
     // Deliberately ignore abort in this double to exercise stale completions.
     fetch: (url, init) => new Promise((resolve) => requests.push({ url, init, complete:resolve })),
   })
-  player = exports.createMSEPlayer({}, master, mode, (detail) => { terminal.push(detail); player.destroy() })
+  player = exports.createMSEPlayer(video, master, mode, (detail) => { terminal.push(detail); player.destroy() })
   const loader = () => {
     const value = new instance.config.loader()
     instance.loaders.push(value)
@@ -43,7 +45,7 @@ function harness(mode = 'll-hls') {
     { loadPolicy:{ maxLoadTimeMs:12000 } },
     { onSuccess: (response) => success.push(response), onError() {}, onTimeout() {} },
   )
-  return { player, requests, terminal, success, loader, load, config: () => instance.config }
+  return { player, requests, terminal, success, loader, load, video, hls: () => instance, config: () => instance.config }
 }
 
 test('MSE loader leaves the fourth lease slot free and discards queued work on destroy', async () => {
@@ -107,4 +109,26 @@ test('LL-HLS uses the server PART-HOLD-BACK instead of a segment-count live sync
   assert.equal(conventional.liveSyncDurationCount, 3)
   assert.equal(conventional.liveMaxLatencyDurationCount, 5)
   assert.equal('maxLiveSyncPlaybackRate' in conventional, false)
+})
+
+test('LL-HLS skips forward to the target latency within the buffer after playback starts', () => {
+  const h = harness('ll-hls')
+  h.hls().liveSyncPosition = 3.3
+  h.video.dispatchEvent(new Event('playing'))
+  assert.equal(h.video.currentTime, 3, 'a small offset is not worth a visible skip')
+  h.hls().liveSyncPosition = 4.4
+  h.video.dispatchEvent(new Event('playing'))
+  assert.equal(h.video.currentTime, 4.4)
+  h.video.currentTime = 3
+  h.hls().liveSyncPosition = 6.8
+  h.video.dispatchEvent(new Event('playing'))
+  assert.equal(h.video.currentTime, 3, 'never past the buffered media')
+  h.hls().liveSyncPosition = 4.4
+  h.player.destroy()
+  h.video.dispatchEvent(new Event('playing'))
+  assert.equal(h.video.currentTime, 3)
+  const conventional = harness('hls')
+  conventional.hls().liveSyncPosition = 4.4
+  conventional.video.dispatchEvent(new Event('playing'))
+  assert.equal(conventional.video.currentTime, 3)
 })

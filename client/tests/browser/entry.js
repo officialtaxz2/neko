@@ -8,8 +8,10 @@ const log = (...parts) => {
   const message = parts.map((part) => typeof part === 'string' ? part : JSON.stringify(part)).join(' ')
   fetch('/log', { method: 'POST', body: message }).catch(() => {})
 }
+let hls
 const trigger = Hls.prototype.trigger
 Hls.prototype.trigger = function (event, data) {
+  hls = this
   if (event === Hls.Events.ERROR) {
     log('ERROR', { details: data.details, fatal: data.fatal, reason: data.reason, code: data.response?.code, parent: data.parent })
   }
@@ -25,7 +27,8 @@ video.play().catch(() => {})
 for (const name of ['pause', 'playing', 'error', 'ended']) video.addEventListener(name, () => log('EVENT', name, video.currentTime.toFixed(2)))
 setInterval(() => {
   const end = video.buffered.length ? video.buffered.end(video.buffered.length - 1) : 0
-  log('PROGRESS', video.currentTime.toFixed(2), (end - video.currentTime).toFixed(2), String(video.paused))
+  log('PROGRESS', video.currentTime.toFixed(2), (end - video.currentTime).toFixed(2), String(video.paused),
+    'latency', Number(hls?.latency || 0).toFixed(2), 'target', Number(hls?.targetLatency || 0).toFixed(2), 'rate', video.playbackRate, 'sync', String(hls?.liveSyncPosition))
 }, 2000)
 
 let keepAliveAt = 0
