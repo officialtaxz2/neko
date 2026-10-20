@@ -11,6 +11,7 @@
     >
       <div ref="container" class="player-container">
         <video ref="video" playsinline webkit-playsinline />
+        <pre v-if="debugVideo" class="video-debug">{{ debugText }}</pre>
         <div class="emotes">
           <template v-for="(emote, index) in emotes">
             <neko-emote :id="index" :key="index" />
@@ -366,6 +367,21 @@
           }
         }
 
+        .video-debug {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          z-index: 23;
+          margin: 0;
+          padding: 6px 8px;
+          max-width: calc(100% - 16px);
+          white-space: pre-wrap;
+          font: 11px/1.35 monospace;
+          color: #fff;
+          background: rgba(0, 0, 0, 0.7);
+          pointer-events: none;
+        }
+
         .media-status {
           position: absolute;
           left: 14px;
@@ -560,6 +576,7 @@
   import Clipboard from './clipboard.vue'
   import KeyboardHelper from './keyboard_helper.vue'
   import { samplePlayback, hasPlaybackProgress, framesAdvanced, trackPresentedFrames } from '~/neko/playback-progress.js'
+  import { debugEnabled, describeVideo } from '~/neko/video-debug.js'
 
   // @ts-ignore
   import GuacamoleKeyboard from '~/utils/guacamole-keyboard.ts'
@@ -632,12 +649,27 @@
       destroyed: false,
       hidden: false,
       stopFrames: null as (() => void) | null,
+      lastPlay: '',
     })
+    private debugVideo = debugEnabled(location.search)
+    private debugText = ''
+    private debugTimer: number | null = null
     private static readonly MAX_RECOVERY_ATTEMPTS = 3
     private static readonly STALLED_TIMEOUT_MS = 8000 // 8s — give mobile browsers more time
 
     private videoWidth = 0
     private videoHeight = 0
+
+    private updateDebugText() {
+      const health = this.playbackHealth
+      this.debugText = describeVideo(this._video, {
+        backend: this.$accessor.hls.selected || 'webrtc',
+        playing: this.playing,
+        lastPlay: health.lastPlay,
+        framesTrusted: health.framesTrusted,
+        attempts: health.attempts,
+      })
+    }
 
     private updateVideoDimensions() {
       if (this._video) {
@@ -1259,17 +1291,23 @@
       health.playPending = true
       const current = () => request === health.playRequest && generation === health.generation &&
         this.currentWebRTCVideo() && video === this._video && stream === this.stream && this.playing
+      health.lastPlay = 'pending'
       try {
         await video.play() // Old browsers may return undefined; await is safe.
+        health.lastPlay = 'ok'
       } catch (err: any) {
+        health.lastPlay = String(err?.name || 'error')
         if (!current() || err?.name === 'AbortError') return
         if (!video.muted && err?.name !== 'NotSupportedError') {
           try {
             video.muted = true
             this.$accessor.video.setMuted(true)
+            health.lastPlay = `${health.lastPlay}, muted pending`
             await video.play()
+            health.lastPlay = health.lastPlay.replace(/pending$/, 'ok')
             if (current()) this.mutedOverlay = true
           } catch (mutedError: any) {
+            health.lastPlay = health.lastPlay.replace(/pending$/, String(mutedError?.name || 'error'))
             if (current() && mutedError?.name !== 'AbortError') {
               this.cancelStalledTimer()
               this.$accessor.video.pause()
@@ -1305,6 +1343,7 @@
     mounted() {
       if (this.hlsSelected) this.$client.attachHLSVideo(this._video)
       else this.playbackHealth.stopFrames = trackPresentedFrames(this._video)
+      if (this.debugVideo) this.debugTimer = window.setInterval(this.updateDebugText, 1000)
       this._container.addEventListener('resize', this.onResize)
       window.addEventListener('resize', this.onResize)
       this.onVolumeChanged(this.volume)
@@ -1371,6 +1410,7 @@
       this.cancelStalledTimer()
       this.playbackHealth.stopFrames?.()
       this.playbackHealth.stopFrames = null
+      if (this.debugTimer !== null) window.clearInterval(this.debugTimer)
       if (this.hlsSelected) this.$client.detachHLSVideo(this._video)
       window.removeEventListener('focus', this._onWindowFocus)
       this.observer.disconnect()

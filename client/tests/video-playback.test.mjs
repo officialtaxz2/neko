@@ -6,6 +6,7 @@ import test from 'node:test'
 import ts from 'typescript'
 import Vue from 'vue'
 import * as progress from '../src/neko/playback-progress.js'
+import * as videoDebug from '../src/neko/video-debug.js'
 
 // Run on the target. This mounts the actual decorated Vue class with its real
 // data/method binding and lifecycle, replacing DOM/media/network with doubles.
@@ -50,13 +51,14 @@ function harness({ autoplay = true, play } = {}) {
   Object.assign(state, { play: () => { state.playing = true }, pause: () => { state.playing = false },
     setPlayable: value => { state.playable = value }, setMuted: value => { state.muted = value }, setVolume: value => { state.volume = value } })
   runInNewContext(compiled, {
-    exports, window, document, navigator:{ userAgent:'test', maxTouchPoints:0, platform:'test' },
+    exports, window, document, location:{ search:'' }, navigator:{ userAgent:'test', maxTouchPoints:0, platform:'test' },
     Date:{ now: () => now }, console, Object,
     require(path) {
       if (path === 'vue-property-decorator') return require(path)
       if (path === 'resize-observer-polyfill') return class { observe() {} disconnect() {} }
       if (path === '~/utils/guacamole-keyboard.ts') return () => ({ listenTo() {}, reset() {} })
       if (path === '~/neko/playback-progress.js') return progress
+      if (path === '~/neko/video-debug.js') return videoDebug
       if (path === '~/utils/touch') return { isTouchDevice: () => false }
       if (path === '~/utils') return { isFullscreen: () => false, lockKeyboard() {}, unlockKeyboard() {} }
       if (path.endsWith('.vue')) return {}
