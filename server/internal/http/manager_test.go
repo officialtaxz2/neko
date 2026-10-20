@@ -109,3 +109,32 @@ func TestWebSocketOriginAllowsInternalDialWithoutOrigin(t *testing.T) {
 		t.Fatal("unconfigured browser Origin was accepted")
 	}
 }
+
+func TestStaticFilesRevalidateExceptHashedAssets(t *testing.T) {
+	staticDir := t.TempDir()
+	if err := os.MkdirAll(staticDir+"/assets", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"index.html", "site.webmanifest", "assets/index-AbC123.js"} {
+		if err := os.WriteFile(staticDir+"/"+name, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	memberConfig := &config.Member{}
+	sessionManager := session.New(&config.Session{})
+	apiManager := api.New(sessionManager, member.New(sessionManager, memberConfig), nil, nil, memberConfig, &config.Server{})
+	manager := New(testWebSocketManager{}, apiManager, &config.Server{Static: staticDir}, memberConfig, nil)
+
+	for path, want := range map[string]string{
+		"/":                       "no-cache",
+		"/index.html":             "no-cache",
+		"/site.webmanifest":       "no-cache",
+		"/assets/index-AbC123.js": "public, max-age=31536000, immutable",
+	} {
+		recorder := httptest.NewRecorder()
+		manager.router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+		if got := recorder.Header().Get("Cache-Control"); got != want {
+			t.Fatalf("%s: Cache-Control = %q, want %q (status %d)", path, got, want, recorder.Code)
+		}
+	}
+}

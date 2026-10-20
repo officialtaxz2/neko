@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog"
@@ -81,6 +82,7 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 		staticHandler = func(w http.ResponseWriter, r *http.Request) error {
 			_, err := os.Stat(config.Static + r.URL.Path)
 			if err == nil {
+				w.Header().Set("Cache-Control", staticCacheControl(r.URL.Path))
 				fs.ServeHTTP(w, r)
 				return nil
 			}
@@ -182,4 +184,15 @@ func (manager *HttpManagerCtx) Shutdown() error {
 	manager.logger.Info().Msg("shutdown")
 
 	return manager.http.Shutdown(context.Background())
+}
+
+// Built assets carry a content hash in their name and never change. Every
+// other file, index.html above all, is revalidated on each load: without a
+// header, browsers guess freshness from Last-Modified and an iPhone kept
+// starting the old client long after a deploy.
+func staticCacheControl(urlPath string) string {
+	if strings.HasPrefix(urlPath, "/assets/") {
+		return "public, max-age=31536000, immutable"
+	}
+	return "no-cache"
 }
