@@ -654,6 +654,7 @@
     private debugVideo = debugEnabled(location.search)
     private debugText = ''
     private debugTimer: number | null = null
+    private debugInput = Object.seal({ touches: 0, lastTouch: '', streamAt: 0, firstFrameAt: 0 })
     private static readonly MAX_RECOVERY_ATTEMPTS = 3
     private static readonly STALLED_TIMEOUT_MS = 8000 // 8s — give mobile browsers more time
 
@@ -662,12 +663,22 @@
 
     private updateDebugText() {
       const health = this.playbackHealth
+      const input = this.debugInput
+      const stats = this.$client.inputStats
+      if (input.streamAt && !input.firstFrameAt && this._video?.readyState >= 2) input.firstFrameAt = Date.now()
+      const seconds = (from: number, to = Date.now()) => from ? `${((to - from) / 1000).toFixed(1)}s` : '-'
       this.debugText = describeVideo(this._video, {
         backend: this.$accessor.hls.selected || 'webrtc',
         playing: this.playing,
         lastPlay: health.lastPlay,
         framesTrusted: health.framesTrusted,
         attempts: health.attempts,
+        extra: [
+          `stream since ${seconds(input.streamAt)} first frame after ${input.firstFrameAt ? seconds(input.streamAt, input.firstFrameAt) : '-'}`,
+          `transport ${this.$client.transportState}`,
+          `input hosting ${this.hosting} controlling ${this.controlling} locked ${this.locked} trackpad ${this.trackpadActive}`,
+          `touches ${input.touches} ${input.lastTouch || '-'} sent ${stats.sent} ${stats.last || '-'} skipped ${stats.skipped}`,
+        ],
       })
     }
 
@@ -1164,6 +1175,8 @@
         return
       }
 
+      this.debugInput.streamAt = Date.now()
+      this.debugInput.firstFrameAt = 0
       if ('srcObject' in this._video) {
         this._video.srcObject = stream
       } else {
@@ -1729,6 +1742,8 @@
     }
 
     onTouchHandler(e: TouchEvent) {
+      this.debugInput.touches++
+      this.debugInput.lastTouch = e.type
       if (this.trackpadActive) {
         this.onTrackpadTouch(e)
         return
