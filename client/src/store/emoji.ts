@@ -1,5 +1,5 @@
 import { getterTree, mutationTree, actionTree } from 'typed-vuex'
-import { get, set } from '~/utils/localstorage'
+import { getList, set } from '~/utils/localstorage'
 import { accessor } from '~/store'
 
 export const namespaced = true
@@ -25,7 +25,7 @@ export const state = () => ({
     {
       id: 'recent',
       name: 'Recent',
-      list: JSON.parse(get('emoji_recent', '[]')) as string[],
+      list: getList('emoji_recent'),
     },
   ] as Group[],
   keywords: {} as Keywords,

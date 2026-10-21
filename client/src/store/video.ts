@@ -16,7 +16,8 @@ export const state = () => ({
   rate: 30,
   horizontal: 16,
   vertical: 9,
-  volume: get<number>('volume', 100),
+  // The player assigns this to video.volume, which throws outside 0..1.
+  volume: Math.max(0, Math.min(100, get<number>('volume', 100))),
   muted: get<boolean>('muted', false),
   playing: false,
   playable: false,

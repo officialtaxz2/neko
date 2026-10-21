@@ -144,7 +144,7 @@
 
 <script lang="ts">
   import { Vue, Ref, Component, Prop } from 'vue-property-decorator'
-  import { get, set } from '../utils/localstorage'
+  import { getList, set } from '../utils/localstorage'
 
   // @ts-ignore
   import { VueContext } from 'vue-context'
@@ -158,7 +158,7 @@
   export default class NekoEmotes extends Vue {
     @Ref('context') readonly context!: any
     @Prop(Boolean) readonly compact!: boolean
-    recent: string[] = JSON.parse(get('emote_recent', '[]'))
+    recent: string[] = getList('emote_recent')
 
     get emotes() {
       return [

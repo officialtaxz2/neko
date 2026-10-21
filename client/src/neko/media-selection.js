@@ -94,3 +94,16 @@ export function mediaBackendNavigationURL(href) {
   url.searchParams.delete('media')
   return url.toString()
 }
+
+/**
+ * Re-enter startup for the new selection. Assigning the current URL is only a
+ * fragment navigation when it has a fragment (view-only token, a trailing #):
+ * the page would stay, already disconnected, on the old media path.
+ *
+ * @param {Pick<Location, 'href' | 'assign' | 'reload'>} location
+ */
+export function navigateForMediaBackendSelection(location) {
+  const next = mediaBackendNavigationURL(location.href)
+  if (next === location.href) location.reload()
+  else location.assign(next)
+}
