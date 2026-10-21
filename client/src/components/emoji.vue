@@ -289,7 +289,7 @@
 <script lang="ts">
   import { Component, Ref, Vue } from 'vue-property-decorator'
   import { directive as onClickaway } from 'vue-clickaway'
-  import { get } from '../utils/localstorage'
+  import { getList } from '../utils/localstorage'
 
   @Component({
     name: 'neko-emoji',
@@ -306,7 +306,7 @@
     search = ''
     index = 0
     hovered = ''
-    recent: string[] = JSON.parse(get('emoji_recent', '[]'))
+    recent: string[] = getList('emoji_recent')
 
     get active() {
       return this.$accessor.emoji.groups[this.index]

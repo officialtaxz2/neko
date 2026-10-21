@@ -1105,15 +1105,28 @@
       }
     }
 
+    get trackpadInputAllowed() {
+      return this.hosting && !this.locked
+    }
+
     @Watch('trackpadActive')
     onTrackpadActiveChanged(active: boolean) {
-      if (!active) {
-        this.trackpadTouching = false
-        this.trackpadTouchId = null
-        if (this.longPressTimer !== null) {
-          window.clearTimeout(this.longPressTimer)
-          this.longPressTimer = null
-        }
+      if (!active) this.resetTrackpadTouch()
+    }
+
+    // Touch events are ignored without control, including the end of a touch
+    // that began with it. Still tracking that touch would ignore all later ones.
+    @Watch('trackpadInputAllowed')
+    onTrackpadInputAllowedChanged(allowed: boolean) {
+      if (!allowed) this.resetTrackpadTouch()
+    }
+
+    resetTrackpadTouch() {
+      this.trackpadTouching = false
+      this.trackpadTouchId = null
+      if (this.longPressTimer !== null) {
+        window.clearTimeout(this.longPressTimer)
+        this.longPressTimer = null
       }
     }
 

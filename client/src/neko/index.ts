@@ -11,7 +11,7 @@ import { hlsModes } from './hls/protocol.js'
 import { bindPageLifecycle } from './page-lifecycle.js'
 import {
   MEDIA_BACKEND_WEBRTC,
-  mediaBackendNavigationURL,
+  navigateForMediaBackendSelection,
   normalizeMediaBackendPreference,
   resolveMediaBackendSelection,
   isHLSBackend,
@@ -327,7 +327,7 @@ export class NekoClient extends BaseClient implements EventEmitter<NekoEvents> {
     // Close the peer and event socket now, so the left page cannot linger as
     // a second session (see page-lifecycle.js).
     this.disconnect()
-    window.location.assign(mediaBackendNavigationURL(window.location.href))
+    navigateForMediaBackendSelection(window.location)
   }
 
   public attachHLSVideo(video: HTMLVideoElement) {

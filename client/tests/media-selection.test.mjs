@@ -6,6 +6,7 @@ import {
   MEDIA_BACKEND_STORAGE_KEY,
   MEDIA_BACKEND_WEBRTC,
   mediaBackendNavigationURL,
+  navigateForMediaBackendSelection,
   normalizeMediaBackendPreference,
   readMediaBackendPreference,
   resolveMediaBackendSelection,
@@ -99,6 +100,20 @@ test('selection navigation removes only the stateless diagnostic override', () =
   assert.equal(next.hash, '#/Ab3dEf7h_Jk9-mN2')
 })
 
+test('selection navigation reloads when the address would not change', () => {
+  const navigate = (href) => {
+    const calls = []
+    navigateForMediaBackendSelection({ href, assign: (url) => calls.push(['assign', url]), reload: () => calls.push(['reload']) })
+    return calls
+  }
+  // Assigning the same address with a fragment only scrolls and would leave
+  // the already disconnected page on the old media path.
+  for (const href of ['https://neko.example/?debug=1#', 'https://neko.example/#/Ab3dEf7h_Jk9-mN2', 'https://neko.example/room', 'https://neko.example/?debug=1']) {
+    assert.deepEqual(navigate(href), [['reload']], href)
+  }
+  assert.deepEqual(navigate('https://neko.example/?media=hls&debug=1#'), [['assign', 'https://neko.example/?debug=1#']])
+})
+
 test('HLS modes remain exact opt-ins and preserve passive link state during selection', () => {
   for (const mode of ['hls', 'll-hls']) {
     const storage = memoryStorage()
@@ -129,7 +144,7 @@ test('sidebar changes persist and re-enter startup while the WebRTC action persi
   )
   assert.match(client, /this\.\$accessor\.settings\.setMediaBackend\(MEDIA_BACKEND_WEBRTC\)/)
   assert.match(client, /public clearMediaBackendOverride\(\) \{\s*if \(!this\.mediaBackendURLOverride\) return/)
-  assert.match(client, /window\.location\.assign\(mediaBackendNavigationURL\(window\.location\.href\)\)/)
+  assert.match(client, /navigateForMediaBackendSelection\(window\.location\)/)
   assert.match(video, /v-if="hlsStatus === 'terminal'" class="media-actions"/)
   assert.match(video, /@click\.stop\.prevent="useWebRTC"/)
   assert.doesNotMatch(settings, /webcodecs/i)
