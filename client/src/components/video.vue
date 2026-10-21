@@ -1042,8 +1042,11 @@
     }
 
     getVideoRect() {
-      const surface = this._video
-      const rect = (surface || this._overlay).getBoundingClientRect()
+      // The trackpad cursor computes this during the first render, before the
+      // refs exist. Throwing there left the whole player unrendered.
+      const surface = this._video || this._overlay
+      if (!surface) return { width: 0, height: 0, left: 0, top: 0 }
+      const rect = surface.getBoundingClientRect()
       const { w, h } = this.$accessor.video.resolution
 
       if (rect.width <= 0 || rect.height <= 0 || w <= 0 || h <= 0) {
