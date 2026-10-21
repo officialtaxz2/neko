@@ -62,6 +62,7 @@ export function describeVideo(video, state = {}, storage = typeof localStorage =
     `frames ${sample && sample.frames !== null ? sample.frames : '-'} decoded ${decoded} trusted ${!!state.framesTrusted} recovery ${state.attempts || 0}`,
     `src ${source ? 'stream' : (video.currentSrc ? 'url' : 'none')} tracks ${tracks}`,
     `visible ${typeof document === 'undefined' ? '-' : document.visibilityState}`,
+    ...(state.extra || []),
     `stored ${storedSettings(storage)}`,
     ...errors.map((error) => `error ${error}`),
   ].join('\n')

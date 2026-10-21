@@ -44,6 +44,13 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     return this._id
   }
 
+  // Read by the opt-in ?debug overlay.
+  public readonly inputStats = { sent: 0, skipped: 0, last: '' }
+
+  get transportState() {
+    return `peer ${this._peer?.connectionState || 'none'} ice ${this._peer?.iceConnectionState || 'none'} data ${this._channel?.readyState || 'none'}`
+  }
+
   get supported() {
     if (this._mediaBackend !== undefined) {
       // Keep the authenticated event plane available so the isolated media
@@ -314,6 +321,7 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
   public sendData(event: 'mousedown' | 'mouseup' | 'keydown' | 'keyup', data: { key: number }): void
   public sendData(event: string, data: any) {
     if (!this.connected) {
+      this.inputStats.skipped++
       this.emit('warn', `attempting to send data while disconnected`)
       return
     }
@@ -360,6 +368,8 @@ export abstract class BaseClient extends EventEmitter<BaseEvents> {
     // @ts-ignore
     if (typeof buffer !== 'undefined') {
       this._channel!.send(buffer)
+      this.inputStats.sent++
+      this.inputStats.last = event
     }
   }
 
