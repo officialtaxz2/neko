@@ -116,7 +116,7 @@ Supporting trees:
 
 ### IMPLEMENTED
 
-Since 2026-10-23 the client is upstream's React client on the v3 API (`/api/ws`); the Vue 2.7 client and the legacy `/ws` protocol are gone (the last Vue client is the tag `vue-final`, whose description of this section is in Git history).
+Since 2026-10-23 the client is upstream's React client on the v3 API (`/api/ws`); the Vue 2.7 client and the legacy `/ws` protocol are gone (the last Vue client is commit `a7e53c0`, whose description of this section is in Git history).
 
 - React 19, TypeScript, Vite, zustand stores, Tailwind CSS v4.
 - `client/core`: the framework-free `@m1k1o/neko` package: `NekoClient` (session, reconnect, events), the stream transports (`transport/webrtc.ts`, the fork's `transport/hls.ts`), the input overlay (`overlay.ts`, with the fork's trackpad mode) and the playback watchdog (`playback.ts`).

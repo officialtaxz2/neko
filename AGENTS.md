@@ -392,7 +392,7 @@ Runtime/build/test status must be reported as **NOT EXECUTED IN CODEX** unless r
 
 ## Repository map
 
-- `client/` — upstream's React + TypeScript/Vite client (`client/core` is the framework-free `@m1k1o/neko` package); the fork's design is in `client/src/fork/` (see its README), fork features sit in their layers marked "the fork". The last Vue client is the tag `vue-final`.
+- `client/` — upstream's React + TypeScript/Vite client (`client/core` is the framework-free `@m1k1o/neko` package); the fork's design is in `client/src/fork/` (see its README), fork features sit in their layers marked "the fork". The last Vue client is commit `a7e53c0`.
 - `server/` — Go server and plugins.
 - `apps/` — browser/application image definitions.
 - `runtime/` — runtime image/container support.
