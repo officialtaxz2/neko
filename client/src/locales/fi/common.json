@@ -36,7 +36,10 @@
     "lock": "Lukitse kontrollit",
     "unlock": "Vapauta kontrollit",
     "has": "Sinulla on kontrollit",
-    "hasnot": "Sinulle ei ole kontrolleja"
+    "hasnot": "Sinulle ei ole kontrolleja",
+    "mic_on": "Ota mikrofoni käyttöön",
+    "mic_off": "Poista mikrofoni käytöstä",
+    "mic_error": "Mikrofonivirhe"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "Automaattisesti toista video",
     "ignore_emotes": "Estä emojit",
     "chat_sound": "Soita viesti ääni",
+    "links_in_app": "Avaa linkit aina sovelluksessa",
     "keyboard_layout": "Näppäimistöasettelu",
     "broadcast_title": "Suora Lähetys"
   },
@@ -70,6 +74,7 @@
     "connected": "Yhdistetty",
     "disconnected": "Katkaistu yhteys",
     "kicked": "Sinut on poistettu huoneesta.",
+    "replaced": "Tämä istunto avattiin toisessa välilehdessä tai ikkunassa",
     "button_confirm": "OK"
   },
   "notifications": {

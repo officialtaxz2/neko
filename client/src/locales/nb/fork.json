@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Kontroll låst",
-    "login": "Innlogging låst"
+    "login": "Innlogging låst",
+    "file_transfer": "Filer låst"
   },
   "room": {
-    "members": "Medlemmer"
+    "members": "Medlemmer",
+    "host": "Vert",
+    "muted": "Dempet",
+    "ignored": "Ignorert"
   },
   "setting": {
     "language": "Språk"
@@ -97,6 +101,7 @@
     "more": "Mer",
     "tools": "Flere verktøy",
     "fullscreen": "Fullskjerm",
+    "exit_fullscreen": "Avslutt fullskjerm",
     "resolution": "Skjermoppløsning",
     "pip": "Bilde i bilde",
     "clipboard": "Utklippstavle",
@@ -115,6 +120,7 @@
     "account": "Konto",
     "lock_control_hint": "Bare administratorer kan ta kontroll",
     "lock_login_hint": "Bare administratorer kan bli med",
+    "lock_file_transfer_hint": "Bare administratorer kan overføre filer",
     "broadcast_hint": "RTMP, f.eks. YouTube",
     "broadcast_start": "Start",
     "broadcast_stop": "Stopp",
@@ -130,5 +136,8 @@
     "copy": "Kopier til denne enheten og det eksterne skrivebordet",
     "copied": "Kopiert",
     "hint": "Når du kopierer en oppføring, oppdateres både enheten din og den eksterne utklippstavlen. Trykk Ctrl+V på det eksterne skrivebordet for å lime inn."
+  },
+  "chat": {
+    "today_at": "I dag kl. {{time}}"
   }
 }

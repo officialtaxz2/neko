@@ -13,6 +13,7 @@ import { EachHook } from '@/components/EachHook'
 import logo from '@/assets/images/logo.svg'
 
 const zero = () => 0
+const always = () => true
 const resources: LockResource[] = ['control', 'login']
 
 // a status chip: a pill with an icon and a text that narrow screens drop
@@ -35,9 +36,12 @@ export function Header() {
     })),
   )
   const side = useStore(app, (s) => s.side)
-  const items = useSlot('header.item')
+  // a plugin's room lock (file transfer) is a chip here and a switch in the settings, so its own
+  // header button is left out
+  const roomLocks = useSlot('room.lock')
+  const items = useSlot('header.item').filter((i) => !roomLocks.some((l) => l.replaces === i.id))
   const tabs = useSlot('side.tab')
-  const locks = resources.filter((r) => isLocked(r, settings))
+  const locks: string[] = resources.filter((r) => isLocked(r, settings))
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-2.5 pr-3 pl-4 max-[600px]:gap-1.5 max-[600px]:pr-2 max-[600px]:pl-2.5">
@@ -54,18 +58,22 @@ export function Header() {
         </span>
       </button>
       <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden" role="status">
-        {locks.map((r) => (
-          <span
-            key={r}
-            className={cn(chip, 'border-warn/40 bg-warn/[0.07] text-warn')}
-            title={t(`fork:chip.${r}`)}
-            data-testid={`lock-${r}`}
-            data-locked
-          >
-            <LockIcon className="size-3" aria-hidden />
-            <span className={chipText}>{t(`fork:chip.${r}`)}</span>
-          </span>
-        ))}
+        <EachHook items={roomLocks} use={(l) => l.useAvailable ?? always}>
+          {(available) =>
+            [...locks, ...roomLocks.filter((l, i) => available[i] && l.locked(settings)).map((l) => l.id)].map((r) => (
+              <span
+                key={r}
+                className={cn(chip, 'border-warn/40 bg-warn/[0.07] text-warn')}
+                title={t(`fork:chip.${r}`)}
+                data-testid={`lock-${r}`}
+                data-locked
+              >
+                <LockIcon className="size-3" aria-hidden />
+                <span className={chipText}>{t(`fork:chip.${r}`)}</span>
+              </span>
+            ))
+          }
+        </EachHook>
         {admin && (
           <span className={chip} title={t('admin_loggedin')} data-testid="admin-badge">
             <ShieldIcon className="size-3 text-admin" aria-hidden />

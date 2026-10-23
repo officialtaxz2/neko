@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Ovládanie uzamknuté",
-    "login": "Prihlásenie uzamknuté"
+    "login": "Prihlásenie uzamknuté",
+    "file_transfer": "Súbory zamknuté"
   },
   "room": {
-    "members": "Členovia"
+    "members": "Členovia",
+    "host": "Hostiteľ",
+    "muted": "Stlmený",
+    "ignored": "Ignorovaný"
   },
   "setting": {
     "language": "Jazyk"
@@ -97,6 +101,7 @@
     "more": "Viac",
     "tools": "Ďalšie nástroje",
     "fullscreen": "Celá obrazovka",
+    "exit_fullscreen": "Ukončiť celú obrazovku",
     "resolution": "Rozlíšenie obrazovky",
     "pip": "Obraz v obraze",
     "clipboard": "Schránka",
@@ -115,6 +120,7 @@
     "account": "Účet",
     "lock_control_hint": "Ovládať môžu len admini",
     "lock_login_hint": "Pripojiť sa môžu len admini",
+    "lock_file_transfer_hint": "Súbory môžu prenášať iba administrátori",
     "broadcast_hint": "RTMP, napr. YouTube",
     "broadcast_start": "Spustiť",
     "broadcast_stop": "Zastaviť",
@@ -130,5 +136,8 @@
     "copy": "Kopírovať do tohto zariadenia a na vzdialenú plochu",
     "copied": "Skopírované",
     "hint": "Skopírovanie položky aktualizuje tvoje zariadenie aj vzdialenú schránku. Na vzdialenej ploche vlož pomocou Ctrl+V."
+  },
+  "chat": {
+    "today_at": "Dnes o {{time}}"
   }
 }

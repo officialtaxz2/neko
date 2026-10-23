@@ -2,6 +2,7 @@
   "logout": "odhlásiť sa",
   "unsupported": "tento prehliadač nepodporuje webrtc",
   "admin_loggedin": "Ste prihlásení/á ako administrátor",
+  "you": "Vy",
   "somebody": "Niekto",
   "side": {
     "settings": "Nastavenia"
@@ -35,7 +36,10 @@
     "lock": "Zamknúť ovládanie",
     "unlock": "Odomknúť ovládanie",
     "has": "Máte ovládanie",
-    "hasnot": "Nemáte ovládanie"
+    "hasnot": "Nemáte ovládanie",
+    "mic_on": "Zapnúť mikrofón",
+    "mic_off": "Vypnúť mikrofón",
+    "mic_error": "Chyba mikrofónu"
   },
   "locks": {
     "control": {
@@ -61,6 +65,7 @@
     "autoplay": "Automatické prehrávanie videa",
     "ignore_emotes": "Ignorovať smajlíky",
     "chat_sound": "Prehrávať zvuky chatu",
+    "links_in_app": "Vždy otvárať odkazy v aplikácii",
     "keyboard_layout": "Rozloženie klávesnice",
     "broadcast_title": "Živé vysielanie"
   },
@@ -69,6 +74,7 @@
     "connected": "Úspešne pripojený/á",
     "disconnected": "Boli ste odpojený/á",
     "kicked": "Boli ste odstránený/á z tejto miestnosti.",
+    "replaced": "Táto relácia bola otvorená na inej karte alebo v inom okne",
     "button_confirm": "Ok"
   },
   "notifications": {

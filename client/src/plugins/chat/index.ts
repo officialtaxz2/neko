@@ -10,6 +10,15 @@ import { Chat } from './Chat'
 import { chat as store, push } from './store'
 import { mute, mutedByMe } from './actions'
 
+// the fork: the optional sound never breaks the message handling (old TV browsers have no Audio or a
+// play() without a promise), as the Vue client's playNotificationSound
+function ding() {
+  try {
+    const playing = new Audio('chat.mp3').play() as Promise<void> | undefined
+    playing?.catch?.(() => {})
+  } catch {}
+}
+
 export const chat: Plugin = {
   id: 'chat',
   ns: 'chat',
@@ -49,8 +58,7 @@ export const chat: Plugin = {
         created: new Date(payload.created),
       })
       store(neko).setState((s) => ({ texts: s.texts + 1 }))
-      if (app.getState().settings.chat_sound && payload.id !== client.state.session_id)
-        new Audio('chat.mp3').play().catch(() => {})
+      if (app.getState().settings.chat_sound && payload.id !== client.state.session_id) ding()
     }
   },
   init(neko) {

@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "控制已锁定",
-    "login": "登录已锁定"
+    "login": "登录已锁定",
+    "file_transfer": "文件已锁定"
   },
   "room": {
-    "members": "成员"
+    "members": "成员",
+    "host": "主持人",
+    "muted": "已静音",
+    "ignored": "已忽略"
   },
   "setting": {
     "language": "语言"
@@ -97,6 +101,7 @@
     "more": "更多",
     "tools": "更多工具",
     "fullscreen": "全屏",
+    "exit_fullscreen": "退出全屏",
     "resolution": "屏幕分辨率",
     "pip": "画中画",
     "clipboard": "剪贴板",
@@ -115,6 +120,7 @@
     "account": "账户",
     "lock_control_hint": "只有管理员可以控制",
     "lock_login_hint": "只有管理员可以加入",
+    "lock_file_transfer_hint": "只有管理员可以传输文件",
     "broadcast_hint": "RTMP，例如 YouTube",
     "broadcast_start": "开始",
     "broadcast_stop": "停止",
@@ -130,5 +136,8 @@
     "copy": "复制到此设备和远程桌面",
     "copied": "已复制",
     "hint": "复制一条记录会同时更新你的设备和远程剪贴板。在远程桌面中按 Ctrl+V 粘贴。"
+  },
+  "chat": {
+    "today_at": "今天 {{time}}"
   }
 }

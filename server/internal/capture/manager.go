@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -293,7 +294,7 @@ func pointerInVideo(pipelines map[string]types.VideoConfig, ids []string) bool {
 			return false
 		}
 		if pipeline.GstPipeline != "" {
-			if !strings.Contains(pipeline.GstPipeline, "show-pointer=true") {
+			if !gstPipelineShowsPointer(pipeline.GstPipeline) {
 				return false
 			}
 		} else if !pipeline.ShowPointer {
@@ -301,4 +302,25 @@ func pointerInVideo(pipelines map[string]types.VideoConfig, ids []string) bool {
 		}
 	}
 	return true
+}
+
+var showPointerProperty = regexp.MustCompile(`(?i)\bshow-pointer\s*=\s*"?([a-z0-9]+)`)
+
+// gstPipelineShowsPointer reads a full gst pipeline the way GStreamer does: an
+// ximagesrc draws the pointer unless its show-pointer property says otherwise
+// (the property defaults to true); a pipeline without ximagesrc draws none.
+func gstPipelineShowsPointer(pipeline string) bool {
+	if !strings.Contains(pipeline, "ximagesrc") {
+		return false
+	}
+	match := showPointerProperty.FindStringSubmatch(pipeline)
+	if match == nil {
+		return true
+	}
+	switch strings.ToLower(match[1]) {
+	case "false", "no", "0", "f", "n":
+		return false
+	default:
+		return true
+	}
 }

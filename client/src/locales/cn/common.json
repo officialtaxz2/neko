@@ -36,7 +36,10 @@
     "lock": "锁定控制",
     "unlock": "解锁控制",
     "has": "你拥有控制权",
-    "hasnot": "你没有控制权"
+    "hasnot": "你没有控制权",
+    "mic_on": "开启麦克风",
+    "mic_off": "关闭麦克风",
+    "mic_error": "麦克风错误"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "自动播放视频",
     "ignore_emotes": "忽略表情符号",
     "chat_sound": "播放聊天提示音",
+    "links_in_app": "始终在应用内打开链接",
     "keyboard_layout": "键盘布局",
     "broadcast_title": "直播流"
   },
@@ -70,6 +74,7 @@
     "connected": "已连接",
     "disconnected": "已断开",
     "kicked": "你已被踢出",
+    "replaced": "此会话已在另一个标签页或窗口中打开",
     "button_confirm": "确定"
   },
   "notifications": {

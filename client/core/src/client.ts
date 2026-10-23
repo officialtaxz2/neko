@@ -166,12 +166,19 @@ export class NekoClient {
     return this.state.settings.implicit_hosting && !!this.session?.profile.can_host && !this.receiveOnly
   }
 
+  // the fork: the Vue client's heuristic (utils/touch.ts): a touch screen, a phone or tablet by its
+  // user agent (iPadOS too, which calls itself a Mac), a coarse pointer, or a window up to 1024px wide,
+  // so an iPad with a keyboard and trackpad keeps the touch controls
   get isTouchDevice() {
     if (this.inputMode && this.inputMode !== 'auto') return this.inputMode === 'touch'
+    const ua = navigator.userAgent || ''
     return (
-      ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
-      !matchMedia('(pointer:fine)').matches &&
-      !matchMedia('(hover:hover)').matches
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0 ||
+      /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(ua) ||
+      matchMedia('(pointer: coarse)').matches ||
+      matchMedia('(any-pointer: coarse)').matches ||
+      window.innerWidth <= 1024
     )
   }
 

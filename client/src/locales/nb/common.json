@@ -36,7 +36,10 @@
     "lock": "Lås kontrollen",
     "unlock": "Lås opp kontrollen",
     "has": "Du har kontrollen",
-    "hasnot": "Du har ikke kontrollen"
+    "hasnot": "Du har ikke kontrollen",
+    "mic_on": "Slå på mikrofon",
+    "mic_off": "Slå av mikrofon",
+    "mic_error": "Mikrofonfeil"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "Spill video automatisk",
     "ignore_emotes": "Ignorer smilefjes",
     "chat_sound": "Sludringslyd",
+    "links_in_app": "Åpne alltid lenker i appen",
     "keyboard_layout": "Tastaturoppsett",
     "broadcast_title": "Direktesending"
   },
@@ -70,6 +74,7 @@
     "connected": "Tilkoblet",
     "disconnected": "Frakoblet",
     "kicked": "Du har blitt fjernet fra dette rommet.",
+    "replaced": "Denne økten ble åpnet i en annen fane eller et annet vindu",
     "button_confirm": "OK"
   },
   "notifications": {

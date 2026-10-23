@@ -1,11 +1,11 @@
 import type { ComponentType } from 'react'
 import type { Icon } from '@phosphor-icons/react'
-import type { Session } from '@m1k1o/neko'
+import type { Session, Settings } from '@m1k1o/neko'
 import type { NekoApp } from '@/state/app'
 
 // What a plugin can contribute to the GUI. The registry (index.ts) wires it in: its tab, header
-// items and member-menu entries go into the slots the layout renders (`side.tab`, `header.item`,
-// `member.menu`), server events starting with `${id}/` reach onEvent, and its strings are the
+// items, member-menu entries and room locks go into the slots the layout renders (`side.tab`,
+// `header.item`, `member.menu`, `room.lock`), server events starting with `${id}/` reach onEvent, and its strings are the
 // namespace `ns`. Adding a plugin is a folder and one line in the registry.
 //
 // The instance (`NekoApp`: the client, the GUI store, the bus) comes first to every callback;
@@ -19,6 +19,7 @@ export interface Plugin {
   tab?: PluginTab
   topBar?: PluginTopBarItem[]
   memberMenu?: PluginMemberMenuItem[]
+  roomLocks?: PluginRoomLock[]
   // its server events, typed by PluginEvents; the rest parameter narrows the payload on the event:
   // `onEvent(neko, ...[event, payload]) { if (event === 'chat/init') store.setState({ enabled: payload.enabled }) }`
   onEvent?: (neko: NekoApp, ...args: PluginEventArgs) => void
@@ -49,6 +50,7 @@ export interface Slots {
   'side.tab': PluginTab
   'header.item': PluginTopBarItem
   'member.menu': PluginMemberMenuItem
+  'room.lock': PluginRoomLock
 }
 
 // `useVisible` and `useBadge` are hooks (they select from the plugin's store with useStore), so
@@ -80,4 +82,19 @@ export interface PluginMemberMenuItem {
   useVisible?: (member: Session) => boolean
   label: (neko: NekoApp, member: Session) => string
   onClick: (neko: NekoApp, member: Session) => void
+}
+
+// the fork: a lock an admin sets for the room, which the fork's design shows as a switch in the
+// settings' Room section and, while it is on, a chip in the header (fork/settings, fork/layout/Header)
+export interface PluginRoomLock {
+  // also names its strings in the fork namespace: `fork:settings.lock_${id}_hint`, `fork:chip.${id}`
+  id: string
+  // the i18n key of its name
+  label: string
+  // the plugin's header item for the same lock, which the fork's header leaves out
+  replaces?: string
+  // a hook: whether the server offers what it locks; default: always
+  useAvailable?: () => boolean
+  locked: (settings: Settings) => boolean
+  toggle: (neko: NekoApp) => void
 }

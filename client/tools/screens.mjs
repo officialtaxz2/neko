@@ -68,7 +68,7 @@ const member = (id, name, over) => ({
 })
 
 // the room: Matze (admin, this session) with three others
-function room({ host = 's3', admin = true, lockedControls = false, viewOnly = false } = {}) {
+function room({ host = 's3', admin = true, lockedControls = false, lockedFiles = false, viewOnly = false } = {}) {
   return {
     session_id: 's1',
     sessions: {
@@ -87,6 +87,7 @@ function room({ host = 's3', admin = true, lockedControls = false, viewOnly = fa
       implicit_hosting: false,
       inactive_cursors: false,
       merciful_reconnect: true,
+      plugins: { 'filetransfer.enabled': !lockedFiles },
     },
     screen_size: { width: 1920, height: 1080, rate: 30 },
     control_host: host ? { has_host: true, host_id: host } : { has_host: false },
@@ -225,6 +226,20 @@ function fakeBrowser(token) {
 }
 // a browser without WebRTC (an old TV)
 const noWebRTC = () => delete window.RTCPeerConnection
+// an iPhone's Safari: no element fullscreen, so the picture fills the page instead (state/stage.ts)
+const noFullscreen = () => {
+  delete Element.prototype.requestFullscreen
+  delete Element.prototype.webkitRequestFullscreen
+}
+// the shared folder of a server with file transfer on
+const files = {
+  enabled: true,
+  root_dir: '/home/neko/Downloads',
+  user_download: true,
+  user_upload: true,
+  user_delete: false,
+  files: [{ name: 'notizen.txt', type: 'file', size: 2048 }],
+}
 
 async function shot(
   name,
@@ -241,6 +256,7 @@ async function shot(
     after,
     hls,
     webrtc = true,
+    fullscreen = true,
     stored = {},
   },
 ) {
@@ -255,6 +271,7 @@ async function shot(
   })
   await ctx.addInitScript(fakeBrowser, token)
   if (!webrtc) await ctx.addInitScript(noWebRTC)
+  if (!fullscreen) await ctx.addInitScript(noFullscreen)
   await ctx.addInitScript(
     ([side, tab, viewer, stored]) => {
       // the stored settings as src/state/storage.ts writes them
@@ -291,6 +308,7 @@ async function shot(
       if (event === 'signal/request')
         send('signal/provide', { sdp: 'v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\n', iceservers: [] })
       if (event === 'media/hls/capabilities/request') send('media/hls/capabilities', capabilities)
+      if (event === 'filetransfer/update') send('filetransfer/update', files)
       if (event === 'media/hls/create')
         send('media/hls/offer', {
           version: 1,
@@ -423,6 +441,35 @@ await shot('logout-confirm', {
   after: async (page) => {
     await page.getByTestId('logout').click()
     await page.waitForTimeout(300)
+  },
+})
+// the file-transfer lock: a switch in the room settings, a chip in the header while it is on
+await shot('desktop-settings-files', {
+  ...desktop,
+  side: true,
+  tab: 'settings',
+  state: { host: 's1', lockedFiles: true },
+  after: (page) => page.getByTestId('lock-switch-file_transfer').scrollIntoViewIfNeeded(),
+})
+// the Members tab: everyone with their roles, a member's menu from a tap (the phone has no room bar)
+await shot('desktop-members', { ...desktop, side: true, tab: 'members', state: { host: 's3' } })
+await shot('phone-members', { ...phone, side: true, tab: 'members', state: { host: 's3' } })
+await shot('phone-members-menu', {
+  ...phone,
+  side: true,
+  tab: 'members',
+  state: { host: 's3' },
+  after: (page) => page.getByTestId('member-row').nth(2).click(),
+})
+// the host's iPhone: no element fullscreen, the picture fills the page with its exit button
+await shot('phone-fullscreen-fallback', {
+  ...phone,
+  side: false,
+  fullscreen: false,
+  state: { host: 's1' },
+  after: async (page) => {
+    await page.getByTestId('dock-more').click()
+    await page.getByTestId('tool-fullscreen').click()
   },
 })
 await shot('share-hls', { ...phone, ...share, hash: '?media=ll-hls#/ShareToken-12345', viewer: 'Gast', hls: 'fail' })

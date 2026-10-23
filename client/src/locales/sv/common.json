@@ -36,7 +36,10 @@
     "lock": "Lås kontrollen",
     "unlock": "Lås upp kontrollen",
     "has": "Du har kontrollen",
-    "hasnot": "Du har inte kontrollen"
+    "hasnot": "Du har inte kontrollen",
+    "mic_on": "Slå på mikrofon",
+    "mic_off": "Stäng av mikrofon",
+    "mic_error": "Mikrofonfel"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "Automatisk uppspelning av video",
     "ignore_emotes": "Ignorera emojis",
     "chat_sound": "Spela chattljud",
+    "links_in_app": "Öppna alltid länkar i appen",
     "keyboard_layout": "Tangentbordslayout",
     "broadcast_title": "Livesändning"
   },
@@ -70,6 +74,7 @@
     "connected": "Ansluten",
     "disconnected": "Frånkopplad",
     "kicked": "Du har blivit borttagen från detta rum.",
+    "replaced": "Den här sessionen öppnades i en annan flik eller ett annat fönster",
     "button_confirm": "OK"
   },
   "notifications": {

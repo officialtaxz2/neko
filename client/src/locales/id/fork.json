@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Kontrol dikunci",
-    "login": "Login dikunci"
+    "login": "Login dikunci",
+    "file_transfer": "File dikunci"
   },
   "room": {
-    "members": "Anggota"
+    "members": "Anggota",
+    "host": "Host",
+    "muted": "Dibisukan",
+    "ignored": "Diabaikan"
   },
   "setting": {
     "language": "Bahasa"
@@ -97,6 +101,7 @@
     "more": "Lainnya",
     "tools": "Alat lainnya",
     "fullscreen": "Layar penuh",
+    "exit_fullscreen": "Keluar dari layar penuh",
     "resolution": "Resolusi layar",
     "pip": "Gambar dalam gambar",
     "clipboard": "Papan klip",
@@ -115,6 +120,7 @@
     "account": "Akun",
     "lock_control_hint": "Hanya admin yang dapat mengambil kendali",
     "lock_login_hint": "Hanya admin yang dapat bergabung",
+    "lock_file_transfer_hint": "Hanya admin yang dapat mentransfer file",
     "broadcast_hint": "RTMP, mis. YouTube",
     "broadcast_start": "Mulai",
     "broadcast_stop": "Hentikan",
@@ -130,5 +136,8 @@
     "copy": "Salin ke perangkat ini dan desktop jarak jauh",
     "copied": "Disalin",
     "hint": "Menyalin entri memperbarui perangkat Anda dan papan klip jarak jauh. Tekan Ctrl+V di desktop jarak jauh untuk menempel."
+  },
+  "chat": {
+    "today_at": "Hari ini pukul {{time}}"
   }
 }

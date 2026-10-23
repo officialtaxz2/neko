@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Sterowanie zablokowane",
-    "login": "Logowanie zablokowane"
+    "login": "Logowanie zablokowane",
+    "file_transfer": "Pliki zablokowane"
   },
   "room": {
-    "members": "Członkowie"
+    "members": "Członkowie",
+    "host": "Gospodarz",
+    "muted": "Wyciszony",
+    "ignored": "Ignorowany"
   },
   "setting": {
     "language": "Język"
@@ -97,6 +101,7 @@
     "more": "Więcej",
     "tools": "Więcej narzędzi",
     "fullscreen": "Pełny ekran",
+    "exit_fullscreen": "Zamknij pełny ekran",
     "resolution": "Rozdzielczość ekranu",
     "pip": "Obraz w obrazie",
     "clipboard": "Schowek",
@@ -115,6 +120,7 @@
     "account": "Konto",
     "lock_control_hint": "Tylko administratorzy mogą sterować",
     "lock_login_hint": "Tylko administratorzy mogą dołączyć",
+    "lock_file_transfer_hint": "Tylko administratorzy mogą przesyłać pliki",
     "broadcast_hint": "RTMP, np. YouTube",
     "broadcast_start": "Uruchom",
     "broadcast_stop": "Zatrzymaj",
@@ -130,5 +136,8 @@
     "copy": "Kopiuj na to urządzenie i zdalny pulpit",
     "copied": "Skopiowano",
     "hint": "Skopiowanie wpisu aktualizuje Twoje urządzenie i zdalny schowek. Na zdalnym pulpicie wklej skrótem Ctrl+V."
+  },
+  "chat": {
+    "today_at": "Dzisiaj o {{time}}"
   }
 }

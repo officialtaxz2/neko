@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { selectControlling, selectIsAdmin, selectSession } from '@m1k1o/neko'
 import { useTranslation } from 'react-i18next'
 import {
+  ArrowsInIcon,
   ArrowsOutIcon,
   ClipboardIcon,
   KeyboardIcon,
@@ -32,7 +33,8 @@ import { useFullscreen } from './useFullscreen'
 import { useClipboardSync, canReadClipboard } from './useClipboardSync'
 import { usePip } from './usePip'
 
-// the play / unmute button covering the video
+// the play / unmute button covering the video (the fork: every button here named in the viewer's
+// language)
 const overlayClasses =
   'absolute inset-0 flex cursor-pointer items-center justify-center overflow-hidden rounded-none bg-black/20'
 
@@ -56,7 +58,8 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
   const emotes = useStore(app, (s) => s.emotes)
   const keyboardHelper = useStore(app, (s) => s.keyboardHelper)
   const player = useRef<HTMLDivElement>(null)
-  const { fullscreen, request: requestFullscreen } = useFullscreen(player)
+  // the fork: the prefixed API and the page-filling fallback too (state/stage.ts)
+  const { fullscreen, fallback, request: requestFullscreen, exit: exitFallback } = useFullscreen()
   // the fork: the room bar and the More menu take this element to fullscreen (state/stage.ts)
   const neko = useNeko()
   useEffect(() => {
@@ -75,7 +78,11 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
 
   return (
     <div className="relative h-full w-full">
-      <div ref={player} className="absolute inset-0 flex items-center justify-center bg-black">
+      <div
+        ref={player}
+        className={cn('absolute inset-0 flex items-center justify-center bg-black', fallback && 'fixed z-[1000]')}
+        data-fallback-fullscreen={fallback || undefined}
+      >
         <div className="absolute inset-0" data-testid="player" onMouseEnter={syncClipboard}>
           <Player transport={client.transport} />
           {/* the fork: the trackpad's pointer, the special keys' bar (features/input) */}
@@ -88,7 +95,7 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
           </div>
           {!playing && playable ? (
             <IconButton
-              label="Play"
+              label={t('fork:dock.play')}
               className={overlayClasses}
               data-testid="player-overlay"
               onClick={() => (client.unmute(), client.play().catch(() => {}))}
@@ -101,7 +108,7 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
             muted &&
             mutedByAutoplay && (
               <IconButton
-                label="Unmute"
+                label={t('fork:dock.unmute')}
                 className={overlayClasses}
                 data-testid="player-overlay"
                 onClick={() => client.unmute()}
@@ -111,12 +118,24 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
             )
           )}
         </div>
+        {/* the fork: the page-filling fullscreen has no Esc of the browser's, so it has its own exit */}
+        {fallback && (
+          <IconButton
+            variant="video"
+            label={t('fork:controls.exit_fullscreen')}
+            className="absolute top-[max(15px,env(safe-area-inset-top))] right-5 z-10"
+            data-testid="fullscreen-exit"
+            onClick={exitFallback}
+          >
+            <ArrowsInIcon className="size-4" />
+          </IconButton>
+        )}
         {/* the fork: the buttons on the picture only without the room bar (embed); otherwise
             they are in the bar and its More menu */}
         {!fullscreen && !hideControls && extraControls && (
           <ul className="absolute top-[15px] right-5">
             <li className="mb-2.5 last:mb-0">
-              <IconButton variant="video" label="Fullscreen" onClick={requestFullscreen}>
+              <IconButton variant="video" label={t('fork:controls.fullscreen')} onClick={requestFullscreen}>
                 <ArrowsOutIcon className="size-4" />
               </IconButton>
             </li>
@@ -125,7 +144,7 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
               <li className="mb-2.5 last:mb-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <IconButton variant="video" label="Screen resolution" data-testid="resolution-open">
+                    <IconButton variant="video" label={t('fork:controls.resolution')} data-testid="resolution-open">
                       <MonitorIcon className="size-4" />
                     </IconButton>
                   </DropdownMenuTrigger>
@@ -160,7 +179,7 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
                     which would close the popover and send its Ctrl+C to the remote */}
                 <Popover modal>
                   <PopoverTrigger asChild>
-                    <IconButton variant="video" label="Clipboard" data-testid="clipboard-open">
+                    <IconButton variant="video" label={t('fork:controls.clipboard')} data-testid="clipboard-open">
                       <ClipboardIcon className="size-4" />
                     </IconButton>
                   </PopoverTrigger>
@@ -170,7 +189,7 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
             )}
             {pip.canPip && (
               <li className="mb-2.5 last:mb-0">
-                <IconButton variant="video" label="Picture-in-Picture" onClick={pip.request}>
+                <IconButton variant="video" label={t('fork:controls.pip')} onClick={pip.request}>
                   <PictureInPictureIcon className="size-4" />
                 </IconButton>
               </li>
@@ -193,7 +212,7 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
               <li className={cn('mb-2.5 last:mb-0', extra)}>
                 <IconButton
                   variant="video"
-                  label="Keyboard"
+                  label={t('fork:input.keyboard')}
                   data-testid="keyboard-toggle"
                   onMouseDown={(e) => e.preventDefault()} // tapping the button must not take the focus the keyboard needs
                   onClick={() => overlay.mobileKeyboardToggle()}

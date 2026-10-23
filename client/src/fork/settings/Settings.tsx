@@ -14,7 +14,10 @@ import { htmlLang, langs, setLang, type Lang } from '@/i18n'
 import { Switch } from '@/components/Switch'
 import { MediaSetting } from '@/features/media/MediaSetting'
 import { InputSetting } from '@/features/input/InputSetting'
+import { EachHook } from '@/components/EachHook'
+import { useSlot } from '@/plugins'
 
+const always = () => true
 // a row: the name (with a hint below it) on the left, the control on the right
 const row = 'flex min-h-12 items-center justify-between gap-4 border-t border-white/[0.04] py-1.5 first:border-t-0'
 const label =
@@ -62,7 +65,8 @@ function Select({ children, ...props }: React.ComponentProps<'select'>) {
 }
 
 // The settings of the fork's design, in groups as the Vue client had them: Stream, Input, Chat,
-// Room (admins: the locks and the live broadcast) and Account (language, logging out after asking).
+// Room (admins: the locks of control, login and file transfer, and the live broadcast) and Account
+// (language, logging out after asking).
 // The rows are upstream's settings (features/settings/Settings.tsx, which stays as it is).
 export function Settings() {
   const { t, i18n } = useTranslation()
@@ -85,6 +89,9 @@ export function Settings() {
   )
   const admin = useStore(client.store, selectIsAdmin)
   const roomSettings = useStore(client.store, (st) => st.settings)
+  // a plugin's lock (file transfer) has its switch here once the server offers what it locks, as in
+  // the Vue client (its own header button is not shown, fork/layout/Header.tsx)
+  const roomLocks = useSlot('room.lock')
   const [url, setUrl] = useState(broadcast.url)
   useEffect(() => setUrl(broadcast.url), [broadcast.url])
 
@@ -97,20 +104,17 @@ export function Settings() {
       <Switch label={name} checked={s[key]} onChange={(e) => setSetting(neko, key, e.target.checked)} />
     </li>
   )
-  const lock = (r: LockResource) => (
-    <li className={row}>
+  const lock = (r: string, name: string, checked: boolean, toggle: () => void) => (
+    <li className={row} key={r}>
       <span className={label}>
-        {t(`locks.${r}.locked`)}
+        {name}
         <small>{t(`fork:settings.lock_${r}_hint`)}</small>
       </span>
-      <Switch
-        label={t(`locks.${r}.locked`)}
-        data-testid={`lock-switch-${r}`}
-        checked={isLocked(r, roomSettings)}
-        onChange={() => actions.toggleLock(r)}
-      />
+      <Switch label={name} data-testid={`lock-switch-${r}`} checked={checked} onChange={toggle} />
     </li>
   )
+  const roomLock = (r: LockResource) =>
+    lock(r, t(`locks.${r}.locked`), isLocked(r, roomSettings), () => actions.toggleLock(r))
   const logout = async () => {
     if (await ask(app, t('fork:settings.logout_title'), t('fork:settings.logout_text'), t('logout'))) actions.logout()
   }
@@ -164,8 +168,15 @@ export function Settings() {
 
       {admin && (
         <Section title={t('fork:settings.room')} badge={t('fork:header.admin')}>
-          {lock('control')}
-          {lock('login')}
+          {roomLock('control')}
+          {roomLock('login')}
+          <EachHook items={roomLocks} use={(l) => l.useAvailable ?? always}>
+            {(available) =>
+              roomLocks.map(
+                (l, i) => available[i] && lock(l.id, t(l.label), l.locked(roomSettings), () => l.toggle(neko)),
+              )
+            }
+          </EachHook>
           <li className={cn(row, 'flex-col items-stretch gap-2 py-2.5')}>
             <div className="flex items-center justify-between gap-4">
               <span className={label}>

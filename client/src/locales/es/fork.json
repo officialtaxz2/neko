@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Control bloqueado",
-    "login": "Acceso bloqueado"
+    "login": "Acceso bloqueado",
+    "file_transfer": "Archivos bloqueados"
   },
   "room": {
-    "members": "Miembros"
+    "members": "Miembros",
+    "host": "Anfitrión",
+    "muted": "Silenciado",
+    "ignored": "Ignorado"
   },
   "setting": {
     "language": "Idioma"
@@ -97,6 +101,7 @@
     "more": "Más",
     "tools": "Más herramientas",
     "fullscreen": "Pantalla completa",
+    "exit_fullscreen": "Salir de pantalla completa",
     "resolution": "Resolución de pantalla",
     "pip": "Imagen en imagen",
     "clipboard": "Portapapeles",
@@ -115,6 +120,7 @@
     "account": "Cuenta",
     "lock_control_hint": "Solo los administradores pueden tomar el control",
     "lock_login_hint": "Solo los administradores pueden entrar",
+    "lock_file_transfer_hint": "Solo los administradores pueden transferir archivos",
     "broadcast_hint": "RTMP, p. ej. YouTube",
     "broadcast_start": "Iniciar",
     "broadcast_stop": "Detener",
@@ -130,5 +136,8 @@
     "copy": "Copiar a este dispositivo y al escritorio remoto",
     "copied": "Copiado",
     "hint": "Copiar una entrada actualiza tu dispositivo y el portapapeles remoto. Pulsa Ctrl+V en el escritorio remoto para pegar."
+  },
+  "chat": {
+    "today_at": "Hoy a las {{time}}"
   }
 }

@@ -7,7 +7,12 @@ import { filetransfer } from './filetransfer'
 export const plugins: Plugin[] = [chat, filetransfer]
 
 // what the plugins put into each place of the GUI, in registry order; filled once by initPlugins
-const slots: { [K in keyof Slots]: Slots[K][] } = { 'side.tab': [], 'header.item': [], 'member.menu': [] }
+const slots: { [K in keyof Slots]: Slots[K][] } = {
+  'side.tab': [],
+  'header.item': [],
+  'member.menu': [],
+  'room.lock': [],
+}
 let filled = false
 export function registerSlot<K extends keyof Slots>(name: K, item: Slots[K]) {
   slots[name].push(item)
@@ -26,6 +31,7 @@ export function initPlugins(neko: NekoApp) {
       if (p.tab) registerSlot('side.tab', p.tab)
       for (const item of p.topBar ?? []) registerSlot('header.item', item)
       for (const item of p.memberMenu ?? []) registerSlot('member.menu', item)
+      for (const lock of p.roomLocks ?? []) registerSlot('room.lock', lock)
     }
   }
   // `chat/message` goes to the plugin with id `chat`: one lookup per message, the map built here once

@@ -36,7 +36,10 @@
     "lock": "Vérouiller le contrôle",
     "unlock": "Débloquer le contrôle",
     "has": "Vous avez le contrôle",
-    "hasnot": "Vous n'avez pas le contrôle"
+    "hasnot": "Vous n'avez pas le contrôle",
+    "mic_on": "Activer le micro",
+    "mic_off": "Désactiver le micro",
+    "mic_error": "Erreur du micro"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "Lecture automatique de la vidéo",
     "ignore_emotes": "Ignorer les émoticônes",
     "chat_sound": "Son du chat",
+    "links_in_app": "Toujours ouvrir les liens dans l'application",
     "keyboard_layout": "Disposition du clavier",
     "broadcast_title": "Diffusion en direct"
   },
@@ -70,6 +74,7 @@
     "connected": "Connecté",
     "disconnected": "Déconnecté",
     "kicked": "Vous avez été expulsé de cette salle.",
+    "replaced": "Cette session a été ouverte dans un autre onglet ou une autre fenêtre",
     "button_confirm": "OK"
   },
   "notifications": {

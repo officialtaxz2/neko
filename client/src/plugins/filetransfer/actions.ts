@@ -13,6 +13,11 @@ export const locked = (settings: Settings) => settings.plugins?.['filetransfer.e
 export const toggleLock = (neko: NekoApp) =>
   api(neko, 'POST', '/room/settings', { plugins: { 'filetransfer.enabled': locked(neko.client.state.settings) } })
 
+// whether the server has file transfer on
+export function useEnabled() {
+  return useStore(store(useNeko()), (s) => !!s.files?.enabled)
+}
+
 // whether this viewer gets the Files tab
 export function useAllowed() {
   const neko = useNeko()

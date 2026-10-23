@@ -24,7 +24,7 @@
     "give": "Steuerung geben",
     "kick": "Rauswerfen",
     "confirm": {
-      "kick_title": "Kick {{name}}?",
+      "kick_title": "{{name}} entfernen?",
       "kick_text": "Bist du sicher das du {{name}} rauswerfen willst?",
       "button_yes": "Ja",
       "button_cancel": "Abbrechen"
@@ -36,7 +36,10 @@
     "lock": "Steuerung sperren",
     "unlock": "Steuerung entsperren",
     "has": "Du hast die Kontrolle",
-    "hasnot": "Du hast keine Kontrolle"
+    "hasnot": "Du hast keine Kontrolle",
+    "mic_on": "Mikrofon einschalten",
+    "mic_off": "Mikrofon ausschalten",
+    "mic_error": "Mikrofonfehler"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "Video automatisch abspielen",
     "ignore_emotes": "Emotes ignorieren",
     "chat_sound": "Chat-Sound abspielen",
+    "links_in_app": "Links immer in der App öffnen",
     "keyboard_layout": "Tastaturbelegung",
     "broadcast_title": "Live-Übertragung"
   },
@@ -70,6 +74,7 @@
     "connected": "Verbunden",
     "disconnected": "Getrennt",
     "kicked": "Du wurdest aus diesem Raum entfernt.",
+    "replaced": "Diese Sitzung wurde in einem anderen Tab oder Fenster geöffnet",
     "button_confirm": "OK"
   },
   "notifications": {
