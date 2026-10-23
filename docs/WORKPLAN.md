@@ -4,6 +4,8 @@ Current assessment and NEXT consolidated: 2026-10-10.
 
 ## NEXT
 
+**React client migration (2026-10-23):** the operator decided to move to the upstream React client (v3 API, `/api/ws`) with feature parity before switching `master`. Phase 0 merges upstream `92f9916`, removes the Vue client and the legacy `/ws` bridge and keeps all v3-native server work. Next phases: 1 stability (`signal/request` with `video.auto`, optional overlay pointer, STUN fallback, recovery, playback watchdog, settings keys), 1b design scaffold, 2 view-only share links, 3 HLS transport (also re-targets `hls_browser_test` and `deploy/trace-*.js`, which still point at the removed Vue player), 4 mobile input, 5 UI, 6 switch. Until phase 3 the `hlsbrowser` integration test has no player to drive.
+
 **WebCodecs removed (2026-10-14):** the operator decided to delete the
 WebCodecs/media-WebSocket prototype and to continue with WebRTC plus
 HLS/LL-HLS (adaptive quality for both). Deleted: `server/internal/mediaws`,

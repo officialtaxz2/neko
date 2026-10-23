@@ -54,16 +54,9 @@ func (session *SessionCtx) profileChanged() {
 	}
 
 	if (!session.profile.CanConnect || !session.profile.CanLogin || !session.profile.CanWatch) && session.State().IsWatching {
-		// TODO: Needed for legacy implementation. Websocket must die before webrtc and deliver signal close message
-		// otherwise webrtc destroy would trigger websocket reconnect. In case of kick event, webrtc destroy is called
-		// before websocket destroy that delivers the information about the kick.
-		time.AfterFunc(time.Second, func() {
-			// The delivery may have been removed if the user disconnected while
-			// waiting for the delayed teardown.
-			if delivery := session.GetMediaDelivery(); delivery != nil {
-				closeMediaDelivery(delivery, types.MediaDeliveryCloseRevoked)
-			}
-		})
+		if delivery := session.GetMediaDelivery(); delivery != nil {
+			closeMediaDelivery(delivery, types.MediaDeliveryCloseRevoked)
+		}
 	}
 
 	if (!session.profile.CanConnect || !session.profile.CanLogin) && session.State().IsConnected {
@@ -84,18 +77,6 @@ func (session *SessionCtx) State() types.SessionState {
 
 func (session *SessionCtx) IsHost() bool {
 	return session.manager.isHost(session)
-}
-
-// only needed for legacy webrtc handler
-func (session *SessionCtx) LegacyIsHost() bool {
-	settings := session.manager.Settings()
-	if !session.profile.IsInteractive() || !session.profile.CanHost || session.PrivateModeEnabled() {
-		return false
-	}
-	if settings.LockedControls && !session.profile.IsAdmin {
-		return false
-	}
-	return settings.ImplicitHosting || session.manager.isHost(session)
 }
 
 func (session *SessionCtx) SetAsHost() {

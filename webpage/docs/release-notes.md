@@ -1,15 +1,29 @@
 # Release Notes
 
-## master {#master}
+## [n.eko v3.2.0](https://github.com/m1k1o/neko/releases/tag/v3.2.0) {#v3.2.0}
 
-### Fixes {#master-fixes}
-- Fixed video timestamps running slow when the encoder falls behind: frames captured late or dropped before the encoder made the stream's clock lag real time, so browsers buffered up to seconds of video and lost lip sync. RTP timestamps now follow the time between captured frames ([#712](https://github.com/m1k1o/neko/pull/712)).
+### New Features {#v3.2.0-feats}
+- Replaced the Vue 2 web client with a React 19 and TypeScript client built with Vite. It keeps the familiar layout and workflows: login and invite links, OAuth, video controls, fullscreen and Picture-in-Picture, clipboard, control handoff, microphone, emotes, chat, file transfer, settings, broadcast, member actions, and all 15 translations and URL parameters ([#713](https://github.com/m1k1o/neko/pull/713)).
+- Added a framework-free TypeScript client core, `client/core` (`@m1k1o/neko`), with authentication, room state and events, a pluggable stream transport, WebRTC, typed input channels, and the keyboard/mouse/touch overlay. It can be used independently of the React GUI or embedded in another framework ([#713](https://github.com/m1k1o/neko/pull/713)).
+- The client detects silent websocket connections, reconnects with backoff, and requests a replacement media peer when WebRTC fails. The stream can continue through a signalling outage, and playback resumes after reconnection ([#713](https://github.com/m1k1o/neko/pull/713)).
+- Added binary WebRTC data-channel input with websocket control-event fallback for transports without their own input channel. The client also handles IME and on-screen keyboard text as key events; Ctrl+V uses whichever clipboard was changed most recently ([#713](https://github.com/m1k1o/neko/pull/713)).
+- Chat now renders CommonMark and GitHub Flavored Markdown, including tables, lists, and nested quotes. Links are limited to HTTP, HTTPS, and mailto; HTML and images are not rendered. The new renderer replaces the hand-written parser and keeps hostile or oversized messages from stalling the chat ([#713](https://github.com/m1k1o/neko/pull/713)).
 
-### Changes {#master-changes}
-- Generated video pipelines keep at most one raw frame queued, so a slow encoder drops frames instead of adding latency.
-- New metric `neko_capture_streamsink_frames`: video frames produced per pipeline; a rate below the configured fps means the encoder falls behind.
-- Session ids on the `multiuser` and `noauth` providers are built from a sanitised login name (the name itself is shown as typed); `POST /api/members` rejects usernames that would not be safe in a URL path.
-- Chat messages are limited to `chat.max_length` characters (default 512, the web client's input limit); longer ones are rejected over the API and dropped over the websocket.
+### Fixes {#v3.2.0-fixes}
+- Bound each OAuth authorization state to a short-lived, HttpOnly browser cookie, preventing a callback URL from creating a session in a browser that did not start the login. Concurrent login flows and explicit reverse-proxy redirects are supported ([#708](https://github.com/m1k1o/neko/pull/708)).
+- Fixed session and member IDs containing URL path characters. The `multiuser` and `noauth` providers now use sanitized IDs while preserving the display name; unsafe usernames submitted through `POST /api/members` are rejected ([#712](https://github.com/m1k1o/neko/pull/712)).
+- Fixed a server panic when video pipelines were configured without explicit video IDs, and when no video stream was available ([#711](https://github.com/m1k1o/neko/pull/711)).
+- Fixed slow WebRTC video timestamps under load, which could make browser buffers grow and audio/video drift. Generated pipelines also keep only the newest raw frame when an encoder falls behind, reducing input latency instead of accumulating stale frames ([#712](https://github.com/m1k1o/neko/pull/712)).
+- Fixed the client leaving a user at the disconnected screen when the server rejects a banned session, and hiding the microphone control when the browser does not support media capture ([#713](https://github.com/m1k1o/neko/pull/713)).
+- Internal websocket connections without an `Origin` header are now accepted, allowing trusted server-side websocket dials ([#710](https://github.com/m1k1o/neko/pull/710)).
+
+### Changes {#v3.2.0-changes}
+- The React client uses the v3 API only and works with `NEKO_LEGACY=false`. It no longer supports legacy v2-only behavior, including IP bans; kick removes the session, and the user may log in again ([#713](https://github.com/m1k1o/neko/pull/713)).
+- Added `chat.max_length` (default 512 characters; `0` disables the limit). Longer messages receive HTTP 400 through REST and are dropped over the websocket. Incoming websocket frames are limited to 1 MiB ([#712](https://github.com/m1k1o/neko/pull/712)).
+- Added the `neko_capture_streamsink_frames` metric to show when a video pipeline produces fewer frames than its configured frame rate ([#712](https://github.com/m1k1o/neko/pull/712)).
+- The default video pipeline no longer draws the mouse pointer into the stream; the client draws it without the stream delay. Set `capture.video.show_pointer` to `true` to restore the old behavior ([#713](https://github.com/m1k1o/neko/pull/713)).
+- Scroll sensitivity uses the v3 scale (-5 to 5), with the `?scroll` URL parameter mapped to it. File downloads are streamed instead of buffered in memory. The microphone turns off when the connection is re-established, and opening a second tab takes over the session ([#713](https://github.com/m1k1o/neko/pull/713)).
+- The client uses the system font stack instead of Whitney and renders emoji as native characters rather than a sprite sheet ([#713](https://github.com/m1k1o/neko/pull/713)).
 
 ## [n.eko v3.1.6](https://github.com/m1k1o/neko/releases/tag/v3.1.6) {#v3.1.6}
 

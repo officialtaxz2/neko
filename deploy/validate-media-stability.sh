@@ -111,8 +111,8 @@ git archive "$selected_commit" | tar -x -C "$output/source"
   # but do not repeat unchanged codec/fuzz fixtures or claim their fresh acceptance.
   if [[ "$validation_mode" != --hls-member-access ]]; then
     docker compose -f docker-compose.validation.yaml run --rm -T server-checks sh -ec '
-  go test ./pkg/utils ./pkg/drop ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediahls ./internal/member/multiuser ./internal/session ./internal/http ./internal/http/legacy ./internal/websocket ./internal/websocket/handler ./internal/webrtc
-  go test -race ./pkg/utils ./internal/config ./internal/capture ./internal/http/legacy ./internal/websocket ./internal/websocket/handler ./internal/webrtc
+  go test ./pkg/utils ./pkg/drop ./pkg/types ./pkg/auth ./internal/config ./internal/capture ./internal/media ./internal/mediahls ./internal/member/multiuser ./internal/session ./internal/http ./internal/websocket ./internal/websocket/handler ./internal/webrtc
+  go test -race ./pkg/utils ./internal/config ./internal/capture ./internal/websocket ./internal/websocket/handler ./internal/webrtc
   ./build
 ' </dev/null
   fi

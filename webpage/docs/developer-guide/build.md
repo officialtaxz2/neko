@@ -8,7 +8,7 @@ This page covers building the frontend and backend binaries from source, and bui
 
 ## Frontend
 
-**Requires:** [Node.js](https://nodejs.org/) 18+
+**Requires:** [Node.js](https://nodejs.org/) 24 LTS (22.18 or newer works: `npm run check` runs TypeScript files with Node itself)
 
 ```bash
 cd client
@@ -20,7 +20,7 @@ The production build is written to `client/dist/`.
 
 ## Backend
 
-**Requires:** [Go](https://golang.org/) 1.25+ and the following system libraries (Debian/Ubuntu):
+**Requires:** [Go](https://golang.org/) 1.26+ and the following system libraries (Debian/Ubuntu):
 
 ```bash
 apt-get install -y --no-install-recommends \
@@ -52,14 +52,14 @@ The repository uses a [Dockerfile template](https://github.com/m1k1o/neko/blob/m
 | Stage | Source | Description |
 |---|---|---|
 | `server` | `server/` | Go binary + plugins |
-| `client` | `client/` | Vue.js frontend |
+| `client` | `client/` | React frontend |
 | `runtime` | `runtime/` | Xorg, PulseAudio, GStreamer base |
 | `application` | `apps/<name>/` | The browser / desktop app |
 
 ### Requirements
 
-- [Go](https://golang.org/) 1.25+ (for the template pre-processor)
-- [Node.js](https://nodejs.org/) 18+ (for the frontend, unless you supply a pre-built `client/dist/`)
+- [Go](https://golang.org/) 1.26+ (for the template pre-processor)
+- [Node.js](https://nodejs.org/) 24 LTS (22.18 or newer; for the frontend, unless you supply a pre-built `client/dist/`)
 - [Docker](https://www.docker.com/) with BuildKit enabled
 
 ### Steps

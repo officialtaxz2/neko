@@ -19,7 +19,6 @@ import (
 	"github.com/pion/webrtc/v4"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 
 	"github.com/m1k1o/neko/server/internal/config"
 	"github.com/m1k1o/neko/server/internal/webrtc/cursor"
@@ -565,23 +564,6 @@ func (manager *WebRTCManagerCtx) openPeer(session types.Session, lease types.Med
 
 	connection.OnDataChannel(func(dc *webrtc.DataChannel) {
 		logger.Info().Interface("data_channel", dc).Msg("got remote data channel")
-
-		//
-		// old implementation created a new data channel on client side
-		// new implementation creates a new data channel on server side
-		//
-
-		if viper.GetBool("legacy") {
-			// handle legacy data channel
-			dc.OnMessage(func(message webrtc.DataChannelMessage) {
-				if err := manager.handleLegacy(logger, message.Data, session); err != nil {
-					logger.Err(err).Msg("data handle failed")
-				}
-			})
-
-			// handle legacy data channel
-			peer.dataChannel = dc
-		}
 	})
 
 	var once sync.Once
