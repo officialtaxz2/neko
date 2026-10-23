@@ -31,5 +31,29 @@
     "watch": "Katso",
     "connecting": "Yhdistetään",
     "invalid": "Linkki on virheellinen tai ei ole enää käytössä."
+  },
+  "media": {
+    "label": "Oletusmediapolku",
+    "webrtc_desc": "Pienin viive, tarvitaan ohjaamiseen",
+    "ll_hls_desc": "Katseluun, lyhyt viive",
+    "hls_desc": "Katseluun, vakain, pidempi viive",
+    "default": "Oletus",
+    "current": "Nykyinen",
+    "override": "URL-osoitteen diagnostiikkavalinta on käytössä ja ohittaa tallennetun valinnan.",
+    "invalid_override": "URL-osoitteen mediavalinta on virheellinen, joten tallennetun valinnan sijaan käytössä on turvallinen WebRTC-polku.",
+    "clear_override": "Käytä tallennettua valintaa",
+    "limitations": "Vain katseluun, puskurointiviiveellä. Vaihto WebRTC:hen tehdään käsin.",
+    "retry": "Yritä HLS:ää uudelleen",
+    "unavailable": "ei saatavilla",
+    "use_webrtc": "Käytä WebRTC:tä",
+    "status": {
+      "idle": "valmiina",
+      "negotiating": "neuvotellaan",
+      "connecting": "yhdistetään",
+      "streaming": "toistetaan",
+      "paused": "yksityistila",
+      "terminal": "epäonnistui"
+    },
+    "try_hls": "Katso HLS:llä"
   }
 }

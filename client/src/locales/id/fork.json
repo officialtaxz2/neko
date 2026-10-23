@@ -31,5 +31,29 @@
     "watch": "Tonton",
     "connecting": "Menghubungkan",
     "invalid": "Tautan tidak valid atau sudah tidak aktif."
+  },
+  "media": {
+    "label": "Jalur media bawaan",
+    "webrtc_desc": "Jeda terendah, diperlukan untuk mengendalikan",
+    "ll_hls_desc": "Untuk menonton, jeda singkat",
+    "hls_desc": "Untuk menonton, paling tangguh, jeda lebih lama",
+    "default": "Bawaan",
+    "current": "Saat ini",
+    "override": "Pilihan diagnostik dari URL aktif dan diutamakan di atas pilihan yang disimpan.",
+    "invalid_override": "Pilihan media di URL tidak valid, jadi jalur WebRTC yang aman dipakai alih-alih pilihan yang disimpan.",
+    "clear_override": "Pakai pilihan yang disimpan",
+    "limitations": "Hanya menonton, dengan jeda buffer. Beralih ke WebRTC dilakukan manual.",
+    "retry": "Coba HLS lagi",
+    "unavailable": "tidak tersedia",
+    "use_webrtc": "Pakai WebRTC",
+    "status": {
+      "idle": "siaga",
+      "negotiating": "bernegosiasi",
+      "connecting": "menghubungkan",
+      "streaming": "sedang tayang",
+      "paused": "mode privat",
+      "terminal": "gagal"
+    },
+    "try_hls": "Tonton dengan HLS saja"
   }
 }

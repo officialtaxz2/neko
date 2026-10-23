@@ -10,7 +10,7 @@ on:
     paths:
       - server/internal/mediahls/**
       - server/pkg/gst/**
-      - client/src/neko/hls/**
+      - client/core/src/transport/hls/**
       - client/tests/browser/**
       - client/package-lock.json
       - .github/workflows/hls_browser_test.yml
@@ -42,7 +42,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 24
           cache: npm
           cache-dependency-path: client/package-lock.json
 

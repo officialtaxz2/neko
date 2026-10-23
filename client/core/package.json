@@ -34,6 +34,7 @@
     "typescript": "~5.8.0"
   },
   "dependencies": {
+    "hls.js": "1.7.3",
     "zustand": "^5.0.15"
   }
 }

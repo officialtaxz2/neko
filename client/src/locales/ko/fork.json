@@ -31,5 +31,29 @@
     "watch": "시청하기",
     "connecting": "연결 중",
     "invalid": "링크가 잘못되었거나 더 이상 활성 상태가 아닙니다."
+  },
+  "media": {
+    "label": "기본 미디어 경로",
+    "webrtc_desc": "지연이 가장 적음, 제어에 필요",
+    "ll_hls_desc": "시청용, 짧은 지연",
+    "hls_desc": "시청용, 가장 안정적, 긴 지연",
+    "default": "기본값",
+    "current": "현재",
+    "override": "URL의 진단용 지정이 활성화되어 저장된 선택보다 우선합니다.",
+    "invalid_override": "URL의 미디어 지정이 올바르지 않아 저장된 선택 대신 안전한 WebRTC 경로를 사용합니다.",
+    "clear_override": "저장된 선택 사용",
+    "limitations": "시청 전용이며 버퍼링 지연이 있습니다. WebRTC로 전환은 직접 해야 합니다.",
+    "retry": "HLS 다시 시도",
+    "unavailable": "사용할 수 없음",
+    "use_webrtc": "WebRTC 사용",
+    "status": {
+      "idle": "대기",
+      "negotiating": "협상 중",
+      "connecting": "연결 중",
+      "streaming": "스트리밍 중",
+      "paused": "비공개 모드",
+      "terminal": "실패"
+    },
+    "try_hls": "대신 HLS로 시청"
   }
 }

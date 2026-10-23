@@ -31,5 +31,29 @@
     "watch": "Watch",
     "connecting": "Connecting",
     "invalid": "The link is invalid or no longer active."
+  },
+  "media": {
+    "label": "Default Media Backend",
+    "webrtc_desc": "Lowest delay, required for controlling",
+    "ll_hls_desc": "For watching, short delay",
+    "hls_desc": "For watching, most robust, longer delay",
+    "default": "Default",
+    "current": "Current",
+    "override": "The URL diagnostic override is active and takes priority over the saved default.",
+    "invalid_override": "The URL media selector is invalid, so the safe WebRTC path is active instead of the saved default.",
+    "clear_override": "Use saved default",
+    "limitations": "Passive viewing with buffering delay. Switching to WebRTC is a manual choice.",
+    "retry": "Retry HLS",
+    "unavailable": "unavailable",
+    "use_webrtc": "Use WebRTC",
+    "status": {
+      "idle": "idle",
+      "negotiating": "negotiating",
+      "connecting": "connecting",
+      "streaming": "streaming",
+      "paused": "private mode",
+      "terminal": "failed"
+    },
+    "try_hls": "Watch with HLS instead"
   }
 }

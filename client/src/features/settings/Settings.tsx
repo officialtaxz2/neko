@@ -11,6 +11,7 @@ import { useNeko } from '@/state/provider'
 import { setSetting } from '@/state/settings'
 import { Button } from '@/components/ui/button'
 import { htmlLang, langs, setLang, type Lang } from '@/i18n'
+import { MediaSetting } from '@/features/media/MediaSetting'
 import { row, label } from './classes'
 
 const field =
@@ -109,6 +110,8 @@ export function Settings() {
         </li>
         {toggle('scroll_invert', 'scroll_invert')}
         {toggle('autoplay', 'autoplay')}
+        {/* the fork: WebRTC or HLS / LL-HLS (state/media.ts) */}
+        <MediaSetting />
         {toggle('ignore_emotes', 'ignore_emotes')}
         {toggle('chat_sound', 'chat_sound')}
         {openInApp && toggle('links_in_app', 'links_in_app')}

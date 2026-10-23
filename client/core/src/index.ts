@@ -22,6 +22,15 @@ export type {
   TransportEvents,
 } from './transport.ts'
 export { WebRTCTransport } from './transport/webrtc.ts'
+export {
+  HLSTransport,
+  hlsModes,
+  type HLSMode,
+  type HLSStatus,
+  type HLSState,
+  type HLSTransportEvents,
+  type HLSTransportOptions,
+} from './transport/hls.ts'
 export { DataChannelInput } from './input/datachannel.ts'
 export { WebSocketInput } from './input/websocket.ts'
 export * from './types.ts'

@@ -31,5 +31,29 @@
     "watch": "視聴する",
     "connecting": "接続中",
     "invalid": "リンクが無効か、すでに無効になっています。"
+  },
+  "media": {
+    "label": "既定のメディア経路",
+    "webrtc_desc": "遅延が最小、操作に必要",
+    "ll_hls_desc": "視聴用、短い遅延",
+    "hls_desc": "視聴用、最も安定、遅延は長め",
+    "default": "既定",
+    "current": "現在",
+    "override": "URL の診断用指定が有効で、保存された選択より優先されます。",
+    "invalid_override": "URL のメディア指定が無効なため、保存された選択ではなく安全な WebRTC を使用しています。",
+    "clear_override": "保存された選択を使う",
+    "limitations": "視聴専用で、バッファによる遅延があります。WebRTC への切り替えは手動です。",
+    "retry": "HLS を再試行",
+    "unavailable": "利用不可",
+    "use_webrtc": "WebRTC を使う",
+    "status": {
+      "idle": "待機中",
+      "negotiating": "ネゴシエーション中",
+      "connecting": "接続中",
+      "streaming": "配信中",
+      "paused": "プライベートモード",
+      "terminal": "失敗"
+    },
+    "try_hls": "代わりに HLS で視聴"
   }
 }

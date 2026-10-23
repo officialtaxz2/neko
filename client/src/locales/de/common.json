@@ -67,7 +67,7 @@
   },
   "connection": {
     "reconnecting": "Erneut verbinden...",
-    "connected": "Verbindet",
+    "connected": "Verbunden",
     "disconnected": "Getrennt",
     "kicked": "Du wurdest aus diesem Raum entfernt.",
     "button_confirm": "OK"

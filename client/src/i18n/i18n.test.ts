@@ -123,7 +123,7 @@ test('every language has the four files, en every key, the others all but the kn
   assert.deepEqual(readdirSync(new URL('../locales/', import.meta.url)).sort(), [...langs].sort())
   const en = Object.fromEntries(NS.map((ns) => [ns, flat(json('en', ns))]))
   assert.equal(Object.keys(en.common).length + Object.keys(en.chat).length + Object.keys(en.files).length, 100)
-  assert.equal(Object.keys(en.fork).length, 21)
+  assert.equal(Object.keys(en.fork).length, 41)
   // strings added since the translations: en only, until someone translates them
   const GAPS = [
     'controls.mic_on',

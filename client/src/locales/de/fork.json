@@ -31,5 +31,29 @@
     "watch": "Zuschauen",
     "connecting": "Verbinde",
     "invalid": "Der Link ist ungültig oder nicht mehr aktiv."
+  },
+  "media": {
+    "label": "Standard-Medienpfad",
+    "webrtc_desc": "Geringste Verzögerung, nötig zum Steuern",
+    "ll_hls_desc": "Zum Zuschauen, kurze Verzögerung",
+    "hls_desc": "Zum Zuschauen, am robustesten, mehr Verzögerung",
+    "default": "Standard",
+    "current": "Aktiv",
+    "override": "Die URL-Diagnosevorgabe ist aktiv und hat Vorrang vor der gespeicherten Auswahl.",
+    "invalid_override": "Die Medienauswahl in der URL ist ungültig; deshalb ist statt der gespeicherten Auswahl der sichere WebRTC-Pfad aktiv.",
+    "clear_override": "Gespeicherte Auswahl verwenden",
+    "limitations": "Passives Zuschauen mit Pufferverzögerung. Der Wechsel zu WebRTC erfolgt manuell.",
+    "retry": "HLS erneut versuchen",
+    "unavailable": "nicht verfügbar",
+    "use_webrtc": "WebRTC verwenden",
+    "status": {
+      "idle": "bereit",
+      "negotiating": "wird ausgehandelt",
+      "connecting": "wird verbunden",
+      "streaming": "Streaming aktiv",
+      "paused": "Privatmodus",
+      "terminal": "fehlgeschlagen"
+    },
+    "try_hls": "Stattdessen mit HLS zuschauen"
   }
 }

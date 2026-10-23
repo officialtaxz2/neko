@@ -3,7 +3,7 @@
 package mediahls
 
 // Plays the real packager output through the production MSE player
-// (client/src/neko/hls/player.ts with hls.js) in WebKitGTK. The browser starts
+// (client/core/src/transport/hls/player.ts with hls.js) in WebKitGTK. The browser starts
 // before the packager is ready, as a viewer does after the bootstrap, so a
 // playlist hls.js cannot play fails here with the same "HLS player stopped"
 // terminal error the UI shows.

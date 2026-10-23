@@ -4,10 +4,11 @@ import { useTranslation } from 'react-i18next'
 import { PauseIcon, PlayIcon, SpeakerHighIcon, SpeakerSlashIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { useClient } from '@/state/provider'
+import { MediaSelect } from '@/features/media/MediaSelect'
 import { dockButton } from './MobileDock'
 
 // The bar of a view-only viewer (a share link), under the picture on every screen: playback and
-// sound, nothing that acts on the room.
+// sound, the stream's path when the server offers HLS; nothing that acts on the room.
 export function PassiveBar() {
   const { t } = useTranslation()
   const client = useClient()
@@ -52,6 +53,7 @@ export function PassiveBar() {
         value={Math.round(volume * 100)}
         onChange={(e) => client.setVolume(Number(e.target.value) / 100)}
       />
+      <MediaSelect />
     </div>
   )
 }

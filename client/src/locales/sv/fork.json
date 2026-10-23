@@ -31,5 +31,29 @@
     "watch": "Titta",
     "connecting": "Ansluter",
     "invalid": "Länken är ogiltig eller inte längre aktiv."
+  },
+  "media": {
+    "label": "Standardmediesökväg",
+    "webrtc_desc": "Minst fördröjning, krävs för att styra",
+    "ll_hls_desc": "För att titta, kort fördröjning",
+    "hls_desc": "För att titta, mest robust, längre fördröjning",
+    "default": "Standard",
+    "current": "Aktuell",
+    "override": "Diagnosvalet i URL:en är aktivt och går före det sparade valet.",
+    "invalid_override": "Medievalet i URL:en är ogiltigt, så den säkra WebRTC-vägen används i stället för det sparade valet.",
+    "clear_override": "Använd sparat val",
+    "limitations": "Endast tittande, med buffertfördröjning. Byte till WebRTC görs manuellt.",
+    "retry": "Försök med HLS igen",
+    "unavailable": "inte tillgänglig",
+    "use_webrtc": "Använd WebRTC",
+    "status": {
+      "idle": "vilande",
+      "negotiating": "förhandlar",
+      "connecting": "ansluter",
+      "streaming": "strömmar",
+      "paused": "privat läge",
+      "terminal": "misslyckades"
+    },
+    "try_hls": "Titta med HLS i stället"
   }
 }

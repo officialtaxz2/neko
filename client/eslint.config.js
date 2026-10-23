@@ -40,15 +40,15 @@ export default [
     plugins: { '@typescript-eslint': tseslint.plugin },
     rules: { '@typescript-eslint/no-deprecated': 'error' },
   },
-  { files: ['src/components/**'], rules: only(not('app', 'layout', 'features', 'plugins')) },
+  { files: ['src/components/**'], rules: only(not('app', 'layout', 'fork', 'features', 'plugins')) },
   {
     files: ['src/state/**', 'src/i18n/**', 'src/lib/**'],
-    rules: only(not('app', 'layout', 'features', 'plugins', 'components')),
+    rules: only(not('app', 'layout', 'fork', 'features', 'plugins', 'components')),
   },
   {
     files: ['src/features/**'],
     rules: only([
-      ...not('app', 'layout'),
+      ...not('app', 'layout', 'fork'),
       // the registry and everything under it but the contract (a group cannot re-include a child of `@/plugins`)
       {
         regex: '^@/plugins(/(?!types$)|$)',
@@ -56,7 +56,7 @@ export default [
       },
     ]),
   },
-  { files: ['src/plugins/**'], rules: only(not('app', 'layout', 'features')) },
+  { files: ['src/plugins/**'], rules: only(not('app', 'layout', 'fork', 'features')) },
   { files: ['src/layout/**'], rules: only(not('app')) },
   // the fork's GUI (src/fork) sits beside the layout: it composes features and components, the app shell uses it
   { files: ['src/fork/**'], rules: only(not('app')) },

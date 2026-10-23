@@ -72,6 +72,12 @@ export class WebRTCTransport implements StreamTransport {
     return this.video
   }
 
+  // the current peer connection, read-only, for diagnostics (its states and getStats(); see the
+  // fork's deploy/trace-media-browser.js)
+  get peer(): RTCPeerConnection | null {
+    return this.pc
+  }
+
   on<K extends keyof TransportEvents>(event: K, cb: TransportEvents[K]) {
     return this.events.on(event, cb)
   }

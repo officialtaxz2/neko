@@ -31,5 +31,29 @@
     "watch": "Ver",
     "connecting": "Conectando",
     "invalid": "El enlace no es válido o ya no está activo."
+  },
+  "media": {
+    "label": "Ruta de medios predeterminada",
+    "webrtc_desc": "Menor retraso, necesario para controlar",
+    "ll_hls_desc": "Para ver, poco retraso",
+    "hls_desc": "Para ver, lo más robusto, más retraso",
+    "default": "Predeterminado",
+    "current": "Actual",
+    "override": "La selección de diagnóstico de la URL está activa y tiene prioridad sobre la selección guardada.",
+    "invalid_override": "La selección de medios de la URL no es válida, por eso se usa la ruta segura WebRTC en lugar de la selección guardada.",
+    "clear_override": "Usar la selección guardada",
+    "limitations": "Solo para ver, con retraso de búfer. El cambio a WebRTC es manual.",
+    "retry": "Reintentar HLS",
+    "unavailable": "no disponible",
+    "use_webrtc": "Usar WebRTC",
+    "status": {
+      "idle": "inactivo",
+      "negotiating": "negociando",
+      "connecting": "conectando",
+      "streaming": "transmitiendo",
+      "paused": "modo privado",
+      "terminal": "falló"
+    },
+    "try_hls": "Ver con HLS en su lugar"
   }
 }

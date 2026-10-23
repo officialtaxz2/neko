@@ -30,6 +30,8 @@ for (const name of [
   'NekoApi',
   'ApiError',
   'WebRTCTransport',
+  'HLSTransport',
+  'hlsModes',
   'WebSocketInput',
   'DataChannelInput',
 ])
@@ -53,6 +55,13 @@ assert.ok(
   [...imports('overlay.js')].some((f) => f.startsWith('keyboard/')),
   'the keyboard is still used by the overlay',
 )
+// HLS: hls.js is loaded only when an MSE browser plays a lease, never with the client or the transport
+assert.ok(!clientGraph.some((f) => /hls/.test(f)), 'client.js must not reach the HLS transport')
+const hlsGraph = [...imports('transport/hls.js')]
+assert.ok(!hlsGraph.some((f) => /player/.test(f)), 'the MSE player is imported lazily: ' + hlsGraph.join(', '))
+assert.ok(!readFileSync(join(dist, 'transport/hls.js'), 'utf8').includes("from 'hls.js'"))
+assert.ok(readFileSync(join(dist, 'transport/hls/player.js'), 'utf8').includes("from 'hls.js'"))
+assert.equal(new pkg.HLSTransport({ mode: 'hls' }).kind, 'hls')
 assert.equal(WebRTCTransport.supported(), typeof RTCPeerConnection !== 'undefined')
 assert.ok(!('OP' in pkg), 'the data channel opcodes are not part of the API')
 

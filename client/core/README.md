@@ -249,8 +249,9 @@ login names on some member providers, so they go through `encodeURIComponent` in
 
 `NekoClient` owns the session (auth, the websocket, the room state) and leaves the stream to a
 `StreamTransport` (`transport.ts`), the way Guacamole's client runs over a tunnel it does not care
-about. WebRTC is the one implemented (`WebRTCTransport`, `transport/webrtc.ts`); others
-(WebCodecs over a websocket, WebTransport, MSE, HLS) plug in the same way:
+about. Two are implemented: WebRTC (`WebRTCTransport`, `transport/webrtc.ts`, the default) and HLS /
+LL-HLS (`HLSTransport`, `transport/hls.ts`, see below); others (WebCodecs over a websocket,
+WebTransport, MSE) plug in the same way:
 
 ```ts
 interface StreamTransport {
@@ -293,10 +294,25 @@ needs: its own connection from the `SessionInfo`, an element it draws into, play
 either an `input` channel or nothing (the client then sends input over the websocket). Pass it as
 `new NekoClient({ transport })`; the GUI checks `WebRTCTransport.supported()` before rendering.
 
+`HLSTransport` (`new HLSTransport({ mode: 'hls' | 'll-hls', autoplay?, workerPath? })`) plays the
+server's passive HLS delivery (`docs/HLS_LL_HLS.md` in the repository): it negotiates over the main
+socket (`media/hls/*`), sends the one-time ticket only in the bootstrap POST, keeps the cookie-scoped
+lease alive and probes it once a second, follows the room's private mode, and plays natively
+(Safari, iOS, TVs) or through hls.js over MSE. hls.js is imported lazily (`transport/hls/player.ts`),
+only when an MSE browser plays a lease; `workerPath` is where the page serves
+`hls.js/dist/hls.worker.js`. It has no `input`, so input goes over the websocket. Its status maps
+onto the transport's: negotiating is `'connecting'`, a granted stream (also while waiting for media
+or paused by private mode) is `'connected'`, a failure is `'unavailable'` (the room stays up; there
+is no automatic fallback, `retry()` starts over). Its own detail comes as an `'hls'` event and as
+`transport.hls` (`{ mode, status, detail, player }`, the detail a fixed English message). Unlike
+WebRTC it may call `play()` itself once a source is attached when `autoplay()` says so, because
+native HLS in Safari loads nothing before `play()`. `hlsModes(payload)` checks a
+`media/hls/capabilities` payload and returns the modes it advertises.
+
 ## The store and `Emitter`
 
 The state is a zustand store (`createStore` from `zustand/vanilla` with `subscribeWithSelector`
-from `zustand/middleware`; zustand is the package's one runtime dependency): every change is one
+from `zustand/middleware`; zustand is the package's one runtime dependency besides hls.js, which only the HLS player loads): every change is one
 immutable `setState`, listeners run synchronously in it, and a selector subscription fires only when
 its value changes (see [State](#state)). A GUI makes its own stores the same way and selects from all
 of them with one hook (`useStore` from `zustand`). `Emitter<Events>` is a small typed event emitter

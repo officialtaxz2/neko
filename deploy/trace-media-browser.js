@@ -1,14 +1,14 @@
 /* Paste into the affected browser's console. ES5 syntax for older TV engines.
  * Read-only, ten-minute bounded RAM trace. No URLs, SDP, tokens or chat content.
  * Optional marks: nekoMediaTraceMark('first_picture'|'audio'|'black'|'pause').
- * Stop and print: nekoMediaTraceStop(). Refresh loses unsaved evidence. */
+ * Stop and print: nekoMediaTraceStop(). Refresh loses unsaved evidence.
+ * Reads the page's read-only window.__nekoTrace handle (client/src/state/diagnostics.ts). */
 (function () {
   'use strict';
   if (typeof window.nekoMediaTraceStop === 'function') window.nekoMediaTraceStop();
   var start = Date.now(), stopped = false, busy = false, tick, deadline;
   var samples = [], events = [], stats = [], dropped = { samples:0, events:0, stats:0 };
-  var video, client, peer, removeVideo = function () {}, removeClient = function () {}, removePeer = function () {};
-  var allowed = /^(system\/(init|disconnect)|signal\/(provide|restart|offer|answer|close)|member\/(connected|disconnected)|control\/(give|release|request|requesting|locked)|chat\/(message|emote)|screen\/(resolution|set))$/;
+  var video, peer, connection, removeVideo = function () {}, removePeer = function () {};
   function number(value) { return typeof value === 'number' && isFinite(value) ? value : null; }
   function elapsed() { return Date.now() - start; }
   function keep(list, value, max, kind) {
@@ -30,10 +30,10 @@
       width:number(video.videoWidth), height:number(video.videoHeight), muted:video.muted,
       error:video.error && [1, 2, 3, 4].indexOf(video.error.code) !== -1 ? video.error.code : null };
   }
+  function handle() { return window.__nekoTrace || null; }
   function bind() {
-    var node = document.querySelector('.video');
-    var vm = node && node.__vue__;
-    var nextVideo = node && node.querySelector('video');
+    var trace = handle();
+    var nextVideo = trace ? trace.video() : document.querySelector('[data-testid="player"] video');
     if (nextVideo !== video) {
       removeVideo(); video = nextVideo;
       var bound = video, listeners = [];
@@ -45,21 +45,12 @@
       removeVideo = function () { listeners.forEach(function (remove) { remove(); }); };
       event('video/replaced');
     }
-    var nextClient = vm && vm.$client;
-    if (nextClient !== client) {
-      removeClient(); client = nextClient;
-      if (client && typeof client.on === 'function' && typeof client.off === 'function') {
-        var boundClient = client;
-        var debug = function (message) {
-          if (typeof message !== 'string') return;
-          var match = /^received websocket event ([a-z/_-]+)(?: |$)/.exec(message);
-          if (match && allowed.test(match[1])) event('event/' + match[1]);
-        };
-        boundClient.on('debug', debug);
-        removeClient = function () { boundClient.off('debug', debug); };
-      } else removeClient = function () {};
+    var nextConnection = trace ? trace.connection() : null;
+    if (nextConnection !== connection) {
+      connection = nextConnection;
+      if (connection) event('connection/' + connection);
     }
-    var nextPeer = client && client._peer;
+    var nextPeer = trace ? trace.peer() : null;
     if (nextPeer !== peer) {
       removePeer(); peer = nextPeer;
       var boundPeer = peer, peerListeners = [];
@@ -73,7 +64,7 @@
       removePeer = function () { peerListeners.forEach(function (remove) { remove(); }); };
       event('peer/replaced');
     }
-    return vm;
+    return trace;
   }
   function peerStats() {
     if (busy || !peer || typeof peer.getStats !== 'function') return;
@@ -101,29 +92,29 @@
     }, function () { busy = false; });
   }
   function sample() {
-    var vm = bind();
-    var selected = vm && vm.$accessor;
-    var backend = selected && selected.hls && selected.hls.selected;
+    var trace = bind();
+    var backend = trace ? trace.backend() : 'webrtc';
     if (backend !== 'hls' && backend !== 'll-hls') backend = 'webrtc';
+    var hls = trace ? trace.hls() : null;
     keep(samples, { t_ms:elapsed(), backend:backend, visible:document.visibilityState === 'visible',
-      socket:client && client._ws ? number(client._ws.readyState) : null,
-      ice:peer ? peer.iceConnectionState : null, connection:peer ? peer.connectionState : null,
+      connection:connection || null, hls:hls ? hls.status : null,
+      ice:peer ? peer.iceConnectionState : null, peer_state:peer ? peer.connectionState : null,
       signaling:peer ? peer.signalingState : null, media:media() }, 301, 'samples');
     peerStats();
   }
   function finish(reason) {
     if (stopped) return;
     sample(); stopped = true;
-    removeVideo(); removeClient(); removePeer();
+    removeVideo(); removePeer();
     window.clearInterval(tick); window.clearTimeout(deadline);
     delete window.nekoMediaTraceStop; delete window.nekoMediaTraceMark;
-    console.log(JSON.stringify({ diagnostic:'media-browser-trace-v1', reason:reason, duration_ms:elapsed(),
+    console.log(JSON.stringify({ diagnostic:'media-browser-trace-v2', reason:reason, duration_ms:elapsed(),
       user_agent:String(navigator.userAgent || '').slice(0, 240),
       support:{ webRTC:typeof window.RTCPeerConnection !== 'undefined', videoDecoder:typeof window.VideoDecoder !== 'undefined',
         audioDecoder:typeof window.AudioDecoder !== 'undefined', audioWorklet:typeof window.AudioWorkletNode !== 'undefined',
         native_hls:video && typeof video.canPlayType === 'function' ? video.canPlayType('application/vnd.apple.mpegurl') : '' },
       samples:samples, events:events, stats:stats, discarded:dropped,
-      limits:'Private browser state only; optional Vue/debug/getStats APIs may be unavailable. Frame/time counters are proxies, not proof of a visible picture or audible sound. Marks are operator observations. No URLs, SDP, addresses, payloads, credentials, network/player changes or causal attribution.' }));
+      limits:'Private browser state only; the page handle or getStats may be unavailable. Frame/time counters are proxies, not proof of a visible picture or audible sound. Marks are operator observations. No URLs, SDP, addresses, payloads, credentials, network/player changes or causal attribution.' }));
   }
   window.nekoMediaTraceMark = function (kind) {
     if (['first_picture', 'audio', 'black', 'pause', 'recovered'].indexOf(kind) !== -1) event('operator/' + kind);

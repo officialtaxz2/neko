@@ -31,5 +31,29 @@
     "watch": "Regarder",
     "connecting": "Connexion",
     "invalid": "Le lien n’est pas valide ou n’est plus actif."
+  },
+  "media": {
+    "label": "Chemin média par défaut",
+    "webrtc_desc": "Délai minimal, nécessaire pour contrôler",
+    "ll_hls_desc": "Pour regarder, délai court",
+    "hls_desc": "Pour regarder, le plus robuste, délai plus long",
+    "default": "Par défaut",
+    "current": "Actuel",
+    "override": "La sélection de diagnostic de l’URL est active et prime sur la sélection enregistrée.",
+    "invalid_override": "La sélection média de l’URL n’est pas valide ; le chemin sûr WebRTC est donc utilisé à la place de la sélection enregistrée.",
+    "clear_override": "Utiliser la sélection enregistrée",
+    "limitations": "Visionnage seul, avec un délai de mise en mémoire tampon. Le passage à WebRTC se fait manuellement.",
+    "retry": "Réessayer HLS",
+    "unavailable": "indisponible",
+    "use_webrtc": "Utiliser WebRTC",
+    "status": {
+      "idle": "inactif",
+      "negotiating": "négociation",
+      "connecting": "connexion",
+      "streaming": "diffusion en cours",
+      "paused": "mode privé",
+      "terminal": "échec"
+    },
+    "try_hls": "Regarder avec HLS à la place"
   }
 }

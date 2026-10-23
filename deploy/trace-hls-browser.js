@@ -22,12 +22,13 @@
     if (list.length >= maximum) { list.shift(); removed[name]++ }
     list.push(row)
   }
+  // the page's read-only trace handle (client/src/state/diagnostics.ts)
+  const handle = () => window.__nekoTrace
   const ui = () => {
-    const node = document.querySelector('.video .media-status')
-    const label = node?.querySelector('strong, span')?.textContent?.trim()
-    if (!['HLS', 'LL-HLS'].includes(label)) return { selected: false }
-    const terminal = !!node.querySelector('.media-actions')
-    const text = terminal ? node.querySelector('small')?.textContent : ''
+    const hls = handle()?.hls()
+    if (!hls) return { selected: false }
+    const terminal = hls.status === 'terminal'
+    const text = terminal ? hls.detail : ''
     const detail = text === 'HLS HTTP connection failed; retry manually' ? 'http_connection' :
       text === 'HLS playback stalled; retry manually' ? 'playback_stalled' :
       text === 'HLS playback did not become ready; retry manually' ? 'playback_not_ready' :
@@ -36,7 +37,7 @@
       text === 'HLS media was unavailable at startup; retry manually' ? 'startup_unavailable' :
       text === 'HLS authorization or media availability ended' ? 'authorization_or_availability' :
       text === 'HLS lease ended' ? 'lease_ended' : terminal ? 'other_fixed_error' : null
-    return { selected: true, compact: node.classList.contains('compact'), terminal, detail }
+    return { selected: true, mode: hls.mode, status: hls.status, compact: hls.status === 'streaming', terminal, detail }
   }
   const media = () => {
     if (!video) return null
@@ -54,7 +55,7 @@
       ranges_ms: ranges, range_count: number(video.buffered.length), frames }
   }
   const bind = () => {
-    const next = document.querySelector('.video .player-container video')
+    const next = handle()?.video() ?? document.querySelector('[data-testid="player"] video')
     if (next === video) return
     removeListeners()
     video = next

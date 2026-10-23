@@ -17,6 +17,10 @@ sync with upstream touches as few upstream files as possible.
 - `room/`: fork components the layout composes (`MemberStrip`).
 - `connect/`: `ShareConnect`, the login screen of a view-only share link (`#/<token>`, see
   `src/state/viewonly.ts` and `docs/VIEW_ONLY_SHARING.md`); `layout/PassiveBar` is its playback bar.
+- HLS (outside this folder, in their layers): `src/state/media.ts` (the choice, the transport, what
+  the server offers), `src/state/diagnostics.ts` (the traces' read-only handle) and
+  `src/features/media/` (the status on the picture, the settings' choice, the short select for a
+  view-only bar); the transport itself is in the core (`core/src/transport/hls.ts`).
 - Strings: the namespace `fork`, `src/locales/<lang>/fork.json` in every language, used as
   `t('fork:key')`.
 
@@ -25,13 +29,18 @@ shell's classes and the pieces above), `src/index.css` (the import), `src/main.t
 `src/features/settings/Settings.tsx` (the language picker and the admin's lock switches),
 `src/components/ui/button.tsx` (dark ink on mint), `eslint.config.js` (the layer rule),
 `src/features/video/Stage.tsx` (no control request without `can_host`), `src/state/app.ts` and
-`src/state/neko.ts` (the share link), and in the core `client.ts` (`tokenStorage`/`tokenKey`,
-`logout({ keepalive })`).
+`src/state/neko.ts` (the share link, the media choice, the traces' handle), `src/app/App.tsx` also
+for the HLS status and the HLS offer without WebRTC, `vite.config.ts` (hls.js's own chunk),
+`tools/dist.check.mjs` (that it stays lazy), `src/locales/de/common.json` ("Verbunden"), and in the
+core `client.ts` (`tokenStorage`/`tokenKey`, `logout({ keepalive })`), `transport/webrtc.ts` (the
+read-only `peer`), `index.ts` and `dist.check.mjs` (the HLS transport).
 
 Imports follow the layer rules (`eslint.config.js`): `src/fork` sits beside `src/layout`, it may use
-features, components, state and the plugin registry; only the app shell imports it.
+features, components, state and the plugin registry; only the app shell imports it (the rules forbid
+it below).
 
 The visual check (DesignSystem.md, Gate 2) runs against a simulated server:
 `node tools/screens.mjs <out-dir>` renders the login, the desktop with and without the side panel, a
 narrow window, the phone upright with and without the panel, the phone sideways, and a share link's
-login screen and passive view on desktop and phone.
+login screen and passive view on desktop and phone, a browser without WebRTC, and HLS starting,
+failed, in the settings and on a share link (served over HTTPS with a throwaway certificate).

@@ -31,5 +31,29 @@
     "watch": "Sledovať",
     "connecting": "Pripája sa",
     "invalid": "Odkaz je neplatný alebo už nie je aktívny."
+  },
+  "media": {
+    "label": "Predvolená cesta médií",
+    "webrtc_desc": "Najmenšie oneskorenie, potrebné na ovládanie",
+    "ll_hls_desc": "Na pozeranie, krátke oneskorenie",
+    "hls_desc": "Na pozeranie, najodolnejšie, dlhšie oneskorenie",
+    "default": "Predvolené",
+    "current": "Aktuálne",
+    "override": "Diagnostický výber v URL je aktívny a má prednosť pred uloženým výberom.",
+    "invalid_override": "Výber médií v URL je neplatný, preto sa namiesto uloženého výberu používa bezpečná cesta WebRTC.",
+    "clear_override": "Použiť uložený výber",
+    "limitations": "Len pozeranie, s oneskorením vyrovnávacej pamäte. Prechod na WebRTC je ručný.",
+    "retry": "Skúsiť HLS znova",
+    "unavailable": "nedostupné",
+    "use_webrtc": "Použiť WebRTC",
+    "status": {
+      "idle": "nečinné",
+      "negotiating": "vyjednáva sa",
+      "connecting": "pripája sa",
+      "streaming": "prenos beží",
+      "paused": "súkromný režim",
+      "terminal": "zlyhalo"
+    },
+    "try_hls": "Pozerať radšej cez HLS"
   }
 }

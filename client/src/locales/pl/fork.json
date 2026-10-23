@@ -31,5 +31,29 @@
     "watch": "Oglądaj",
     "connecting": "Łączenie",
     "invalid": "Link jest nieprawidłowy lub nieaktywny."
+  },
+  "media": {
+    "label": "Domyślna ścieżka mediów",
+    "webrtc_desc": "Najmniejsze opóźnienie, potrzebne do sterowania",
+    "ll_hls_desc": "Do oglądania, małe opóźnienie",
+    "hls_desc": "Do oglądania, najbardziej niezawodne, większe opóźnienie",
+    "default": "Domyślna",
+    "current": "Bieżąca",
+    "override": "Wybór diagnostyczny z adresu URL jest aktywny i ma pierwszeństwo przed zapisanym wyborem.",
+    "invalid_override": "Wybór mediów w adresie URL jest nieprawidłowy, więc zamiast zapisanego wyboru używana jest bezpieczna ścieżka WebRTC.",
+    "clear_override": "Użyj zapisanego wyboru",
+    "limitations": "Tylko oglądanie, z opóźnieniem buforowania. Przejście na WebRTC jest ręczne.",
+    "retry": "Ponów HLS",
+    "unavailable": "niedostępne",
+    "use_webrtc": "Użyj WebRTC",
+    "status": {
+      "idle": "bezczynne",
+      "negotiating": "negocjowanie",
+      "connecting": "łączenie",
+      "streaming": "transmisja trwa",
+      "paused": "tryb prywatny",
+      "terminal": "niepowodzenie"
+    },
+    "try_hls": "Oglądaj zamiast tego przez HLS"
   }
 }

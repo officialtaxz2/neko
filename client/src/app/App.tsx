@@ -15,6 +15,9 @@ import { RoomBar } from '@/fork/layout/RoomBar'
 import { MobileDock } from '@/fork/layout/MobileDock'
 import { PassiveBar } from '@/fork/layout/PassiveBar'
 import { ShareConnect } from '@/fork/connect/ShareConnect'
+import { MediaStatus } from '@/features/media/MediaStatus'
+import { tryHLS } from '@/state/media'
+import { Button } from '@/components/ui/button'
 import { Stage } from '@/features/video/Stage'
 import { MemberMenu } from '@/features/members/MemberMenu'
 import { Connect } from '@/features/connect/Connect'
@@ -39,7 +42,9 @@ export function App() {
   )
   const memberMenu = useSlot('member.menu')
 
-  if (!WebRTCTransport.supported()) {
+  // the fork: only the WebRTC path needs RTCPeerConnection; a browser without it (an old TV) can
+  // still watch over HLS, which it is offered here (never chosen for it)
+  if (client.transport.kind === 'webrtc' && !WebRTCTransport.supported()) {
     return (
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-[320px] rounded-[5px] bg-background-secondary p-2.5">
@@ -51,6 +56,9 @@ export function App() {
           </div>
           <div className="flex flex-col">
             <span className="block text-center leading-7.5 uppercase">{t('unsupported')}</span>
+            <Button className="mt-2.5" data-testid="try-hls" onClick={() => tryHLS()}>
+              {t('fork:media.try_hls')}
+            </Button>
           </div>
         </div>
       </div>
@@ -85,6 +93,8 @@ export function App() {
               height and the dock follows right below it */}
           <div className="video-container phone:portrait:h-[min(62.5vw,60vh)]! phone:portrait:flex-none relative flex max-w-full grow overflow-hidden bg-[radial-gradient(circle_at_50%_50%,rgba(12,13,18,0.2)_0%,rgba(7,8,12,0.7)_100%)]">
             <Stage hideControls={cast} extraControls={videoOnly} />
+            {/* the fork: how HLS is doing, when this page plays HLS (state/media.ts) */}
+            {!cast && <MediaStatus />}
           </div>
           {!bare && <RoomBar />}
           {!bare && <MobileDock />}

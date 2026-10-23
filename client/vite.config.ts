@@ -19,10 +19,14 @@ const vendorChunks: [string, RegExp][] = [
   ],
   ['i18n', /^(i18next|react-i18next)$/],
   ['icons', /^@phosphor-icons\/react$/],
+  // the fork: the MSE player for HLS, loaded only when an HLS page needs it (core/src/transport/hls.ts);
+  // its 590 kB stay out of every other page
+  ['hls', /^hls\.js$/],
 ]
 const vendorChunk = (id: string) => {
   const dep = id.split('/node_modules/').pop()
   if (dep === id) return // not a dependency: app code, core/, a virtual module
+  if (id.endsWith('?url')) return // the fork: an asset's URL (hls.js's worker), not its code
   const pkg = /^(@[^/]+\/)?[^/]+/.exec(dep)![0]
   return vendorChunks.find(([, re]) => re.test(pkg))?.[0] ?? 'vendor'
 }
@@ -43,6 +47,8 @@ export default defineConfig({
     },
   },
   build: {
+    // the fork: hls.js's chunk (590 kB) is the one this big, and only HLS pages load it
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: vendorChunk,

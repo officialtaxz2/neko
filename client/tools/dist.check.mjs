@@ -23,4 +23,12 @@ for (const lang of langs) {
     if (ns === 'common') assert.ok(read(own[0]).includes(label), `${own[0]} lacks ${lang} ("${label}")`)
   }
 }
-console.log(`dist ok: ${langs.length} languages in chunks of their own, none in ${main}`)
+// the fork: hls.js is a chunk of its own that only the lazily loaded HLS player imports; neither the
+// page nor the entry chunk loads it (the entry names it only among the player's preloads)
+const hls = chunks.find((f) => f.startsWith('hls-'))
+assert.ok(hls, 'hls.js has a chunk of its own')
+assert.ok(!new RegExp(`from ?"\\./${hls}"`).test(mainSrc), `${main} imports ${hls}`)
+assert.ok(!readFileSync(join(assets, '../index.html'), 'utf8').includes(hls), `index.html preloads ${hls}`)
+assert.ok(read(chunks.find((f) => f.startsWith('player-'))).includes(hls), 'the HLS player imports hls.js')
+
+console.log(`dist ok: ${langs.length} languages in chunks of their own, none in ${main}; hls.js only on demand`)

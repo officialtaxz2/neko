@@ -9,6 +9,8 @@ import { wireEvents } from './events'
 import { initSettings } from './settings'
 import { bindPageLifecycle } from './lifecycle'
 import { bindShareLeave, shareToken, SHARE_TOKEN_KEY, tabStorage } from './viewonly'
+import { bindMedia, mediaTransport, readMedia, resolveMedia } from './media'
+import { exposeDiagnostics } from './diagnostics'
 
 // share: the token of a view-only link; read from the page's URL (#/<token>) unless given
 export type NekoAppOptions = Pick<NekoClientOptions, 'transport'> & { share?: string }
@@ -16,6 +18,9 @@ export type NekoAppOptions = Pick<NekoClientOptions, 'transport'> & { share?: st
 export function createNekoApp(options: NekoAppOptions = {}): NekoApp {
   const app = createAppStore()
   const share = 'share' in options ? options.share : shareToken()
+  // the fork: WebRTC, or HLS when chosen (media.ts)
+  const media = resolveMedia(new URL(location.href).search, readMedia())
+  const autoplay = () => app.getState().settings.autoplay
   const client = new NekoClient({
     autologin: true,
     // a share link resumes or logs in from its own login screen (fork/connect/ShareConnect.tsx)
@@ -23,14 +28,16 @@ export function createNekoApp(options: NekoAppOptions = {}): NekoApp {
     ...(share && { tokenStorage: tabStorage(), tokenKey: SHARE_TOKEN_KEY }),
     // read when a track arrives, so the setting applies without a reload
     get autoplay() {
-      return app.getState().settings.autoplay
+      return autoplay()
     },
-    transport: options.transport,
+    transport: options.transport ?? mediaTransport(media, autoplay),
   })
   const neko: NekoApp = { client, overlay: new Overlay(client), app, bus: createBus(), share }
   wireEvents(neko)
   initSettings(neko)
   bindPageLifecycle(client)
   if (share) bindShareLeave(client)
+  bindMedia(neko, media)
+  exposeDiagnostics(neko)
   return neko
 }

@@ -3,8 +3,12 @@
 // Vite serves the app; Playwright answers /api/* and the /api/ws event socket, and a fake
 // RTCPeerConnection plays a painted desktop, so the room renders without a neko server.
 // SCREENS=desktop,phone limits the run to the named shots; DUMP=<selector> prints the matching
-// elements with their computed layout, to debug a shot.
+// elements with their computed layout, to debug a shot. The page is served over HTTPS (a throwaway
+// self-signed certificate), as HLS needs.
 import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import { execFileSync } from 'node:child_process'
 import { chromium } from 'playwright'
 import { createServer } from 'vite'
 
@@ -12,7 +16,29 @@ const out = process.argv[2] || 'screens-out'
 fs.mkdirSync(out, { recursive: true })
 const only = process.env.SCREENS?.split(',')
 
-const server = await createServer({ logLevel: 'error', server: { port: 4174, strictPort: false } })
+const certDir = fs.mkdtempSync(path.join(os.tmpdir(), 'neko-screens-'))
+execFileSync(
+  'openssl',
+  [
+    'req',
+    '-x509',
+    '-newkey',
+    'rsa:2048',
+    '-nodes',
+    '-days',
+    '1',
+    '-subj',
+    '/CN=localhost',
+    '-keyout',
+    `${certDir}/key.pem`,
+    '-out',
+    `${certDir}/cert.pem`,
+  ],
+  { stdio: 'ignore' },
+)
+const https = { key: fs.readFileSync(`${certDir}/key.pem`), cert: fs.readFileSync(`${certDir}/cert.pem`) }
+fs.rmSync(certDir, { recursive: true })
+const server = await createServer({ logLevel: 'error', server: { port: 4174, strictPort: false, https } })
 await server.listen()
 const base = server.resolvedUrls.local[0]
 
@@ -67,6 +93,36 @@ function room({ host = 's3', admin = true, lockedControls = false, viewOnly = fa
     touch_events: false,
     webrtc: { videos: ['hq'], pointer_in_video: false },
   }
+}
+// what a server with HLS enabled advertises and offers (docs/HLS_LL_HLS.md)
+const capabilities = {
+  version: 1,
+  backend: 'hls',
+  modes: ['hls', 'll-hls'],
+  container: 'fmp4',
+  video_codec: 'h264-high-3.1',
+  audio_codec: 'aac-lc',
+  audio_rate: 48000,
+  variants: [
+    ['high', 1280, 720, 25],
+    ['medium', 854, 480, 20],
+    ['low', 640, 360, 15],
+  ].map(([id, width, height, frame_rate]) => ({
+    id,
+    source_id: 'high',
+    width,
+    height,
+    frame_rate,
+    video_codec: 'avc1.64001f',
+    container: 'video/mp4',
+    bandwidth: 4000000,
+  })),
+  limits: {
+    idle_expires_in_ms: 30000,
+    maximum_playlist_bytes: 65536,
+    max_requests_per_lease: 8,
+    max_blocking_per_lease: 4,
+  },
 }
 const chat = [
   ['s2', 'Hat jemand den Link zur Präsentation?'],
@@ -167,20 +223,24 @@ function fakeBrowser(token) {
   }
   window.RTCPeerConnection = FakePeer
 }
+// a browser without WebRTC (an old TV)
+const noWebRTC = () => delete window.RTCPeerConnection
 
 async function shot(
   name,
-  { width, height, mobile = false, token = 'tok', state, side, tab, hash = '', viewer, after },
+  { width, height, mobile = false, token = 'tok', state, side, tab, hash = '', viewer, after, hls, webrtc = true },
 ) {
   if (only && !only.includes(name)) return
   const ctx = await browser.newContext({
     viewport: { width, height },
+    ignoreHTTPSErrors: true,
     deviceScaleFactor: 2,
     isMobile: mobile,
     hasTouch: mobile,
     locale: 'de-DE',
   })
   await ctx.addInitScript(fakeBrowser, token)
+  if (!webrtc) await ctx.addInitScript(noWebRTC)
   await ctx.addInitScript(
     ([side, tab, viewer]) => {
       // the stored settings as src/state/storage.ts writes them
@@ -200,6 +260,8 @@ async function shot(
         ? r.fulfill({ json: member('s1', 'Matze') })
         : r.fulfill({ status: 401, json: { message: 'no session' } })
     if (path.endsWith('/login')) return r.fulfill({ json: { token: 'tok' } })
+    // the HLS bootstrap: still starting (no answer yet), or refused
+    if (path.endsWith('/media/hls/session')) return hls === 'fail' ? r.fulfill({ status: 503, body: '' }) : undefined
     return r.fulfill({ json: {} })
   })
   await page.routeWebSocket(/\/api\/ws/, (ws) => {
@@ -213,6 +275,16 @@ async function shot(
       const { event } = JSON.parse(m)
       if (event === 'signal/request')
         send('signal/provide', { sdp: 'v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\n', iceservers: [] })
+      if (event === 'media/hls/capabilities/request') send('media/hls/capabilities', capabilities)
+      if (event === 'media/hls/create')
+        send('media/hls/offer', {
+          version: 1,
+          backend: 'hls',
+          mode: JSON.parse(m).payload.mode,
+          path: '/api/media/hls/session',
+          ticket: 'T'.repeat(32),
+          expires_in_ms: 10000,
+        })
     })
   })
   await page.goto(base + hash)
@@ -263,6 +335,12 @@ const share = { hash: '#/ShareToken-12345', token: '', state: { viewOnly: true, 
 await shot('share-login', { ...desktop, ...share })
 await shot('share-desktop', { ...desktop, ...share, viewer: 'Gast' })
 await shot('share-phone', { ...phone, ...share, viewer: 'Gast' })
+// HLS (?media=hls): starting, failed with Retry / WebRTC, the choice in the settings, and on a share link
+await shot('no-webrtc', { ...phone, webrtc: false })
+await shot('hls-connecting', { ...desktop, hash: '?media=hls', side: false })
+await shot('hls-failed', { ...phone, hash: '?media=hls', side: false, hls: 'fail' })
+await shot('desktop-media', { ...desktop, side: true, tab: 'settings', state: { host: 's1' } })
+await shot('share-hls', { ...phone, ...share, hash: '?media=ll-hls#/ShareToken-12345', viewer: 'Gast', hls: 'fail' })
 
 await browser.close()
 await server.close()

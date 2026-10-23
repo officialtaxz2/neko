@@ -31,5 +31,29 @@
     "watch": "Se på",
     "connecting": "Kobler til",
     "invalid": "Lenken er ugyldig eller ikke lenger aktiv."
+  },
+  "media": {
+    "label": "Standard mediebane",
+    "webrtc_desc": "Minst forsinkelse, nødvendig for å styre",
+    "ll_hls_desc": "For å se på, kort forsinkelse",
+    "hls_desc": "For å se på, mest robust, lengre forsinkelse",
+    "default": "Standard",
+    "current": "Nå",
+    "override": "Diagnosevalget i URL-en er aktivt og går foran det lagrede valget.",
+    "invalid_override": "Medievalget i URL-en er ugyldig, så den trygge WebRTC-banen brukes i stedet for det lagrede valget.",
+    "clear_override": "Bruk lagret valg",
+    "limitations": "Bare visning, med bufferforsinkelse. Bytte til WebRTC gjøres manuelt.",
+    "retry": "Prøv HLS igjen",
+    "unavailable": "ikke tilgjengelig",
+    "use_webrtc": "Bruk WebRTC",
+    "status": {
+      "idle": "klar",
+      "negotiating": "forhandler",
+      "connecting": "kobler til",
+      "streaming": "strømmer",
+      "paused": "privat modus",
+      "terminal": "mislyktes"
+    },
+    "try_hls": "Se med HLS i stedet"
   }
 }

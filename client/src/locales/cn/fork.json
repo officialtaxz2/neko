@@ -31,5 +31,29 @@
     "watch": "观看",
     "connecting": "正在连接",
     "invalid": "链接无效或已失效。"
+  },
+  "media": {
+    "label": "默认媒体路径",
+    "webrtc_desc": "延迟最低，控制时必需",
+    "ll_hls_desc": "用于观看，延迟较短",
+    "hls_desc": "用于观看，最稳定，延迟较长",
+    "default": "默认",
+    "current": "当前",
+    "override": "URL 中的诊断选择已生效，优先于已保存的选择。",
+    "invalid_override": "URL 中的媒体选择无效，因此使用安全的 WebRTC 路径，而不是已保存的选择。",
+    "clear_override": "使用已保存的选择",
+    "limitations": "仅观看，有缓冲延迟。切换到 WebRTC 需手动进行。",
+    "retry": "重试 HLS",
+    "unavailable": "不可用",
+    "use_webrtc": "使用 WebRTC",
+    "status": {
+      "idle": "空闲",
+      "negotiating": "协商中",
+      "connecting": "连接中",
+      "streaming": "播放中",
+      "paused": "私密模式",
+      "terminal": "失败"
+    },
+    "try_hls": "改用 HLS 观看"
   }
 }
