@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Ohjaus lukittu",
-    "login": "Kirjautuminen lukittu"
+    "login": "Kirjautuminen lukittu",
+    "file_transfer": "Tiedostot lukittu"
   },
   "room": {
-    "members": "Jäsenet"
+    "members": "Jäsenet",
+    "host": "Isäntä",
+    "muted": "Mykistetty",
+    "ignored": "Ohitettu"
   },
   "setting": {
     "language": "Kieli"
@@ -97,6 +101,7 @@
     "more": "Lisää",
     "tools": "Lisää työkaluja",
     "fullscreen": "Koko näyttö",
+    "exit_fullscreen": "Poistu koko näytöstä",
     "resolution": "Näytön tarkkuus",
     "pip": "Kuva kuvassa",
     "clipboard": "Leikepöytä",
@@ -115,6 +120,7 @@
     "account": "Tili",
     "lock_control_hint": "Vain ylläpitäjät voivat ohjata",
     "lock_login_hint": "Vain ylläpitäjät voivat liittyä",
+    "lock_file_transfer_hint": "Vain ylläpitäjät voivat siirtää tiedostoja",
     "broadcast_hint": "RTMP, esim. YouTube",
     "broadcast_start": "Aloita",
     "broadcast_stop": "Lopeta",
@@ -130,5 +136,8 @@
     "copy": "Kopioi tähän laitteeseen ja etätyöpöydälle",
     "copied": "Kopioitu",
     "hint": "Merkinnän kopiointi päivittää sekä laitteesi että etäleikepöydän. Liitä etätyöpöydällä painamalla Ctrl+V."
+  },
+  "chat": {
+    "today_at": "Tänään klo {{time}}"
   }
 }

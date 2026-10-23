@@ -134,8 +134,8 @@ test('clipboard history: newest first without repeats, at most ten, what the rem
 
 test('more menu: the host gets the input tools, the sheet adds what the desktop bar already has', () => {
   // a desktop: a mouse, no touch screen
-  vi.stubGlobal('window', {})
-  vi.stubGlobal('matchMedia', () => ({ matches: true }))
+  vi.stubGlobal('window', { innerWidth: 1920 })
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: !q.includes('coarse') }))
   const tools = (html: string) => [...html.matchAll(/data-testid="tool-([a-z-]+)"/g)].map((m) => m[1])
   const desktop = tools(render(room({ host: 'me', admin: true }), <MoreTools done={() => {}} />))
   expect(desktop).toContain('clipboard')

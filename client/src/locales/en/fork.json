@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Control locked",
-    "login": "Login locked"
+    "login": "Login locked",
+    "file_transfer": "Files locked"
   },
   "room": {
-    "members": "Members"
+    "members": "Members",
+    "host": "Host",
+    "muted": "Muted",
+    "ignored": "Ignored"
   },
   "setting": {
     "language": "Language"
@@ -97,6 +101,7 @@
     "more": "More",
     "tools": "More tools",
     "fullscreen": "Fullscreen",
+    "exit_fullscreen": "Exit fullscreen",
     "resolution": "Screen resolution",
     "pip": "Picture in picture",
     "clipboard": "Clipboard",
@@ -115,6 +120,7 @@
     "account": "Account",
     "lock_control_hint": "Only admins can take control",
     "lock_login_hint": "Only admins can join",
+    "lock_file_transfer_hint": "Only admins can transfer files",
     "broadcast_hint": "RTMP, e.g. YouTube",
     "broadcast_start": "Start",
     "broadcast_stop": "Stop",
@@ -130,5 +136,8 @@
     "copy": "Copy to this device and the remote desktop",
     "copied": "Copied",
     "hint": "Copying an entry updates both your device and the remote clipboard. Press Ctrl+V on the remote desktop to paste."
+  },
+  "chat": {
+    "today_at": "Today at {{time}}"
   }
 }

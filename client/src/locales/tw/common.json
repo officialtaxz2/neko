@@ -36,7 +36,10 @@
     "lock": "鎖定控制",
     "unlock": "解鎖控制",
     "has": "您擁有控制權",
-    "hasnot": "您沒有控制權"
+    "hasnot": "您沒有控制權",
+    "mic_on": "開啟麥克風",
+    "mic_off": "關閉麥克風",
+    "mic_error": "麥克風錯誤"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "自動播放影片",
     "ignore_emotes": "忽略表情符號",
     "chat_sound": "播放聊天音效",
+    "links_in_app": "一律在應用程式內開啟連結",
     "keyboard_layout": "鍵盤配置",
     "broadcast_title": "直播"
   },
@@ -70,6 +74,7 @@
     "connected": "已連線",
     "disconnected": "已斷線",
     "kicked": "您已被移出此房間。",
+    "replaced": "此工作階段已在另一個分頁或視窗中開啟",
     "button_confirm": "確定"
   },
   "notifications": {

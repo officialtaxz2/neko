@@ -5,12 +5,14 @@ import { selectMuted } from '@/state/app'
 import { EMOTES } from '@/state/emotes'
 import { useClient } from '@/state/provider'
 import { SmileyStickerIcon } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import { IconButton } from '@/components/IconButton'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import './sprites.css'
 
 // the emote bar in the room menu: recently used emotes and the picker
 export function Emotes() {
+  const { t } = useTranslation() // the fork: the picker's name in the viewer's language
   const client = useClient()
   const actions = useActions()
   const muted = useStore(client.store, selectMuted)
@@ -59,7 +61,7 @@ export function Emotes() {
         <li className="mx-[5px] text-[24px]">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <IconButton label="Emotes" data-testid="emotes-open">
+              <IconButton label={t('fork:controls.emotes')} data-testid="emotes-open">
                 <SmileyStickerIcon className="size-6" />
               </IconButton>
             </DropdownMenuTrigger>

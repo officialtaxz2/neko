@@ -18,10 +18,10 @@ const { setSetting } = await import('@/state/settings')
 const { specialKeys, MODIFIERS, XK } = await import('./keys')
 const { InputSetting } = await import('./InputSetting')
 
-// a phone: touch, no mouse; or a desktop with a mouse
+// a phone: touch, a coarse pointer; or a wide desktop with a mouse
 const device = (touch: boolean) => {
-  vi.stubGlobal('window', touch ? { ontouchstart: null } : {})
-  vi.stubGlobal('matchMedia', () => ({ matches: !touch }))
+  vi.stubGlobal('window', touch ? { ontouchstart: null, innerWidth: 390 } : { innerWidth: 1920 })
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: touch ? q.includes('coarse') : !q.includes('coarse') }))
 }
 beforeEach(() => {
   stored = fakeBrowser()
@@ -106,6 +106,21 @@ test('force touch makes any device a touch device; the trackpad is on only where
   expect(phone.app.getState().settings.trackpad_mode).toBe(true)
   expect(phone.overlay.trackpadCursor).toEqual({ x: 0.5, y: 0.5, touching: false })
   expect((phone.overlay as unknown as { trackpad: boolean }).trackpad).toBe(true)
+})
+
+test('touch devices as the Vue client counted them: an iPad with keyboard and trackpad, a window up to 1024px', () => {
+  const neko = createNekoApp({ transport: fakeTransport() })
+  expect(neko.client.isTouchDevice).toBe(false) // a wide desktop with a mouse
+  vi.stubGlobal('navigator', {
+    ...navigator,
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+    maxTouchPoints: 5,
+  })
+  expect(neko.client.isTouchDevice).toBe(true) // iPadOS calls itself a Mac, but has touch points
+  vi.unstubAllGlobals()
+  device(false)
+  vi.stubGlobal('window', { innerWidth: 900 })
+  expect(neko.client.isTouchDevice).toBe(true) // a narrow window
 })
 
 test('settings: force touch always, the trackpad on a touch device, its pointer while the trackpad is on', () => {

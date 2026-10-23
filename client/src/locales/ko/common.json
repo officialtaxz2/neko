@@ -36,7 +36,10 @@
     "lock": "조작 잠그기",
     "unlock": "조작 잠금 해제하기",
     "has": "당신은 제어권을 가지고 있습니다",
-    "hasnot": "당신은 제어권이 없습니다"
+    "hasnot": "당신은 제어권이 없습니다",
+    "mic_on": "마이크 켜기",
+    "mic_off": "마이크 끄기",
+    "mic_error": "마이크 오류"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "동영상 자동 재생",
     "ignore_emotes": "이모지 무시",
     "chat_sound": "채팅 소리 재생",
+    "links_in_app": "항상 앱에서 링크 열기",
     "keyboard_layout": "키보드 레이아웃",
     "broadcast_title": "실시간 방송"
   },
@@ -70,6 +74,7 @@
     "connected": "연결됨",
     "disconnected": "연결 해제됨",
     "kicked": "이 방에서 추방됐습니다.",
+    "replaced": "이 세션이 다른 탭이나 창에서 열렸습니다",
     "button_confirm": "확인"
   },
   "notifications": {

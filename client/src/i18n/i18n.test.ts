@@ -56,8 +56,10 @@ test('namespaces: common is the default, the plugins are <ns>:key', () => {
 })
 
 test('a key the language lacks falls back to en', () => {
-  assert.equal(t('controls.mic_on'), 'Enable Microphone')
-  assert.equal(t('setting.links_in_app'), 'Always open links in app')
+  // every language has every key now, so one only en knows
+  i18n.addResource('en', 'common', 'only_en', 'Only in English')
+  assert.equal(t('only_en'), 'Only in English')
+  assert.equal(t('controls.mic_on'), 'Mikrofon einschalten')
 })
 
 test('interpolation: {{x}}, count, and a value is not interpolated or nested again, nor escaped', () => {
@@ -119,19 +121,11 @@ test('loader: reads exactly <lang>/<ns> from the glob map, nothing of the other 
   assert.equal(de.mock.calls.length, 1)
 })
 
-test('every language has the four files, en every key, the others all but the known gaps', () => {
+test('every language has the four files, en every key, the others too', () => {
   assert.deepEqual(readdirSync(new URL('../locales/', import.meta.url)).sort(), [...langs].sort())
   const en = Object.fromEntries(NS.map((ns) => [ns, flat(json('en', ns))]))
   assert.equal(Object.keys(en.common).length + Object.keys(en.chat).length + Object.keys(en.files).length, 100)
-  assert.equal(Object.keys(en.fork).length, 108)
-  // strings added since the translations: en only, until someone translates them
-  const GAPS = [
-    'controls.mic_on',
-    'controls.mic_off',
-    'controls.mic_error',
-    'setting.links_in_app',
-    'connection.replaced',
-  ]
+  assert.equal(Object.keys(en.fork).length, 115)
   for (const lang of langs) {
     assert.deepEqual(readdirSync(new URL(`../locales/${lang}/`, import.meta.url)).sort(), [
       'chat.json',
@@ -148,7 +142,7 @@ test('every language has the four files, en every key, the others all but the kn
       }
       for (const k of Object.keys(mine)) assert.ok(k in en[ns], `${lang} has ${ns}:${k}, en has not`)
     }
-    assert.deepEqual(missing, lang === 'en' ? [] : lang === 'sk' ? ['you', ...GAPS] : GAPS, lang)
+    assert.deepEqual(missing, [], lang)
   }
 })
 

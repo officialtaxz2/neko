@@ -36,7 +36,10 @@
     "lock": "Kunci Kendali",
     "unlock": "Buka Kunci Kendali",
     "has": "Anda memiliki kendali",
-    "hasnot": "Anda tidak memiliki kendali"
+    "hasnot": "Anda tidak memiliki kendali",
+    "mic_on": "Aktifkan mikrofon",
+    "mic_off": "Nonaktifkan mikrofon",
+    "mic_error": "Kesalahan mikrofon"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "Putar Video Otomatis",
     "ignore_emotes": "Abaikan Emoticon",
     "chat_sound": "Nyalakan Bunyi Obrolan",
+    "links_in_app": "Selalu buka tautan di aplikasi",
     "keyboard_layout": "Tata Letak Papan Tik",
     "broadcast_title": "Siaran Langsung"
   },
@@ -70,6 +74,7 @@
     "connected": "Tersambung",
     "disconnected": "Terputus",
     "kicked": "Anda telah dikeluarkan dari ruangan ini.",
+    "replaced": "Sesi ini dibuka di tab atau jendela lain",
     "button_confirm": "Oke"
   },
   "notifications": {

@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
+import { htmlLang } from '@/i18n'
 import { useActions } from '@/state/actions'
 import { selectMuted } from '@/state/app'
 import { useNeko } from '@/state/provider'
@@ -16,21 +18,30 @@ import { loadEmoji } from './emoji'
 import { Markdown } from './Markdown'
 import { EmojiPicker } from './EmojiPicker'
 
-const time = (d: Date) =>
-  d.toDateString() === new Date().toDateString()
-    ? `Today at ${d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
-    : d.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })
+// the fork: the time in the viewer's language, as the Vue client wrote it (date-fns per language)
+const time = (d: Date, lang: string, t: TFunction) => {
+  const tag = htmlLang(lang)
+  if (d.toDateString() !== new Date().toDateString())
+    return d.toLocaleString(tag, { dateStyle: 'short', timeStyle: 'short' })
+  const clock = d.toLocaleTimeString(tag, { hour: 'numeric', minute: '2-digit' })
+  return t('fork:chat.today_at', { time: clock })
+}
 
 const MAX_MESSAGE = 512
 // a line of the history: a message (an avatar and the content) or an event
 const line = 'flex flex-1 flex-row flex-nowrap overflow-hidden pt-2.5 pr-[5px] pl-2.5 wrap-break-word select-text'
 
 export function Chat() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const neko = useNeko()
   const { client } = neko
   const actions = useActions()
   const sessions = useStore(client.store, (s) => s.sessions)
+  // the fork: the host's avatar is marked and your own name says "(you)", as in the Vue client
+  const { hostId, sessionId } = useStore(
+    client.store,
+    useShallow((s) => ({ hostId: s.control.host_id, sessionId: s.session_id })),
+  )
   const muted = useStore(client.store, selectMuted)
   const store = chat(neko)
   const { lines, enabled } = useStore(
@@ -85,8 +96,10 @@ export function Chat() {
               <div
                 className={cn(
                   'mr-2.5 h-10 w-10 shrink-0 grow-0 overflow-hidden rounded-full bg-style-primary',
+                  m.id === hostId && 'shadow-mint-glow ring-2 ring-mint',
                   bulk && 'invisible h-0',
                 )}
+                data-host={m.id === hostId || undefined}
                 data-testid="chat-author"
                 onContextMenu={(e) => actions.openMenu(e, m.id)}
               >
@@ -95,13 +108,16 @@ export function Chat() {
               <div className="flex min-w-0 flex-1 flex-col wrap-break-word">
                 {!bulk && (
                   <div className="mb-[3px] block w-full cursor-default">
-                    <span className="inline-block font-medium text-text-normal">{nameOf(m)}</span>
+                    <span className="inline-block font-medium text-text-normal">
+                      {nameOf(m)}
+                      {m.id === sessionId && ` (${t('you')})`}
+                    </span>
                     {/* the legacy 0.7rem and 0.3rem at a 14px root */}
                     <span
                       className="ml-[4.2px] inline-block text-[9.8px] leading-3 font-medium text-text-muted first-letter:uppercase"
                       data-testid="chat-time"
                     >
-                      {time(m.created)}
+                      {time(m.created, i18n.language, t)}
                     </span>
                   </div>
                 )}
@@ -110,7 +126,10 @@ export function Chat() {
             </li>
           ) : (
             <li key={m.seq} className={cn(line, 'cursor-default text-text-muted')} data-testid="chat-event">
-              <div className="inline-block min-w-0 align-baseline leading-5 wrap-break-word" title={time(m.created)}>
+              <div
+                className="inline-block min-w-0 align-baseline leading-5 wrap-break-word"
+                title={time(m.created, i18n.language, t)}
+              >
                 <strong className="font-semibold">{m.name}</strong> {m.content}
               </div>
             </li>

@@ -36,7 +36,10 @@
     "lock": "Bloquear controles",
     "unlock": "Desbloquear controles",
     "has": "Tienes el control",
-    "hasnot": "No tienes el control"
+    "hasnot": "No tienes el control",
+    "mic_on": "Activar micrófono",
+    "mic_off": "Desactivar micrófono",
+    "mic_error": "Error del micrófono"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "Reproducir video automáticamente",
     "ignore_emotes": "Ignorar emoticonos",
     "chat_sound": "Reproducir sonido del chat",
+    "links_in_app": "Abrir siempre los enlaces en la aplicación",
     "keyboard_layout": "Diseño del teclado",
     "broadcast_title": "Transmisión en vivo"
   },
@@ -70,6 +74,7 @@
     "connected": "Conectado",
     "disconnected": "Desconectado",
     "kicked": "Has sido expulsado de esta sala.",
+    "replaced": "Esta sesión se abrió en otra pestaña o ventana",
     "button_confirm": "OK"
   },
   "notifications": {

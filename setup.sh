@@ -21,6 +21,7 @@ HEALTH_TIMEOUT=180
 DO_BUILD=1
 DO_CHECK=0
 NO_CACHE=""
+ROLLBACK=0
 
 usage() {
   cat <<EOF
@@ -32,6 +33,8 @@ Options:
   --check       Run the server and client tests in containers first
                 (docker-compose.validation.yaml, a few minutes); stop if they fail.
                 Useful after a git pull that changed server/ or client/.
+  --rollback    Start the build before the last one again (kept as :previous after
+                every successful update). The next run without it goes back to the newest.
   -h, --help    Show this help.
 EOF
 }
@@ -41,6 +44,7 @@ while [[ $# -gt 0 ]]; do
     --no-build) DO_BUILD=0 ;;
     --no-cache) NO_CACHE="--no-cache" ;;
     --check) DO_CHECK=1 ;;
+    --rollback) ROLLBACK=1; DO_BUILD=0 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
   esac
@@ -230,6 +234,12 @@ image_app="${NEKO_IMAGE##*/}"; image_app="${image_app%%:*}"
 if [[ "$POLICY_FILE" =~ (^|/)apps/([^/]+)/policies\.json$ && "${BASH_REMATCH[2]}" != "$BROWSER" ]]; then
   die "NEKO_POLICY_FILE '$POLICY_FILE' belongs to ${BASH_REMATCH[2]}, not NEKO_BROWSER '$BROWSER'; clear it in .env."
 fi
+if [[ "$ROLLBACK" == 1 ]]; then
+  # Compose prefers NEKO_IMAGE from the environment over .env: this run only, .env stays as it is
+  export NEKO_IMAGE="${NEKO_IMAGE%:*}:previous"
+  docker image inspect "$NEKO_IMAGE" >/dev/null 2>&1 \
+    || die "There is no earlier build $NEKO_IMAGE yet; it is kept from the next successful update on."
+fi
 log "Browser: $BROWSER ($NEKO_IMAGE)"
 HTTP_BIND="$(env_get NEKO_HTTP_BIND .env)";            HTTP_BIND="${HTTP_BIND:-127.0.0.1}"
 HTTP_PORT="$(env_get NEKO_HTTP_PORT .env)";            HTTP_PORT="${HTTP_PORT:-8082}"
@@ -338,18 +348,20 @@ for dir in "$PROFILE_DIR" "$DOWNLOADS_DIR"; do
 done
 
 # --------------------------------------------------------------------
-# Superseded images
+# Earlier builds
 #
 # Rebuilding a tag leaves the image it pointed to behind without a name, a
-# few GB per update. The IDs our tags point to now are noted before building;
-# once the new neko is healthy, those that no tag uses any more are removed.
+# few GB per update. The images our tags point to now are noted before
+# building. Once the new neko is healthy, the browser and base images it
+# replaced are kept as :previous (the way back: --rollback), and those that
+# :previous held until then are removed, as is a replaced server test image.
 # Only images this script built are touched, and none a container still uses.
 
-superseded=()
+replaced=() # "<image>=<id it had before the build>"
 note_image() {
   local id
   id="$(docker image inspect -f '{{.Id}}' "$1" 2>/dev/null || true)"
-  [[ -n "$id" ]] && superseded+=("$id")
+  [[ -n "$id" ]] && replaced+=("$1=$id")
   return 0
 }
 # server-checks' image name in docker-compose.validation.yaml
@@ -423,17 +435,35 @@ if [[ "$status" != healthy ]]; then
   die "neko is '$status' after ${HEALTH_TIMEOUT}s; see the log above."
 fi
 
+dropped=()
+kept=0
+# newest first: the browser image, then its base, then the server test image
+for ((i = ${#replaced[@]} - 1; i >= 0; i--)); do
+  image="${replaced[i]%=*}"
+  id="${replaced[i]##*=}"
+  # not rebuilt: nothing replaced
+  [[ "$(docker image inspect -f '{{.Id}}' "$image" 2>/dev/null)" == "$id" ]] && continue
+  previous="${image%:*}:previous"
+  if [[ "$image" == "$VALIDATION_IMAGE" || "$image" == "$previous" ]]; then
+    dropped+=("$id")
+    continue
+  fi
+  old="$(docker image inspect -f '{{.Id}}' "$previous" 2>/dev/null || true)"
+  docker tag "$id" "$previous" && kept=$((kept + 1))
+  [[ -n "$old" && "$old" != "$id" ]] && dropped+=("$old")
+done
 removed=0
-# newest first: an old browser image goes before the old base it was built on
-for ((i = ${#superseded[@]} - 1; i >= 0; i--)); do
-  id="${superseded[i]}"
-  # still tagged (nothing was rebuilt): keep
+for id in "${dropped[@]}"; do
+  # still tagged: keep
   [[ -n "$(docker image inspect -f '{{join .RepoTags " "}}' "$id" 2>/dev/null)" ]] && continue
   # refused while a container uses it or an image builds on it
   docker image rm "$id" >/dev/null 2>&1 && removed=$((removed + 1))
 done
+if ((kept > 0)); then
+  log "Kept the replaced build as ${NEKO_IMAGE%:*}:previous; 'bash setup.sh --rollback' starts it again"
+fi
 if ((removed > 0)); then
-  log "Removed $removed superseded image(s) of earlier builds"
+  log "Removed $removed image(s) of older builds"
 fi
 
 # --------------------------------------------------------------------

@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "操作はロック中",
-    "login": "ログインはロック中"
+    "login": "ログインはロック中",
+    "file_transfer": "ファイルはロック中"
   },
   "room": {
-    "members": "メンバー"
+    "members": "メンバー",
+    "host": "ホスト",
+    "muted": "ミュート中",
+    "ignored": "無視中"
   },
   "setting": {
     "language": "言語"
@@ -97,6 +101,7 @@
     "more": "その他",
     "tools": "その他のツール",
     "fullscreen": "全画面",
+    "exit_fullscreen": "全画面を終了",
     "resolution": "画面解像度",
     "pip": "ピクチャーインピクチャー",
     "clipboard": "クリップボード",
@@ -115,6 +120,7 @@
     "account": "アカウント",
     "lock_control_hint": "管理者のみ操作できます",
     "lock_login_hint": "管理者のみ参加できます",
+    "lock_file_transfer_hint": "管理者のみファイルを転送できます",
     "broadcast_hint": "RTMP（例: YouTube）",
     "broadcast_start": "開始",
     "broadcast_stop": "停止",
@@ -130,5 +136,8 @@
     "copy": "この端末とリモートデスクトップにコピー",
     "copied": "コピーしました",
     "hint": "項目をコピーすると、この端末とリモートのクリップボードの両方が更新されます。リモートデスクトップでは Ctrl+V で貼り付けます。"
+  },
+  "chat": {
+    "today_at": "今日 {{time}}"
   }
 }

@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Contrôle verrouillé",
-    "login": "Connexion verrouillée"
+    "login": "Connexion verrouillée",
+    "file_transfer": "Fichiers verrouillés"
   },
   "room": {
-    "members": "Membres"
+    "members": "Membres",
+    "host": "Hôte",
+    "muted": "Muet",
+    "ignored": "Ignoré"
   },
   "setting": {
     "language": "Langue"
@@ -97,6 +101,7 @@
     "more": "Plus",
     "tools": "Plus d’outils",
     "fullscreen": "Plein écran",
+    "exit_fullscreen": "Quitter le plein écran",
     "resolution": "Résolution de l’écran",
     "pip": "Image dans l’image",
     "clipboard": "Presse-papiers",
@@ -115,6 +120,7 @@
     "account": "Compte",
     "lock_control_hint": "Seuls les admins peuvent prendre le contrôle",
     "lock_login_hint": "Seuls les admins peuvent rejoindre",
+    "lock_file_transfer_hint": "Seuls les administrateurs peuvent transférer des fichiers",
     "broadcast_hint": "RTMP, p. ex. YouTube",
     "broadcast_start": "Démarrer",
     "broadcast_stop": "Arrêter",
@@ -130,5 +136,8 @@
     "copy": "Copier sur cet appareil et le bureau distant",
     "copied": "Copié",
     "hint": "Copier une entrée met à jour votre appareil et le presse-papiers distant. Appuyez sur Ctrl+V sur le bureau distant pour coller."
+  },
+  "chat": {
+    "today_at": "Aujourd'hui à {{time}}"
   }
 }

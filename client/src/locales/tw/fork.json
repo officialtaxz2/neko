@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "控制已鎖定",
-    "login": "登入已鎖定"
+    "login": "登入已鎖定",
+    "file_transfer": "檔案已鎖定"
   },
   "room": {
-    "members": "成員"
+    "members": "成員",
+    "host": "主持人",
+    "muted": "已靜音",
+    "ignored": "已忽略"
   },
   "setting": {
     "language": "語言"
@@ -97,6 +101,7 @@
     "more": "更多",
     "tools": "更多工具",
     "fullscreen": "全螢幕",
+    "exit_fullscreen": "結束全螢幕",
     "resolution": "螢幕解析度",
     "pip": "子母畫面",
     "clipboard": "剪貼簿",
@@ -115,6 +120,7 @@
     "account": "帳戶",
     "lock_control_hint": "只有管理員可以控制",
     "lock_login_hint": "只有管理員可以加入",
+    "lock_file_transfer_hint": "只有管理員可以傳輸檔案",
     "broadcast_hint": "RTMP，例如 YouTube",
     "broadcast_start": "開始",
     "broadcast_stop": "停止",
@@ -130,5 +136,8 @@
     "copy": "複製到此裝置和遠端桌面",
     "copied": "已複製",
     "hint": "複製一筆紀錄會同時更新你的裝置和遠端剪貼簿。在遠端桌面中按 Ctrl+V 貼上。"
+  },
+  "chat": {
+    "today_at": "今天 {{time}}"
   }
 }

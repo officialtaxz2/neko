@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "제어 잠김",
-    "login": "로그인 잠김"
+    "login": "로그인 잠김",
+    "file_transfer": "파일 잠김"
   },
   "room": {
-    "members": "멤버"
+    "members": "멤버",
+    "host": "호스트",
+    "muted": "음소거됨",
+    "ignored": "무시됨"
   },
   "setting": {
     "language": "언어"
@@ -97,6 +101,7 @@
     "more": "더 보기",
     "tools": "도구 더 보기",
     "fullscreen": "전체 화면",
+    "exit_fullscreen": "전체 화면 종료",
     "resolution": "화면 해상도",
     "pip": "PIP 모드",
     "clipboard": "클립보드",
@@ -115,6 +120,7 @@
     "account": "계정",
     "lock_control_hint": "관리자만 제어할 수 있습니다",
     "lock_login_hint": "관리자만 참여할 수 있습니다",
+    "lock_file_transfer_hint": "관리자만 파일을 전송할 수 있습니다",
     "broadcast_hint": "RTMP, 예: YouTube",
     "broadcast_start": "시작",
     "broadcast_stop": "중지",
@@ -130,5 +136,8 @@
     "copy": "이 기기와 원격 데스크톱에 복사",
     "copied": "복사됨",
     "hint": "항목을 복사하면 이 기기와 원격 클립보드가 모두 바뀝니다. 원격 데스크톱에서는 Ctrl+V로 붙여넣으세요."
+  },
+  "chat": {
+    "today_at": "오늘 {{time}}"
   }
 }

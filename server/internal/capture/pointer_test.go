@@ -31,6 +31,18 @@ func TestPointerInVideo(t *testing.T) {
 		{"gst pipeline without pointer", map[string]types.VideoConfig{
 			"main": {GstPipeline: "ximagesrc display-name={display} show-pointer=false ! appsink name=appsink", ShowPointer: true},
 		}, []string{"main"}, false},
+		{"gst pipeline with ximagesrc's default pointer", map[string]types.VideoConfig{
+			"main": {GstPipeline: "ximagesrc display-name={display} use-damage=false ! appsink name=appsink"},
+		}, []string{"main"}, true},
+		{"gst pipeline with pointer as 1", map[string]types.VideoConfig{
+			"main": {GstPipeline: "ximagesrc display-name={display} show-pointer=1 ! appsink name=appsink"},
+		}, []string{"main"}, true},
+		{"gst pipeline without pointer as FALSE", map[string]types.VideoConfig{
+			"main": {GstPipeline: "ximagesrc display-name={display} show-pointer=FALSE ! appsink name=appsink"},
+		}, []string{"main"}, false},
+		{"gst pipeline without ximagesrc", map[string]types.VideoConfig{
+			"main": {GstPipeline: "videotestsrc ! appsink name=appsink"},
+		}, []string{"main"}, false},
 	}
 
 	for _, test := range tests {

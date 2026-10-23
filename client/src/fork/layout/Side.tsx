@@ -1,15 +1,23 @@
 import { useEffect } from 'react'
 import { useStore } from 'zustand'
 import { useTranslation } from 'react-i18next'
-import { SlidersHorizontalIcon } from '@phosphor-icons/react'
+import { SlidersHorizontalIcon, UsersIcon } from '@phosphor-icons/react'
 import { useApp } from '@/state/provider'
 import { remember } from '@/state/storage'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Settings } from '@/fork/settings/Settings'
+import { MemberList } from '@/fork/room/MemberList'
 import { useSlot } from '@/plugins'
 import type { PluginTab } from '@/plugins/types'
 import { EachHook } from '@/components/EachHook'
 
+// right after the chat, as in the Vue client: the members, also on a phone without the room bar
+const membersTab: PluginTab = {
+  id: 'members',
+  icon: UsersIcon,
+  label: 'fork:room.members',
+  component: MemberList,
+}
 // after the plugins' tabs
 const settingsTab: PluginTab = {
   id: 'settings',
@@ -22,9 +30,11 @@ const tabClass =
   'mr-0 flex min-w-0 flex-1 basis-0 flex-col items-center gap-1 rounded-control bg-transparent px-0.5 pt-2 pb-1.5 text-[11.5px] font-semibold text-text-muted transition-all duration-300 ease-fluid hover:bg-glass hover:text-pure data-[state=active]:bg-mint/12 data-[state=active]:text-mint'
 
 // The side panel of the fork's design: upstream's panel (layout/Side.tsx) on glass, with the tabs as
-// icon-over-label buttons that fill the width.
+// icon-over-label buttons that fill the width; the Vue client's Members tab is back after the chat.
 export function Side() {
-  const tabs = [...useSlot('side.tab'), settingsTab]
+  const plugins = useSlot('side.tab')
+  const chat = plugins.findIndex((p) => p.id === 'chat') + 1
+  const tabs = [...plugins.slice(0, chat), membersTab, ...plugins.slice(chat), settingsTab]
   useEffect(() => {
     document.querySelector('aside')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])

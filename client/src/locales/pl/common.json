@@ -36,7 +36,10 @@
     "lock": "Zablokuj sterowanie",
     "unlock": "Odblokuj sterowanie",
     "has": "Masz sterowanie",
-    "hasnot": "Nie masz sterowania"
+    "hasnot": "Nie masz sterowania",
+    "mic_on": "Włącz mikrofon",
+    "mic_off": "Wyłącz mikrofon",
+    "mic_error": "Błąd mikrofonu"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "Autoodtwarzanie wideo",
     "ignore_emotes": "Ignoruj emotki",
     "chat_sound": "Odtwarzaj dźwięk czatu",
+    "links_in_app": "Zawsze otwieraj linki w aplikacji",
     "keyboard_layout": "Układ klawiatury",
     "broadcast_title": "Transmisja na żywo"
   },
@@ -70,6 +74,7 @@
     "connected": "Połączono",
     "disconnected": "Rozłączono",
     "kicked": "Zostałeś usunięty z pokoju.",
+    "replaced": "Ta sesja została otwarta w innej karcie lub oknie",
     "button_confirm": "OK"
   },
   "notifications": {

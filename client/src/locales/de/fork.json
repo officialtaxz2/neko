@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Steuerung gesperrt",
-    "login": "Login gesperrt"
+    "login": "Login gesperrt",
+    "file_transfer": "Dateien gesperrt"
   },
   "room": {
-    "members": "Mitglieder"
+    "members": "Mitglieder",
+    "host": "Host",
+    "muted": "Stummgeschaltet",
+    "ignored": "Ignoriert"
   },
   "setting": {
     "language": "Sprache"
@@ -97,6 +101,7 @@
     "more": "Mehr",
     "tools": "Weitere Werkzeuge",
     "fullscreen": "Vollbild",
+    "exit_fullscreen": "Vollbild beenden",
     "resolution": "Bildschirmauflösung",
     "pip": "Bild im Bild",
     "clipboard": "Zwischenablage",
@@ -115,6 +120,7 @@
     "account": "Konto",
     "lock_control_hint": "Nur Admins können steuern",
     "lock_login_hint": "Nur Admins können beitreten",
+    "lock_file_transfer_hint": "Nur Admins können Dateien übertragen",
     "broadcast_hint": "RTMP, z. B. YouTube",
     "broadcast_start": "Starten",
     "broadcast_stop": "Stoppen",
@@ -130,5 +136,8 @@
     "copy": "Auf dieses Gerät und den entfernten Desktop kopieren",
     "copied": "Kopiert",
     "hint": "Ein kopierter Eintrag landet in deiner und in der entfernten Zwischenablage. Im entfernten Desktop fügst du mit Strg+V ein."
+  },
+  "chat": {
+    "today_at": "Heute um {{time}}"
   }
 }

@@ -36,7 +36,10 @@
     "lock": "コントロールをロック",
     "unlock": "コントロールのロックを解除",
     "has": "あなたはコントロールを持っています",
-    "hasnot": "あなたはコントロールを持っていません"
+    "hasnot": "あなたはコントロールを持っていません",
+    "mic_on": "マイクをオン",
+    "mic_off": "マイクをオフ",
+    "mic_error": "マイクのエラー"
   },
   "locks": {
     "control": {
@@ -62,6 +65,7 @@
     "autoplay": "動画を自動再生する",
     "ignore_emotes": "絵文字を無視する",
     "chat_sound": "チャットで音を再生する",
+    "links_in_app": "リンクを常にアプリ内で開く",
     "keyboard_layout": "キーボード配列",
     "broadcast_title": "ライブ配信"
   },
@@ -70,6 +74,7 @@
     "connected": "接続しました",
     "disconnected": "切断しました",
     "kicked": "あなたはこの部屋から追い出されました",
+    "replaced": "このセッションは別のタブまたはウィンドウで開かれました",
     "button_confirm": "OK"
   },
   "notifications": {

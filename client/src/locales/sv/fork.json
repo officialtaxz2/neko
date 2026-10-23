@@ -10,10 +10,14 @@
   },
   "chip": {
     "control": "Kontroll låst",
-    "login": "Inloggning låst"
+    "login": "Inloggning låst",
+    "file_transfer": "Filer låsta"
   },
   "room": {
-    "members": "Medlemmar"
+    "members": "Medlemmar",
+    "host": "Värd",
+    "muted": "Tystad",
+    "ignored": "Ignorerad"
   },
   "setting": {
     "language": "Språk"
@@ -97,6 +101,7 @@
     "more": "Mer",
     "tools": "Fler verktyg",
     "fullscreen": "Helskärm",
+    "exit_fullscreen": "Avsluta helskärm",
     "resolution": "Skärmupplösning",
     "pip": "Bild i bild",
     "clipboard": "Urklipp",
@@ -115,6 +120,7 @@
     "account": "Konto",
     "lock_control_hint": "Endast administratörer kan ta kontroll",
     "lock_login_hint": "Endast administratörer kan gå med",
+    "lock_file_transfer_hint": "Endast administratörer kan överföra filer",
     "broadcast_hint": "RTMP, t.ex. YouTube",
     "broadcast_start": "Starta",
     "broadcast_stop": "Stoppa",
@@ -130,5 +136,8 @@
     "copy": "Kopiera till den här enheten och fjärrskrivbordet",
     "copied": "Kopierat",
     "hint": "När du kopierar en post uppdateras både din enhet och fjärrurklippet. Tryck Ctrl+V på fjärrskrivbordet för att klistra in."
+  },
+  "chat": {
+    "today_at": "Idag kl. {{time}}"
   }
 }
