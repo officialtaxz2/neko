@@ -55,5 +55,23 @@
       "terminal": "epäonnistui"
     },
     "try_hls": "Katso HLS:llä"
+  },
+  "input": {
+    "force_touch": "Pakota kosketusohjaus",
+    "force_touch_hint": "Näyttää näyttönäppäimistön ja erikoisnäppäimet kaikilla laitteilla. Fyysinen näppäimistö toimii sen jälkeen, kun napsautat kuvaa.",
+    "trackpad_mode": "Kosketuslevytila",
+    "trackpad_hint": "Yksi sormi liikuttaa osoitinta, napautus napsauttaa ja paikallaan pidetty sormi napsauttaa oikealla.",
+    "trackpad_cursor_hidden": "Piilota kosketuslevyn osoitin",
+    "keyboard_helper": "Erikoisnäppäimet",
+    "reset_keys": "Vapauta näppäimet",
+    "close": "Sulje",
+    "all": "Kaikki",
+    "copy": "Kopioi",
+    "paste": "Liitä",
+    "undo": "Kumoa",
+    "left": "Vasen",
+    "up": "Ylös",
+    "right": "Oikea",
+    "down": "Alas"
   }
 }

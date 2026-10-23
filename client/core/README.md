@@ -198,6 +198,15 @@ detaches it (a second attach replaces the first). `overlay.mobileKeyboardToggle(
 the on-screen keyboard on touch devices. A stream without input is just `transport.attach(box)`: the
 client never loads the overlay or the keyboard unless they are imported.
 
+Trackpad mode (the fork): `overlay.setTrackpad(true)` turns the touch screen into a laptop's
+trackpad. One finger moves a pointer by as much as it moves (not to where it is), a tap clicks the
+left button where the pointer is, a finger held still for 600 ms clicks the right one; other fingers
+are ignored, and a touch that input was taken from (control lost, locked) is forgotten.
+`overlay.onTrackpad(fn)` reports the pointer as a fraction of the picture
+(`{ x, y, touching }`, also `overlay.trackpadCursor`) for the consumer to draw; while no finger is
+on it, it follows the remote cursor. `client.setInputMode('touch' | 'mouse' | 'auto')` overrides
+`isTouchDevice` at run time (no argument: back to the `inputMode` option).
+
 Another device (a gamepad, a VR controller, a test driver) does what the overlay does: watch
 `client.controlling` / `client.state.control.locked` to know when input is accepted, call
 `client.request()` to become host, and send through `client.input`:
@@ -217,6 +226,7 @@ gamepad.onButton = (n, down) => client.input.button(n + 1, down)
 | `lock()`, `unlock()`                             | local lock (`control.locked`)                                                              |
 | `setScrollInverse(v)`, `setScrollSensitivity(n)` | wheel direction and v3 scroll steps (-5..5)                                                |
 | `setKeyboard(layout, variant?)`                  | the remote keyboard layout, sent while in control                                          |
+| `setInputMode(mode?)`                            | the fork: override `isTouchDevice` (`'touch'`, `'mouse'`, `'auto'`)                        |
 | `setScreenSize(width, height, rate)`             | admins: change the screen                                                                  |
 | `paste(text)`                                    | type text remotely through the server's clipboard                                          |
 | `preparePaste(text)`                             | before a paste keystroke: the side that copied most recently wins (see the source comment) |

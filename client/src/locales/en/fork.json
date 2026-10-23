@@ -55,5 +55,23 @@
       "terminal": "failed"
     },
     "try_hls": "Watch with HLS instead"
+  },
+  "input": {
+    "force_touch": "Force touch controls",
+    "force_touch_hint": "Shows the on-screen keyboard and the special keys on any device. A physical keyboard then works after you click into the picture.",
+    "trackpad_mode": "Trackpad mode",
+    "trackpad_hint": "One finger moves the pointer, a tap clicks, a finger held still right-clicks.",
+    "trackpad_cursor_hidden": "Hide trackpad pointer",
+    "keyboard_helper": "Special keys",
+    "reset_keys": "Reset keys",
+    "close": "Close",
+    "all": "All",
+    "copy": "Copy",
+    "paste": "Paste",
+    "undo": "Undo",
+    "left": "Left",
+    "up": "Up",
+    "right": "Right",
+    "down": "Down"
   }
 }

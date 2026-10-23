@@ -55,5 +55,23 @@
       "terminal": "falló"
     },
     "try_hls": "Ver con HLS en su lugar"
+  },
+  "input": {
+    "force_touch": "Forzar controles táctiles",
+    "force_touch_hint": "Muestra el teclado en pantalla y las teclas especiales en cualquier dispositivo. El teclado físico funcionará después de hacer clic en la imagen.",
+    "trackpad_mode": "Modo trackpad",
+    "trackpad_hint": "Un dedo mueve el puntero, un toque hace clic y mantener el dedo quieto hace clic derecho.",
+    "trackpad_cursor_hidden": "Ocultar puntero del trackpad",
+    "keyboard_helper": "Teclas especiales",
+    "reset_keys": "Soltar teclas",
+    "close": "Cerrar",
+    "all": "Todo",
+    "copy": "Copiar",
+    "paste": "Pegar",
+    "undo": "Deshacer",
+    "left": "Izquierda",
+    "up": "Arriba",
+    "right": "Derecha",
+    "down": "Abajo"
   }
 }

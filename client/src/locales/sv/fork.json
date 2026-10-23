@@ -55,5 +55,23 @@
       "terminal": "misslyckades"
     },
     "try_hls": "Titta med HLS i stället"
+  },
+  "input": {
+    "force_touch": "Tvinga pekkontroller",
+    "force_touch_hint": "Visar skärmtangentbordet och specialtangenterna på alla enheter. Ett fysiskt tangentbord fungerar då först efter att du klickat i bilden.",
+    "trackpad_mode": "Styrplattsläge",
+    "trackpad_hint": "Ett finger flyttar pekaren, ett tryck klickar, ett finger som hålls stilla högerklickar.",
+    "trackpad_cursor_hidden": "Dölj styrplattans pekare",
+    "keyboard_helper": "Specialtangenter",
+    "reset_keys": "Släpp tangenterna",
+    "close": "Stäng",
+    "all": "Allt",
+    "copy": "Kopiera",
+    "paste": "Klistra in",
+    "undo": "Ångra",
+    "left": "Vänster",
+    "up": "Upp",
+    "right": "Höger",
+    "down": "Ned"
   }
 }

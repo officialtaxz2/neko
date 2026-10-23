@@ -55,5 +55,23 @@
       "terminal": "失敗"
     },
     "try_hls": "改用 HLS 觀看"
+  },
+  "input": {
+    "force_touch": "強制觸控操作",
+    "force_touch_hint": "在任何裝置上顯示螢幕鍵盤和特殊按鍵。實體鍵盤需要先點擊畫面後才能使用。",
+    "trackpad_mode": "觸控板模式",
+    "trackpad_hint": "單指移動指標，輕點即點擊，手指靜止按住即右鍵點擊。",
+    "trackpad_cursor_hidden": "隱藏觸控板指標",
+    "keyboard_helper": "特殊按鍵",
+    "reset_keys": "放開按鍵",
+    "close": "關閉",
+    "all": "全選",
+    "copy": "複製",
+    "paste": "貼上",
+    "undo": "復原",
+    "left": "左",
+    "up": "上",
+    "right": "右",
+    "down": "下"
   }
 }

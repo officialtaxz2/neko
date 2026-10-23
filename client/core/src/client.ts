@@ -99,9 +99,11 @@ export class NekoClient {
   private localSeen = { text: '', at: 0 } // the local clipboard text last handed over, and when
 
   private readonly opts: NekoClientOptions
+  private inputMode: NekoClientOptions['inputMode'] // the fork: changes at run time (setInputMode)
 
   constructor(opts: NekoClientOptions = {}) {
     this.opts = opts
+    this.inputMode = opts.inputMode
     const t = opts.transport
     this.transport = typeof t === 'function' ? t() : (t ?? new WebRTCTransport())
     this.input = this.transport.input ?? new WebSocketInput(this)
@@ -159,7 +161,7 @@ export class NekoClient {
   }
 
   get isTouchDevice() {
-    if (this.opts.inputMode) return this.opts.inputMode === 'touch'
+    if (this.inputMode && this.inputMode !== 'auto') return this.inputMode === 'touch'
     return (
       ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
       !matchMedia('(pointer:fine)').matches &&
@@ -523,6 +525,11 @@ export class NekoClient {
 
   setScrollSensitivity(value: number) {
     this.patch('control', { scroll: { ...this.state.control.scroll, sensitivity: value } })
+  }
+
+  // the fork: the viewer's "force touch" setting; undefined goes back to what the options said
+  setInputMode(mode = this.opts.inputMode) {
+    this.inputMode = mode
   }
 
   setKeyboard(layout: string, variant = '') {

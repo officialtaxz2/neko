@@ -21,6 +21,10 @@ export const defaults = {
   // open chat links on the remote desktop instead of locally (needs the openinapp plugin)
   links_in_app: false,
   keyboard_layout: 'us',
+  // the fork: touch input (features/input), under the Vue client's keys
+  force_touch: false,
+  trackpad_mode: false,
+  trackpad_cursor_hidden: false,
 }
 export type ViewerSettings = typeof defaults
 
@@ -47,6 +51,8 @@ export function createAppStore() {
     menu: null as null | { x: number; y: number; id: string },
     dialog: null as Dialog | null,
     about: false,
+    // the fork: the special keys' bar (features/input/KeyboardHelper)
+    keyboardHelper: false,
   }))
 }
 export type AppStore = ReturnType<typeof createAppStore>

@@ -37,6 +37,18 @@ const MAC_REMAP: Record<number, number> = {
 const remap = (key: number) => (isMac && MAC_REMAP[key]) || key
 const isCtrl = (key: number) => key === XK.Control_L || key === XK.Control_R
 
+// the fork: trackpad mode (setTrackpad)
+const TRACKPAD_LONG_PRESS_MS = 600 // a finger held this long without moving right-clicks
+const TRACKPAD_MOVE_PX = 2 // a finger that moves more than this is not a tap
+const TRACKPAD_CLICK_MS = 50 // between the press and the release of a tap's click
+
+// where the trackpad's pointer is, as a fraction (0..1) of the picture, and whether a finger is on it
+export interface TrackpadCursor {
+  x: number
+  y: number
+  touching: boolean
+}
+
 const TOUCH_PHASE: Record<string, 'begin' | 'update' | 'end'> = {
   touchstart: 'begin',
   touchmove: 'update',
@@ -66,6 +78,13 @@ export class Overlay {
   private pendingPress: { e: MouseEvent; at: number } | null = null // implicit hosting: replayed once we are host
   private ctrlDown = 0
   private readonly noKeyUp = new Set<number>()
+
+  // the fork: trackpad mode, the pointer it moves (fractions of the picture) and the finger on it
+  private trackpad = false
+  private pad = { x: 0.5, y: 0.5 }
+  private padTouch: { id: number; x: number; y: number; moved: boolean; long: boolean } | null = null
+  private padTimer = 0
+  private readonly padListeners = new Set<(c: TrackpadCursor) => void>()
 
   private readonly client: NekoClient
 
@@ -184,7 +203,10 @@ export class Overlay {
       client.store.subscribe((s) => s.control.host_id, this.draw),
       client.store.subscribe(
         () => this.active,
-        () => this.focusIfActive(),
+        (active) => {
+          if (!active) this.resetTrackpad() // the fork: a finger lifted while input was off is forgotten
+          this.focusIfActive()
+        },
       ),
       client.transport.on('cursor.position', (p) => (p ? this.onCursorPosition(p) : this.clearCursor())),
       client.transport.on('cursor.image', (img) => this.onCursorImage(img)),
@@ -197,6 +219,7 @@ export class Overlay {
   private detach() {
     if (!this.box) return
     clearTimeout(this.moveTimer)
+    this.resetTrackpad()
     this.cleanup.splice(0).forEach((fn) => fn())
     this.keyboard.reset()
     this.wrap.remove()
@@ -407,6 +430,7 @@ export class Overlay {
     e.preventDefault()
     e.stopPropagation()
     if (this.client.state.control.locked) return
+    if (this.trackpad) return this.onTrackpadTouch(e) // the fork
 
     if (this.client.state.control.touch) {
       for (const t of e.changedTouches) {
@@ -420,6 +444,96 @@ export class Overlay {
     this.move(this.pos(t))
     if (e.type === 'touchstart') this.button(1, true)
     else if (e.type !== 'touchmove') this.button(1, false)
+  }
+
+  /////////////////////////////
+  // the fork: trackpad mode
+  /////////////////////////////
+
+  // the touch screen as a laptop's trackpad: one finger moves a pointer by as much as it moves
+  // (not to where it is), a tap clicks, a finger held still right-clicks. For phones, where a
+  // finger covers what it would tap. The GUI draws the pointer (onTrackpad).
+  setTrackpad(on: boolean) {
+    if (on === this.trackpad) return
+    this.trackpad = on
+    this.resetTrackpad()
+  }
+
+  // the pointer, now and whenever it moves; returns what stops it
+  onTrackpad(fn: (c: TrackpadCursor) => void): () => void {
+    this.padListeners.add(fn)
+    fn(this.trackpadCursor)
+    return () => void this.padListeners.delete(fn)
+  }
+
+  get trackpadCursor(): TrackpadCursor {
+    return { ...this.pad, touching: !!this.padTouch }
+  }
+
+  private emitTrackpad() {
+    const c = this.trackpadCursor
+    this.padListeners.forEach((fn) => fn(c))
+  }
+
+  private resetTrackpad() {
+    clearTimeout(this.padTimer)
+    if (!this.padTouch) return
+    this.padTouch = null
+    this.emitTrackpad()
+  }
+
+  private padPos(): Pos {
+    const { width, height } = this.client.state.screen.size
+    return { x: Math.round(this.pad.x * width), y: Math.round(this.pad.y * height) }
+  }
+
+  private padClick(code: number) {
+    this.move(this.padPos())
+    this.button(code, true)
+    window.setTimeout(() => this.button(code, false), TRACKPAD_CLICK_MS)
+  }
+
+  private onTrackpadTouch(e: TouchEvent) {
+    const own = this.padTouch && [...e.changedTouches].find((t) => t.identifier === this.padTouch!.id)
+    if (e.type === 'touchstart') {
+      if (this.padTouch) return // one finger drives, the others are ignored
+      const t = e.changedTouches[0]
+      const touch = { id: t.identifier, x: t.clientX, y: t.clientY, moved: false, long: false }
+      this.padTouch = touch
+      this.move(this.padPos()) // the remote pointer joins the local one
+      clearTimeout(this.padTimer)
+      this.padTimer = window.setTimeout(() => {
+        if (this.padTouch !== touch || touch.moved) return
+        touch.long = true
+        this.padClick(3)
+        navigator.vibrate?.(40)
+      }, TRACKPAD_LONG_PRESS_MS)
+      this.emitTrackpad()
+    } else if (!own) {
+      return
+    } else if (e.type === 'touchmove') {
+      const touch = this.padTouch!
+      const dx = own.clientX - touch.x
+      const dy = own.clientY - touch.y
+      touch.x = own.clientX
+      touch.y = own.clientY
+      if (Math.abs(dx) > TRACKPAD_MOVE_PX || Math.abs(dy) > TRACKPAD_MOVE_PX) {
+        touch.moved = true
+        clearTimeout(this.padTimer)
+      }
+      const r = this.canvas.getBoundingClientRect()
+      if (!r.width || !r.height) return
+      const clamp = (v: number) => Math.max(0, Math.min(v, 1))
+      this.pad = { x: clamp(this.pad.x + dx / r.width), y: clamp(this.pad.y + dy / r.height) }
+      this.move(this.padPos())
+      this.emitTrackpad()
+    } else {
+      const { moved, long } = this.padTouch!
+      clearTimeout(this.padTimer)
+      this.padTouch = null
+      if (e.type === 'touchend' && !moved && !long) this.padClick(1)
+      this.emitTrackpad()
+    }
   }
 
   /////////////////////////////
@@ -455,6 +569,12 @@ export class Overlay {
   private onCursorPosition(p: Pos) {
     this.cursorPos = p
     this.draw()
+    // the fork: the trackpad's pointer follows the remote one while no finger moves it
+    const { width, height } = this.client.state.screen.size
+    if (this.trackpad && !this.padTouch && width && height) {
+      this.pad = { x: Math.max(0, Math.min(p.x / width, 1)), y: Math.max(0, Math.min(p.y / height, 1)) }
+      this.emitTrackpad()
+    }
   }
 
   private clearCursor() {

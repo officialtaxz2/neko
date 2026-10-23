@@ -55,5 +55,23 @@
       "terminal": "niepowodzenie"
     },
     "try_hls": "Oglądaj zamiast tego przez HLS"
+  },
+  "input": {
+    "force_touch": "Wymuś sterowanie dotykowe",
+    "force_touch_hint": "Pokazuje klawiaturę ekranową i klawisze specjalne na każdym urządzeniu. Fizyczna klawiatura działa wtedy dopiero po kliknięciu w obraz.",
+    "trackpad_mode": "Tryb gładzika",
+    "trackpad_hint": "Jeden palec przesuwa wskaźnik, stuknięcie klika, palec przytrzymany w miejscu klika prawym przyciskiem.",
+    "trackpad_cursor_hidden": "Ukryj wskaźnik gładzika",
+    "keyboard_helper": "Klawisze specjalne",
+    "reset_keys": "Zwolnij klawisze",
+    "close": "Zamknij",
+    "all": "Wszystko",
+    "copy": "Kopiuj",
+    "paste": "Wklej",
+    "undo": "Cofnij",
+    "left": "W lewo",
+    "up": "W górę",
+    "right": "W prawo",
+    "down": "W dół"
   }
 }

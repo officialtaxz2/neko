@@ -55,5 +55,23 @@
       "terminal": "失敗"
     },
     "try_hls": "代わりに HLS で視聴"
+  },
+  "input": {
+    "force_touch": "タッチ操作を強制",
+    "force_touch_hint": "どのデバイスでもスクリーンキーボードと特殊キーを表示します。物理キーボードは画面をクリックした後に使えます。",
+    "trackpad_mode": "トラックパッドモード",
+    "trackpad_hint": "指1本でポインターを動かし、タップでクリック、指を止めたまま長押しで右クリックします。",
+    "trackpad_cursor_hidden": "トラックパッドのポインターを隠す",
+    "keyboard_helper": "特殊キー",
+    "reset_keys": "キーを離す",
+    "close": "閉じる",
+    "all": "全選択",
+    "copy": "コピー",
+    "paste": "貼り付け",
+    "undo": "元に戻す",
+    "left": "左",
+    "up": "上",
+    "right": "右",
+    "down": "下"
   }
 }

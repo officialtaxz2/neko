@@ -55,5 +55,23 @@
       "terminal": "fehlgeschlagen"
     },
     "try_hls": "Stattdessen mit HLS zuschauen"
+  },
+  "input": {
+    "force_touch": "Touch-Bedienung erzwingen",
+    "force_touch_hint": "Zeigt Bildschirmtastatur und Sondertasten auf jedem Gerät. Die echte Tastatur greift dann erst nach einem Klick ins Bild.",
+    "trackpad_mode": "Trackpad-Modus",
+    "trackpad_hint": "Ein Finger bewegt den Zeiger, Tippen klickt, ein ruhig gehaltener Finger klickt rechts.",
+    "trackpad_cursor_hidden": "Trackpad-Zeiger ausblenden",
+    "keyboard_helper": "Sondertasten",
+    "reset_keys": "Tasten lösen",
+    "close": "Schließen",
+    "all": "Alles",
+    "copy": "Kopieren",
+    "paste": "Einfügen",
+    "undo": "Rückgängig",
+    "left": "Links",
+    "up": "Hoch",
+    "right": "Rechts",
+    "down": "Runter"
   }
 }

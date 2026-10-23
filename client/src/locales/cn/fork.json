@@ -55,5 +55,23 @@
       "terminal": "失败"
     },
     "try_hls": "改用 HLS 观看"
+  },
+  "input": {
+    "force_touch": "强制触控操作",
+    "force_touch_hint": "在任何设备上显示屏幕键盘和特殊按键。物理键盘需要先点击画面后才能使用。",
+    "trackpad_mode": "触控板模式",
+    "trackpad_hint": "单指移动指针，轻点即点击，手指静止按住即右键点击。",
+    "trackpad_cursor_hidden": "隐藏触控板指针",
+    "keyboard_helper": "特殊按键",
+    "reset_keys": "松开按键",
+    "close": "关闭",
+    "all": "全选",
+    "copy": "复制",
+    "paste": "粘贴",
+    "undo": "撤销",
+    "left": "左",
+    "up": "上",
+    "right": "右",
+    "down": "下"
   }
 }

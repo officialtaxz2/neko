@@ -55,5 +55,23 @@
       "terminal": "échec"
     },
     "try_hls": "Regarder avec HLS à la place"
+  },
+  "input": {
+    "force_touch": "Forcer les commandes tactiles",
+    "force_touch_hint": "Affiche le clavier virtuel et les touches spéciales sur tout appareil. Le clavier physique fonctionne ensuite après un clic dans l’image.",
+    "trackpad_mode": "Mode pavé tactile",
+    "trackpad_hint": "Un doigt déplace le pointeur, un appui clique, un doigt immobile fait un clic droit.",
+    "trackpad_cursor_hidden": "Masquer le pointeur du pavé tactile",
+    "keyboard_helper": "Touches spéciales",
+    "reset_keys": "Relâcher les touches",
+    "close": "Fermer",
+    "all": "Tout",
+    "copy": "Copier",
+    "paste": "Coller",
+    "undo": "Annuler",
+    "left": "Gauche",
+    "up": "Haut",
+    "right": "Droite",
+    "down": "Bas"
   }
 }

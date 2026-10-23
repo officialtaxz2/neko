@@ -379,3 +379,105 @@ test('store subscriptions: resize on the screen size, sync on visibility and int
   })
   assert.deepEqual([o.visible, o.interactive, o.active], [true, true, true])
 })
+
+// the fork: trackpad mode
+test('trackpad: a finger moves the pointer by as much as it moves, a tap clicks at the pointer, a finger held still right-clicks; the GUI hears where the pointer is', async () => {
+  const { client, calls, box, overlay, canvas, textarea, emit } = setup()
+  overlay.attach(box as any)
+  laidOut(canvas())
+  await host(client)
+  const seen: unknown[] = []
+  overlay.onTrackpad((c) => seen.push(c))
+  overlay.setTrackpad(true)
+  assert.deepEqual(seen, [{ x: 0.5, y: 0.5, touching: false }], 'starts in the middle')
+  const touch = (type: string, x: number, y: number, identifier = 1) =>
+    textarea().dispatch(type, { changedTouches: [{ identifier, clientX: x, clientY: y, force: 1 }] })
+
+  // a tap anywhere clicks where the pointer is, not where the finger is
+  touch('touchstart', 100, 100)
+  touch('touchend', 100, 100)
+  assert.deepEqual(calls, [
+    ['move', 960, 540],
+    ['move', 960, 540],
+    ['button', 1, true],
+  ])
+  await tick(50)
+  assert.deepEqual(calls.at(-1), ['button', 1, false])
+
+  // a drag of 96x54 css px (a tenth of the 960x540 picture) moves it by a tenth; no click
+  calls.length = 0
+  touch('touchstart', 100, 100)
+  touch('touchmove', 196, 154)
+  touch('touch', 0, 0, 2) // not a touch event the overlay listens to
+  touch('touchstart', 500, 500, 2) // a second finger is ignored
+  touch('touchmove', 900, 900, 2)
+  touch('touchend', 196, 154)
+  await tick(600)
+  assert.deepEqual(calls, [
+    ['move', 960, 540],
+    ['move', 1152, 648],
+  ])
+  assert.deepEqual(overlay.trackpadCursor, { x: 0.6, y: 0.6, touching: false })
+  touch('touchmove', 5000, -5000)
+  assert.equal(calls.length, 2, 'a finger that is not on the pad does nothing')
+
+  // held still for 600 ms: a right click, and the end of that touch clicks nothing more
+  calls.length = 0
+  touch('touchstart', 100, 100)
+  assert.deepEqual(seen.at(-1), { x: 0.6, y: 0.6, touching: true })
+  await tick(600)
+  touch('touchend', 101, 101)
+  await tick(50)
+  assert.deepEqual(calls, [
+    ['move', 1152, 648],
+    ['move', 1152, 648],
+    ['button', 3, true],
+    ['button', 3, false],
+  ])
+  assert.deepEqual(seen.at(-1), { x: 0.6, y: 0.6, touching: false })
+
+  // the pointer is clamped to the picture, and follows the remote one while no finger is on it
+  touch('touchstart', 0, 0)
+  touch('touchmove', 5000, 5000)
+  touch('touchcancel', 5000, 5000)
+  assert.deepEqual(overlay.trackpadCursor, { x: 1, y: 1, touching: false })
+  emit('cursor.position', { x: 480, y: 270 })
+  assert.deepEqual(overlay.trackpadCursor, { x: 0.25, y: 0.25, touching: false })
+
+  // off: touches are touches again
+  overlay.setTrackpad(false)
+  calls.length = 0
+  touch('touchstart', 10 + 96, 20 + 54)
+  assert.deepEqual(calls, [['touch', 'begin', 1, 192, 108, 255]])
+})
+
+for (const [name, lose, regain] of [
+  [
+    'losing control',
+    (c: any) => patch(c, 'control', { host_id: 's2' }),
+    (c: any) => patch(c, 'control', { host_id: 's1' }),
+  ],
+  ['pausing input', (c: any) => c.lock(), (c: any) => c.unlock()],
+] as const) {
+  test(`trackpad: ${name} during a touch does not block later touches`, async () => {
+    const { client, calls, box, overlay, canvas, textarea } = setup()
+    overlay.attach(box as any)
+    laidOut(canvas())
+    await host(client)
+    overlay.setTrackpad(true)
+    const touch = (type: string, identifier: number) =>
+      textarea().dispatch(type, { changedTouches: [{ identifier, clientX: 100, clientY: 100, force: 1 }] })
+    touch('touchstart', 1)
+    lose(client)
+    await settle()
+    touch('touchend', 1) // without control the end of the touch never arrives
+    await tick(600)
+    assert.equal(overlay.trackpadCursor.touching, false)
+    regain(client)
+    await settle()
+    calls.length = 0
+    touch('touchstart', 2)
+    touch('touchend', 2)
+    assert.deepEqual(calls.at(-1), ['button', 1, true])
+  })
+}

@@ -11,6 +11,7 @@ import {
   MouseIcon,
   PictureInPictureIcon,
   PlayCircleIcon,
+  SlidersHorizontalIcon,
   SpeakerHighIcon,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
@@ -20,6 +21,9 @@ import { IconButton } from '@/components/IconButton'
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverTrigger } from '@/components/ui/popover'
 import { Emote } from '@/features/emotes/Emote'
+import { KeyboardHelper } from '@/features/input/KeyboardHelper'
+import { TrackpadCursor } from '@/features/input/TrackpadCursor'
+import { useTouch } from '@/features/input/useTouch'
 import { Resolution } from './Resolution'
 import { Clipboard } from './Clipboard'
 import { Player } from './Player'
@@ -49,10 +53,12 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
     })),
   )
   const emotes = useStore(app, (s) => s.emotes)
+  const keyboardHelper = useStore(app, (s) => s.keyboardHelper)
   const player = useRef<HTMLDivElement>(null)
   const { fullscreen, request: requestFullscreen } = useFullscreen(player)
   const syncClipboard = useClipboardSync()
   const pip = usePip()
+  const touch = useTouch() // the fork: "force touch" counts too
 
   const controlLocked = lockedControls && !admin
   const { playing, playable, muted, mutedByAutoplay } = video
@@ -64,6 +70,9 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
       <div ref={player} className="absolute inset-0 flex items-center justify-center bg-black">
         <div className="absolute inset-0" data-testid="player" onMouseEnter={syncClipboard}>
           <Player transport={client.transport} />
+          {/* the fork: the trackpad's pointer, the special keys' bar (features/input) */}
+          <TrackpadCursor />
+          <KeyboardHelper />
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             {Object.entries(emotes).map(([id, type]) => (
               <Emote key={id} id={id} type={type} />
@@ -153,7 +162,21 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
                 </IconButton>
               </li>
             )}
-            {hosting && client.isTouchDevice && (
+            {hosting && touch && (
+              <li className={cn('mb-2.5 last:mb-0', extra)}>
+                <IconButton
+                  variant="video"
+                  label={t('fork:input.keyboard_helper')}
+                  data-testid="keyboard-helper-toggle"
+                  aria-pressed={keyboardHelper}
+                  onMouseDown={(e) => e.preventDefault()} // keeps an open on-screen keyboard open
+                  onClick={() => app.setState({ keyboardHelper: !keyboardHelper })}
+                >
+                  <SlidersHorizontalIcon className="size-4" />
+                </IconButton>
+              </li>
+            )}
+            {hosting && touch && (
               <li className={cn('mb-2.5 last:mb-0', extra)}>
                 <IconButton
                   variant="video"

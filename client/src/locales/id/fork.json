@@ -55,5 +55,23 @@
       "terminal": "gagal"
     },
     "try_hls": "Tonton dengan HLS saja"
+  },
+  "input": {
+    "force_touch": "Paksa kontrol sentuh",
+    "force_touch_hint": "Menampilkan keyboard layar dan tombol khusus di perangkat apa pun. Keyboard fisik baru berfungsi setelah Anda mengklik gambar.",
+    "trackpad_mode": "Mode trackpad",
+    "trackpad_hint": "Satu jari menggerakkan penunjuk, ketuk untuk klik, tahan jari diam untuk klik kanan.",
+    "trackpad_cursor_hidden": "Sembunyikan penunjuk trackpad",
+    "keyboard_helper": "Tombol khusus",
+    "reset_keys": "Lepas tombol",
+    "close": "Tutup",
+    "all": "Semua",
+    "copy": "Salin",
+    "paste": "Tempel",
+    "undo": "Urungkan",
+    "left": "Kiri",
+    "up": "Atas",
+    "right": "Kanan",
+    "down": "Bawah"
   }
 }

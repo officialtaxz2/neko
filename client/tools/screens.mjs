@@ -228,7 +228,21 @@ const noWebRTC = () => delete window.RTCPeerConnection
 
 async function shot(
   name,
-  { width, height, mobile = false, token = 'tok', state, side, tab, hash = '', viewer, after, hls, webrtc = true },
+  {
+    width,
+    height,
+    mobile = false,
+    token = 'tok',
+    state,
+    side,
+    tab,
+    hash = '',
+    viewer,
+    after,
+    hls,
+    webrtc = true,
+    stored = {},
+  },
 ) {
   if (only && !only.includes(name)) return
   const ctx = await browser.newContext({
@@ -242,14 +256,15 @@ async function shot(
   await ctx.addInitScript(fakeBrowser, token)
   if (!webrtc) await ctx.addInitScript(noWebRTC)
   await ctx.addInitScript(
-    ([side, tab, viewer]) => {
+    ([side, tab, viewer, stored]) => {
       // the stored settings as src/state/storage.ts writes them
       localStorage.setItem('lang', 'de')
       if (side !== undefined) localStorage.setItem('side', side ? '1' : '0')
       if (tab) localStorage.setItem('tab', tab)
       if (viewer) localStorage.setItem('view_name', viewer)
+      for (const [k, v] of Object.entries(stored)) localStorage.setItem(k, v)
     },
-    [side, tab, viewer],
+    [side, tab, viewer, stored],
   )
   const page = await ctx.newPage()
   page.on('pageerror', (e) => console.log(`${name}: pageerror ${e.message}`))
@@ -340,6 +355,21 @@ await shot('no-webrtc', { ...phone, webrtc: false })
 await shot('hls-connecting', { ...desktop, hash: '?media=hls', side: false })
 await shot('hls-failed', { ...phone, hash: '?media=hls', side: false, hls: 'fail' })
 await shot('desktop-media', { ...desktop, side: true, tab: 'settings', state: { host: 's1' } })
+// touch input: the trackpad's pointer and the special keys' bar on a phone; the settings with force touch
+await shot('phone-trackpad', {
+  ...phone,
+  side: false,
+  state: { host: 's1' },
+  stored: { trackpad_mode: '1' },
+  after: (page) => page.getByTestId('keyboard-helper-toggle').click(),
+})
+await shot('desktop-input', {
+  ...desktop,
+  side: true,
+  tab: 'settings',
+  state: { host: 's1' },
+  stored: { force_touch: '1', trackpad_mode: '1' },
+})
 await shot('share-hls', { ...phone, ...share, hash: '?media=ll-hls#/ShareToken-12345', viewer: 'Gast', hls: 'fail' })
 
 await browser.close()

@@ -9,6 +9,7 @@ export {
   type Pos,
 } from './client.ts'
 export { Overlay } from './overlay.ts'
+export type { TrackpadCursor } from './overlay.ts' // the fork
 export { mount } from './mount.ts'
 export { Emitter } from './emitter.ts'
 export { NekoApi, ApiError } from './api.ts'

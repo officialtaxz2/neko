@@ -8,11 +8,14 @@ export function setSetting<K extends keyof ViewerSettings>(neko: NekoApp, key: K
   applySettings(neko)
 }
 
-export function applySettings({ client, app }: NekoApp) {
+export function applySettings({ client, overlay, app }: NekoApp) {
   const { settings } = app.getState()
   client.setScrollSensitivity(settings.scroll_sensitivity)
   client.setScrollInverse(settings.scroll_invert)
   client.setKeyboard(settings.keyboard_layout)
+  // the fork: touch input on any device when forced, the trackpad only on a touch device
+  client.setInputMode(settings.force_touch ? 'touch' : undefined)
+  overlay.setTrackpad(settings.trackpad_mode && client.isTouchDevice)
 }
 
 // start-up (createNekoApp): what the URL and the stored settings say, applied once before the connection

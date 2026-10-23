@@ -55,5 +55,23 @@
       "terminal": "zlyhalo"
     },
     "try_hls": "Pozerať radšej cez HLS"
+  },
+  "input": {
+    "force_touch": "Vynútiť dotykové ovládanie",
+    "force_touch_hint": "Zobrazí klávesnicu na obrazovke a špeciálne klávesy na každom zariadení. Fyzická klávesnica potom funguje až po kliknutí do obrazu.",
+    "trackpad_mode": "Režim touchpadu",
+    "trackpad_hint": "Jeden prst posúva ukazovateľ, ťuknutie klikne, prst podržaný na mieste klikne pravým tlačidlom.",
+    "trackpad_cursor_hidden": "Skryť ukazovateľ touchpadu",
+    "keyboard_helper": "Špeciálne klávesy",
+    "reset_keys": "Uvoľniť klávesy",
+    "close": "Zavrieť",
+    "all": "Všetko",
+    "copy": "Kopírovať",
+    "paste": "Vložiť",
+    "undo": "Späť",
+    "left": "Doľava",
+    "up": "Hore",
+    "right": "Doprava",
+    "down": "Dole"
   }
 }

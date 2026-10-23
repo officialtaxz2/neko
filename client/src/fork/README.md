@@ -21,19 +21,29 @@ sync with upstream touches as few upstream files as possible.
   the server offers), `src/state/diagnostics.ts` (the traces' read-only handle) and
   `src/features/media/` (the status on the picture, the settings' choice, the short select for a
   view-only bar); the transport itself is in the core (`core/src/transport/hls.ts`).
+- Touch input (outside this folder too): `src/features/input/` (`useTouch`: a touch device or
+  "force touch"; `InputSetting`: force touch, the trackpad and its pointer in the settings;
+  `TrackpadCursor`: the trackpad's pointer drawn into the overlay; `KeyboardHelper` and `keys.ts`:
+  the special keys' bar over the on-screen keyboard); the trackpad itself is in the core
+  (`core/src/overlay.ts`, `setTrackpad`). The settings keep the Vue client's keys (`force_touch`,
+  `trackpad_mode`, `trackpad_cursor_hidden`).
 - Strings: the namespace `fork`, `src/locales/<lang>/fork.json` in every language, used as
   `t('fork:key')`.
 
 Upstream files changed for the fork, each marked with a "the fork" comment: `src/app/App.tsx` (the
 shell's classes and the pieces above), `src/index.css` (the import), `src/main.tsx` (the namespace),
-`src/features/settings/Settings.tsx` (the language picker and the admin's lock switches),
+`src/features/settings/Settings.tsx` (the language picker, the admin's lock switches, the media
+choice and the touch settings),
 `src/components/ui/button.tsx` (dark ink on mint), `eslint.config.js` (the layer rule),
-`src/features/video/Stage.tsx` (no control request without `can_host`), `src/state/app.ts` and
+`src/features/video/Stage.tsx` (no control request without `can_host`; the trackpad's pointer,
+the special keys and "force touch" for the keyboard button), `src/state/settings.ts` (the touch
+settings into the core), `src/state/app.ts` (also the touch settings and the special keys' flag) and
 `src/state/neko.ts` (the share link, the media choice, the traces' handle), `src/app/App.tsx` also
 for the HLS status and the HLS offer without WebRTC, `vite.config.ts` (hls.js's own chunk),
 `tools/dist.check.mjs` (that it stays lazy), `src/locales/de/common.json` ("Verbunden"), and in the
-core `client.ts` (`tokenStorage`/`tokenKey`, `logout({ keepalive })`), `transport/webrtc.ts` (the
-read-only `peer`), `index.ts` and `dist.check.mjs` (the HLS transport).
+core `client.ts` (`tokenStorage`/`tokenKey`, `logout({ keepalive })`, `setInputMode`),
+`overlay.ts` (trackpad mode), `transport/webrtc.ts` (the read-only `peer`), `index.ts` and
+`dist.check.mjs` (the HLS transport).
 
 Imports follow the layer rules (`eslint.config.js`): `src/fork` sits beside `src/layout`, it may use
 features, components, state and the plugin registry; only the app shell imports it (the rules forbid
@@ -43,4 +53,5 @@ The visual check (DesignSystem.md, Gate 2) runs against a simulated server:
 `node tools/screens.mjs <out-dir>` renders the login, the desktop with and without the side panel, a
 narrow window, the phone upright with and without the panel, the phone sideways, and a share link's
 login screen and passive view on desktop and phone, a browser without WebRTC, and HLS starting,
-failed, in the settings and on a share link (served over HTTPS with a throwaway certificate).
+failed, in the settings and on a share link (served over HTTPS with a throwaway certificate), and
+the trackpad with the special keys on a phone and the touch settings.

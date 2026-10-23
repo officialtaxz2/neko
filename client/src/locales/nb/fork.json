@@ -55,5 +55,23 @@
       "terminal": "mislyktes"
     },
     "try_hls": "Se med HLS i stedet"
+  },
+  "input": {
+    "force_touch": "Tving berøringskontroller",
+    "force_touch_hint": "Viser skjermtastaturet og spesialtastene på alle enheter. Et fysisk tastatur virker da først etter at du klikker i bildet.",
+    "trackpad_mode": "Styreflatemodus",
+    "trackpad_hint": "Én finger flytter pekeren, et trykk klikker, en finger som holdes i ro høyreklikker.",
+    "trackpad_cursor_hidden": "Skjul styreflatepekeren",
+    "keyboard_helper": "Spesialtaster",
+    "reset_keys": "Slipp tastene",
+    "close": "Lukk",
+    "all": "Alt",
+    "copy": "Kopier",
+    "paste": "Lim inn",
+    "undo": "Angre",
+    "left": "Venstre",
+    "up": "Opp",
+    "right": "Høyre",
+    "down": "Ned"
   }
 }

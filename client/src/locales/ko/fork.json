@@ -55,5 +55,23 @@
       "terminal": "실패"
     },
     "try_hls": "대신 HLS로 시청"
+  },
+  "input": {
+    "force_touch": "터치 조작 강제",
+    "force_touch_hint": "모든 기기에서 화상 키보드와 특수 키를 표시합니다. 실제 키보드는 화면을 클릭한 뒤에 작동합니다.",
+    "trackpad_mode": "트랙패드 모드",
+    "trackpad_hint": "한 손가락으로 포인터를 움직이고, 탭하면 클릭, 손가락을 멈춘 채 누르고 있으면 오른쪽 클릭입니다.",
+    "trackpad_cursor_hidden": "트랙패드 포인터 숨기기",
+    "keyboard_helper": "특수 키",
+    "reset_keys": "키 놓기",
+    "close": "닫기",
+    "all": "전체",
+    "copy": "복사",
+    "paste": "붙여넣기",
+    "undo": "실행 취소",
+    "left": "왼쪽",
+    "up": "위",
+    "right": "오른쪽",
+    "down": "아래"
   }
 }

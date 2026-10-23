@@ -12,6 +12,7 @@ import { setSetting } from '@/state/settings'
 import { Button } from '@/components/ui/button'
 import { htmlLang, langs, setLang, type Lang } from '@/i18n'
 import { MediaSetting } from '@/features/media/MediaSetting'
+import { InputSetting } from '@/features/input/InputSetting'
 import { row, label } from './classes'
 
 const field =
@@ -112,6 +113,8 @@ export function Settings() {
         {toggle('autoplay', 'autoplay')}
         {/* the fork: WebRTC or HLS / LL-HLS (state/media.ts) */}
         <MediaSetting />
+        {/* the fork: force touch, the trackpad (features/input) */}
+        <InputSetting />
         {toggle('ignore_emotes', 'ignore_emotes')}
         {toggle('chat_sound', 'chat_sound')}
         {openInApp && toggle('links_in_app', 'links_in_app')}
