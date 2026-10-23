@@ -6,6 +6,15 @@ Dieses Runbook ist auf einen Linux-Zielserver ohne lokal installiertes Node.js, 
 
 Der ursprüngliche Gruppenplan sah die gemeinsame Ausführung mit [`IOS_RECOVERY.md`](IOS_RECOVERY.md) auf demselben exakten `testing`-Commit und demselben Neko-Image vor. Der Betreiber schloss diesen Checkpoint am 2026-09-11 ausdrücklich mit bestandener View-only-Evidenz und bewusst offener iPhone-Tiefenvalidierung.
 
+## React-Client (ab der Umstellung auf den Upstream-Client)
+
+Der Vue-Client übertrug den Token als WebSocket-Subprotokoll `neko-view.<token>` an die Legacy-Route `/ws`. Diese Route gibt es seit dem Upstream-Merge nicht mehr. Der React-Client (`client/src/state/viewonly.ts`) meldet sich stattdessen über `POST /api/login` an: Name als `username`, Token als `password` im JSON-Body. Der Multiuser-Provider erkennt den Token wie bisher in konstanter Zeit und erzeugt die passive Session. Der Token steht damit weiterhin nie in Request-Pfad, Query oder `Referer`; Reverse Proxies dürfen jetzt keine Request-Bodies von `/api/login` protokollieren (statt `Sec-WebSocket-Protocol`).
+
+- Das Sitzungstoken liegt in `sessionStorage` unter `neko_view_session`, getrennt vom `neko_session` eines Mitglieds im selben Browser. Nur ein vom System beendeter Tab (ohne `pagehide`) setzt die Session fort; ein Reload meldet ab und neu an.
+- Beim Verlassen der Seite (Schließen, Wegnavigieren, Reload) entfernt der Client das Token sofort aus dem `sessionStorage` und meldet die Session per `keepalive`-Request ab. Zehn Reloads hinterlassen deshalb eine Session, nicht zehn. Eine Seite im Back/Forward-Cache trennt nur und setzt beim Zurückkehren dieselbe Session fort.
+- Der zuletzt verwendete Name wird als `view_name` in `localStorage` gemerkt und beim nächsten Besuch für die automatische Anmeldung benutzt. Nach einem Kick oder Logout meldet sich die Seite nicht von selbst wieder an.
+- Mit Cookie-Authentifizierung (`session.cookie.enabled`) teilen sich Mitglied und Share-Link im selben Browser das Cookie; der Link ersetzt dann die Mitglieds-Session. Die Deployment-Baseline nutzt Tokens ohne Cookie.
+
 ## Sicherheitsmodell in Kurzform
 
 Der optionale Token erzeugt eine passive Session im selben Neko-Raum und mit demselben WebRTC-Audio/-Video. Die Session darf weder Steuerung noch Maus, Tastatur, Touch, Zwischenablage, Dateioperationen, Mikrofon/Kamera, Chat-Senden, Plugins oder Adminfunktionen verwenden.

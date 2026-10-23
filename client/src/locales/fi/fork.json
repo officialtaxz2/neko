@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "Tietoja n.eko:sta",
+    "in_room": "{{count}} huoneessa",
+    "admin": "Ylläpitäjä",
+    "chat": "Chat",
+    "open_panel": "Avaa sivupaneeli",
+    "close_panel": "Sulje sivupaneeli",
+    "new_messages": "Uusia viestejä"
+  },
+  "chip": {
+    "control": "Ohjaus lukittu",
+    "login": "Kirjautuminen lukittu"
+  },
+  "room": {
+    "members": "Jäsenet"
+  },
+  "setting": {
+    "language": "Kieli"
+  },
+  "dock": {
+    "play": "Toista",
+    "pause": "Tauko",
+    "mute": "Mykistä",
+    "unmute": "Poista mykistys",
+    "volume": "Äänenvoimakkuus"
+  },
+  "share": {
+    "title": "Katso",
+    "hint": "Tällä linkillä voit katsoa ja kuunnella. Työpöytää ei voi ohjata eikä chatata.",
+    "watch": "Katso",
+    "connecting": "Yhdistetään",
+    "invalid": "Linkki on virheellinen tai ei ole enää käytössä."
+  },
+  "media": {
+    "label": "Oletusmediapolku",
+    "webrtc_desc": "Pienin viive, tarvitaan ohjaamiseen",
+    "ll_hls_desc": "Katseluun, lyhyt viive",
+    "hls_desc": "Katseluun, vakain, pidempi viive",
+    "default": "Oletus",
+    "current": "Nykyinen",
+    "override": "URL-osoitteen diagnostiikkavalinta on käytössä ja ohittaa tallennetun valinnan.",
+    "invalid_override": "URL-osoitteen mediavalinta on virheellinen, joten tallennetun valinnan sijaan käytössä on turvallinen WebRTC-polku.",
+    "clear_override": "Käytä tallennettua valintaa",
+    "limitations": "Vain katseluun, puskurointiviiveellä. Vaihto WebRTC:hen tehdään käsin.",
+    "retry": "Yritä HLS:ää uudelleen",
+    "unavailable": "ei saatavilla",
+    "use_webrtc": "Käytä WebRTC:tä",
+    "status": {
+      "idle": "valmiina",
+      "negotiating": "neuvotellaan",
+      "connecting": "yhdistetään",
+      "streaming": "toistetaan",
+      "paused": "yksityistila",
+      "terminal": "epäonnistui"
+    },
+    "try_hls": "Katso HLS:llä"
+  },
+  "input": {
+    "force_touch": "Pakota kosketusohjaus",
+    "force_touch_hint": "Näyttää näyttönäppäimistön ja erikoisnäppäimet kaikilla laitteilla. Fyysinen näppäimistö toimii sen jälkeen, kun napsautat kuvaa.",
+    "trackpad_mode": "Kosketuslevytila",
+    "trackpad_hint": "Yksi sormi liikuttaa osoitinta, napautus napsauttaa ja paikallaan pidetty sormi napsauttaa oikealla.",
+    "trackpad_cursor_hidden": "Piilota kosketuslevyn osoitin",
+    "keyboard_helper": "Erikoisnäppäimet",
+    "reset_keys": "Vapauta näppäimet",
+    "close": "Sulje",
+    "all": "Kaikki",
+    "copy": "Kopioi",
+    "paste": "Liitä",
+    "undo": "Kumoa",
+    "left": "Vasen",
+    "up": "Ylös",
+    "right": "Oikea",
+    "down": "Alas",
+    "keyboard": "Näppäimistö"
+  },
+  "controls": {
+    "take": "Ota ohjaus",
+    "request": "Pyydä",
+    "requested": "Pyydetty",
+    "release": "Luovu",
+    "force_take": "Ota haltuun",
+    "you_control": "Sinä ohjaat",
+    "other_controls": "{{name}} ohjaa",
+    "watching": "Katselet",
+    "waiting_for": "Odotetaan: {{name}}",
+    "input_active": "Hiiri ja näppäimistö käytössä",
+    "input_locked": "Syötteesi on keskeytetty",
+    "lock_input": "Keskeytä hiiren ja näppäimistön syöte",
+    "unlock_input": "Jatka hiiren ja näppäimistön syötettä",
+    "pause_input": "Keskeytä syöte",
+    "resume_input": "Jatka syötettä",
+    "locked_by_admin": "Ohjaus lukittu",
+    "admin_only": "Vain ylläpitäjät voivat ohjata",
+    "click_to_control": "Napsauta kuvaa ohjataksesi",
+    "more": "Lisää",
+    "tools": "Lisää työkaluja",
+    "fullscreen": "Koko näyttö",
+    "resolution": "Näytön tarkkuus",
+    "pip": "Kuva kuvassa",
+    "clipboard": "Leikepöytä",
+    "microphone": "Mikrofoni",
+    "stream": "Stream: {{name}}",
+    "close": "Sulje",
+    "emotes": "Emojit",
+    "input_group": "Syöte",
+    "view_group": "Kuva ja stream"
+  },
+  "settings": {
+    "stream": "Stream",
+    "input": "Syöte",
+    "chat": "Chat",
+    "room": "Huone",
+    "account": "Tili",
+    "lock_control_hint": "Vain ylläpitäjät voivat ohjata",
+    "lock_login_hint": "Vain ylläpitäjät voivat liittyä",
+    "broadcast_hint": "RTMP, esim. YouTube",
+    "broadcast_start": "Aloita",
+    "broadcast_stop": "Lopeta",
+    "logout_title": "Kirjaudutaanko ulos?",
+    "logout_text": "Poistut huoneesta."
+  },
+  "clipboard": {
+    "title": "Leikepöydän historia",
+    "placeholder": "Kirjoita tai muokkaa tekstiä etäleikepöydälle…",
+    "items": "Viimeisimmät: {{count}}",
+    "clear": "Tyhjennä historia",
+    "empty": "Mitään ei ole vielä kopioitu.",
+    "copy": "Kopioi tähän laitteeseen ja etätyöpöydälle",
+    "copied": "Kopioitu",
+    "hint": "Merkinnän kopiointi päivittää sekä laitteesi että etäleikepöydän. Liitä etätyöpöydällä painamalla Ctrl+V."
+  }
+}

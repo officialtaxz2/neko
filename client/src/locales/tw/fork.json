@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "關於 n.eko",
+    "in_room": "房間內 {{count}} 人",
+    "admin": "管理員",
+    "chat": "聊天",
+    "open_panel": "開啟側邊欄",
+    "close_panel": "關閉側邊欄",
+    "new_messages": "新訊息"
+  },
+  "chip": {
+    "control": "控制已鎖定",
+    "login": "登入已鎖定"
+  },
+  "room": {
+    "members": "成員"
+  },
+  "setting": {
+    "language": "語言"
+  },
+  "dock": {
+    "play": "播放",
+    "pause": "暫停",
+    "mute": "靜音",
+    "unmute": "取消靜音",
+    "volume": "音量"
+  },
+  "share": {
+    "title": "觀看",
+    "hint": "透過此連結你只能觀看和收聽，無法控制桌面或聊天。",
+    "watch": "觀看",
+    "connecting": "連線中",
+    "invalid": "連結無效或已失效。"
+  },
+  "media": {
+    "label": "預設媒體路徑",
+    "webrtc_desc": "延遲最低，控制時必需",
+    "ll_hls_desc": "用於觀看，延遲較短",
+    "hls_desc": "用於觀看，最穩定，延遲較長",
+    "default": "預設",
+    "current": "目前",
+    "override": "URL 中的診斷選擇已生效，優先於已儲存的選擇。",
+    "invalid_override": "URL 中的媒體選擇無效，因此使用安全的 WebRTC 路徑，而非已儲存的選擇。",
+    "clear_override": "使用已儲存的選擇",
+    "limitations": "僅觀看，有緩衝延遲。切換到 WebRTC 需手動進行。",
+    "retry": "重試 HLS",
+    "unavailable": "無法使用",
+    "use_webrtc": "使用 WebRTC",
+    "status": {
+      "idle": "閒置",
+      "negotiating": "協商中",
+      "connecting": "連線中",
+      "streaming": "播放中",
+      "paused": "私密模式",
+      "terminal": "失敗"
+    },
+    "try_hls": "改用 HLS 觀看"
+  },
+  "input": {
+    "force_touch": "強制觸控操作",
+    "force_touch_hint": "在任何裝置上顯示螢幕鍵盤和特殊按鍵。實體鍵盤需要先點擊畫面後才能使用。",
+    "trackpad_mode": "觸控板模式",
+    "trackpad_hint": "單指移動指標，輕點即點擊，手指靜止按住即右鍵點擊。",
+    "trackpad_cursor_hidden": "隱藏觸控板指標",
+    "keyboard_helper": "特殊按鍵",
+    "reset_keys": "放開按鍵",
+    "close": "關閉",
+    "all": "全選",
+    "copy": "複製",
+    "paste": "貼上",
+    "undo": "復原",
+    "left": "左",
+    "up": "上",
+    "right": "右",
+    "down": "下",
+    "keyboard": "鍵盤"
+  },
+  "controls": {
+    "take": "取得控制權",
+    "request": "請求",
+    "requested": "已請求",
+    "release": "放棄",
+    "force_take": "接管",
+    "you_control": "你正在控制",
+    "other_controls": "{{name}} 正在控制",
+    "watching": "你正在觀看",
+    "waiting_for": "正在等待 {{name}}",
+    "input_active": "滑鼠和鍵盤已啟用",
+    "input_locked": "你的輸入已暫停",
+    "lock_input": "暫停我的滑鼠和鍵盤輸入",
+    "unlock_input": "恢復我的滑鼠和鍵盤輸入",
+    "pause_input": "暫停輸入",
+    "resume_input": "恢復輸入",
+    "locked_by_admin": "控制已鎖定",
+    "admin_only": "只有管理員可以控制",
+    "click_to_control": "點擊畫面以控制",
+    "more": "更多",
+    "tools": "更多工具",
+    "fullscreen": "全螢幕",
+    "resolution": "螢幕解析度",
+    "pip": "子母畫面",
+    "clipboard": "剪貼簿",
+    "microphone": "麥克風",
+    "stream": "串流：{{name}}",
+    "close": "關閉",
+    "emotes": "表情",
+    "input_group": "輸入",
+    "view_group": "畫面與串流"
+  },
+  "settings": {
+    "stream": "串流",
+    "input": "輸入",
+    "chat": "聊天",
+    "room": "房間",
+    "account": "帳戶",
+    "lock_control_hint": "只有管理員可以控制",
+    "lock_login_hint": "只有管理員可以加入",
+    "broadcast_hint": "RTMP，例如 YouTube",
+    "broadcast_start": "開始",
+    "broadcast_stop": "停止",
+    "logout_title": "登出？",
+    "logout_text": "你將離開房間。"
+  },
+  "clipboard": {
+    "title": "剪貼簿歷史",
+    "placeholder": "輸入或編輯要傳送到遠端剪貼簿的文字…",
+    "items": "最近：{{count}}",
+    "clear": "清除歷史",
+    "empty": "尚未複製任何內容。",
+    "copy": "複製到此裝置和遠端桌面",
+    "copied": "已複製",
+    "hint": "複製一筆紀錄會同時更新你的裝置和遠端剪貼簿。在遠端桌面中按 Ctrl+V 貼上。"
+  }
+}

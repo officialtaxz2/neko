@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "À propos de n.eko",
+    "in_room": "{{count}} dans la salle",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Ouvrir le panneau latéral",
+    "close_panel": "Fermer le panneau latéral",
+    "new_messages": "Nouveaux messages"
+  },
+  "chip": {
+    "control": "Contrôle verrouillé",
+    "login": "Connexion verrouillée"
+  },
+  "room": {
+    "members": "Membres"
+  },
+  "setting": {
+    "language": "Langue"
+  },
+  "dock": {
+    "play": "Lecture",
+    "pause": "Pause",
+    "mute": "Couper le son",
+    "unmute": "Activer le son",
+    "volume": "Volume"
+  },
+  "share": {
+    "title": "Regarder",
+    "hint": "Ce lien permet de regarder et d’écouter. Vous ne pouvez ni contrôler le bureau ni discuter.",
+    "watch": "Regarder",
+    "connecting": "Connexion",
+    "invalid": "Le lien n’est pas valide ou n’est plus actif."
+  },
+  "media": {
+    "label": "Chemin média par défaut",
+    "webrtc_desc": "Délai minimal, nécessaire pour contrôler",
+    "ll_hls_desc": "Pour regarder, délai court",
+    "hls_desc": "Pour regarder, le plus robuste, délai plus long",
+    "default": "Par défaut",
+    "current": "Actuel",
+    "override": "La sélection de diagnostic de l’URL est active et prime sur la sélection enregistrée.",
+    "invalid_override": "La sélection média de l’URL n’est pas valide ; le chemin sûr WebRTC est donc utilisé à la place de la sélection enregistrée.",
+    "clear_override": "Utiliser la sélection enregistrée",
+    "limitations": "Visionnage seul, avec un délai de mise en mémoire tampon. Le passage à WebRTC se fait manuellement.",
+    "retry": "Réessayer HLS",
+    "unavailable": "indisponible",
+    "use_webrtc": "Utiliser WebRTC",
+    "status": {
+      "idle": "inactif",
+      "negotiating": "négociation",
+      "connecting": "connexion",
+      "streaming": "diffusion en cours",
+      "paused": "mode privé",
+      "terminal": "échec"
+    },
+    "try_hls": "Regarder avec HLS à la place"
+  },
+  "input": {
+    "force_touch": "Forcer les commandes tactiles",
+    "force_touch_hint": "Affiche le clavier virtuel et les touches spéciales sur tout appareil. Le clavier physique fonctionne ensuite après un clic dans l’image.",
+    "trackpad_mode": "Mode pavé tactile",
+    "trackpad_hint": "Un doigt déplace le pointeur, un appui clique, un doigt immobile fait un clic droit.",
+    "trackpad_cursor_hidden": "Masquer le pointeur du pavé tactile",
+    "keyboard_helper": "Touches spéciales",
+    "reset_keys": "Relâcher les touches",
+    "close": "Fermer",
+    "all": "Tout",
+    "copy": "Copier",
+    "paste": "Coller",
+    "undo": "Annuler",
+    "left": "Gauche",
+    "up": "Haut",
+    "right": "Droite",
+    "down": "Bas",
+    "keyboard": "Clavier"
+  },
+  "controls": {
+    "take": "Prendre le contrôle",
+    "request": "Demander",
+    "requested": "Demandé",
+    "release": "Céder",
+    "force_take": "Reprendre",
+    "you_control": "Vous avez le contrôle",
+    "other_controls": "{{name}} a le contrôle",
+    "watching": "Vous regardez",
+    "waiting_for": "En attente de {{name}}",
+    "input_active": "Souris et clavier actifs",
+    "input_locked": "Votre saisie est en pause",
+    "lock_input": "Mettre en pause ma souris et mon clavier",
+    "unlock_input": "Reprendre ma souris et mon clavier",
+    "pause_input": "Mettre la saisie en pause",
+    "resume_input": "Reprendre la saisie",
+    "locked_by_admin": "Contrôle verrouillé",
+    "admin_only": "Seuls les admins peuvent prendre le contrôle",
+    "click_to_control": "Cliquez dans l’image pour contrôler",
+    "more": "Plus",
+    "tools": "Plus d’outils",
+    "fullscreen": "Plein écran",
+    "resolution": "Résolution de l’écran",
+    "pip": "Image dans l’image",
+    "clipboard": "Presse-papiers",
+    "microphone": "Microphone",
+    "stream": "Stream : {{name}}",
+    "close": "Fermer",
+    "emotes": "Émotes",
+    "input_group": "Saisie",
+    "view_group": "Image et stream"
+  },
+  "settings": {
+    "stream": "Stream",
+    "input": "Saisie",
+    "chat": "Chat",
+    "room": "Salle",
+    "account": "Compte",
+    "lock_control_hint": "Seuls les admins peuvent prendre le contrôle",
+    "lock_login_hint": "Seuls les admins peuvent rejoindre",
+    "broadcast_hint": "RTMP, p. ex. YouTube",
+    "broadcast_start": "Démarrer",
+    "broadcast_stop": "Arrêter",
+    "logout_title": "Se déconnecter ?",
+    "logout_text": "Vous quitterez la salle."
+  },
+  "clipboard": {
+    "title": "Historique du presse-papiers",
+    "placeholder": "Saisissez ou modifiez le texte du presse-papiers distant…",
+    "items": "Récents : {{count}}",
+    "clear": "Effacer l’historique",
+    "empty": "Rien n’a encore été copié.",
+    "copy": "Copier sur cet appareil et le bureau distant",
+    "copied": "Copié",
+    "hint": "Copier une entrée met à jour votre appareil et le presse-papiers distant. Appuyez sur Ctrl+V sur le bureau distant pour coller."
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "O aplikácii n.eko",
+    "in_room": "{{count}} v miestnosti",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Otvoriť bočný panel",
+    "close_panel": "Zavrieť bočný panel",
+    "new_messages": "Nové správy"
+  },
+  "chip": {
+    "control": "Ovládanie uzamknuté",
+    "login": "Prihlásenie uzamknuté"
+  },
+  "room": {
+    "members": "Členovia"
+  },
+  "setting": {
+    "language": "Jazyk"
+  },
+  "dock": {
+    "play": "Prehrať",
+    "pause": "Pozastaviť",
+    "mute": "Stlmiť",
+    "unmute": "Zapnúť zvuk",
+    "volume": "Hlasitosť"
+  },
+  "share": {
+    "title": "Sledovať",
+    "hint": "Cez tento odkaz môžeš sledovať a počúvať. Ovládať plochu ani chatovať nemôžeš.",
+    "watch": "Sledovať",
+    "connecting": "Pripája sa",
+    "invalid": "Odkaz je neplatný alebo už nie je aktívny."
+  },
+  "media": {
+    "label": "Predvolená cesta médií",
+    "webrtc_desc": "Najmenšie oneskorenie, potrebné na ovládanie",
+    "ll_hls_desc": "Na pozeranie, krátke oneskorenie",
+    "hls_desc": "Na pozeranie, najodolnejšie, dlhšie oneskorenie",
+    "default": "Predvolené",
+    "current": "Aktuálne",
+    "override": "Diagnostický výber v URL je aktívny a má prednosť pred uloženým výberom.",
+    "invalid_override": "Výber médií v URL je neplatný, preto sa namiesto uloženého výberu používa bezpečná cesta WebRTC.",
+    "clear_override": "Použiť uložený výber",
+    "limitations": "Len pozeranie, s oneskorením vyrovnávacej pamäte. Prechod na WebRTC je ručný.",
+    "retry": "Skúsiť HLS znova",
+    "unavailable": "nedostupné",
+    "use_webrtc": "Použiť WebRTC",
+    "status": {
+      "idle": "nečinné",
+      "negotiating": "vyjednáva sa",
+      "connecting": "pripája sa",
+      "streaming": "prenos beží",
+      "paused": "súkromný režim",
+      "terminal": "zlyhalo"
+    },
+    "try_hls": "Pozerať radšej cez HLS"
+  },
+  "input": {
+    "force_touch": "Vynútiť dotykové ovládanie",
+    "force_touch_hint": "Zobrazí klávesnicu na obrazovke a špeciálne klávesy na každom zariadení. Fyzická klávesnica potom funguje až po kliknutí do obrazu.",
+    "trackpad_mode": "Režim touchpadu",
+    "trackpad_hint": "Jeden prst posúva ukazovateľ, ťuknutie klikne, prst podržaný na mieste klikne pravým tlačidlom.",
+    "trackpad_cursor_hidden": "Skryť ukazovateľ touchpadu",
+    "keyboard_helper": "Špeciálne klávesy",
+    "reset_keys": "Uvoľniť klávesy",
+    "close": "Zavrieť",
+    "all": "Všetko",
+    "copy": "Kopírovať",
+    "paste": "Vložiť",
+    "undo": "Späť",
+    "left": "Doľava",
+    "up": "Hore",
+    "right": "Doprava",
+    "down": "Dole",
+    "keyboard": "Klávesnica"
+  },
+  "controls": {
+    "take": "Prevziať ovládanie",
+    "request": "Požiadať",
+    "requested": "Vyžiadané",
+    "release": "Odovzdať",
+    "force_take": "Prevziať",
+    "you_control": "Ovládaš ty",
+    "other_controls": "{{name}} ovláda",
+    "watching": "Pozeráš",
+    "waiting_for": "Čaká sa na {{name}}",
+    "input_active": "Myš a klávesnica aktívne",
+    "input_locked": "Tvoj vstup je pozastavený",
+    "lock_input": "Pozastaviť môj vstup z myši a klávesnice",
+    "unlock_input": "Obnoviť môj vstup z myši a klávesnice",
+    "pause_input": "Pozastaviť vstup",
+    "resume_input": "Obnoviť vstup",
+    "locked_by_admin": "Ovládanie zamknuté",
+    "admin_only": "Ovládať môžu len admini",
+    "click_to_control": "Klikni do obrazu a ovládaj",
+    "more": "Viac",
+    "tools": "Ďalšie nástroje",
+    "fullscreen": "Celá obrazovka",
+    "resolution": "Rozlíšenie obrazovky",
+    "pip": "Obraz v obraze",
+    "clipboard": "Schránka",
+    "microphone": "Mikrofón",
+    "stream": "Stream: {{name}}",
+    "close": "Zavrieť",
+    "emotes": "Emotikony",
+    "input_group": "Vstup",
+    "view_group": "Obraz a stream"
+  },
+  "settings": {
+    "stream": "Stream",
+    "input": "Vstup",
+    "chat": "Chat",
+    "room": "Miestnosť",
+    "account": "Účet",
+    "lock_control_hint": "Ovládať môžu len admini",
+    "lock_login_hint": "Pripojiť sa môžu len admini",
+    "broadcast_hint": "RTMP, napr. YouTube",
+    "broadcast_start": "Spustiť",
+    "broadcast_stop": "Zastaviť",
+    "logout_title": "Odhlásiť sa?",
+    "logout_text": "Opustíš miestnosť."
+  },
+  "clipboard": {
+    "title": "História schránky",
+    "placeholder": "Napíš alebo uprav text pre vzdialenú schránku…",
+    "items": "Nedávne: {{count}}",
+    "clear": "Vymazať históriu",
+    "empty": "Zatiaľ nič neskopírované.",
+    "copy": "Kopírovať do tohto zariadenia a na vzdialenú plochu",
+    "copied": "Skopírované",
+    "hint": "Skopírovanie položky aktualizuje tvoje zariadenie aj vzdialenú schránku. Na vzdialenej ploche vlož pomocou Ctrl+V."
+  }
+}

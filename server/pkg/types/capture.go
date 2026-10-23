@@ -81,6 +81,13 @@ type StreamSelectorManager interface {
 	GetStream(selector StreamSelector) (StreamSinkManager, bool)
 }
 
+// StreamSelectorPointerProvider is implemented by video selectors that know
+// whether their pipelines draw the mouse pointer into the picture, so clients
+// can avoid drawing it a second time.
+type StreamSelectorPointerProvider interface {
+	PointerInVideo() bool
+}
+
 type StreamSinkManager interface {
 	ID() string
 	Codec() codec.RTPCodec

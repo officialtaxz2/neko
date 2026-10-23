@@ -116,74 +116,29 @@ Supporting trees:
 
 ### IMPLEMENTED
 
-- Vue `2.7.13`
-- TypeScript `~5.8.2`
-- Vite `^6.2.3`
-- Vuex/typed-vuex
-- browser `RTCPeerConnection`
+Since 2026-10-23 the client is upstream's React client on the v3 API (`/api/ws`); the Vue 2.7 client and the legacy `/ws` protocol are gone (the last Vue client is the tag `vue-final`, whose description of this section is in Git history).
 
-The reconciled lockfile resolves Vue `2.7.14`, TypeScript `5.8.3`, and Vite `6.4.3`; the operator confirmed that the target-server installation, lint and production build passed.
-
-`client/src/neko/base.ts` currently couples WebSocket signaling/session events, WebRTC peer setup, WebRTC tracks and the WebRTC data channel for input.
+- React 19, TypeScript, Vite, zustand stores, Tailwind CSS v4.
+- `client/core`: the framework-free `@m1k1o/neko` package: `NekoClient` (session, reconnect, events), the stream transports (`transport/webrtc.ts`, the fork's `transport/hls.ts`), the input overlay (`overlay.ts`, with the fork's trackpad mode) and the playback watchdog (`playback.ts`).
+- `client/src`: the GUI in layers (`app`, `layout`, `features`, `components`, `state`, `plugins`), checked by ESLint layer rules. The fork's design is in `client/src/fork/` (theme tokens, header, room bar, phone dock, control pill, More menu, settings; see its README); fork features in the shared layers are marked "the fork".
 
 Current behavior includes:
 
-- the normal WebRTC choice requires `RTCPeerConnection`; optional receive paths
-  perform their own eligibility/codec/player capability checks;
-- ICE candidates are exchanged over WebSocket;
-- explicit TURN/STUN/STUNS lists are preserved; public STUN fallback remains
-  only for an empty list, with ICE-lite behavior unchanged;
-- failed/closed or unresolved disconnected ICE states lead to disconnect/recovery flow;
-- client ICE `disconnected` and server Pion peer `Disconnected` now each have
-  one eight-second grace; rechecking cannot extend the client's deadline.
-  Failed peers and authoritative revocation close immediately. The callbacks
-  are different observations, so real timing/no-reload behavior needs a target
-  trace. Initial `checking` remains inside the 15-second startup deadline;
-- non-trickle ICE gathering has a 15-second bound plus a destruction-intent
-  signal before acquiring the peer mutex; external IP discovery is bounded to
-  15 seconds and a 4-KiB successful response;
-- WebRTC element callbacks are Vue-bound methods with one nonreactive health
-  state and 500-ms polling only while playback is requested. Frame-count
-  progress (excluding reported dropped frames) or old-browser time progress
-  resets the existing eight-second stall budget; metadata/seek/unmute/playing
-  events alone do not. Three source reattachments are followed by explicit
-  Play. Deliberate/native Pause, background throttling and autoplay denial are
-  distinct from a foreground stall; stale operations cannot mutate replacement
-  streams. No new network retry loop or `video.load()` is added;
-- after an established peer/socket is irrecoverable, one application-owned timer serializes at most four fresh legacy logins after 1/2/5/10 seconds;
-- initial-login failures, explicit logout, demo mode and server-directed disconnects cannot enter that automatic retry path;
-- old socket/peer/data-channel callbacks are identity-guarded, buffered ICE candidates are cleared during teardown, and the login component does not start a parallel connection;
-- input travels over the WebRTC data channel;
-- a compact `#/<16-character-Base64URL-token>` fragment creates a view-only login whose 96-bit credential is sent as a WebSocket subprotocol, not an HTTP request path/query string;
-- once the passive member marker arrives, the client renders video/playback controls without room, input, clipboard, file, chat or admin controls;
-- the legacy protocol path requests automatic video-pipeline selection; it becomes active only when multiple pipelines and the per-peer bandwidth estimator are configured;
-- file-transfer capability messages carry separate non-admin download/upload/delete permissions;
-- the optional `openinapp` client/store path sends authorized HTTP(S) chat links to the shared application;
-- window focus can resynchronize the clipboard for the active controller.
-- a normalized per-browser `media_backend` preference selects WebRTC or an explicitly saved HLS/LL-HLS path before login; absent, inaccessible and invalid storage (including the removed `webcodecs-ws`) resolve to WebRTC;
-- exact `?media=hls` or `?media=ll-hls` remains a stateless highest-priority diagnostic override, while any present non-exact selector stays safely on WebRTC rather than activating a stored experimental choice;
-- sidebar changes persist the default and reload through the normal startup path after removing only the diagnostic media parameter; unrelated query state and the view-only fragment are preserved;
-- settings report the effective backend and override state. Healthy HLS playback uses a compact chip; negotiation, recovery and terminal failure retain the prominent explanation and explicit actions.
+- `signal/request` asks for `video: {auto: true}`, so the per-peer bandwidth estimator can switch pipelines when several are configured;
+- public STUN only when the server lists no ICE servers; explicit lists are kept;
+- an eight-second grace for ICE `disconnected` before it counts as failed, matching the server's peer grace; the ICE state backs up browsers without `connectionState`;
+- the playback watchdog: no presented frames (or no time progress) for eight seconds in the foreground re-attaches the same stream, up to three times, then stops playback; a hidden page, a deliberate pause or a running re-attachment is not a stall;
+- a page put into the bfcache disconnects and reconnects on return;
+- upstream's reconnect: ten attempts with a whoami check, none after kick or logout;
+- input over the WebRTC data channel; HLS is receive-only (`client.receiveOnly`: no control request, no implicit hosting, no overlay input);
+- the overlay does not draw a second cursor when `system/init` reports `webrtc.pointer_in_video`;
+- a compact `#/<16-character-Base64URL-token>` fragment opens a name-only view-only login; the token goes only into the `/api/login` body, the share session lives in `sessionStorage` apart from a member's session, and a view-only session sees only the picture with a playback bar;
+- `media_backend` (stored) or `?media=hls|ll-hls` (one visit) selects WebRTC, HLS or LL-HLS among the modes the server advertises; a change reloads, there is no automatic fallback; hls.js loads lazily in a chunk of its own, Apple devices and TVs play natively;
+- touch: a touch screen without mouse and hover, or "force touch", gets the on-screen keyboard and the special keys' bar (held modifiers, Esc, Tab, Ctrl shortcuts, arrows); trackpad mode moves a pointer relatively, taps click, a long press right-clicks;
+- the clipboard: synchronized on hovering the picture where the browser can read it, otherwise through the clipboard panel with the last ten texts (in memory, cleared on logout);
+- a read-only `window.__nekoTrace` handle (states, element, WebRTC peer; no token) for `deploy/trace-*.js`.
 
-The alternative receive path is still intentionally incomplete for interactive parity: it carries no replacement input transport and never falls back automatically.
-
-## Fork-specific video/touch layer
-
-`client/src/components/video.vue` is a high-conflict/high-value file containing:
-
-- custom player/fullscreen behavior;
-- touch detection;
-- trackpad cursor/interaction;
-- mobile keyboard helper;
-- aspect-aware coordinate handling;
-- autoplay fallback;
-- media/track health monitoring;
-- bounded `srcObject` recovery;
-- stream/track listener cleanup.
-
-These behaviors require semantic preservation through upstream sync.
-
-The video layer remains separate from connection recovery. It can reassign `srcObject` for a bounded media-element stall without calling `video.load()`, but an assignment is not counted as success until playback progress or track unmute. When a new or recovered stream is available and Safari rejects autoplay even while muted, the existing central Play overlay remains the user-activation fallback; this does not trigger another network reconnect.
+Demo mode was not carried over.
 
 ## Fork-specific scope
 

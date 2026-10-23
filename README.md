@@ -6,6 +6,8 @@ This fork keeps Neko's shared multi-user session model and adds substantial clie
 
 ## Status
 
+**React client (2026-10-23):** upstream `m1k1o/neko` replaced the Vue 2 client with a React client on the v3 API (`6ad3ad0`) and removed the legacy `/ws` protocol (`3191dbb`). The fork follows: upstream is merged up to `92f9916`, `client/` is the upstream React client and `server/internal/http/legacy` plus `server/internal/webrtc/legacyhandler.go` are gone. The fork's client features are ported onto it: playback watchdog and recovery, the redesigned UI (`client/src/fork/`), view-only share links, the HLS/LL-HLS transport, trackpad, force touch and the special keys. The fork's server work (HLS/LL-HLS, media delivery manager, adaptive quality, view-only enforcement, bounded WebSocket writers) is v3-native and unchanged. The last Vue client is tagged `vue-final`; Vue- and `/ws`-specific statements in older notes below describe that client.
+
 **Branch status (2026-10-14):** the operator authorized promoting `testing` to `master`. `master` is now the single working branch and contains all `testing` work plus the upstream sync to `c75a2f60` and `setup.sh` (see [`docs/UPSTREAM_SYNC_AUDIT.md`](docs/UPSTREAM_SYNC_AUDIT.md#integration-of-master-into-testing-2026-10-14)). Older notes below that say to keep `master` pinned or to work only on `testing` describe the state before this promotion. Target-server `go test`/client tests for the integrated state are pending.
 
 **WebCodecs removed (2026-10-14):** the operator decided to drop the WebCodecs/media-WebSocket prototype and to continue with WebRTC plus HLS/LL-HLS. Its server package (`server/internal/mediaws`), the `/api/media/ws` route, the `media.webcodecs_ws.*` configuration, the client decoder/renderer, the `docker-compose.webcodecs-ws.yaml` overlay and its docs/helpers are deleted. A browser that still has `webcodecs-ws` saved as its media default, or a `?media=webcodecs-ws` link, falls back to WebRTC. `setup.sh` moves existing `NEKO_MEDIA_WEBCODECS_WS_ALLOWED_ORIGINS`/`_TRUSTED_PROXIES` values to the HLS keys, drops the overlay from `COMPOSE_FILE` and then deletes the unused `NEKO_MEDIA_WEBCODECS_WS_*` lines (and their WebCodecs comment block) from `.env`.
@@ -294,7 +296,7 @@ See `docs/PROJECT.md`.
 ## Structure
 
 ```text
-client/      Vue 2.7 + TypeScript/Vite client
+client/      React + TypeScript/Vite client (upstream), the fork's design in client/src/fork
 server/      Go Neko server and plugins
 apps/        browser/application image definitions
 runtime/     runtime container support

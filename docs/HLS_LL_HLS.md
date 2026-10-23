@@ -625,3 +625,30 @@ Operator logs from the target at `5a72d3d2` showed a desktop LL-HLS start at 9:5
 hls.js starts LL-HLS at an independent part up to two seconds before the 3-second `PART-HOLD-BACK` target and, with playback-rate catch-up off, stays that far behind. In the browser harness the measured hls.js latency was 4.38 seconds at a 3.00-second target. On each `playing` event (start or end of a stall) the MSE player now moves to `liveSyncPosition` when that is more than 0.5 seconds ahead and still at least 0.5 seconds inside the buffered range; the harness then measured 3.65 seconds. The native Apple player is unaffected.
 
 `.github/workflows/hls_browser_test.yml` runs the browser playback test and the cold-start test on pull requests that touch the HLS server or client code; `HLS_BROWSER_REQUIRED=1` makes a missing tool fail instead of skip. Run the browser test with `-count=1` locally: Go does not see the client bundle as a test input and would otherwise return a cached result after client-only changes.
+
+### React client (2026-10-23)
+
+The fork moved to upstream's React client. The player and the controller were ported unchanged in
+behaviour into the core package: `client/core/src/transport/hls/protocol.ts` (the contract checks),
+`client/core/src/transport/hls/player.ts` (the MSE player with the scoped loader, imported lazily) and
+`client/core/src/transport/hls.ts` (`HLSTransport`: negotiation, bootstrap, keepalive and master probe,
+private mode, autoplay, the readiness deadline and the stall watch). The legacy bridge's
+`media/hls/state` event is gone with `/ws`; the transport derives the private pause from the room
+settings and the session's admin flag (`PrivateModeEnabled` on the server), which pauses the lease
+itself. The client tests were ported to vitest (`hls.test.ts`, `hls/player.test.ts`,
+`hls/protocol.test.ts`, the golden playlists included). The browser harness `client/tests/browser`
+now bundles the core player; the playback test above and its workflow run it unchanged.
+
+The GUI (`client/src/state/media.ts`, `client/src/features/media/`): the stored choice keeps the key
+`media_backend`; `?media=hls` / `?media=ll-hls` override it for one visit; a change reloads the page
+without `?media=` (a share link's fragment stays). Only the modes the server advertises can be chosen;
+a stored mode it no longer offers stays visible, disabled. HLS shows its state on the picture (a small
+chip while it plays, otherwise a card; after a failure Retry or WebRTC). A view-only viewer finds the
+choice in the bar under the picture. A browser without WebRTC is offered HLS for the visit instead of
+only the unsupported notice; nothing switches on its own. HLS stays receive-only, as in the Vue
+client: the core's `client.receiveOnly` turns off the control request, taking control by a click under
+implicit hosting and every input from the overlay, and the GUI shows no control pill, no input tools
+and no screen size over HLS. Control over HLS is a later phase of its own. hls.js is a chunk of
+its own that only an MSE browser on an HLS page loads. The console traces in `deploy/` read the page's
+read-only `window.__nekoTrace` handle instead of Vue internals.
+

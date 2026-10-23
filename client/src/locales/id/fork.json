@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "Tentang n.eko",
+    "in_room": "{{count}} di ruangan",
+    "admin": "Admin",
+    "chat": "Obrolan",
+    "open_panel": "Buka panel samping",
+    "close_panel": "Tutup panel samping",
+    "new_messages": "Pesan baru"
+  },
+  "chip": {
+    "control": "Kontrol dikunci",
+    "login": "Login dikunci"
+  },
+  "room": {
+    "members": "Anggota"
+  },
+  "setting": {
+    "language": "Bahasa"
+  },
+  "dock": {
+    "play": "Putar",
+    "pause": "Jeda",
+    "mute": "Bisukan",
+    "unmute": "Bunyikan",
+    "volume": "Volume"
+  },
+  "share": {
+    "title": "Tonton",
+    "hint": "Dengan tautan ini kamu hanya bisa menonton dan mendengar. Kamu tidak bisa mengendalikan desktop atau mengobrol.",
+    "watch": "Tonton",
+    "connecting": "Menghubungkan",
+    "invalid": "Tautan tidak valid atau sudah tidak aktif."
+  },
+  "media": {
+    "label": "Jalur media bawaan",
+    "webrtc_desc": "Jeda terendah, diperlukan untuk mengendalikan",
+    "ll_hls_desc": "Untuk menonton, jeda singkat",
+    "hls_desc": "Untuk menonton, paling tangguh, jeda lebih lama",
+    "default": "Bawaan",
+    "current": "Saat ini",
+    "override": "Pilihan diagnostik dari URL aktif dan diutamakan di atas pilihan yang disimpan.",
+    "invalid_override": "Pilihan media di URL tidak valid, jadi jalur WebRTC yang aman dipakai alih-alih pilihan yang disimpan.",
+    "clear_override": "Pakai pilihan yang disimpan",
+    "limitations": "Hanya menonton, dengan jeda buffer. Beralih ke WebRTC dilakukan manual.",
+    "retry": "Coba HLS lagi",
+    "unavailable": "tidak tersedia",
+    "use_webrtc": "Pakai WebRTC",
+    "status": {
+      "idle": "siaga",
+      "negotiating": "bernegosiasi",
+      "connecting": "menghubungkan",
+      "streaming": "sedang tayang",
+      "paused": "mode privat",
+      "terminal": "gagal"
+    },
+    "try_hls": "Tonton dengan HLS saja"
+  },
+  "input": {
+    "force_touch": "Paksa kontrol sentuh",
+    "force_touch_hint": "Menampilkan keyboard layar dan tombol khusus di perangkat apa pun. Keyboard fisik baru berfungsi setelah Anda mengklik gambar.",
+    "trackpad_mode": "Mode trackpad",
+    "trackpad_hint": "Satu jari menggerakkan penunjuk, ketuk untuk klik, tahan jari diam untuk klik kanan.",
+    "trackpad_cursor_hidden": "Sembunyikan penunjuk trackpad",
+    "keyboard_helper": "Tombol khusus",
+    "reset_keys": "Lepas tombol",
+    "close": "Tutup",
+    "all": "Semua",
+    "copy": "Salin",
+    "paste": "Tempel",
+    "undo": "Urungkan",
+    "left": "Kiri",
+    "up": "Atas",
+    "right": "Kanan",
+    "down": "Bawah",
+    "keyboard": "Keyboard"
+  },
+  "controls": {
+    "take": "Ambil kendali",
+    "request": "Minta",
+    "requested": "Diminta",
+    "release": "Lepaskan",
+    "force_take": "Ambil alih",
+    "you_control": "Anda memegang kendali",
+    "other_controls": "{{name}} memegang kendali",
+    "watching": "Anda menonton",
+    "waiting_for": "Menunggu {{name}}",
+    "input_active": "Mouse dan keyboard aktif",
+    "input_locked": "Input Anda dijeda",
+    "lock_input": "Jeda input mouse dan keyboard saya",
+    "unlock_input": "Lanjutkan input mouse dan keyboard saya",
+    "pause_input": "Jeda input",
+    "resume_input": "Lanjutkan input",
+    "locked_by_admin": "Kendali dikunci",
+    "admin_only": "Hanya admin yang dapat mengambil kendali",
+    "click_to_control": "Klik gambar untuk mengendalikan",
+    "more": "Lainnya",
+    "tools": "Alat lainnya",
+    "fullscreen": "Layar penuh",
+    "resolution": "Resolusi layar",
+    "pip": "Gambar dalam gambar",
+    "clipboard": "Papan klip",
+    "microphone": "Mikrofon",
+    "stream": "Stream: {{name}}",
+    "close": "Tutup",
+    "emotes": "Emote",
+    "input_group": "Input",
+    "view_group": "Gambar & stream"
+  },
+  "settings": {
+    "stream": "Stream",
+    "input": "Input",
+    "chat": "Chat",
+    "room": "Ruang",
+    "account": "Akun",
+    "lock_control_hint": "Hanya admin yang dapat mengambil kendali",
+    "lock_login_hint": "Hanya admin yang dapat bergabung",
+    "broadcast_hint": "RTMP, mis. YouTube",
+    "broadcast_start": "Mulai",
+    "broadcast_stop": "Hentikan",
+    "logout_title": "Keluar?",
+    "logout_text": "Anda akan meninggalkan ruang."
+  },
+  "clipboard": {
+    "title": "Riwayat papan klip",
+    "placeholder": "Ketik atau ubah teks untuk papan klip jarak jauh…",
+    "items": "Terbaru: {{count}}",
+    "clear": "Hapus riwayat",
+    "empty": "Belum ada yang disalin.",
+    "copy": "Salin ke perangkat ini dan desktop jarak jauh",
+    "copied": "Disalin",
+    "hint": "Menyalin entri memperbarui perangkat Anda dan papan klip jarak jauh. Tekan Ctrl+V di desktop jarak jauh untuk menempel."
+  }
+}

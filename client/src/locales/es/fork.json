@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "Acerca de n.eko",
+    "in_room": "{{count}} en la sala",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Abrir panel lateral",
+    "close_panel": "Cerrar panel lateral",
+    "new_messages": "Mensajes nuevos"
+  },
+  "chip": {
+    "control": "Control bloqueado",
+    "login": "Acceso bloqueado"
+  },
+  "room": {
+    "members": "Miembros"
+  },
+  "setting": {
+    "language": "Idioma"
+  },
+  "dock": {
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "volume": "Volumen"
+  },
+  "share": {
+    "title": "Ver",
+    "hint": "Con este enlace puedes ver y escuchar. No puedes controlar el escritorio ni chatear.",
+    "watch": "Ver",
+    "connecting": "Conectando",
+    "invalid": "El enlace no es válido o ya no está activo."
+  },
+  "media": {
+    "label": "Ruta de medios predeterminada",
+    "webrtc_desc": "Menor retraso, necesario para controlar",
+    "ll_hls_desc": "Para ver, poco retraso",
+    "hls_desc": "Para ver, lo más robusto, más retraso",
+    "default": "Predeterminado",
+    "current": "Actual",
+    "override": "La selección de diagnóstico de la URL está activa y tiene prioridad sobre la selección guardada.",
+    "invalid_override": "La selección de medios de la URL no es válida, por eso se usa la ruta segura WebRTC en lugar de la selección guardada.",
+    "clear_override": "Usar la selección guardada",
+    "limitations": "Solo para ver, con retraso de búfer. El cambio a WebRTC es manual.",
+    "retry": "Reintentar HLS",
+    "unavailable": "no disponible",
+    "use_webrtc": "Usar WebRTC",
+    "status": {
+      "idle": "inactivo",
+      "negotiating": "negociando",
+      "connecting": "conectando",
+      "streaming": "transmitiendo",
+      "paused": "modo privado",
+      "terminal": "falló"
+    },
+    "try_hls": "Ver con HLS en su lugar"
+  },
+  "input": {
+    "force_touch": "Forzar controles táctiles",
+    "force_touch_hint": "Muestra el teclado en pantalla y las teclas especiales en cualquier dispositivo. El teclado físico funcionará después de hacer clic en la imagen.",
+    "trackpad_mode": "Modo trackpad",
+    "trackpad_hint": "Un dedo mueve el puntero, un toque hace clic y mantener el dedo quieto hace clic derecho.",
+    "trackpad_cursor_hidden": "Ocultar puntero del trackpad",
+    "keyboard_helper": "Teclas especiales",
+    "reset_keys": "Soltar teclas",
+    "close": "Cerrar",
+    "all": "Todo",
+    "copy": "Copiar",
+    "paste": "Pegar",
+    "undo": "Deshacer",
+    "left": "Izquierda",
+    "up": "Arriba",
+    "right": "Derecha",
+    "down": "Abajo",
+    "keyboard": "Teclado"
+  },
+  "controls": {
+    "take": "Tomar el control",
+    "request": "Solicitar",
+    "requested": "Solicitado",
+    "release": "Ceder",
+    "force_take": "Tomar",
+    "you_control": "Tienes el control",
+    "other_controls": "{{name}} tiene el control",
+    "watching": "Estás mirando",
+    "waiting_for": "Esperando a {{name}}",
+    "input_active": "Ratón y teclado activos",
+    "input_locked": "Tu entrada está en pausa",
+    "lock_input": "Pausar mi ratón y teclado",
+    "unlock_input": "Reanudar mi ratón y teclado",
+    "pause_input": "Pausar entrada",
+    "resume_input": "Reanudar entrada",
+    "locked_by_admin": "Control bloqueado",
+    "admin_only": "Solo los administradores pueden tomar el control",
+    "click_to_control": "Haz clic en la imagen para controlar",
+    "more": "Más",
+    "tools": "Más herramientas",
+    "fullscreen": "Pantalla completa",
+    "resolution": "Resolución de pantalla",
+    "pip": "Imagen en imagen",
+    "clipboard": "Portapapeles",
+    "microphone": "Micrófono",
+    "stream": "Stream: {{name}}",
+    "close": "Cerrar",
+    "emotes": "Emotes",
+    "input_group": "Entrada",
+    "view_group": "Imagen y stream"
+  },
+  "settings": {
+    "stream": "Stream",
+    "input": "Entrada",
+    "chat": "Chat",
+    "room": "Sala",
+    "account": "Cuenta",
+    "lock_control_hint": "Solo los administradores pueden tomar el control",
+    "lock_login_hint": "Solo los administradores pueden entrar",
+    "broadcast_hint": "RTMP, p. ej. YouTube",
+    "broadcast_start": "Iniciar",
+    "broadcast_stop": "Detener",
+    "logout_title": "¿Cerrar sesión?",
+    "logout_text": "Saldrás de la sala."
+  },
+  "clipboard": {
+    "title": "Historial del portapapeles",
+    "placeholder": "Escribe o edita texto para el portapapeles remoto…",
+    "items": "Recientes: {{count}}",
+    "clear": "Borrar historial",
+    "empty": "Aún no se ha copiado nada.",
+    "copy": "Copiar a este dispositivo y al escritorio remoto",
+    "copied": "Copiado",
+    "hint": "Copiar una entrada actualiza tu dispositivo y el portapapeles remoto. Pulsa Ctrl+V en el escritorio remoto para pegar."
+  }
+}

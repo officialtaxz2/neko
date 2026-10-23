@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "Om n.eko",
+    "in_room": "{{count}} i rommet",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Åpne sidepanelet",
+    "close_panel": "Lukk sidepanelet",
+    "new_messages": "Nye meldinger"
+  },
+  "chip": {
+    "control": "Kontroll låst",
+    "login": "Innlogging låst"
+  },
+  "room": {
+    "members": "Medlemmer"
+  },
+  "setting": {
+    "language": "Språk"
+  },
+  "dock": {
+    "play": "Spill av",
+    "pause": "Pause",
+    "mute": "Demp",
+    "unmute": "Slå på lyd",
+    "volume": "Volum"
+  },
+  "share": {
+    "title": "Se på",
+    "hint": "Med denne lenken kan du se og lytte. Du kan ikke styre skrivebordet eller chatte.",
+    "watch": "Se på",
+    "connecting": "Kobler til",
+    "invalid": "Lenken er ugyldig eller ikke lenger aktiv."
+  },
+  "media": {
+    "label": "Standard mediebane",
+    "webrtc_desc": "Minst forsinkelse, nødvendig for å styre",
+    "ll_hls_desc": "For å se på, kort forsinkelse",
+    "hls_desc": "For å se på, mest robust, lengre forsinkelse",
+    "default": "Standard",
+    "current": "Nå",
+    "override": "Diagnosevalget i URL-en er aktivt og går foran det lagrede valget.",
+    "invalid_override": "Medievalget i URL-en er ugyldig, så den trygge WebRTC-banen brukes i stedet for det lagrede valget.",
+    "clear_override": "Bruk lagret valg",
+    "limitations": "Bare visning, med bufferforsinkelse. Bytte til WebRTC gjøres manuelt.",
+    "retry": "Prøv HLS igjen",
+    "unavailable": "ikke tilgjengelig",
+    "use_webrtc": "Bruk WebRTC",
+    "status": {
+      "idle": "klar",
+      "negotiating": "forhandler",
+      "connecting": "kobler til",
+      "streaming": "strømmer",
+      "paused": "privat modus",
+      "terminal": "mislyktes"
+    },
+    "try_hls": "Se med HLS i stedet"
+  },
+  "input": {
+    "force_touch": "Tving berøringskontroller",
+    "force_touch_hint": "Viser skjermtastaturet og spesialtastene på alle enheter. Et fysisk tastatur virker da først etter at du klikker i bildet.",
+    "trackpad_mode": "Styreflatemodus",
+    "trackpad_hint": "Én finger flytter pekeren, et trykk klikker, en finger som holdes i ro høyreklikker.",
+    "trackpad_cursor_hidden": "Skjul styreflatepekeren",
+    "keyboard_helper": "Spesialtaster",
+    "reset_keys": "Slipp tastene",
+    "close": "Lukk",
+    "all": "Alt",
+    "copy": "Kopier",
+    "paste": "Lim inn",
+    "undo": "Angre",
+    "left": "Venstre",
+    "up": "Opp",
+    "right": "Høyre",
+    "down": "Ned",
+    "keyboard": "Tastatur"
+  },
+  "controls": {
+    "take": "Ta kontroll",
+    "request": "Be om",
+    "requested": "Bedt om",
+    "release": "Gi fra deg",
+    "force_take": "Overta",
+    "you_control": "Du har kontrollen",
+    "other_controls": "{{name}} har kontrollen",
+    "watching": "Du ser på",
+    "waiting_for": "Venter på {{name}}",
+    "input_active": "Mus og tastatur aktiv",
+    "input_locked": "Inndataene dine er satt på pause",
+    "lock_input": "Sett mus og tastatur på pause",
+    "unlock_input": "Fortsett mus og tastatur",
+    "pause_input": "Sett inndata på pause",
+    "resume_input": "Fortsett inndata",
+    "locked_by_admin": "Kontroll låst",
+    "admin_only": "Bare administratorer kan ta kontroll",
+    "click_to_control": "Klikk i bildet for å styre",
+    "more": "Mer",
+    "tools": "Flere verktøy",
+    "fullscreen": "Fullskjerm",
+    "resolution": "Skjermoppløsning",
+    "pip": "Bilde i bilde",
+    "clipboard": "Utklippstavle",
+    "microphone": "Mikrofon",
+    "stream": "Strøm: {{name}}",
+    "close": "Lukk",
+    "emotes": "Emotes",
+    "input_group": "Inndata",
+    "view_group": "Bilde og strøm"
+  },
+  "settings": {
+    "stream": "Strøm",
+    "input": "Inndata",
+    "chat": "Chat",
+    "room": "Rom",
+    "account": "Konto",
+    "lock_control_hint": "Bare administratorer kan ta kontroll",
+    "lock_login_hint": "Bare administratorer kan bli med",
+    "broadcast_hint": "RTMP, f.eks. YouTube",
+    "broadcast_start": "Start",
+    "broadcast_stop": "Stopp",
+    "logout_title": "Logge ut?",
+    "logout_text": "Du forlater rommet."
+  },
+  "clipboard": {
+    "title": "Utklippshistorikk",
+    "placeholder": "Skriv eller rediger tekst til den eksterne utklippstavlen…",
+    "items": "Siste: {{count}}",
+    "clear": "Tøm historikk",
+    "empty": "Ingenting kopiert ennå.",
+    "copy": "Kopier til denne enheten og det eksterne skrivebordet",
+    "copied": "Kopiert",
+    "hint": "Når du kopierer en oppføring, oppdateres både enheten din og den eksterne utklippstavlen. Trykk Ctrl+V på det eksterne skrivebordet for å lime inn."
+  }
+}

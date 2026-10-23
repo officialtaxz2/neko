@@ -4,6 +4,8 @@ Current assessment and NEXT consolidated: 2026-10-10.
 
 ## NEXT
 
+**React client migration (2026-10-23):** the operator decided to move to the upstream React client (v3 API, `/api/ws`) with feature parity before switching `master`. Done in one pull request, phase by phase: 0 upstream merge `92f9916` (Vue client and legacy `/ws` bridge removed, v3-native server work kept), 1 stability (`signal/request` with `video.auto`, optional overlay pointer, STUN fallback, ICE grace, playback watchdog, bfcache, settings keys), 1b design scaffold (`client/src/fork/`), 2 view-only share links, 3 HLS transport (`hls_browser_test` and `deploy/trace-*.js` re-targeted at `window.__nekoTrace`), 4 mobile input (trackpad, force touch, special keys), 5 UI (control pill, room bar, More menu, clipboard history, grouped settings), 6 switch and docs. The last Vue client is the tag `vue-final`. NEXT for the client: real devices (desktop, iPhone, the VIDAA TV), then HLS with control. Statements below that name Vue components describe the Vue client.
+
 **WebCodecs removed (2026-10-14):** the operator decided to delete the
 WebCodecs/media-WebSocket prototype and to continue with WebRTC plus
 HLS/LL-HLS (adaptive quality for both). Deleted: `server/internal/mediaws`,
@@ -346,7 +348,7 @@ network conditions. Recheck actual non-trickle/TURN-only configurations if used.
 **Operator step 3 — VIDAA event correlation, one variable at a time.** Record
 Hisense model, firmware, VIDAA/Odin build, source/codec and network/foreground
 state. Paste `deploy/trace-media-browser.js` into the affected browser console
-if inspection is available; it observes the live Vue client, fixed event names,
+if inspection is available; it observes the client's read-only `window.__nekoTrace` handle, fixed event names,
 element and optional RTC counters for at most ten minutes. It captures no URLs,
 SDP, candidates/addresses, user IDs, credentials or chat text. Optional marks:
 `nekoMediaTraceMark('first_picture')`, `nekoMediaTraceMark('audio')`,

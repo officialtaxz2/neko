@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "About n.eko",
+    "in_room": "{{count}} in the room",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Open side panel",
+    "close_panel": "Close side panel",
+    "new_messages": "New messages"
+  },
+  "chip": {
+    "control": "Control locked",
+    "login": "Login locked"
+  },
+  "room": {
+    "members": "Members"
+  },
+  "setting": {
+    "language": "Language"
+  },
+  "dock": {
+    "play": "Play",
+    "pause": "Pause",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "volume": "Volume"
+  },
+  "share": {
+    "title": "Watch",
+    "hint": "This link lets you watch and listen. You cannot control the desktop or chat.",
+    "watch": "Watch",
+    "connecting": "Connecting",
+    "invalid": "The link is invalid or no longer active."
+  },
+  "media": {
+    "label": "Default Media Backend",
+    "webrtc_desc": "Lowest delay, required for controlling",
+    "ll_hls_desc": "For watching, short delay",
+    "hls_desc": "For watching, most robust, longer delay",
+    "default": "Default",
+    "current": "Current",
+    "override": "The URL diagnostic override is active and takes priority over the saved default.",
+    "invalid_override": "The URL media selector is invalid, so the safe WebRTC path is active instead of the saved default.",
+    "clear_override": "Use saved default",
+    "limitations": "Passive viewing with buffering delay. Switching to WebRTC is a manual choice.",
+    "retry": "Retry HLS",
+    "unavailable": "unavailable",
+    "use_webrtc": "Use WebRTC",
+    "status": {
+      "idle": "idle",
+      "negotiating": "negotiating",
+      "connecting": "connecting",
+      "streaming": "streaming",
+      "paused": "private mode",
+      "terminal": "failed"
+    },
+    "try_hls": "Watch with HLS instead"
+  },
+  "input": {
+    "force_touch": "Force touch controls",
+    "force_touch_hint": "Shows the on-screen keyboard and the special keys on any device. A physical keyboard then works after you click into the picture.",
+    "trackpad_mode": "Trackpad mode",
+    "trackpad_hint": "One finger moves the pointer, a tap clicks, a finger held still right-clicks.",
+    "trackpad_cursor_hidden": "Hide trackpad pointer",
+    "keyboard_helper": "Special keys",
+    "reset_keys": "Reset keys",
+    "close": "Close",
+    "all": "All",
+    "copy": "Copy",
+    "paste": "Paste",
+    "undo": "Undo",
+    "left": "Left",
+    "up": "Up",
+    "right": "Right",
+    "down": "Down",
+    "keyboard": "Keyboard"
+  },
+  "controls": {
+    "take": "Take control",
+    "request": "Request",
+    "requested": "Requested",
+    "release": "Give up",
+    "force_take": "Take over",
+    "you_control": "You are in control",
+    "other_controls": "{{name}} is in control",
+    "watching": "You are watching",
+    "waiting_for": "Waiting for {{name}}",
+    "input_active": "Mouse and keyboard active",
+    "input_locked": "Your input is paused",
+    "lock_input": "Pause my mouse and keyboard input",
+    "unlock_input": "Resume my mouse and keyboard input",
+    "pause_input": "Pause input",
+    "resume_input": "Resume input",
+    "locked_by_admin": "Control locked",
+    "admin_only": "Only admins can take control",
+    "click_to_control": "Click into the picture to control",
+    "more": "More",
+    "tools": "More tools",
+    "fullscreen": "Fullscreen",
+    "resolution": "Screen resolution",
+    "pip": "Picture in picture",
+    "clipboard": "Clipboard",
+    "microphone": "Microphone",
+    "stream": "Stream: {{name}}",
+    "close": "Close",
+    "emotes": "Emotes",
+    "input_group": "Input",
+    "view_group": "Picture & stream"
+  },
+  "settings": {
+    "stream": "Stream",
+    "input": "Input",
+    "chat": "Chat",
+    "room": "Room",
+    "account": "Account",
+    "lock_control_hint": "Only admins can take control",
+    "lock_login_hint": "Only admins can join",
+    "broadcast_hint": "RTMP, e.g. YouTube",
+    "broadcast_start": "Start",
+    "broadcast_stop": "Stop",
+    "logout_title": "Log out?",
+    "logout_text": "You will leave the room."
+  },
+  "clipboard": {
+    "title": "Clipboard history",
+    "placeholder": "Type or edit text for the remote clipboard…",
+    "items": "Recent: {{count}}",
+    "clear": "Clear history",
+    "empty": "Nothing copied yet.",
+    "copy": "Copy to this device and the remote desktop",
+    "copied": "Copied",
+    "hint": "Copying an entry updates both your device and the remote clipboard. Press Ctrl+V on the remote desktop to paste."
+  }
+}

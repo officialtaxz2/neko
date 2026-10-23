@@ -1,42 +1,69 @@
-import vue from '@vitejs/plugin-vue2';
-import path from 'path';
-import {defineConfig} from 'vite';
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import { version } from './package.json'
 
-export default defineConfig(() => {
-  return {
-    plugins: [vue()],
-    resolve: {
-      alias: {
-        'vue': 'vue/dist/vue.esm.js',
-        '~@fortawesome': path.resolve(__dirname, './node_modules/@fortawesome'),
-        '~sweetalert2': path.resolve(__dirname, './node_modules/sweetalert2'),
-        '~emoji-datasource': path.resolve(__dirname, './node_modules/emoji-datasource'),
-        '~': path.resolve(__dirname, './src'),
-        '@': path.resolve(__dirname, './src'),
-      },
-      extensions: ['.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
+// vendor code in a few chunks of its own, by package, so an app change does not make browsers refetch
+// React and friends (and the build output shows what is big instead of one 700 kB chunk); the rest of
+// node_modules is `vendor`, the app itself stays in the entry chunk
+const vendorChunks: [string, RegExp][] = [
+  ['react', /^(react|react-dom|scheduler)$/],
+  [
+    'radix',
+    /^(@radix-ui\/|@floating-ui\/|aria-hidden|react-remove-scroll|react-style-singleton|use-callback-ref|use-sidecar|get-nonce|tslib)/,
+  ],
+  [
+    'markdown',
+    /^(react-markdown|remark-|rehype-|micromark|mdast-|hast-|unified|unist-|vfile|estree-|decode-named-character-reference|@ungap\/structured-clone|property-information|space-separated-tokens|comma-separated-tokens|style-to-|inline-style-parser|html-url-attributes|markdown-table|longest-streak|trim-lines|escape-string-regexp|is-plain-obj|bail|trough|zwitch|ccount|devlop|extend)/,
+  ],
+  ['i18n', /^(i18next|react-i18next)$/],
+  ['icons', /^@phosphor-icons\/react$/],
+  // the fork: the MSE player for HLS, loaded only when an HLS page needs it (core/src/transport/hls.ts);
+  // its 590 kB stay out of every other page
+  ['hls', /^hls\.js$/],
+]
+const vendorChunk = (id: string) => {
+  const dep = id.split('/node_modules/').pop()
+  if (dep === id) return // not a dependency: app code, core/, a virtual module
+  if (id.endsWith('?url')) return // the fork: an asset's URL (hls.js's worker), not its code
+  const pkg = /^(@[^/]+\/)?[^/]+/.exec(dep)![0]
+  return vendorChunks.find(([, re]) => re.test(pkg))?.[0] ?? 'vendor'
+}
+
+// dev: NEKO_URL=http://host:port npm run dev  (proxies /api incl. websocket)
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  base: './',
+  // shown in the About dialog
+  define: { __APP_VERSION__: JSON.stringify(version) },
+  resolve: {
+    // the core is consumed from source (alias below), so its zustand must be this app's copy, not core/node_modules'
+    dedupe: ['zustand'],
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // the GUI consumes the core package from source; consumers get the built dist/ (core/package.json)
+      '@m1k1o/neko': fileURLToPath(new URL('./core/src/index.ts', import.meta.url)),
     },
-    css: {
-      preprocessorOptions: {
-        scss: {
-          additionalData: `@import "~/assets/styles/_variables.scss";`,
+  },
+  build: {
+    // the fork: hls.js's chunk (590 kB) is the one this big, and only HLS pages load it
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks: vendorChunk,
+        // the lazily loaded locale files (src/i18n) by language and namespace, not 15 `common-<hash>.js`
+        chunkFileNames: (chunk) => {
+          const locale = /\/locales\/(\w+)\/(\w+)\.json$/.exec(chunk.facadeModuleId ?? '')
+          return locale ? `assets/locales/${locale[1]}-${locale[2]}-[hash].js` : 'assets/[name]-[hash].js'
         },
       },
     },
-    esbuild: {
-      tsconfigRaw: {
-        compilerOptions: {
-          experimentalDecorators: true,
-        },
-      },
-    },
-    server: {
-      port: 3000,
-      host: '0.0.0.0',
-      allowedHosts: 'all',
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
-    },
-  };
-});
+  },
+  server: {
+    port: 3001,
+    proxy: process.env.NEKO_URL
+      ? { '/api': { target: process.env.NEKO_URL, changeOrigin: true, ws: true } }
+      : undefined,
+  },
+})

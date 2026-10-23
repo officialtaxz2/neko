@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "Über n.eko",
+    "in_room": "{{count}} im Raum",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Seitenleiste öffnen",
+    "close_panel": "Seitenleiste schließen",
+    "new_messages": "Neue Nachrichten"
+  },
+  "chip": {
+    "control": "Steuerung gesperrt",
+    "login": "Login gesperrt"
+  },
+  "room": {
+    "members": "Mitglieder"
+  },
+  "setting": {
+    "language": "Sprache"
+  },
+  "dock": {
+    "play": "Abspielen",
+    "pause": "Pausieren",
+    "mute": "Stummschalten",
+    "unmute": "Ton an",
+    "volume": "Lautstärke"
+  },
+  "share": {
+    "title": "Zuschauen",
+    "hint": "Über diesen Link siehst und hörst du zu. Steuern und Chatten geht hier nicht.",
+    "watch": "Zuschauen",
+    "connecting": "Verbinde",
+    "invalid": "Der Link ist ungültig oder nicht mehr aktiv."
+  },
+  "media": {
+    "label": "Standard-Medienpfad",
+    "webrtc_desc": "Geringste Verzögerung, nötig zum Steuern",
+    "ll_hls_desc": "Zum Zuschauen, kurze Verzögerung",
+    "hls_desc": "Zum Zuschauen, am robustesten, mehr Verzögerung",
+    "default": "Standard",
+    "current": "Aktiv",
+    "override": "Die URL-Diagnosevorgabe ist aktiv und hat Vorrang vor der gespeicherten Auswahl.",
+    "invalid_override": "Die Medienauswahl in der URL ist ungültig; deshalb ist statt der gespeicherten Auswahl der sichere WebRTC-Pfad aktiv.",
+    "clear_override": "Gespeicherte Auswahl verwenden",
+    "limitations": "Passives Zuschauen mit Pufferverzögerung. Der Wechsel zu WebRTC erfolgt manuell.",
+    "retry": "HLS erneut versuchen",
+    "unavailable": "nicht verfügbar",
+    "use_webrtc": "WebRTC verwenden",
+    "status": {
+      "idle": "bereit",
+      "negotiating": "wird ausgehandelt",
+      "connecting": "wird verbunden",
+      "streaming": "Streaming aktiv",
+      "paused": "Privatmodus",
+      "terminal": "fehlgeschlagen"
+    },
+    "try_hls": "Stattdessen mit HLS zuschauen"
+  },
+  "input": {
+    "force_touch": "Touch-Bedienung erzwingen",
+    "force_touch_hint": "Zeigt Bildschirmtastatur und Sondertasten auf jedem Gerät. Die echte Tastatur greift dann erst nach einem Klick ins Bild.",
+    "trackpad_mode": "Trackpad-Modus",
+    "trackpad_hint": "Ein Finger bewegt den Zeiger, Tippen klickt, ein ruhig gehaltener Finger klickt rechts.",
+    "trackpad_cursor_hidden": "Trackpad-Zeiger ausblenden",
+    "keyboard_helper": "Sondertasten",
+    "reset_keys": "Tasten lösen",
+    "close": "Schließen",
+    "all": "Alles",
+    "copy": "Kopieren",
+    "paste": "Einfügen",
+    "undo": "Rückgängig",
+    "left": "Links",
+    "up": "Hoch",
+    "right": "Rechts",
+    "down": "Runter",
+    "keyboard": "Tastatur"
+  },
+  "controls": {
+    "take": "Steuerung übernehmen",
+    "request": "Anfragen",
+    "requested": "Angefragt",
+    "release": "Abgeben",
+    "force_take": "Übernehmen",
+    "you_control": "Du steuerst",
+    "other_controls": "{{name}} steuert",
+    "watching": "Du schaust zu",
+    "waiting_for": "Wartet auf {{name}}",
+    "input_active": "Maus und Tastatur aktiv",
+    "input_locked": "Deine Eingabe ist pausiert",
+    "lock_input": "Meine Maus- und Tastatureingabe pausieren",
+    "unlock_input": "Meine Maus- und Tastatureingabe fortsetzen",
+    "pause_input": "Eingabe pausieren",
+    "resume_input": "Eingabe fortsetzen",
+    "locked_by_admin": "Steuerung gesperrt",
+    "admin_only": "Nur Admins können steuern",
+    "click_to_control": "Zum Steuern ins Bild klicken",
+    "more": "Mehr",
+    "tools": "Weitere Werkzeuge",
+    "fullscreen": "Vollbild",
+    "resolution": "Bildschirmauflösung",
+    "pip": "Bild im Bild",
+    "clipboard": "Zwischenablage",
+    "microphone": "Mikrofon",
+    "stream": "Stream: {{name}}",
+    "close": "Schließen",
+    "emotes": "Emotes",
+    "input_group": "Eingabe",
+    "view_group": "Bild & Stream"
+  },
+  "settings": {
+    "stream": "Stream",
+    "input": "Eingabe",
+    "chat": "Chat",
+    "room": "Raum",
+    "account": "Konto",
+    "lock_control_hint": "Nur Admins können steuern",
+    "lock_login_hint": "Nur Admins können beitreten",
+    "broadcast_hint": "RTMP, z. B. YouTube",
+    "broadcast_start": "Starten",
+    "broadcast_stop": "Stoppen",
+    "logout_title": "Abmelden?",
+    "logout_text": "Du verlässt damit den Raum."
+  },
+  "clipboard": {
+    "title": "Zwischenablagenverlauf",
+    "placeholder": "Text für die entfernte Zwischenablage eingeben oder bearbeiten…",
+    "items": "Zuletzt: {{count}}",
+    "clear": "Verlauf leeren",
+    "empty": "Noch nichts kopiert.",
+    "copy": "Auf dieses Gerät und den entfernten Desktop kopieren",
+    "copied": "Kopiert",
+    "hint": "Ein kopierter Eintrag landet in deiner und in der entfernten Zwischenablage. Im entfernten Desktop fügst du mit Strg+V ein."
+  }
+}

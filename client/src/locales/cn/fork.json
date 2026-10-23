@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "关于 n.eko",
+    "in_room": "房间内 {{count}} 人",
+    "admin": "管理员",
+    "chat": "聊天",
+    "open_panel": "打开侧边栏",
+    "close_panel": "关闭侧边栏",
+    "new_messages": "新消息"
+  },
+  "chip": {
+    "control": "控制已锁定",
+    "login": "登录已锁定"
+  },
+  "room": {
+    "members": "成员"
+  },
+  "setting": {
+    "language": "语言"
+  },
+  "dock": {
+    "play": "播放",
+    "pause": "暂停",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "volume": "音量"
+  },
+  "share": {
+    "title": "观看",
+    "hint": "通过此链接你只能观看和收听，无法控制桌面或聊天。",
+    "watch": "观看",
+    "connecting": "正在连接",
+    "invalid": "链接无效或已失效。"
+  },
+  "media": {
+    "label": "默认媒体路径",
+    "webrtc_desc": "延迟最低，控制时必需",
+    "ll_hls_desc": "用于观看，延迟较短",
+    "hls_desc": "用于观看，最稳定，延迟较长",
+    "default": "默认",
+    "current": "当前",
+    "override": "URL 中的诊断选择已生效，优先于已保存的选择。",
+    "invalid_override": "URL 中的媒体选择无效，因此使用安全的 WebRTC 路径，而不是已保存的选择。",
+    "clear_override": "使用已保存的选择",
+    "limitations": "仅观看，有缓冲延迟。切换到 WebRTC 需手动进行。",
+    "retry": "重试 HLS",
+    "unavailable": "不可用",
+    "use_webrtc": "使用 WebRTC",
+    "status": {
+      "idle": "空闲",
+      "negotiating": "协商中",
+      "connecting": "连接中",
+      "streaming": "播放中",
+      "paused": "私密模式",
+      "terminal": "失败"
+    },
+    "try_hls": "改用 HLS 观看"
+  },
+  "input": {
+    "force_touch": "强制触控操作",
+    "force_touch_hint": "在任何设备上显示屏幕键盘和特殊按键。物理键盘需要先点击画面后才能使用。",
+    "trackpad_mode": "触控板模式",
+    "trackpad_hint": "单指移动指针，轻点即点击，手指静止按住即右键点击。",
+    "trackpad_cursor_hidden": "隐藏触控板指针",
+    "keyboard_helper": "特殊按键",
+    "reset_keys": "松开按键",
+    "close": "关闭",
+    "all": "全选",
+    "copy": "复制",
+    "paste": "粘贴",
+    "undo": "撤销",
+    "left": "左",
+    "up": "上",
+    "right": "右",
+    "down": "下",
+    "keyboard": "键盘"
+  },
+  "controls": {
+    "take": "获取控制权",
+    "request": "请求",
+    "requested": "已请求",
+    "release": "放弃",
+    "force_take": "接管",
+    "you_control": "你正在控制",
+    "other_controls": "{{name}} 正在控制",
+    "watching": "你正在观看",
+    "waiting_for": "正在等待 {{name}}",
+    "input_active": "鼠标和键盘已启用",
+    "input_locked": "你的输入已暂停",
+    "lock_input": "暂停我的鼠标和键盘输入",
+    "unlock_input": "恢复我的鼠标和键盘输入",
+    "pause_input": "暂停输入",
+    "resume_input": "恢复输入",
+    "locked_by_admin": "控制已锁定",
+    "admin_only": "只有管理员可以控制",
+    "click_to_control": "点击画面以控制",
+    "more": "更多",
+    "tools": "更多工具",
+    "fullscreen": "全屏",
+    "resolution": "屏幕分辨率",
+    "pip": "画中画",
+    "clipboard": "剪贴板",
+    "microphone": "麦克风",
+    "stream": "串流：{{name}}",
+    "close": "关闭",
+    "emotes": "表情",
+    "input_group": "输入",
+    "view_group": "画面和串流"
+  },
+  "settings": {
+    "stream": "串流",
+    "input": "输入",
+    "chat": "聊天",
+    "room": "房间",
+    "account": "账户",
+    "lock_control_hint": "只有管理员可以控制",
+    "lock_login_hint": "只有管理员可以加入",
+    "broadcast_hint": "RTMP，例如 YouTube",
+    "broadcast_start": "开始",
+    "broadcast_stop": "停止",
+    "logout_title": "退出登录？",
+    "logout_text": "你将离开房间。"
+  },
+  "clipboard": {
+    "title": "剪贴板历史",
+    "placeholder": "输入或编辑要发送到远程剪贴板的文本…",
+    "items": "最近：{{count}}",
+    "clear": "清除历史",
+    "empty": "还没有复制任何内容。",
+    "copy": "复制到此设备和远程桌面",
+    "copied": "已复制",
+    "hint": "复制一条记录会同时更新你的设备和远程剪贴板。在远程桌面中按 Ctrl+V 粘贴。"
+  }
+}

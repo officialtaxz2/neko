@@ -1,7 +1,5 @@
-# Used when client/ is the standalone Docker build context.
-**/node_modules
+node_modules
 dist
-.git
-.logs
-logs
-*.log
+e2e-out
+core/node_modules
+core/dist

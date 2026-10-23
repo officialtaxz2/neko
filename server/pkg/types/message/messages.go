@@ -12,6 +12,8 @@ import (
 
 type SystemWebRTC struct {
 	Videos []string `json:"videos"`
+	// the video pipelines draw the mouse pointer into the picture
+	PointerInVideo bool `json:"pointer_in_video"`
 }
 
 type SystemInit struct {

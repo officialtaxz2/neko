@@ -1,0 +1,134 @@
+{
+  "header": {
+    "about": "n.eko 정보",
+    "in_room": "방에 {{count}}명",
+    "admin": "관리자",
+    "chat": "채팅",
+    "open_panel": "사이드 패널 열기",
+    "close_panel": "사이드 패널 닫기",
+    "new_messages": "새 메시지"
+  },
+  "chip": {
+    "control": "제어 잠김",
+    "login": "로그인 잠김"
+  },
+  "room": {
+    "members": "멤버"
+  },
+  "setting": {
+    "language": "언어"
+  },
+  "dock": {
+    "play": "재생",
+    "pause": "일시정지",
+    "mute": "음소거",
+    "unmute": "음소거 해제",
+    "volume": "볼륨"
+  },
+  "share": {
+    "title": "시청하기",
+    "hint": "이 링크로는 보고 들을 수만 있습니다. 데스크톱 제어와 채팅은 할 수 없습니다.",
+    "watch": "시청하기",
+    "connecting": "연결 중",
+    "invalid": "링크가 잘못되었거나 더 이상 활성 상태가 아닙니다."
+  },
+  "media": {
+    "label": "기본 미디어 경로",
+    "webrtc_desc": "지연이 가장 적음, 제어에 필요",
+    "ll_hls_desc": "시청용, 짧은 지연",
+    "hls_desc": "시청용, 가장 안정적, 긴 지연",
+    "default": "기본값",
+    "current": "현재",
+    "override": "URL의 진단용 지정이 활성화되어 저장된 선택보다 우선합니다.",
+    "invalid_override": "URL의 미디어 지정이 올바르지 않아 저장된 선택 대신 안전한 WebRTC 경로를 사용합니다.",
+    "clear_override": "저장된 선택 사용",
+    "limitations": "시청 전용이며 버퍼링 지연이 있습니다. WebRTC로 전환은 직접 해야 합니다.",
+    "retry": "HLS 다시 시도",
+    "unavailable": "사용할 수 없음",
+    "use_webrtc": "WebRTC 사용",
+    "status": {
+      "idle": "대기",
+      "negotiating": "협상 중",
+      "connecting": "연결 중",
+      "streaming": "스트리밍 중",
+      "paused": "비공개 모드",
+      "terminal": "실패"
+    },
+    "try_hls": "대신 HLS로 시청"
+  },
+  "input": {
+    "force_touch": "터치 조작 강제",
+    "force_touch_hint": "모든 기기에서 화상 키보드와 특수 키를 표시합니다. 실제 키보드는 화면을 클릭한 뒤에 작동합니다.",
+    "trackpad_mode": "트랙패드 모드",
+    "trackpad_hint": "한 손가락으로 포인터를 움직이고, 탭하면 클릭, 손가락을 멈춘 채 누르고 있으면 오른쪽 클릭입니다.",
+    "trackpad_cursor_hidden": "트랙패드 포인터 숨기기",
+    "keyboard_helper": "특수 키",
+    "reset_keys": "키 놓기",
+    "close": "닫기",
+    "all": "전체",
+    "copy": "복사",
+    "paste": "붙여넣기",
+    "undo": "실행 취소",
+    "left": "왼쪽",
+    "up": "위",
+    "right": "오른쪽",
+    "down": "아래",
+    "keyboard": "키보드"
+  },
+  "controls": {
+    "take": "제어권 가져오기",
+    "request": "요청",
+    "requested": "요청됨",
+    "release": "넘기기",
+    "force_take": "가져오기",
+    "you_control": "내가 제어 중",
+    "other_controls": "{{name}} 님이 제어 중",
+    "watching": "보는 중",
+    "waiting_for": "{{name}} 님을 기다리는 중",
+    "input_active": "마우스와 키보드 활성",
+    "input_locked": "입력이 일시 중지됨",
+    "lock_input": "내 마우스와 키보드 입력 일시 중지",
+    "unlock_input": "내 마우스와 키보드 입력 재개",
+    "pause_input": "입력 일시 중지",
+    "resume_input": "입력 재개",
+    "locked_by_admin": "제어 잠김",
+    "admin_only": "관리자만 제어할 수 있습니다",
+    "click_to_control": "화면을 클릭해 제어",
+    "more": "더 보기",
+    "tools": "도구 더 보기",
+    "fullscreen": "전체 화면",
+    "resolution": "화면 해상도",
+    "pip": "PIP 모드",
+    "clipboard": "클립보드",
+    "microphone": "마이크",
+    "stream": "스트림: {{name}}",
+    "close": "닫기",
+    "emotes": "이모트",
+    "input_group": "입력",
+    "view_group": "화면 및 스트림"
+  },
+  "settings": {
+    "stream": "스트림",
+    "input": "입력",
+    "chat": "채팅",
+    "room": "방",
+    "account": "계정",
+    "lock_control_hint": "관리자만 제어할 수 있습니다",
+    "lock_login_hint": "관리자만 참여할 수 있습니다",
+    "broadcast_hint": "RTMP, 예: YouTube",
+    "broadcast_start": "시작",
+    "broadcast_stop": "중지",
+    "logout_title": "로그아웃할까요?",
+    "logout_text": "방에서 나가게 됩니다."
+  },
+  "clipboard": {
+    "title": "클립보드 기록",
+    "placeholder": "원격 클립보드에 보낼 텍스트를 입력하거나 편집…",
+    "items": "최근: {{count}}",
+    "clear": "기록 지우기",
+    "empty": "아직 복사한 항목이 없습니다.",
+    "copy": "이 기기와 원격 데스크톱에 복사",
+    "copied": "복사됨",
+    "hint": "항목을 복사하면 이 기기와 원격 클립보드가 모두 바뀝니다. 원격 데스크톱에서는 Ctrl+V로 붙여넣으세요."
+  }
+}

@@ -88,8 +88,8 @@ The product remains one shared session, not independent per-user browser session
 
 ### IMPLEMENTED
 
-- Vue 2.7 + TypeScript client built with Vite.
-- Major client/UI redesign.
+- Upstream's React + TypeScript client (v3 API) built with Vite; the Vue 2.7 client up to the tag `vue-final` had the same features below unless noted.
+- Major client/UI redesign (`client/src/fork/`).
 - Touch-device detection.
 - Trackpad mode and optional trackpad cursor.
 - Mobile keyboard and keyboard-helper integration.
@@ -100,14 +100,14 @@ The product remains one shared session, not independent per-user browser session
 - Bounded `srcObject`-based stream recovery.
 - Explicit avoidance of `video.load()` for WebRTC recovery.
 - ICE failure/disconnect timeout handling.
-- Bounded application-level reconnect for a previously established real session after the existing peer/socket cannot recover: four serialized attempts after 1, 2, 5 and 10 seconds.
+- Bounded application-level reconnect for a previously established real session after the existing peer/socket cannot recover: four serialized attempts after 1, 2, 5 and 10 seconds (Vue client; the React client keeps upstream's ten attempts with a whoami check and no reconnect after kick or logout).
 - Automatic reconnect suppression for initial-login failure, explicit logout, demo mode and server-directed disconnects, preserving authentication/session intent.
 - Identity guards and teardown for stale WebSocket, peer, data-channel, ICE-candidate and media-stream callbacks before a replacement connection becomes authoritative.
 - Public STUN fallback injection if no STUN URL is configured.
-- Demo mode.
+- Demo mode (Vue client only; not carried over to the React client).
 - Cross-browser fullscreen handling.
-- Optional 96-bit view-only share credential encoded as exactly 16 Base64URL characters and transported by a compact `#/<token>` fragment and WebSocket subprotocol rather than an HTTP request path/query string.
-- Fixed view-only profile/session normalization plus HTTP, current/legacy WebSocket, modern/legacy data-channel, inbound-media, host-assignment and plugin enforcement.
+- Optional 96-bit view-only share credential encoded as exactly 16 Base64URL characters and transported by a compact `#/<token>` fragment rather than an HTTP request path/query string (the Vue client sent it as a WebSocket subprotocol, the React client in the `/api/login` body).
+- Fixed view-only profile/session normalization plus HTTP, current/legacy WebSocket, modern/legacy data-channel, inbound-media, host-assignment and plugin enforcement (the legacy WebSocket and data-channel paths went with upstream's removal of `/ws`).
 - Non-persisted passive sessions with documented token rotation/removal and service recreation as the hard revocation boundary.
 
 ## Integrated upstream implementation
