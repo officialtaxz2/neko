@@ -11,12 +11,14 @@ import { bindPageLifecycle } from './lifecycle'
 import { bindShareLeave, shareToken, SHARE_TOKEN_KEY, tabStorage } from './viewonly'
 import { bindMedia, mediaTransport, readMedia, resolveMedia } from './media'
 import { exposeDiagnostics } from './diagnostics'
+import { captureErrors, debugEnabled } from './debug'
 import { clipboardStore } from './clipboard'
 
 // share: the token of a view-only link; read from the page's URL (#/<token>) unless given
 export type NekoAppOptions = Pick<NekoClientOptions, 'transport'> & { share?: string }
 
 export function createNekoApp(options: NekoAppOptions = {}): NekoApp {
+  if (debugEnabled()) captureErrors() // the fork: page errors from start-up on, for ?debug
   const app = createAppStore()
   const share = 'share' in options ? options.share : shareToken()
   // the fork: WebRTC, or HLS when chosen (media.ts)

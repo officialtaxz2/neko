@@ -54,11 +54,13 @@ side), `src/features/connect/Connect.tsx` (the login card in the fork's look),
 `src/state/dialogs.ts` (a question with its own confirm word), `src/state/settings.ts` (the touch
 settings into the core), `src/state/app.ts` (also the touch settings and the special keys' and the clipboard panel's flags) and
 `src/state/neko.ts` (the share link, the media choice, the traces' handle, the clipboard's history), `src/app/App.tsx` also
-for the HLS status and the HLS offer without WebRTC, `vite.config.ts` (hls.js's own chunk),
+for the HLS status, the HLS offer without WebRTC and the `?debug` text (`src/state/debug.ts`,
+`src/features/media/DebugOverlay.tsx`), `vite.config.ts` (hls.js's own chunk),
 `tools/dist.check.mjs` (that it stays lazy), `src/locales/de/common.json` ("Verbunden", "Abmelden"), and in the
 core `client.ts` (`tokenStorage`/`tokenKey`, `logout({ keepalive })`, `setInputMode`),
-`overlay.ts` (trackpad mode), `transport/webrtc.ts` (the read-only `peer`), `index.ts` and
-`dist.check.mjs` (the HLS transport).
+`overlay.ts` (trackpad mode), `transport/webrtc.ts` (the read-only `peer` and `playback`),
+`input/datachannel.ts` (its `stats` and `channelState`, for `?debug`), `index.ts` and
+`dist.check.mjs` (the HLS transport; `samplePlayback`).
 
 Imports follow the layer rules (`eslint.config.js`): `src/fork` sits beside `src/layout`, it may use
 features, components, state and the plugin registry; only the app shell imports it (the rules forbid

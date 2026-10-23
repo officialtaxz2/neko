@@ -108,7 +108,7 @@ Der Quellbaum wird read-only eingebunden und in ein temporäres Container-Dateis
 ) 2>&1 | tee "$NEKO_RESULT_DIR/01-client-checks.txt"
 ```
 
-Erwartung: `npm ci`, `npm test`, `npm run lint` und `npm run build` enden ohne Fehler. Dieser eine Block deckt alle Clientbefehle ab; nichts davon muss auf dem Host installiert sein.
+Erwartung: `npm ci`, `npm run check` (Typen, Format, Lint, Importzyklen, Tests, Core-Paket) und `npm run build` enden ohne Fehler. Dieser eine Block deckt alle Clientbefehle ab; nichts davon muss auf dem Host installiert sein.
 
 ## Block 2 — Servertests und Server-Build im Container
 
@@ -378,6 +378,8 @@ Gemeldet: Auf dem iPhone (Brave) bleibt WebRTC nach LL-HLS → WebRTC schwarz, o
 Weil iPhone-Browser keine erreichbare Konsole haben, zeigt der Link-Parameter `debug` (z. B. `&debug=1`) oben links im Video eine Textzeile mit Zustand: gewähltes Medium, `playing` im Store, die gespeicherten Seiteneinstellungen ohne Passwort, die letzten drei Seitenfehler, Ergebnis des letzten `play()`-Aufrufs (`pending`, `ok`, Fehlername, mit Zusatz für den stummen Versuch), `paused`, `readyState`, `currentTime`, Videogröße, `muted`/Lautstärke, gezeigte und dekodierte Bilder, Wiederherstellungsversuche, Quelle samt Tracks (`readyState`, `muted`) und Sichtbarkeit der Seite. Die Anzeige liest nur und fängt keine Eingaben ab. Ohne den Parameter ändert sich nichts.
 
 Ziel-Server-Prüfung und iPhone-Screenshot: ausstehend.
+
+Seit dem Umstieg auf den React-Client (2026-10-23) zeigt `?debug` dieselben Angaben aus `client/src/state/debug.ts` (Anzeige: `client/src/features/media/DebugOverlay.tsx`): Medium und Verbindung, die letzten drei Seitenfehler direkt darunter (auf einem hochkant gehaltenen Handy wird der Text unten abgeschnitten), Peer-, ICE- und Datenkanal-Zustand oder bei HLS Modus und Status, Wiederherstellungsversuche und ob der Bildzähler gilt, Videozustand, Sekunden seit dem Anhängen des Streams und bis zum ersten Bild, Steuerungs- und Touch-Zustand, gezählte Touch-Ereignisse, gesendete und verworfene Eingaben, Sichtbarkeit und die gespeicherten Einstellungen. Schlüssel mit `session`, `token` oder `password` im Namen werden nie gezeigt. Das Ergebnis des letzten `play()`-Aufrufs zeigt der React-Client nicht mehr; sein Wiedergabezustand steht in `playing`/`paused`/`ready`.
 
 ### Ergebnis: veraltete Seite aus dem Browser-Cache
 

@@ -33,5 +33,6 @@ export {
   type HLSTransportOptions,
 } from './transport/hls.ts'
 export { DataChannelInput } from './input/datachannel.ts'
+export { samplePlayback } from './playback.ts' // the fork: the GUI's ?debug view
 export { WebSocketInput } from './input/websocket.ts'
 export * from './types.ts'

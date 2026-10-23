@@ -146,6 +146,11 @@ export class PlaybackWatchdog {
     return this.timer !== 0
   }
 
+  // the frame counter is trusted (it advanced for this stream); else playback time decides
+  get trusted() {
+    return this.framesTrusted
+  }
+
   private observe() {
     const current = samplePlayback(this.video)
     if (framesAdvanced(this.sample, current)) this.framesTrusted = true
