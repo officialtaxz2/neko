@@ -48,8 +48,9 @@ export function useTools(sheet: boolean): { input: Tool[]; view: Tool[] } {
     client.store,
     useShallow((s) => ({
       hosting: selectControlling(s),
-      canHost: !!selectSession(s)?.profile.can_host,
-      admin: selectIsAdmin(s),
+      // over HLS (receive-only) no control and no screen size: the picture is only watched
+      canHost: !!selectSession(s)?.profile.can_host && !client.receiveOnly,
+      admin: selectIsAdmin(s) && !client.receiveOnly,
       locked: s.control.locked,
       viewOnly: !!selectSession(s)?.profile.is_view_only,
     })),

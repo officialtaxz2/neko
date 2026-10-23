@@ -118,6 +118,14 @@ test('ten reloads leave one session in the room, whether the page logs out on le
   expect(sessions.size).toBe(0)
   expect(requests.filter((r) => r.path === '/api/logout').every((r) => r.keepalive)).toBe(true)
 
+  // leaving drops the token at once: the logout's answer rarely arrives on unload, and the next page
+  // must not resume the session being logged out
+  await load()
+  const left = page.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: false }))
+  expect(left && tab.has(SHARE_TOKEN_KEY)).toBe(false)
+  await settle()
+  expect(sessions.size).toBe(0)
+
   // a tab the system killed (no pagehide) resumes its session from sessionStorage
   await load()
   const first = tab.get(SHARE_TOKEN_KEY)

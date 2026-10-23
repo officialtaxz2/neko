@@ -232,8 +232,9 @@ export class Overlay {
     return !this.client.privateModeEnabled && this.client.state.connection.status !== 'disconnected'
   }
 
+  // the fork: not on a receive-only transport (HLS), where the picture is only watched
   private get interactive() {
-    return !this.client.state.control.locked && !!this.client.session?.profile.can_host
+    return !this.client.state.control.locked && !!this.client.session?.profile.can_host && !this.client.receiveOnly
   }
 
   private sync() {
@@ -259,9 +260,10 @@ export class Overlay {
     this.resize()
   }
 
-  // input only flows while we are host and have not locked ourselves out
+  // input only flows while we are host and have not locked ourselves out (the fork: and never
+  // over a receive-only transport, even when the server makes us host)
   private get active() {
-    return this.client.controlling && !this.client.state.control.locked
+    return this.client.controlling && !this.client.state.control.locked && !this.client.receiveOnly
   }
 
   private pos(e: { clientX: number; clientY: number }): Pos {
@@ -315,7 +317,7 @@ export class Overlay {
       }
       return
     }
-    if (this.client.state.control.locked) return
+    if (!this.active) return // locked (the fork: or receive-only)
     this.move(this.pos(e))
     this.button(e.button + 1, down)
   }
@@ -429,7 +431,7 @@ export class Overlay {
     }
     e.preventDefault()
     e.stopPropagation()
-    if (this.client.state.control.locked) return
+    if (!this.active) return // locked (the fork: or receive-only)
     if (this.trackpad) return this.onTrackpadTouch(e) // the fork
 
     if (this.client.state.control.touch) {

@@ -28,7 +28,7 @@ export function ControlPill({ compact = false, separator = false }: { compact?: 
       const id = s.control.host_id
       return {
         state: pillState(s),
-        visible: pillVisible(s),
+        visible: pillVisible(s, client.receiveOnly),
         admin: selectIsAdmin(s),
         implicit: s.settings.implicit_hosting,
         inputLocked: s.control.locked,

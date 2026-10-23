@@ -21,8 +21,8 @@ const STALE_MS = 25_000
 export interface NekoClientOptions {
   // remember the session token in localStorage
   autologin?: boolean
-  // where autologin keeps the token, and under which key; localStorage and `neko_session` unless
-  // given (a view-only share link keeps its own session apart, in sessionStorage)
+  // the fork: where autologin keeps the token, and under which key; localStorage and `neko_session`
+  // unless given (a view-only share link keeps its own session apart, in sessionStorage)
   tokenStorage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
   tokenKey?: string
   // connect as soon as setUrl() finds a valid session
@@ -60,7 +60,7 @@ const initialState = (): State => ({
     keyboard: { layout: 'us', variant: '' },
     touch: false,
   },
-  screen: { size: { width: 1280, height: 720, rate: 30 }, configurations: [], pointer: false },
+  screen: { size: { width: 1280, height: 720, rate: 30 }, configurations: [], pointer: false }, // the fork: pointer
   session_id: null,
   sessions: {},
   settings: defaultSettings(),
@@ -156,8 +156,14 @@ export class NekoClient {
     return this.state.settings.private_mode && !this.isAdmin
   }
 
+  // the fork: HLS only receives (its input would lag by the stream's delay): no control is taken
+  // through it, neither by a request nor by a click under implicit hosting
+  get receiveOnly() {
+    return this.transport.kind === 'hls'
+  }
+
   get implicitControl() {
-    return this.state.settings.implicit_hosting && !!this.session?.profile.can_host
+    return this.state.settings.implicit_hosting && !!this.session?.profile.can_host && !this.receiveOnly
   }
 
   get isTouchDevice() {
@@ -206,7 +212,7 @@ export class NekoClient {
     this.store.setState({ authenticated: true })
   }
 
-  // keepalive: the request outlives the page (logging out while it is left)
+  // the fork: keepalive, the request outlives the page (logging out while it is left)
   async logout({ keepalive = false } = {}) {
     this.close()
     try {
@@ -217,6 +223,7 @@ export class NekoClient {
     }
   }
 
+  // the fork: the token's storage and key (options tokenStorage, tokenKey)
   private get tokenStorage() {
     return this.opts.tokenStorage ?? localStorage
   }
@@ -371,6 +378,7 @@ export class NekoClient {
             touch: !!p.touch_events,
             host_id: p.control_host?.has_host ? p.control_host.host_id : null,
           },
+          // the fork: the server says whether the stream draws the pointer (the overlay then does not)
           screen: { ...state.screen, size: p.screen_size, pointer: !!p.webrtc?.pointer_in_video },
           sessions: p.sessions ?? {},
           settings: p.settings,
@@ -468,7 +476,7 @@ export class NekoClient {
     this.store.setState({
       connection: { ...state.connection, status: 'disconnected' },
       control: { ...state.control, host_id: null, clipboard: null },
-      screen: { ...state.screen, configurations: [], pointer: false },
+      screen: { ...state.screen, configurations: [], pointer: false }, // the fork: pointer
       session_id: null,
       sessions: {},
       settings: defaultSettings(),
@@ -480,6 +488,7 @@ export class NekoClient {
   /////////////////////////////
 
   request() {
+    if (this.receiveOnly) return // the fork
     this.send('control/request')
   }
 

@@ -49,8 +49,8 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
       implicit: s.settings.implicit_hosting,
       lockedControls: s.settings.locked_controls,
       video: s.video,
-      // the fork: who may not host (a view-only session) gets no control request
-      canHost: !!selectSession(s)?.profile.can_host,
+      // the fork: who may not host (a view-only session) or watches over HLS gets no control request
+      canHost: !!selectSession(s)?.profile.can_host && !client.receiveOnly,
     })),
   )
   const emotes = useStore(app, (s) => s.emotes)
@@ -120,7 +120,8 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
                 <ArrowsOutIcon className="size-4" />
               </IconButton>
             </li>
-            {admin && (
+            {/* the fork: no screen size over HLS (receive-only) */}
+            {admin && !client.receiveOnly && (
               <li className="mb-2.5 last:mb-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

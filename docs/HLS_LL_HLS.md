@@ -645,8 +645,10 @@ without `?media=` (a share link's fragment stays). Only the modes the server adv
 a stored mode it no longer offers stays visible, disabled. HLS shows its state on the picture (a small
 chip while it plays, otherwise a card; after a failure Retry or WebRTC). A view-only viewer finds the
 choice in the bar under the picture. A browser without WebRTC is offered HLS for the visit instead of
-only the unsupported notice; nothing switches on its own. With HLS, input (when the profile allows it)
-goes over the websocket with the HLS delay; controlling stays a WebRTC matter. hls.js is a chunk of
+only the unsupported notice; nothing switches on its own. HLS stays receive-only, as in the Vue
+client: the core's `client.receiveOnly` turns off the control request, taking control by a click under
+implicit hosting and every input from the overlay, and the GUI shows no control pill, no input tools
+and no screen size over HLS. Control over HLS is a later phase of its own. hls.js is a chunk of
 its own that only an MSE browser on an HLS page loads. The console traces in `deploy/` read the page's
 read-only `window.__nekoTrace` handle instead of Vue internals.
 

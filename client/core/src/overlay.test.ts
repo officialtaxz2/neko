@@ -3,7 +3,17 @@
 // and the mount() helper around it.
 import { test } from 'vitest'
 import assert from 'node:assert/strict'
-import { tick, settle, reset, init, patch, FakeElement, resizeObservers, windowListeners } from './test/browser.ts'
+import {
+  tick,
+  settle,
+  reset,
+  init,
+  patch,
+  sent,
+  FakeElement,
+  resizeObservers,
+  windowListeners,
+} from './test/browser.ts'
 
 const { NekoClient, Overlay, mount } = await import('./index.ts')
 type Options = ConstructorParameters<typeof NekoClient>[0]
@@ -12,7 +22,7 @@ type Transport = NonNullable<Exclude<NonNullable<Options>['transport'], () => un
 const LAYER = 'position:absolute;inset:0;width:100%;height:100%;'
 
 // a transport with a recording input channel and events a test can emit
-const fakeTransport = () => {
+const fakeTransport = (kind = 'ws-mse') => {
   const calls: unknown[][] = []
   const listeners = new Map<string, Set<(...a: any[]) => void>>()
   const noop = () => {}
@@ -21,7 +31,7 @@ const fakeTransport = () => {
     (...a: unknown[]) =>
       calls.push([m, ...a])
   const t = {
-    kind: 'ws-mse' as const,
+    kind: kind as 'ws-mse',
     element: null,
     input: {
       move: record('move'),
@@ -52,9 +62,9 @@ const fakeTransport = () => {
 
 // a client in a connected room (s1 = us, s2 = Bob the host) with an area of 1000x500 holding a
 // box with the transport's element; the overlay is not attached yet
-const setup = () => {
+const setup = (kind?: string) => {
   reset()
-  const { t, calls, emit, subscribers } = fakeTransport()
+  const { t, calls, emit, subscribers } = fakeTransport(kind)
   const client = new NekoClient({ transport: t })
   const p = init()
   const s = client.state
@@ -481,3 +491,21 @@ for (const [name, lose, regain] of [
     assert.deepEqual(calls.at(-1), ['button', 1, true])
   })
 }
+
+test('HLS is receive-only (the fork): no control request, no click taking control under implicit hosting, no input even as host', async () => {
+  const { client, calls, box, overlay, wrap, canvas, textarea } = setup('hls')
+  overlay.attach(box as any)
+  laidOut(canvas())
+  assert.equal(client.receiveOnly, true)
+  assert.equal(client.implicitControl, false, 'implicit hosting is on in the room, but not over HLS')
+  assert.equal(wrap().style.pointerEvents, 'none', 'the picture is only watched')
+  sent.length = 0
+  client.request()
+  textarea().dispatch('mousedown', { clientX: 100, clientY: 100, button: 0 })
+  textarea().dispatch('touchstart', { changedTouches: [{ identifier: 1, clientX: 100, clientY: 100, force: 1 }] })
+  assert.deepEqual(sent, [], 'no control/request goes out')
+  await host(client) // the server made us host all the same
+  textarea().dispatch('mousedown', { clientX: 100, clientY: 100, button: 0 })
+  textarea().dispatch('keydown', { keyCode: 65, key: 'a', location: 0 })
+  assert.deepEqual(calls, [], 'no input over HLS')
+})

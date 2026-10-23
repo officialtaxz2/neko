@@ -12,8 +12,8 @@ const input =
   'my-[5px] h-10 rounded-button border border-glass-border bg-white/[0.04] px-3 leading-5 text-text-normal outline-hidden selection:bg-text-link placeholder:text-text-muted focus:border-mint/50'
 
 // The login screen of a view-only share link (state/viewonly.ts): only a name, no password. On the
-// first visit with a remembered name, and on every reload of the tab, it starts by itself: a reload
-// resumes the tab's session, a new visit logs in with the link's token.
+// first visit with a remembered name, and on every reload of the tab, it starts by itself: a tab the
+// system killed resumes its session, otherwise it logs in with the link's token.
 export function ShareConnect() {
   const { t } = useTranslation()
   const neko = useNeko()

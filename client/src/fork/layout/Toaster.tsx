@@ -2,13 +2,14 @@ import type { CSSProperties } from 'react'
 import { Toaster as Sonner } from 'sonner'
 
 // The toasts of the fork's design (upstream's components/ui/sonner.tsx, restyled): glass cards at the
-// top left under the header, a coloured left edge and title per kind, full width on a small phone.
+// top left under the header (on a phone too), a coloured left edge and title per kind, full width on
+// a small phone.
 export function Toaster() {
   return (
     <Sonner
       position="top-left"
       offset={{ top: 60, left: 20 }}
-      mobileOffset={{ top: 15, left: 10, right: 10 }}
+      mobileOffset={{ top: 56, left: 10, right: 10 }}
       gap={10}
       expand
       visibleToasts={9}

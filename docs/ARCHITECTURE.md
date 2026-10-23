@@ -130,7 +130,7 @@ Current behavior includes:
 - the playback watchdog: no presented frames (or no time progress) for eight seconds in the foreground re-attaches the same stream, up to three times, then stops playback; a hidden page, a deliberate pause or a running re-attachment is not a stall;
 - a page put into the bfcache disconnects and reconnects on return;
 - upstream's reconnect: ten attempts with a whoami check, none after kick or logout;
-- input over the WebRTC data channel, or over the WebSocket with HLS;
+- input over the WebRTC data channel; HLS is receive-only (`client.receiveOnly`: no control request, no implicit hosting, no overlay input);
 - the overlay does not draw a second cursor when `system/init` reports `webrtc.pointer_in_video`;
 - a compact `#/<16-character-Base64URL-token>` fragment opens a name-only view-only login; the token goes only into the `/api/login` body, the share session lives in `sessionStorage` apart from a member's session, and a view-only session sees only the picture with a playback bar;
 - `media_backend` (stored) or `?media=hls|ll-hls` (one visit) selects WebRTC, HLS or LL-HLS among the modes the server advertises; a change reloads, there is no automatic fallback; hls.js loads lazily in a chunk of its own, Apple devices and TVs play natively;

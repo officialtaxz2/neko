@@ -18,5 +18,6 @@ export function pillState(s: State): PillState {
   return 'free'
 }
 
-// only for a member who may control at all (not a view-only session)
-export const pillVisible = (s: State) => !!selectSession(s)?.profile.can_host
+// only for a member who may control at all (not a view-only session), and not over a receive-only
+// stream (HLS: client.receiveOnly), where control is not taken
+export const pillVisible = (s: State, receiveOnly = false) => !!selectSession(s)?.profile.can_host && !receiveOnly

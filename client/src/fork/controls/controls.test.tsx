@@ -45,9 +45,18 @@ interface Room {
   canHost?: boolean
   locked?: boolean
   implicit?: boolean
+  hls?: boolean
 }
-function room({ host = null, admin = false, canHost = true, locked = false, implicit = false }: Room = {}) {
-  const neko = createNekoApp({ transport: fakeTransport() })
+function room({
+  host = null,
+  admin = false,
+  canHost = true,
+  locked = false,
+  implicit = false,
+  hls = false,
+}: Room = {}) {
+  const transport = hls ? { ...fakeTransport(), kind: 'hls' as const } : fakeTransport()
+  const neko = createNekoApp({ transport })
   neko.client.store.setState((s) => ({
     session_id: 'me',
     sessions: { me: session('me', 'Matze', admin, canHost), a: session('a', 'Alex') },
@@ -97,6 +106,9 @@ test('control pill: the one action that fits, the input pause for the host only 
   expect(render(room({ host: 'me', implicit: true }), <ControlPill />)).not.toContain('control-release')
   // a view-only session gets no pill
   expect(render(room({ canHost: false }), <ControlPill />)).toBe('')
+  // nor does anyone watching over HLS (receive-only), with implicit hosting or without
+  expect(render(room({ hls: true }), <ControlPill />)).toBe('')
+  expect(render(room({ hls: true, implicit: true }), <ControlPill />)).toBe('')
 })
 
 test('clipboard history: newest first without repeats, at most ten, what the remote copied too, gone on logout', () => {
@@ -137,6 +149,10 @@ test('more menu: the host gets the input tools, the sheet adds what the desktop 
   expect(sheet).toEqual(expect.arrayContaining(['input-pause', 'clipboard', 'fullscreen', 'stream']))
   expect(sheet).not.toContain('resolution') // admins only
   expect(sheet).not.toContain('microphone') // the profile may not share media
+
+  // over HLS (receive-only): neither the input tools nor the screen size, even as host and admin
+  const hls = tools(render(room({ host: 'me', admin: true, hls: true }), <MoreTools sheet done={() => {}} />))
+  expect(hls).toEqual(['fullscreen', 'stream'])
 
   // without control: the picture's tools only
   const watcher = tools(render(room({ host: 'a' }), <MoreTools sheet done={() => {}} />))

@@ -4,9 +4,9 @@
 // do; the GUI only shows the picture and the sound.
 //
 // Its session token is kept apart from a member's: in sessionStorage under its own key, so a member's
-// saved session in the same browser stays untouched, and a reload of the tab resumes the session
-// instead of logging in again. Leaving the page logs the session out (a request that outlives the
-// page), so ten reloads leave one session in the room, not ten.
+// saved session in the same browser stays untouched, and a tab the system killed (no pagehide)
+// resumes its session. Leaving the page, a reload included, logs the session out (a request that
+// outlives the page) and the next load logs in anew, so ten reloads leave one session in the room.
 import { ApiError, type NekoClient } from '@m1k1o/neko'
 import { t } from '@/i18n'
 import { actions } from './actions'
@@ -73,6 +73,9 @@ export function bindShareLeave(client: NekoClient, target: PageTarget | undefine
   if (typeof target?.addEventListener !== 'function') return () => {}
   const hide = (e: Event) => {
     if ((e as PageTransitionEvent).persisted || !client.state.authenticated) return
+    // the token goes now, not when the logout answers (it rarely does on unload): the next page must
+    // not resume a session that is being logged out, the logout could beat its connection
+    tabStorage().removeItem(SHARE_TOKEN_KEY)
     client.logout({ keepalive: true }).catch(() => {})
   }
   target.addEventListener('pagehide', hide)
@@ -102,7 +105,7 @@ export function watchShare(neko: NekoApp, name: string) {
 // the automatic start happens once per page: after a kick or a logout the viewer decides
 const started = scoped(() => ({ done: false }))
 
-// the start of a share link page: resume the tab's session (a reload), else log in under the name
+// the start of a share link page: resume the tab's session (a killed tab), else log in under the name
 // from ?usr= or the last visit; without a name the login screen asks. Only the tab's own share
 // session is resumed, never a member's session from a cookie. Null when there is nothing to start
 // (it ran already on this page, or the viewer is logged in).

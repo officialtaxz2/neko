@@ -59,7 +59,7 @@
   "setting": {
     "scroll": "Scroll-Empfindlichkeit",
     "scroll_invert": "Bildlauf umkehren",
-    "autoplay": "Autoplay Video",
+    "autoplay": "Video automatisch abspielen",
     "ignore_emotes": "Emotes ignorieren",
     "chat_sound": "Chat-Sound abspielen",
     "keyboard_layout": "Tastaturbelegung",
