@@ -96,7 +96,7 @@ test('connect: signal/* over the session, the track on the element, state with s
   const { t, video, states, status } = setup()
   const { s, out, events, receive } = sessionInfo()
   await t.connect(s)
-  assert.deepEqual(out, [{ event: 'signal/request', payload: { video: {}, audio: {} } }])
+  assert.deepEqual(out, [{ event: 'signal/request', payload: { video: { auto: true }, audio: {} } }])
   assert.equal(status(), 'connecting')
   receive('signal/candidate', { candidate: 'early' })
   receive('signal/provide', { sdp: OFFER, iceservers: [{ urls: 'stun:x' }] })
@@ -346,4 +346,121 @@ test('microphone: shareMedia adds the tracks and renegotiates through the sessio
   assert.deepEqual(pc.senders, [])
   stop() // already gone: ignored, not thrown (the fake peer throws for an unknown sender)
   assert.deepEqual(pc.senders, [])
+})
+
+test('ICE servers: an empty or missing list falls back to public STUN, an explicit list is kept', async () => {
+  for (const iceservers of [undefined, []]) {
+    const { t } = setup()
+    const { s, receive } = sessionInfo()
+    await t.connect(s)
+    receive('signal/provide', { sdp: OFFER, iceservers })
+    await settle()
+    const urls = (FakePeer.all[0].config as RTCConfiguration).iceServers![0].urls as string[]
+    assert.equal(urls[0], 'stun:stun.l.google.com:19302')
+    assert.equal(urls.length, 5)
+    t.close()
+  }
+})
+
+test('ICE disconnected: recovering within the grace keeps the peer, staying disconnected 8 s replaces it', async () => {
+  const { t, events, out, status } = await connected()
+  const pc = FakePeer.all[0]
+  pc.transition('disconnected')
+  assert.equal(status(), 'connecting')
+  await tick(5000)
+  pc.transition('connected')
+  assert.equal(status(), 'connected')
+  await tick(10_000)
+  assert.equal(pc.closed, false, 'recovered in time')
+
+  pc.transition('disconnected')
+  await tick(3000)
+  pc.transition('disconnected') // rechecking does not extend the deadline
+  await tick(4999)
+  assert.equal(pc.closed, false)
+  await tick(1)
+  assert.equal(pc.closed, true, 'given up after the grace, like a failure')
+  await tick(1500)
+  assert.deepEqual(events(), ['signal/request'], 'a new peer is asked for with the failure backoff')
+  assert.deepEqual(out.at(-1), { event: 'signal/request', payload: { video: { auto: true }, audio: {} } })
+  t.close()
+})
+
+test('ICE state: a failed iceConnectionState counts as a failure even if connectionState does not report it', async () => {
+  const { t, events } = await connected()
+  const pc = FakePeer.all[0] as FakePeer & { iceConnectionState?: string; oniceconnectionstatechange?: () => void }
+  pc.iceConnectionState = 'failed'
+  pc.oniceconnectionstatechange!()
+  assert.equal(pc.closed, true)
+  pc.transition('failed') // the second report of the same failure changes nothing
+  await tick(1500)
+  assert.deepEqual(events(), ['signal/request'])
+  t.close()
+})
+
+// a <video> whose playback position advances while `moving` is set
+const playable = (video: any) => {
+  video.readyState = 4
+  video.currentTime = 0
+  const clock = setInterval(() => video.moving && !video.paused && (video.currentTime += 0.5), 500)
+  return () => clearInterval(clock)
+}
+
+test('watchdog: a playing stream without progress is re-attached three times, then playback stops for an explicit Play', async () => {
+  const { t, video, states } = await connected()
+  const stopClock = playable(video)
+  const stream = { id: 'stream' }
+  FakePeer.all[0].ontrack!({ track: { kind: 'video' }, streams: [stream], receiver: {} })
+  video.moving = true
+  await t.setPlaying(true)
+  assert.equal(video.plays, 1)
+  await tick(20_000)
+  assert.equal(video.plays, 1, 'moving playback is left alone')
+
+  video.moving = false // frozen picture
+  await tick(8_500)
+  assert.equal(video.plays, 2, 'first re-attachment')
+  assert.equal(video.srcObject, stream, 'the same stream, no load()')
+  assert.equal(video.paused, false)
+  await tick(8_500 * 2)
+  assert.equal(video.plays, 4, 'three attempts')
+  await tick(8_500)
+  assert.equal(video.plays, 4)
+  assert.equal(video.paused, true, 'given up: stopped, an explicit Play is needed')
+  assert.equal(states.at(-1)!.video.playing, false)
+  await tick(30_000)
+  assert.equal(video.plays, 4, 'nothing more by itself')
+
+  video.moving = true
+  await t.setPlaying(true) // the user presses Play: the attempts start over
+  assert.equal(video.plays, 5)
+  await tick(20_000)
+  assert.equal(video.plays, 5)
+  stopClock()
+  t.close()
+})
+
+test('watchdog: a deliberate pause, a hidden page and progress after a re-attachment are no stalls', async () => {
+  const { t, video } = await connected()
+  const stopClock = playable(video)
+  FakePeer.all[0].ontrack!({ track: { kind: 'video' }, streams: [{ id: 's' }], receiver: {} })
+  await t.setPlaying(true)
+  await t.setPlaying(false) // the user paused
+  await tick(30_000)
+  assert.equal(video.plays, 1)
+
+  await t.setPlaying(true)
+  ;(globalThis as any).document.hidden = true // background: throttled, not broken
+  await tick(30_000)
+  assert.equal(video.plays, 2)
+  ;(globalThis as any).document.hidden = false
+  await tick(500) // the first foreground poll starts the clock
+  await tick(8_500)
+  assert.equal(video.plays, 3, 're-attached once')
+  video.moving = true // and it moves again: the count starts over
+  await tick(40_000)
+  assert.equal(video.plays, 3)
+  delete (globalThis as any).document.hidden
+  stopClock()
+  t.close()
 })

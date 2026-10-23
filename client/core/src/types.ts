@@ -12,6 +12,8 @@ export interface MemberProfile {
   can_access_clipboard: boolean
   sends_inactive_cursor: boolean
   can_see_inactive_cursors: boolean
+  // a view-only share-link session: watches, never controls (the server enforces it)
+  is_view_only?: boolean
   plugins?: Record<string, any>
 }
 
@@ -67,7 +69,8 @@ export interface InitPayload {
   settings: Settings
   touch_events: boolean
   screencast_enabled?: boolean
-  webrtc?: { videos?: string[] }
+  // pointer_in_video: every video pipeline draws the mouse pointer into the picture
+  webrtc?: { videos?: string[]; pointer_in_video?: boolean }
 }
 
 export interface State {
@@ -98,6 +101,8 @@ export interface State {
   screen: {
     size: ScreenSize
     configurations: ScreenSize[]
+    // the stream already shows the remote mouse pointer, so it is not drawn over it again
+    pointer: boolean
   }
   session_id: string | null
   sessions: Record<string, Session>

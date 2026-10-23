@@ -56,7 +56,7 @@ const initialState = (): State => ({
     keyboard: { layout: 'us', variant: '' },
     touch: false,
   },
-  screen: { size: { width: 1280, height: 720, rate: 30 }, configurations: [] },
+  screen: { size: { width: 1280, height: 720, rate: 30 }, configurations: [], pointer: false },
   session_id: null,
   sessions: {},
   settings: defaultSettings(),
@@ -357,7 +357,7 @@ export class NekoClient {
             touch: !!p.touch_events,
             host_id: p.control_host?.has_host ? p.control_host.host_id : null,
           },
-          screen: { ...state.screen, size: p.screen_size },
+          screen: { ...state.screen, size: p.screen_size, pointer: !!p.webrtc?.pointer_in_video },
           sessions: p.sessions ?? {},
           settings: p.settings,
         })
@@ -454,7 +454,7 @@ export class NekoClient {
     this.store.setState({
       connection: { ...state.connection, status: 'disconnected' },
       control: { ...state.control, host_id: null, clipboard: null },
-      screen: { ...state.screen, configurations: [] },
+      screen: { ...state.screen, configurations: [], pointer: false },
       session_id: null,
       sessions: {},
       settings: defaultSettings(),

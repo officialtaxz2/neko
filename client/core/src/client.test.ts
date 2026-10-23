@@ -66,6 +66,7 @@ test('handshake: init -> signal/request -> provide -> signal/answer -> peer conn
   assert.deepEqual(sent, ['signal/request'])
   assert.equal(client.state.session_id, 's1')
   assert.deepEqual(client.state.screen.size, { width: 1920, height: 1080, rate: 60 })
+  assert.equal(client.state.screen.pointer, false, 'no webrtc.pointer_in_video: the client draws the pointer')
   assert.deepEqual(Object.keys(client.state.sessions), ['s1', 's2'])
   assert.equal(client.session?.profile.name, 'Alice')
   assert.equal(client.state.control.host_id, 's2')
@@ -631,4 +632,12 @@ test('subscriptions: the keyboard map goes out when control or the layout change
   receive('system/init', { ...init(), control_host: { has_host: true, host_id: 's1' } }, sockets[1])
   assert.deepEqual(sent.sort(), ['keyboard/map', 'signal/request'])
   assert.deepEqual(statuses, ['connecting'], 'the lost socket; init itself does not change the status')
+})
+
+test('system/init: webrtc.pointer_in_video says the stream shows the pointer; a closed connection forgets it', async () => {
+  const { client } = await connected()
+  receive('system/init', { ...init(), webrtc: { videos: ['high', 'low'], pointer_in_video: true } })
+  assert.equal(client.state.screen.pointer, true)
+  client.disconnect()
+  assert.equal(client.state.screen.pointer, false)
 })

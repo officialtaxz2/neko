@@ -145,6 +145,22 @@ test('start-up: the URL parameters and the stored settings of the page, read whe
   stored = fakeBrowser()
 })
 
+test('start-up: chat sound starts off, a stored choice is kept; the Vue client’s stored scroll is taken over once', () => {
+  stored = fakeBrowser()
+  assert.equal(make().app.getState().settings.chat_sound, false)
+  stored.set('chat_sound', '1')
+  assert.equal(make().app.getState().settings.chat_sound, true)
+
+  stored = fakeBrowser()
+  stored.set('scroll', '20') // the legacy 1..100 px clamp
+  const neko = make()
+  assert.equal(neko.app.getState().settings.scroll_sensitivity, 2)
+  assert.equal(stored.get('scroll_sensitivity'), '2')
+  stored.set('scroll_sensitivity', '-1') // a v3 value wins over the legacy one
+  assert.equal(make().app.getState().settings.scroll_sensitivity, -1)
+  stored = fakeBrowser()
+})
+
 test('a closed connection goes back to the login screen when the server no longer takes the session: whoami 401 (gone) or 403 (login disabled); other failures keep it for Connect', async () => {
   const out: number[] = []
   for (const status of [401, 403, 500, 200]) {

@@ -280,6 +280,18 @@ test('cursor: the host’s cursor from the transport is drawn on the canvas with
   assert.equal(drawn().includes('drawImage'), false, 'the host sees it as their real pointer, not drawn')
 })
 
+test('cursor: not drawn when the stream already shows the pointer (screen.pointer)', async () => {
+  const { client, box, overlay, canvas, emit } = setup()
+  patch(client, 'screen', { pointer: true })
+  overlay.attach(box as any)
+  const ctx = canvas().ctx
+  const drawn = () => ctx.calls.filter((c: unknown[]) => c[0] !== 'setTransform').map((c: unknown[]) => c[0])
+  emit('cursor.image', { width: 16, height: 16, x: 1, y: 2, uri: 'blob:cursor' })
+  emit('cursor.position', { x: 960, y: 540 })
+  await tick(16)
+  assert.deepEqual(drawn(), ['clearRect'], 'a second, delayed pointer over the picture would be wrong')
+})
+
 test('mobileKeyboardToggle: focuses the textarea to open the on-screen keyboard, blurs it to close', () => {
   const { client, box, overlay, textarea } = setup()
   overlay.attach(box as any)

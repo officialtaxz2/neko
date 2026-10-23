@@ -16,9 +16,11 @@ type StreamSelectorManagerCtx struct {
 	codec     codec.RTPCodec
 	streams   map[string]types.StreamSinkManager
 	streamIDs []string
+	// every selectable pipeline draws the mouse pointer into the picture
+	pointerInVideo bool
 }
 
-func streamSelectorNew(codec codec.RTPCodec, streams map[string]types.StreamSinkManager, streamIDs []string) *StreamSelectorManagerCtx {
+func streamSelectorNew(codec codec.RTPCodec, streams map[string]types.StreamSinkManager, streamIDs []string, pointerInVideo bool) *StreamSelectorManagerCtx {
 	logger := log.With().
 		Str("module", "capture").
 		Str("submodule", "stream-selector").
@@ -29,6 +31,8 @@ func streamSelectorNew(codec codec.RTPCodec, streams map[string]types.StreamSink
 		codec:     codec,
 		streams:   streams,
 		streamIDs: streamIDs,
+
+		pointerInVideo: pointerInVideo,
 	}
 }
 
@@ -60,6 +64,10 @@ func (manager *StreamSelectorManagerCtx) recreatePipelines() error {
 
 func (manager *StreamSelectorManagerCtx) IDs() []string {
 	return manager.streamIDs
+}
+
+func (manager *StreamSelectorManagerCtx) PointerInVideo() bool {
+	return manager.pointerInVideo
 }
 
 func (manager *StreamSelectorManagerCtx) Codec() codec.RTPCodec {

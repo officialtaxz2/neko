@@ -141,7 +141,7 @@ func New(desktop types.DesktopManager, config *config.Capture) *CaptureManagerCt
 					"! appsink name=appsink", config.AudioDevice, config.AudioCodec.Pipeline,
 			), nil
 		}, "audio", 0),
-		video: streamSelectorNew(config.VideoCodec, videos, config.VideoIDs),
+		video: streamSelectorNew(config.VideoCodec, videos, config.VideoIDs, pointerInVideo(config.VideoPipelines, config.VideoIDs)),
 
 		// sources
 		webcam: streamSrcNew(config.WebcamEnabled, map[string]string{
@@ -278,4 +278,27 @@ func (manager *CaptureManagerCtx) Webcam() types.StreamSrcManager {
 
 func (manager *CaptureManagerCtx) Microphone() types.StreamSrcManager {
 	return manager.microphone
+}
+
+// pointerInVideo reports whether every selectable video pipeline draws the mouse
+// pointer into the picture. A full gst pipeline string decides by its own
+// ximagesrc show-pointer property.
+func pointerInVideo(pipelines map[string]types.VideoConfig, ids []string) bool {
+	if len(ids) == 0 {
+		return false
+	}
+	for _, id := range ids {
+		pipeline, ok := pipelines[id]
+		if !ok {
+			return false
+		}
+		if pipeline.GstPipeline != "" {
+			if !strings.Contains(pipeline.GstPipeline, "show-pointer=true") {
+				return false
+			}
+		} else if !pipeline.ShowPointer {
+			return false
+		}
+	}
+	return true
 }

@@ -16,7 +16,8 @@ export const defaults = {
   scroll_invert: true,
   autoplay: true,
   ignore_emotes: false,
-  chat_sound: true,
+  // off until the viewer turns it on (a stored choice is kept)
+  chat_sound: false,
   // open chat links on the remote desktop instead of locally (needs the openinapp plugin)
   links_in_app: false,
   keyboard_layout: 'us',

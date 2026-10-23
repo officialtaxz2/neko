@@ -24,11 +24,15 @@ export function initSettings(neko: NekoApp) {
   if (params.get('mute_chat') !== null)
     app.setState((s) => ({ settings: { ...s.settings, chat_sound: params.get('mute_chat') !== '1' } }))
 
-  // legacy ?scroll= was a 1..100 px clamp (default 10); map it onto v3 steps around the same default
+  // legacy ?scroll= was a 1..100 px clamp (default 10); map it onto v3 steps around the same default.
+  // The Vue client also stored it under `scroll`: taken over once, if no v3 value is stored yet
+  const scrollSteps = (px: number) => Math.max(-5, Math.min(5, Math.round(2 * Math.log2(Math.max(1, px) / 10))))
+  const storedScroll = parseInt(localStorage.getItem('scroll') || '', 10)
+  if (localStorage.getItem('scroll_sensitivity') === null && !isNaN(storedScroll))
+    setSetting(neko, 'scroll_sensitivity', scrollSteps(storedScroll))
   if (params.has('scroll')) {
     const px = parseInt(params.get('scroll') || '', 10)
-    if (!isNaN(px))
-      setSetting(neko, 'scroll_sensitivity', Math.max(-5, Math.min(5, Math.round(2 * Math.log2(Math.max(1, px) / 10)))))
+    if (!isNaN(px)) setSetting(neko, 'scroll_sensitivity', scrollSteps(px))
   }
 
   applySettings(neko)

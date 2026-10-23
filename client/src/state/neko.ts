@@ -7,6 +7,7 @@ import { createAppStore, type NekoApp } from './app'
 import { createBus } from './bus'
 import { wireEvents } from './events'
 import { initSettings } from './settings'
+import { bindPageLifecycle } from './lifecycle'
 
 export type NekoAppOptions = Pick<NekoClientOptions, 'transport'>
 
@@ -24,5 +25,6 @@ export function createNekoApp(options: NekoAppOptions = {}): NekoApp {
   const neko: NekoApp = { client, overlay: new Overlay(client), app, bus: createBus() }
   wireEvents(neko)
   initSettings(neko)
+  bindPageLifecycle(client)
   return neko
 }

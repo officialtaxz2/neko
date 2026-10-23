@@ -486,13 +486,15 @@ export class Overlay {
     })
   }
 
-  // everyone but the host sees the host's cursor drawn here, tagged with their name
+  // everyone but the host sees the host's cursor drawn here, tagged with their name, unless the
+  // stream already shows the pointer (screen.pointer)
   private paint() {
     const { ctx, cursor, cursorPos } = this
     const { width, height } = this.size
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0)
     ctx.clearRect(0, 0, width, height)
-    if (this.client.controlling || !cursor || !cursorPos || (cursor.width <= 1 && cursor.height <= 1)) return
+    if (this.client.controlling || this.client.state.screen.pointer) return
+    if (!cursor || !cursorPos || (cursor.width <= 1 && cursor.height <= 1)) return
 
     const screen = this.client.state.screen.size
     let x = Math.round((cursorPos.x / screen.width) * width)

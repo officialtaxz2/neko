@@ -2,6 +2,7 @@
 // RTCPeerConnection, input and the host's cursor on its data channel.
 import { Emitter } from '../emitter.ts'
 import { DataChannelInput } from '../input/datachannel.ts'
+import { PlaybackWatchdog } from '../playback.ts'
 import type { SessionInfo, StreamTransport, TransportEvents, TransportState, TransportStatus } from '../transport.ts'
 
 const RECONNECT_MAX = 10
@@ -10,6 +11,21 @@ const RECONNECT_BACKOFF_MS = 1500
 // is off), so the room is shown without video instead of a spinner for ever; a dead socket is the
 // client's stale check's business
 const OFFER_TIMEOUT_MS = 8_000
+// ICE that reports "disconnected" this long is treated as failed (the server's Pion peer uses the
+// same grace); some browsers would otherwise wait half a minute or stay disconnected for good
+const DISCONNECT_GRACE_MS = 8_000
+// used only when the server configures no ICE servers at all; an explicit list is kept as it is
+const PUBLIC_STUN: RTCIceServer[] = [
+  {
+    urls: [
+      'stun:stun.l.google.com:19302',
+      'stun:stun1.l.google.com:19302',
+      'stun:stun2.l.google.com:19302',
+      'stun:stun3.l.google.com:19302',
+      'stun:stun4.l.google.com:19302',
+    ],
+  },
+]
 
 export class WebRTCTransport implements StreamTransport {
   readonly kind = 'webrtc' as const
@@ -34,6 +50,18 @@ export class WebRTCTransport implements StreamTransport {
   private failures = 0
   private retryTimer = 0
   private offerTimer = 0
+  private graceTimer = 0
+  // playback was asked for (play) and not given up (pause, close): what the watchdog guards
+  private wantPlaying = false
+  // our own srcObject/play is under way: a pause event meanwhile is not the user's
+  private reattaching = false
+  private readonly watchdog = new PlaybackWatchdog({
+    reattach: () => this.reattach(),
+    giveUp: () => {
+      this.wantPlaying = false
+      this.video?.pause()
+    },
+  })
 
   constructor() {
     this.input.onCursorPosition = (p) => this.events.emit('cursor.position', p)
@@ -84,6 +112,8 @@ export class WebRTCTransport implements StreamTransport {
     this.session = null
     this.closePeer()
     this.failures = 0
+    this.wantPlaying = false
+    this.watchdog.stop()
     if (this.video) {
       this.video.pause()
       this.video.srcObject = null
@@ -98,7 +128,9 @@ export class WebRTCTransport implements StreamTransport {
 
   private requestPeer() {
     this.candidates = []
-    this.session?.send('signal/request', { video: {}, audio: {} })
+    // auto: the server may switch this viewer between the configured video pipelines (adaptive
+    // quality with the bandwidth estimator); with a single pipeline it changes nothing
+    this.session?.send('signal/request', { video: { auto: true }, audio: {} })
     clearTimeout(this.offerTimer)
     this.offerTimer = window.setTimeout(
       () => this.session && !this.pc && this.setStatus('unavailable'),
@@ -109,6 +141,8 @@ export class WebRTCTransport implements StreamTransport {
   private closePeer() {
     clearTimeout(this.retryTimer)
     clearTimeout(this.offerTimer)
+    clearTimeout(this.graceTimer)
+    this.watchdog.stop()
     this.pc?.close()
     this.pc = null
     this.input.bind(null)
@@ -117,11 +151,20 @@ export class WebRTCTransport implements StreamTransport {
 
   private async onProvide({ sdp, iceservers }: { sdp: string; iceservers?: RTCIceServer[] }) {
     this.closePeer()
-    const pc = (this.pc = new RTCPeerConnection({ iceServers: iceservers ?? [] }))
+    const pc = (this.pc = new RTCPeerConnection({ iceServers: iceservers?.length ? iceservers : PUBLIC_STUN }))
     pc.onicecandidate = (e) => e.candidate && this.session?.send('signal/candidate', e.candidate.toJSON())
     pc.ontrack = (e) => this.onTrack(e)
     pc.ondatachannel = (e) => this.input.bind(e.channel)
     pc.onconnectionstatechange = () => this.pc === pc && this.onPeerState(pc.connectionState)
+    // the ICE state as well: older TV and embedded browsers have no connectionState, others report a
+    // failure on only one of the two
+    pc.oniceconnectionstatechange = () => {
+      if (this.pc !== pc) return
+      const s = pc.iceConnectionState
+      if (s === 'failed' || s === 'disconnected') this.onPeerState(s)
+      else if ((s === 'connected' || s === 'completed') && pc.connectionState === undefined)
+        this.onPeerState('connected')
+    }
     // only fires after a local addTrack (microphone), the server offers everything else
     pc.onnegotiationneeded = async () => {
       if (pc.signalingState !== 'stable' || !pc.remoteDescription) return
@@ -148,11 +191,20 @@ export class WebRTCTransport implements StreamTransport {
 
   private onPeerState(s: RTCPeerConnectionState) {
     if (s === 'connected') {
+      clearTimeout(this.graceTimer)
+      this.graceTimer = 0
       this.failures = 0
       this.setStatus('connected')
     } else if (s === 'disconnected') {
-      this.setStatus('connecting') // ICE may still recover
+      this.setStatus('connecting') // ICE may still recover, within the grace
+      if (this.graceTimer) return // rechecking does not extend the deadline
+      const pc = this.pc
+      this.graceTimer = window.setTimeout(() => {
+        this.graceTimer = 0
+        if (this.pc === pc && pc && pc.connectionState !== 'connected') this.onPeerState('failed')
+      }, DISCONNECT_GRACE_MS)
     } else if (s === 'failed') {
+      if (!this.pc) return // already given up on this peer (both state callbacks report it)
       this.setStatus('connecting')
       this.closePeer()
       // no media route (firewall, NAT1TO1, missing TURN): retry with backoff, then give up
@@ -169,8 +221,29 @@ export class WebRTCTransport implements StreamTransport {
     if ('jitterBufferTarget' in receiver) (receiver as any).jitterBufferTarget = 0
     if (track.kind !== 'video' || !this.video) return
     this.video.srcObject = streams[0]
+    this.watchdog.resetAttempts()
     // a replaced peer keeps playing; starting (autoplay, after a socket loss) is the client's call
     if (this.state.video.playing) this.play().catch(() => {})
+  }
+
+  // the watchdog saw no progress: the same stream onto the element again, then play
+  private reattach() {
+    const video = this.video
+    if (!video || !this.pc || !this.wantPlaying) return
+    this.reattaching = true
+    const stream = video.srcObject
+    video.srcObject = stream // re-evaluated by the browser; never video.load() for WebRTC
+    video
+      .play()
+      .catch(() => {})
+      .finally(() => (this.reattaching = false))
+  }
+
+  // guard playback while it is wanted, there is a peer and a stream on the element
+  private watch() {
+    const video = this.video
+    if (this.wantPlaying && this.pc && video?.srcObject) this.watchdog.start(video)
+    else this.watchdog.stop()
   }
 
   // share local media (microphone); renegotiation happens via onnegotiationneeded
@@ -196,8 +269,18 @@ export class WebRTCTransport implements StreamTransport {
     const v = this.state.video
     const sync = () => this.emitState()
     video.addEventListener('canplaythrough', () => ((v.playable = true), sync()))
-    video.addEventListener('playing', () => ((v.playing = true), sync()))
-    video.addEventListener('pause', () => ((v.playing = false), sync()))
+    video.addEventListener('playing', () => {
+      v.playing = true
+      sync()
+      this.watch()
+    })
+    video.addEventListener('pause', () => {
+      v.playing = false
+      // a pause the user made (also in native fullscreen or PiP) ends what the watchdog guards
+      if (!this.reattaching) this.wantPlaying = false
+      sync()
+      this.watch()
+    })
     video.addEventListener('emptied', () => ((v.playable = v.playing = false), sync()))
     video.addEventListener('volumechange', () => ((v.muted = video.muted), (v.volume = video.volume), sync()))
     video.addEventListener('resize', () => {
@@ -210,12 +293,15 @@ export class WebRTCTransport implements StreamTransport {
     this.emitState()
     return () => {
       video.remove()
-      if (this.video === video) this.video = null
+      if (this.video !== video) return
+      this.video = null
+      this.watchdog.stop()
     }
   }
 
   setPlaying(on: boolean) {
     if (on) return this.play()
+    this.wantPlaying = false
     this.video?.pause()
     return Promise.resolve()
   }
@@ -235,6 +321,8 @@ export class WebRTCTransport implements StreamTransport {
   private async play() {
     const video = this.video
     if (!video) return
+    this.wantPlaying = true
+    this.watchdog.resetAttempts()
     try {
       await video.play()
     } catch (err) {

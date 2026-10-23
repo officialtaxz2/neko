@@ -32,6 +32,11 @@ func (h *MessageHandlerCtx) systemInit(session types.Session) error {
 		}
 	}
 
+	pointerInVideo := false
+	if provider, ok := h.capture.Video().(types.StreamSelectorPointerProvider); ok {
+		pointerInVideo = provider.PointerInVideo()
+	}
+
 	session.Send(
 		event.SYSTEM_INIT,
 		message.SystemInit{
@@ -43,7 +48,8 @@ func (h *MessageHandlerCtx) systemInit(session types.Session) error {
 			TouchEvents:       h.desktop.HasTouchSupport(),
 			ScreencastEnabled: h.capture.Screencast().Enabled(),
 			WebRTC: message.SystemWebRTC{
-				Videos: h.capture.Video().IDs(),
+				Videos:         h.capture.Video().IDs(),
+				PointerInVideo: pointerInVideo,
 			},
 		})
 
