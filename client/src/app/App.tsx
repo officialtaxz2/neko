@@ -16,6 +16,7 @@ import { MobileDock } from '@/fork/layout/MobileDock'
 import { PassiveBar } from '@/fork/layout/PassiveBar'
 import { ShareConnect } from '@/fork/connect/ShareConnect'
 import { MediaStatus } from '@/features/media/MediaStatus'
+import { ClipboardPanel } from '@/fork/tools/ClipboardPanel'
 import { tryHLS } from '@/state/media'
 import { Button } from '@/components/ui/button'
 import { Stage } from '@/features/video/Stage'
@@ -104,6 +105,8 @@ export function App() {
         {expanded && <Side />}
         {!connected && (neko.share ? <ShareConnect /> : <Connect />)}
         {!bare && <Toaster />}
+        {/* the fork: the clipboard with its recent texts (More → Clipboard) */}
+        {!bare && <ClipboardPanel />}
         {about && <About />}
         <Dialog />
       </div>

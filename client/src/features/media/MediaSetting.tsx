@@ -37,8 +37,9 @@ export function MediaSetting() {
       : `${t('fork:media.current')}: WebRTC`
 
   return (
-    <li className="flex flex-col gap-2 border-b border-background-secondary py-2.5" data-testid="media-setting">
-      <span className="h-6 leading-6" id="media-label">
+    <li className="flex flex-col gap-2 pt-0.5 pb-2.5" data-testid="media-setting">
+      {/* named by the settings' Stream heading above it; the name stays for screen readers */}
+      <span className="sr-only" id="media-label">
         {t('fork:media.label')}
       </span>
       <div role="radiogroup" aria-labelledby="media-label" className="flex flex-col gap-1.5">

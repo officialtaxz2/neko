@@ -5,8 +5,10 @@ import type { AppStore } from './app'
 export interface Dialog {
   title: string
   text?: string
-  icon: 'warning' | 'error' | 'info'
+  icon: 'warning' | 'error' | 'info' | 'question'
   cancel: boolean
+  // the fork: the confirm button's own word ("Log out") instead of "Yes"
+  confirm?: string
   resolve: (ok: boolean) => void
 }
 
@@ -15,8 +17,8 @@ function dialog(app: AppStore, d: Omit<Dialog, 'resolve'>) {
   app.getState().dialog?.resolve(false)
   return new Promise<boolean>((resolve) => app.setState({ dialog: { ...d, resolve } }))
 }
-export const ask = (app: AppStore, title: string, text?: string) =>
-  dialog(app, { title, text, icon: 'warning', cancel: true })
+export const ask = (app: AppStore, title: string, text?: string, confirm?: string) =>
+  dialog(app, { title, text, icon: confirm ? 'question' : 'warning', cancel: true, confirm })
 export const tell = (app: AppStore, title: string, text?: string, icon: Dialog['icon'] = 'error') =>
   dialog(app, { title, text, icon, cancel: false })
 

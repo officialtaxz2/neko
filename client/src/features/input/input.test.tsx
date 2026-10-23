@@ -110,7 +110,7 @@ test('force touch makes any device a touch device; the trackpad is on only where
 
 test('settings: force touch always, the trackpad on a touch device, its pointer while the trackpad is on', () => {
   const rows = (neko: ReturnType<typeof createNekoApp>) =>
-    [...render(neko, <InputSetting />).matchAll(/data-testid="setting-(\w+)"/g)].map((m) => m[1])
+    [...render(neko, <InputSetting row="" label="" />).matchAll(/data-testid="setting-(\w+)"/g)].map((m) => m[1])
   const desktop = createNekoApp({ transport: fakeTransport() })
   expect(rows(desktop)).toEqual(['force_touch'])
   setSetting(desktop, 'force_touch', true)

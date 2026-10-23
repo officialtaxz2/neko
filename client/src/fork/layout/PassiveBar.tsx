@@ -5,7 +5,7 @@ import { PauseIcon, PlayIcon, SpeakerHighIcon, SpeakerSlashIcon } from '@phospho
 import { cn } from '@/lib/utils'
 import { useClient } from '@/state/provider'
 import { MediaSelect } from '@/features/media/MediaSelect'
-import { dockButton } from './MobileDock'
+import { dockButton } from '@/fork/controls/styles'
 
 // The bar of a view-only viewer (a share link), under the picture on every screen: playback and
 // sound, the stream's path when the server offers HLS; nothing that acts on the room.

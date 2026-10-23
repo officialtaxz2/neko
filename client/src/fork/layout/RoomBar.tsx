@@ -1,10 +1,13 @@
-import { Controls } from '@/features/controls/Controls'
 import { Emotes } from '@/features/emotes/Emotes'
 import { MemberStrip } from '@/fork/room/MemberStrip'
+import { ControlPill } from '@/fork/controls/ControlPill'
+import { Playback } from '@/fork/controls/Playback'
+import { RoomTools } from '@/fork/tools/RoomTools'
 
-// The room bar of the fork's design, one row under the picture: the members on the left, the
-// controls in the middle, the emotes on the right (the outer columns share the rest of the width, so
-// the controls stay centred). Not shown on a phone, where the dock takes its place.
+// The room bar of the fork's design, one row under the picture: the members on the left; the
+// control pill and playback (play, sound, microphone) in the middle; the emotes, fullscreen and More
+// on the right (the outer columns share the rest of the width, so the middle stays centred). Not
+// shown on a phone, where the dock takes its place.
 export function RoomBar() {
   return (
     <div
@@ -15,11 +18,13 @@ export function RoomBar() {
         <div className="flex min-w-0 items-center">
           <MemberStrip />
         </div>
-        <div className="flex items-center justify-center">
-          <Controls />
+        <div className="flex items-center justify-center gap-3">
+          <ControlPill separator />
+          <Playback />
         </div>
-        <div className="flex min-w-0 items-center justify-end gap-2.5">
+        <div className="flex min-w-0 items-center justify-end gap-2">
           <Emotes />
+          <RoomTools />
         </div>
       </div>
     </div>

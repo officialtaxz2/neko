@@ -11,6 +11,7 @@ import { bindPageLifecycle } from './lifecycle'
 import { bindShareLeave, shareToken, SHARE_TOKEN_KEY, tabStorage } from './viewonly'
 import { bindMedia, mediaTransport, readMedia, resolveMedia } from './media'
 import { exposeDiagnostics } from './diagnostics'
+import { clipboardStore } from './clipboard'
 
 // share: the token of a view-only link; read from the page's URL (#/<token>) unless given
 export type NekoAppOptions = Pick<NekoClientOptions, 'transport'> & { share?: string }
@@ -39,5 +40,6 @@ export function createNekoApp(options: NekoAppOptions = {}): NekoApp {
   if (share) bindShareLeave(client)
   bindMedia(neko, media)
   exposeDiagnostics(neko)
+  clipboardStore(neko) // the fork: records the clipboard's recent texts from the start
   return neko
 }

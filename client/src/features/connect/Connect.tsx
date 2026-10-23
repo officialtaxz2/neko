@@ -10,8 +10,9 @@ import { i18n } from '@/i18n'
 import { Button } from '@/components/ui/button'
 import logo from '@/assets/images/logo.svg'
 
+// the fork: the inputs, the card and the logo in the fork's look (as fork/connect/ShareConnect.tsx)
 const input =
-  'my-[5px] rounded-[5px] border-0 bg-background-tertiary px-2 py-1.5 leading-5 text-text-normal selection:bg-text-link placeholder:text-[#757575]'
+  'my-[5px] h-10 rounded-button border border-glass-border bg-white/[0.04] px-3 leading-5 text-text-normal outline-hidden selection:bg-text-link placeholder:text-text-muted focus:border-mint/50'
 
 const params = new URL(location.href).searchParams
 // ?pwd= invite (e.g. neko-rooms links): used for the first login attempt only, like the legacy
@@ -69,11 +70,11 @@ export function Connect() {
   const passwordLogin = oauth.password_login_enabled !== false
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-background-floating/80" data-testid="connect">
-      <div className="w-[320px] rounded-[5px] bg-background-secondary p-2.5">
+      <div className="w-[320px] max-w-[calc(100vw-32px)] rounded-outer border border-glass-border bg-background-secondary p-4 shadow-sheet">
         <div className="flex w-full cursor-pointer items-center justify-center">
           <img src={logo} alt="n.eko" className="mr-2.5 h-[90px]" />
-          <span className="text-[30px] leading-14">
-            <b className="font-black">n</b>.eko
+          <span className="text-[30px] leading-14 text-pure">
+            <b className="font-black text-mint">n</b>.eko
           </span>
         </div>
         {connecting ? (
@@ -94,7 +95,7 @@ export function Connect() {
           </form>
         ) : (
           <form className="flex flex-col" onSubmit={login}>
-            <span className="block text-center leading-7.5 uppercase">
+            <span className="mb-1 block text-center text-[15px] leading-7.5 font-semibold text-pure">
               {invite === null ? t('connect.login_title') : t('connect.invitation_title')}
             </span>
             {passwordLogin && (

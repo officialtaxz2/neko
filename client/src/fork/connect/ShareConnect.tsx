@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import logo from '@/assets/images/logo.svg'
 
 const input =
-  'my-[5px] rounded-[5px] border-0 bg-background-tertiary px-2 py-1.5 leading-5 text-text-normal selection:bg-text-link placeholder:text-text-muted'
+  'my-[5px] h-10 rounded-button border border-glass-border bg-white/[0.04] px-3 leading-5 text-text-normal outline-hidden selection:bg-text-link placeholder:text-text-muted focus:border-mint/50'
 
 // The login screen of a view-only share link (state/viewonly.ts): only a name, no password. On the
 // first visit with a remembered name, and on every reload of the tab, it starts by itself: a reload

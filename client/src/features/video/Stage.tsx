@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
 import { selectControlling, selectIsAdmin, selectSession } from '@m1k1o/neko'
@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useActions } from '@/state/actions'
 import { useNeko } from '@/state/provider'
+import { stageStore } from '@/state/stage'
 import { IconButton } from '@/components/IconButton'
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverTrigger } from '@/components/ui/popover'
@@ -56,6 +57,13 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
   const keyboardHelper = useStore(app, (s) => s.keyboardHelper)
   const player = useRef<HTMLDivElement>(null)
   const { fullscreen, request: requestFullscreen } = useFullscreen(player)
+  // the fork: the room bar and the More menu take this element to fullscreen (state/stage.ts)
+  const neko = useNeko()
+  useEffect(() => {
+    const stage = stageStore(neko)
+    stage.setState({ player: player.current })
+    return () => stage.setState({ player: null })
+  }, [neko])
   const syncClipboard = useClipboardSync()
   const pip = usePip()
   const touch = useTouch() // the fork: "force touch" counts too
@@ -103,7 +111,9 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
             )
           )}
         </div>
-        {!fullscreen && !hideControls && (
+        {/* the fork: the buttons on the picture only without the room bar (embed); otherwise
+            they are in the bar and its More menu */}
+        {!fullscreen && !hideControls && extraControls && (
           <ul className="absolute top-[15px] right-5">
             <li className="mb-2.5 last:mb-0">
               <IconButton variant="video" label="Fullscreen" onClick={requestFullscreen}>
@@ -139,7 +149,9 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
             )}
           </ul>
         )}
-        {!fullscreen && !hideControls && (
+        {/* the fork: the buttons on the picture only without the room bar (embed); otherwise
+            they are in the bar and its More menu */}
+        {!fullscreen && !hideControls && extraControls && (
           <ul className="absolute right-5 bottom-[15px]">
             {hosting && !canReadClipboard && (
               <li className="mb-2.5 last:mb-0">

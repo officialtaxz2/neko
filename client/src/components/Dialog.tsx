@@ -1,6 +1,6 @@
 import { useStore } from 'zustand'
 import { useTranslation } from 'react-i18next'
-import { InfoIcon, WarningIcon, XCircleIcon } from '@phosphor-icons/react'
+import { InfoIcon, QuestionIcon, WarningIcon, XCircleIcon } from '@phosphor-icons/react'
 import { useApp } from '@/state/provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -12,8 +12,14 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 
-const ICON = { warning: WarningIcon, error: XCircleIcon, info: InfoIcon }
-const ICON_COLOR = { warning: 'text-[#f8bb86]', error: 'text-[#f27474]', info: 'text-[#3fc3ee]' }
+// the fork: a question (ask() with its own confirm word) in the text colour
+const ICON = { warning: WarningIcon, error: XCircleIcon, info: InfoIcon, question: QuestionIcon }
+const ICON_COLOR = {
+  warning: 'text-[#f8bb86]',
+  error: 'text-[#f27474]',
+  info: 'text-[#3fc3ee]',
+  question: 'text-text-normal',
+}
 
 // the one modal dialog, shown for ask() and tell() (state/dialogs.ts); the look of the legacy
 // SweetAlert theme. Escape and a click outside dismiss it (false for ask)
@@ -39,12 +45,16 @@ export function Dialog() {
             data-testid="dialog"
             {...(d.text ? {} : { 'aria-describedby': undefined })}
           >
-            <Icon className={`${ICON_COLOR[d.icon]} mx-auto mt-[0.5em] mb-[0.8em] block size-16`} aria-hidden="true" />
+            <Icon
+              className={`${ICON_COLOR[d.icon]} mx-auto mt-[0.5em] mb-[0.8em] block size-16`}
+              weight={d.icon === 'question' ? 'light' : undefined} // the fork: an outlined question
+              aria-hidden="true"
+            />
             <DialogTitle className="mb-[0.4em] text-[1.875em] font-semibold">{d.title}</DialogTitle>
             {d.text && <DialogDescription className="text-[1.125em] leading-[1.4]">{d.text}</DialogDescription>}
             <div className="mt-[1.25em] flex justify-center gap-[0.6em]">
               <Button variant="confirm" data-testid="dialog-confirm" autoFocus onClick={() => done(true)}>
-                {d.cancel ? t('context.confirm.button_yes') : t('connection.button_confirm')}
+                {d.confirm ?? (d.cancel ? t('context.confirm.button_yes') : t('connection.button_confirm'))}
               </Button>
               {d.cancel && (
                 <Button variant="cancel" onClick={() => done(false)}>

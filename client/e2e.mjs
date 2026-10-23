@@ -150,7 +150,7 @@ await step('viewer typing in chat keeps the focus when the mouse crosses the vid
   await B.fill('[data-testid=chat-input]', '')
 })
 await step('bob takes control, alice sees host + event', async () => {
-  await B.click('[data-testid=control-request]')
+  await B.click('[data-testid=control-take]')
   await A.waitForFunction(() => document.querySelector('[data-testid=member][data-host]:not([data-self])'), null, {
     timeout: 5000,
   })
@@ -330,8 +330,14 @@ await step('a member who may not watch gets the room without video, not a spinne
   )
   await openSide(B)
 })
+// the screen sizes are a tile of the More menu (fork/tools); the menu may have closed with the last pick
+const openResolution = async () => {
+  if (!(await A.locator('[data-testid=more-popover]').count())) await A.click('[data-testid=more-open]')
+  await A.click('[data-testid=tool-resolution]')
+  await A.waitForSelector('[data-testid=resolution-menu]', { timeout: 3000 })
+}
 await step('admin changes resolution, bob sees event; revert', async () => {
-  await A.click('[data-testid=resolution-open]')
+  await openResolution()
   const current = (await A.locator('[data-testid=resolution-item][data-active]').textContent()) ?? ''
   const width = await A.evaluate(() => document.querySelector('video').videoWidth)
   await A.locator('[data-testid=resolution-item]').filter({ hasNotText: current }).first().click()
@@ -343,9 +349,10 @@ await step('admin changes resolution, bob sees event; revert', async () => {
     null,
     { timeout: 8000 },
   )
-  await A.click('[data-testid=resolution-open]')
+  await openResolution()
   await A.locator('[data-testid=resolution-item]', { hasText: current }).first().click()
-  await A.mouse.click(5, 5)
+  await A.keyboard.press('Escape')
+  await A.waitForSelector('[data-testid=more-popover]', { state: 'detached', timeout: 3000 })
   await A.waitForFunction((w) => document.querySelector('video').videoWidth === w, width, { timeout: 15000 })
 })
 await step('settings: keyboard layouts loaded, about opens', async () => {
@@ -360,17 +367,17 @@ await step('settings: keyboard layouts loaded, about opens', async () => {
 })
 await step('implicit hosting: bob gets control by clicking', async () => {
   await api(A, 'POST', '/room/settings', { implicit_hosting: true })
-  await B.waitForSelector('[data-testid=control-implicit]', { timeout: 5000 })
+  await B.waitForSelector('[data-testid=control-pill][data-state=implicit]', { timeout: 5000 })
   const box = await B.locator('[data-testid=player]').boundingBox()
   await B.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
   await B.waitForSelector('[data-testid=member][data-self][data-host]', { timeout: 5000 })
   await api(A, 'POST', '/room/settings', { implicit_hosting: false })
-  await A.waitForSelector('[data-testid=control-request]', { timeout: 5000 })
+  await A.waitForSelector('[data-testid=control-pill][data-state=other]', { timeout: 5000 })
   await api(A, 'POST', '/room/control/reset')
   await B.waitForSelector('[data-testid=member][data-self][data-host]', { state: 'detached', timeout: 5000 })
 })
 await step('clipboard: local clipboard reaches the remote when hovering', async () => {
-  await A.click('[data-testid=control-request]')
+  await A.click('[data-testid=control-take]')
   await A.waitForSelector('[data-testid=member][data-self][data-host]', { timeout: 5000 })
   // give the X clipboard an owner first: reading it while nothing owns it is a server 500 (xclip
   // exits) that the browser logs as an error, which is not what this step is about
@@ -399,23 +406,24 @@ await step('microphone: host enables and disables (fake device)', async () => {
   await A.waitForSelector('[data-testid=mic]:not([data-on])', { timeout: 5000 })
   await api(A, 'POST', '/room/control/release')
 })
-// the textarea fallback shows when the browser cannot read the local clipboard (Firefox, Safari):
-// emulated by removing readText before the app loads
-await step('clipboard fallback: the popover keeps the focus while the mouse crosses the video', async () => {
+// the clipboard panel (More menu) is the way in where the browser cannot read the local clipboard
+// (Firefox, Safari): emulated by removing readText before the app loads
+await step('clipboard panel: keeps the focus while the mouse crosses the video', async () => {
   const C = await user('carol', ADMIN, () =>
     Object.defineProperty(Clipboard.prototype, 'readText', { value: undefined }),
   )
   try {
-    await C.click('[data-testid=control-request]')
+    await C.click('[data-testid=control-take]')
     await C.waitForSelector('[data-testid=member][data-self][data-host]', { timeout: 5000 })
-    await C.click('[data-testid=clipboard-open]')
-    const inPopover = () => document.activeElement?.closest('[data-testid=clipboard] textarea') != null
+    await C.click('[data-testid=more-open]')
+    await C.click('[data-testid=tool-clipboard]')
+    const inPopover = () => document.activeElement?.matches('[data-testid=clipboard-text]') === true
     await C.waitForFunction(inPopover, null, { timeout: 3000 })
     const box = await C.locator('[data-testid=player]').boundingBox()
     await C.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 12 })
     await C.mouse.move(box.x + 40, box.y + box.height - 40, { steps: 12 })
     await C.waitForTimeout(500)
-    if (!(await C.locator('[data-testid=clipboard]').count())) throw new Error('the clipboard popover closed')
+    if (!(await C.locator('[data-testid=clipboard-panel]').count())) throw new Error('the clipboard panel closed')
     if (!(await C.evaluate(inPopover))) throw new Error('the clipboard textarea lost the focus')
     // what is typed lands in the textarea, not on the remote, and can be selected to copy
     await C.keyboard.type('neko-fallback')
@@ -426,7 +434,7 @@ await step('clipboard fallback: the popover keeps the focus while the mouse cros
     })
     if (!sel) throw new Error('typing or select-all did not reach the clipboard textarea')
     await C.keyboard.press('Escape')
-    await C.waitForSelector('[data-testid=clipboard]', { state: 'detached', timeout: 3000 })
+    await C.waitForSelector('[data-testid=clipboard-panel]', { state: 'detached', timeout: 3000 })
   } finally {
     await api(C, 'POST', '/room/control/release').catch(() => {})
     await C.context().close()
@@ -478,7 +486,7 @@ await step('long outage: session kept, Connect button instead of the login form'
   )
 })
 await step('alice takes control and types into KDE', async () => {
-  await A.click('[data-testid=control-request]')
+  await A.click('[data-testid=control-take]')
   await A.waitForSelector('[data-testid=member][data-self][data-host]', { timeout: 5000 })
   const box = await A.locator('[data-testid=player]').boundingBox()
   await A.mouse.move(box.x + box.width / 2, box.y + box.height / 2)

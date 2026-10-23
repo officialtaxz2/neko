@@ -304,7 +304,10 @@ async function shot(
   })
   await page.goto(base + hash)
   await page.waitForTimeout(1500)
-  if (after) await after(page)
+  if (after) {
+    await after(page)
+    await page.waitForTimeout(500) // the menus' and sheets' entry animations
+  }
   if (process.env.DUMP)
     console.log(
       await page.evaluate(
@@ -361,7 +364,10 @@ await shot('phone-trackpad', {
   side: false,
   state: { host: 's1' },
   stored: { trackpad_mode: '1' },
-  after: (page) => page.getByTestId('keyboard-helper-toggle').click(),
+  after: async (page) => {
+    await page.getByTestId('dock-more').click()
+    await page.getByTestId('tool-keyboard-helper').click()
+  },
 })
 await shot('desktop-input', {
   ...desktop,
@@ -369,6 +375,55 @@ await shot('desktop-input', {
   tab: 'settings',
   state: { host: 's1' },
   stored: { force_touch: '1', trackpad_mode: '1' },
+})
+// the room's controls: the pill in each state, the More menu on desktop and phone, the emotes and
+// the clipboard on a phone, the settings' lower half and the logout question
+await shot('desktop-hosting', { ...desktop, side: false, state: { host: 's1' } })
+await shot('desktop-free', { ...desktop, side: false, state: { host: null } })
+await shot('desktop-more', {
+  ...desktop,
+  side: false,
+  state: { host: 's1' },
+  after: (page) => page.getByTestId('more-open').click(),
+})
+await shot('phone-hosting', { ...phone, side: false, state: { host: 's1' } })
+await shot('phone-more', {
+  ...phone,
+  side: false,
+  state: { host: 's1' },
+  after: (page) => page.getByTestId('dock-more').click(),
+})
+await shot('phone-emotes', {
+  ...phone,
+  side: false,
+  state: { host: 's1' },
+  after: (page) => page.getByTestId('dock-emotes').click(),
+})
+await shot('phone-clipboard', {
+  ...phone,
+  side: false,
+  state: { host: 's1' },
+  after: async (page) => {
+    await page.getByTestId('dock-more').click()
+    await page.getByTestId('tool-clipboard').click()
+  },
+})
+await shot('desktop-settings-bottom', {
+  ...desktop,
+  side: true,
+  tab: 'settings',
+  state: { host: 's1' },
+  after: (page) => page.getByTestId('logout').scrollIntoViewIfNeeded(),
+})
+await shot('logout-confirm', {
+  ...desktop,
+  side: true,
+  tab: 'settings',
+  state: { host: 's1' },
+  after: async (page) => {
+    await page.getByTestId('logout').click()
+    await page.waitForTimeout(300)
+  },
 })
 await shot('share-hls', { ...phone, ...share, hash: '?media=ll-hls#/ShareToken-12345', viewer: 'Gast', hls: 'fail' })
 

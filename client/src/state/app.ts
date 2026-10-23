@@ -53,6 +53,8 @@ export function createAppStore() {
     about: false,
     // the fork: the special keys' bar (features/input/KeyboardHelper)
     keyboardHelper: false,
+    // the fork: the clipboard's panel with its recent texts (fork/tools/ClipboardPanel)
+    clipboardPanel: false,
   }))
 }
 export type AppStore = ReturnType<typeof createAppStore>

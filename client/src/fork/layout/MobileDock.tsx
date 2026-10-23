@@ -1,30 +1,38 @@
+import { useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
 import { useTranslation } from 'react-i18next'
-import { PauseIcon, PlayIcon, SpeakerHighIcon, SpeakerSlashIcon } from '@phosphor-icons/react'
-import { cn } from '@/lib/utils'
+import { DotsThreeIcon, PauseIcon, PlayIcon } from '@phosphor-icons/react'
 import { useClient } from '@/state/provider'
-import { Emotes } from '@/features/emotes/Emotes'
+import { ControlPill } from '@/fork/controls/ControlPill'
+import { dockButton } from '@/fork/controls/styles'
+import { MoreSheet } from '@/fork/tools/MoreSheet'
+import { DockEmotes } from './DockEmotes'
 
-// a dock button: 44px, glass
-export const dockButton =
-  'relative inline-flex size-11 flex-none cursor-pointer items-center justify-center rounded-control border border-glass-border bg-glass text-text-normal transition-all duration-300 ease-fluid hover:bg-glass-hover hover:text-pure disabled:cursor-default disabled:opacity-50'
-
-// The phone's dock right under the picture, in place of the room bar: playback and sound for now;
-// the control pill and the More sheet join it later (phase 5).
+// The phone's dock right under the picture, in place of the room bar: the control pill, pause, the
+// emotes and More (the sheet with the sound and every tool; a dot on it while the sound is off).
 export function MobileDock() {
   const { t } = useTranslation()
   const client = useClient()
   const { playable, playing, muted } = useStore(
     client.store,
-    useShallow((s) => ({ playable: s.video.playable, playing: s.video.playing, muted: s.video.muted })),
+    useShallow((s) => ({
+      playable: s.video.playable,
+      playing: s.video.playing,
+      muted: s.video.muted || s.video.volume === 0,
+    })),
   )
+  const [open, setOpen] = useState(false)
+  const more = useRef<HTMLButtonElement>(null)
   return (
     <div
       className="phone:flex hidden flex-none items-center gap-2 border-t border-glass-border bg-bar-room px-2.5 pt-2 pb-[calc(8px+env(safe-area-inset-bottom))]"
       data-testid="mobile-dock"
     >
-      <div className="ml-auto flex flex-none items-center gap-1.5">
+      <div className="flex min-w-0 flex-1">
+        <ControlPill compact />
+      </div>
+      <div className="flex flex-none items-center gap-1.5">
         <button
           type="button"
           className={dockButton}
@@ -34,17 +42,28 @@ export function MobileDock() {
         >
           {playing ? <PauseIcon className="size-4" /> : <PlayIcon className="size-4" />}
         </button>
+        <DockEmotes />
         <button
+          ref={more}
           type="button"
-          className={cn(dockButton, muted && 'text-warn hover:text-warn')}
-          aria-label={muted ? t('fork:dock.unmute') : t('fork:dock.mute')}
-          aria-pressed={muted}
-          onClick={() => (muted ? client.unmute() : client.mute())}
+          className={dockButton}
+          aria-label={t('fork:controls.more')}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          data-testid="dock-more"
+          onClick={() => setOpen(!open)}
         >
-          {muted ? <SpeakerSlashIcon className="size-4" /> : <SpeakerHighIcon className="size-4" />}
+          <DotsThreeIcon className="size-5" weight="bold" />
+          {muted && (
+            <span
+              className="absolute top-1.5 right-1.5 size-2 rounded-full bg-warn"
+              data-testid="muted-dot"
+              aria-hidden
+            />
+          )}
         </button>
-        <Emotes />
       </div>
+      {open && <MoreSheet onClose={() => setOpen(false)} opener={more.current} />}
     </div>
   )
 }

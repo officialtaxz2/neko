@@ -4,14 +4,15 @@ import { cn } from '@/lib/utils'
 import { useClient } from '@/state/provider'
 import { DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
 
-// the screen sizes the server offers, a menu left of the icon that opens it
-export function Resolution() {
+// the screen sizes the server offers, a menu left of the icon that opens it (the fork: or where the
+// More menu's tile wants it)
+export function Resolution({ side = 'left' }: { side?: 'left' | 'top' }) {
   const client = useClient()
   const { size, configurations } = useStore(client.store, (s) => s.screen)
   const { width, height, rate } = size
   return (
     <DropdownMenuContent
-      side="left"
+      side={side}
       align="start"
       alignOffset={-5}
       className="[scrollbar-color:var(--color-background-secondary)_transparent] [scrollbar-width:thin]"
