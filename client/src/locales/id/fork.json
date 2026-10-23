@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "Tentang n.eko",
+    "in_room": "{{count}} di ruangan",
+    "admin": "Admin",
+    "chat": "Obrolan",
+    "open_panel": "Buka panel samping",
+    "close_panel": "Tutup panel samping",
+    "new_messages": "Pesan baru"
+  },
+  "chip": {
+    "control": "Kontrol dikunci",
+    "login": "Login dikunci"
+  },
+  "room": {
+    "members": "Anggota"
+  },
+  "setting": {
+    "language": "Bahasa"
+  },
+  "dock": {
+    "play": "Putar",
+    "pause": "Jeda",
+    "mute": "Bisukan",
+    "unmute": "Bunyikan"
+  }
+}

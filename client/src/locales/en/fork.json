@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "About n.eko",
+    "in_room": "{{count}} in the room",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Open side panel",
+    "close_panel": "Close side panel",
+    "new_messages": "New messages"
+  },
+  "chip": {
+    "control": "Control locked",
+    "login": "Login locked"
+  },
+  "room": {
+    "members": "Members"
+  },
+  "setting": {
+    "language": "Language"
+  },
+  "dock": {
+    "play": "Play",
+    "pause": "Pause",
+    "mute": "Mute",
+    "unmute": "Unmute"
+  }
+}

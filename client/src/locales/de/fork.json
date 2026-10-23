@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "Über n.eko",
+    "in_room": "{{count}} im Raum",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Seitenleiste öffnen",
+    "close_panel": "Seitenleiste schließen",
+    "new_messages": "Neue Nachrichten"
+  },
+  "chip": {
+    "control": "Steuerung gesperrt",
+    "login": "Login gesperrt"
+  },
+  "room": {
+    "members": "Mitglieder"
+  },
+  "setting": {
+    "language": "Sprache"
+  },
+  "dock": {
+    "play": "Abspielen",
+    "pause": "Pausieren",
+    "mute": "Stummschalten",
+    "unmute": "Ton an"
+  }
+}

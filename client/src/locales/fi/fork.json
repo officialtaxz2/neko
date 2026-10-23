@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "Tietoja n.eko:sta",
+    "in_room": "{{count}} huoneessa",
+    "admin": "Ylläpitäjä",
+    "chat": "Chat",
+    "open_panel": "Avaa sivupaneeli",
+    "close_panel": "Sulje sivupaneeli",
+    "new_messages": "Uusia viestejä"
+  },
+  "chip": {
+    "control": "Ohjaus lukittu",
+    "login": "Kirjautuminen lukittu"
+  },
+  "room": {
+    "members": "Jäsenet"
+  },
+  "setting": {
+    "language": "Kieli"
+  },
+  "dock": {
+    "play": "Toista",
+    "pause": "Tauko",
+    "mute": "Mykistä",
+    "unmute": "Poista mykistys"
+  }
+}

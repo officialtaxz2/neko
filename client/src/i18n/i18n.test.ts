@@ -20,7 +20,8 @@ fake('localStorage', {
 })
 const { i18n, t, initI18n, setLang, loader, langs, detectLang, htmlLang } = await import('./index.ts')
 
-const NS = ['common', 'chat', 'files'] as const
+// fork: the strings of the fork's own GUI (src/fork), loaded like a plugin's namespace
+const NS = ['common', 'chat', 'files', 'fork'] as const
 const json = (lang: string, ns: string) =>
   JSON.parse(readFileSync(new URL(`../locales/${lang}/${ns}.json`, import.meta.url), 'utf8')) as object
 const flat = (o: object, prefix = ''): Record<string, string> =>
@@ -36,7 +37,7 @@ const vars = (s: string) =>
     .join()
 
 test('start-up: ?lang= wins and is kept, the language and en are loaded, the others are not', async () => {
-  await initI18n(['chat', 'files'])
+  await initI18n(['fork', 'chat', 'files'])
   assert.equal(i18n.language, 'de')
   assert.equal(stored.get('lang'), 'de')
   assert.equal(document.documentElement.lang, 'de')
@@ -118,10 +119,11 @@ test('loader: reads exactly <lang>/<ns> from the glob map, nothing of the other 
   assert.equal(de.mock.calls.length, 1)
 })
 
-test('every language has the three files, en every key, the others all but the known gaps', () => {
+test('every language has the four files, en every key, the others all but the known gaps', () => {
   assert.deepEqual(readdirSync(new URL('../locales/', import.meta.url)).sort(), [...langs].sort())
   const en = Object.fromEntries(NS.map((ns) => [ns, flat(json('en', ns))]))
   assert.equal(Object.keys(en.common).length + Object.keys(en.chat).length + Object.keys(en.files).length, 100)
+  assert.equal(Object.keys(en.fork).length, 15)
   // strings added since the translations: en only, until someone translates them
   const GAPS = [
     'controls.mic_on',
@@ -135,6 +137,7 @@ test('every language has the three files, en every key, the others all but the k
       'chat.json',
       'common.json',
       'files.json',
+      'fork.json',
     ])
     const missing: string[] = []
     for (const ns of NS) {

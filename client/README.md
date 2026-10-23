@@ -16,7 +16,8 @@ client/
     state/       the instance (neko.ts: createNekoApp, app.ts: the GUI store and NekoApp), the provider and hooks, actions, settings, dialogs, event wiring
     i18n/        i18next: initI18n(), setLang(), the loader of the locale files
     lib/         cn(): class names with Tailwind conflicts resolved (clsx + tailwind-merge)
-    locales/     the strings, one folder per language: common.json, chat.json, files.json
+    locales/     the strings, one folder per language: common.json, chat.json, files.json, fork.json
+    fork/        this fork's look and layout pieces (src/fork/README.md)
     assets/      images
     index.css    Tailwind v4: the design tokens (@theme), the global rules, the layout's breakpoint variants
 ```
@@ -100,6 +101,9 @@ export const Room = () => (
 ```
 
 ## Design
+
+This fork restyles the GUI from `src/fork/` (tokens, glass, Whitney, its header, room bar, dock and
+side panel); see `src/fork/README.md`. What follows is upstream's setup it builds on.
 
 Styling is Tailwind v4 (`tailwindcss`, `@tailwindcss/vite`): the classes are in the markup, there is no
 stylesheet per component. `src/index.css` is the whole of the CSS:
@@ -202,7 +206,7 @@ tag (`cn` is `zh-CN`). In development, a key no language has is logged (`i18n: m
 
 - Adding a key: add it to `en` and to the other fourteen files. `src/i18n/i18n.test.ts` lists the
   keys each language lacks today and fails on a new one.
-- Adding a language: a folder with the three files, and its code in `langs` (`src/i18n/index.ts`,
+- Adding a language: a folder with the four files, and its code in `langs` (`src/i18n/index.ts`,
   the picker order).
 - Not yet: plural forms (`key_one`, `key_other`); the strings with a count keep one form, as before.
 

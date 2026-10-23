@@ -6,7 +6,7 @@ import i18next, { type BackendModule, type ResourceKey } from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import { get, set } from '@/state/storage'
 
-// the languages, in picker order: a folder of three files under src/locales/ and its code here
+// the languages, in picker order: a folder of four files under src/locales/ and its code here
 export const langs = ['en', 'es', 'sk', 'sv', 'nb', 'fr', 'de', 'ko', 'fi', 'ru', 'cn', 'tw', 'ja', 'id', 'pl'] as const
 export type Lang = (typeof langs)[number]
 const isLang = (s: string): s is Lang => (langs as readonly string[]).includes(s)

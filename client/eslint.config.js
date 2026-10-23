@@ -3,7 +3,7 @@
 import tseslint from 'typescript-eslint'
 import reactHooks from 'eslint-plugin-react-hooks'
 
-// Dependencies point one way: app -> layout -> features -> components -> design, with state, i18n
+// Dependencies point one way: app -> layout (and the fork's GUI, src/fork) -> features -> components -> design, with state, i18n
 // and lib below everything but design. The app shell and the layout reach plugins only through the
 // registry (`@/plugins`); features see only the contract (`@/plugins/types`) and get plugin
 // contributions passed in, and plugins import neither features nor each other.
@@ -58,5 +58,7 @@ export default [
   },
   { files: ['src/plugins/**'], rules: only(not('app', 'layout', 'features')) },
   { files: ['src/layout/**'], rules: only(not('app')) },
+  // the fork's GUI (src/fork) sits beside the layout: it composes features and components, the app shell uses it
+  { files: ['src/fork/**'], rules: only(not('app')) },
   { files: ['src/app/**', 'src/main.tsx'], rules: only([]) },
 ]

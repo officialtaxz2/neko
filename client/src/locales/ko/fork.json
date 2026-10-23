@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "n.eko 정보",
+    "in_room": "방에 {{count}}명",
+    "admin": "관리자",
+    "chat": "채팅",
+    "open_panel": "사이드 패널 열기",
+    "close_panel": "사이드 패널 닫기",
+    "new_messages": "새 메시지"
+  },
+  "chip": {
+    "control": "제어 잠김",
+    "login": "로그인 잠김"
+  },
+  "room": {
+    "members": "멤버"
+  },
+  "setting": {
+    "language": "언어"
+  },
+  "dock": {
+    "play": "재생",
+    "pause": "일시정지",
+    "mute": "음소거",
+    "unmute": "음소거 해제"
+  }
+}

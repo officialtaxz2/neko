@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "Om n.eko",
+    "in_room": "{{count}} i rummet",
+    "admin": "Admin",
+    "chat": "Chatt",
+    "open_panel": "Öppna sidopanelen",
+    "close_panel": "Stäng sidopanelen",
+    "new_messages": "Nya meddelanden"
+  },
+  "chip": {
+    "control": "Kontroll låst",
+    "login": "Inloggning låst"
+  },
+  "room": {
+    "members": "Medlemmar"
+  },
+  "setting": {
+    "language": "Språk"
+  },
+  "dock": {
+    "play": "Spela",
+    "pause": "Pausa",
+    "mute": "Stäng av ljud",
+    "unmute": "Slå på ljud"
+  }
+}

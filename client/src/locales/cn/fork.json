@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "关于 n.eko",
+    "in_room": "房间内 {{count}} 人",
+    "admin": "管理员",
+    "chat": "聊天",
+    "open_panel": "打开侧边栏",
+    "close_panel": "关闭侧边栏",
+    "new_messages": "新消息"
+  },
+  "chip": {
+    "control": "控制已锁定",
+    "login": "登录已锁定"
+  },
+  "room": {
+    "members": "成员"
+  },
+  "setting": {
+    "language": "语言"
+  },
+  "dock": {
+    "play": "播放",
+    "pause": "暂停",
+    "mute": "静音",
+    "unmute": "取消静音"
+  }
+}

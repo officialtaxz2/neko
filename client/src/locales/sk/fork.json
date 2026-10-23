@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "O aplikácii n.eko",
+    "in_room": "{{count}} v miestnosti",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Otvoriť bočný panel",
+    "close_panel": "Zavrieť bočný panel",
+    "new_messages": "Nové správy"
+  },
+  "chip": {
+    "control": "Ovládanie uzamknuté",
+    "login": "Prihlásenie uzamknuté"
+  },
+  "room": {
+    "members": "Členovia"
+  },
+  "setting": {
+    "language": "Jazyk"
+  },
+  "dock": {
+    "play": "Prehrať",
+    "pause": "Pozastaviť",
+    "mute": "Stlmiť",
+    "unmute": "Zapnúť zvuk"
+  }
+}

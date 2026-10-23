@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "n.eko について",
+    "in_room": "ルームに {{count}} 人",
+    "admin": "管理者",
+    "chat": "チャット",
+    "open_panel": "サイドパネルを開く",
+    "close_panel": "サイドパネルを閉じる",
+    "new_messages": "新着メッセージ"
+  },
+  "chip": {
+    "control": "操作はロック中",
+    "login": "ログインはロック中"
+  },
+  "room": {
+    "members": "メンバー"
+  },
+  "setting": {
+    "language": "言語"
+  },
+  "dock": {
+    "play": "再生",
+    "pause": "一時停止",
+    "mute": "ミュート",
+    "unmute": "ミュート解除"
+  }
+}

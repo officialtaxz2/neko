@@ -6,16 +6,28 @@ import { useTranslation } from 'react-i18next'
 import { PlayIcon, SquareIcon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { useActions } from '@/state/actions'
+import { isLocked, type LockResource } from '@/state/app'
 import { useNeko } from '@/state/provider'
 import { setSetting } from '@/state/settings'
 import { Button } from '@/components/ui/button'
+import { htmlLang, langs, setLang, type Lang } from '@/i18n'
 import { row, label } from './classes'
 
 const field =
   'block h-8 rounded-[5px] border border-transparent bg-background-tertiary leading-7.5 font-light text-ellipsis text-white'
 
+// a language in its own words (Deutsch, 日本語), the code where the browser cannot name it
+const langName = (l: Lang) => {
+  try {
+    const tag = htmlLang(l)
+    return new Intl.DisplayNames([tag], { type: 'language' }).of(tag) ?? l
+  } catch {
+    return l
+  }
+}
+
 export function Settings() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const neko = useNeko()
   const { client, app } = neko
   const actions = useActions()
@@ -34,6 +46,7 @@ export function Settings() {
     })),
   )
   const admin = useStore(client.store, selectIsAdmin)
+  const roomSettings = useStore(client.store, (st) => st.settings)
   const [url, setUrl] = useState(broadcast.url)
   useEffect(() => setUrl(broadcast.url), [broadcast.url])
 
@@ -53,6 +66,25 @@ export function Settings() {
           onChange={(e) => setSetting(neko, key, e.target.checked)}
         />
         <span className="absolute inset-0 cursor-pointer rounded-[34px] bg-background-tertiary transition-all duration-200 peer-checked:bg-style-primary" />
+        <span className="absolute bottom-[3px] left-[3px] h-[18px] w-[18px] cursor-pointer rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-all duration-300 peer-checked:translate-x-[18px]" />
+      </label>
+    </li>
+  )
+
+  // the fork: an admin's room locks, as switches (the header only shows them)
+  const lock = (r: LockResource) => (
+    <li className={row}>
+      <span className={label}>{t(`locks.${r}.locked`)}</span>
+      <label className="relative h-6 w-[42px]">
+        <input
+          type="checkbox"
+          className="peer h-0 w-0 opacity-0"
+          aria-label={t(`locks.${r}.locked`)}
+          data-testid={`lock-switch-${r}`}
+          checked={isLocked(r, roomSettings)}
+          onChange={() => actions.toggleLock(r)}
+        />
+        <span className="absolute inset-0 cursor-pointer rounded-[34px] bg-background-tertiary transition-all duration-200 peer-checked:bg-style-primary peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-style-primary" />
         <span className="absolute bottom-[3px] left-[3px] h-[18px] w-[18px] cursor-pointer rounded-full bg-white shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-all duration-300 peer-checked:translate-x-[18px]" />
       </label>
     </li>
@@ -99,6 +131,30 @@ export function Settings() {
             </select>
           </label>
         </li>
+        {/* the fork: the language picker lives in the settings, each language named in itself */}
+        <li className={row}>
+          <span className={label}>{t('fork:setting.language')}</span>
+          <label className="max-w-[160px] text-right">
+            <select
+              className={cn(
+                field,
+                'w-full max-w-full cursor-pointer appearance-none pr-[5px] pl-2.5 text-right text-[12px] hover:border-background-secondary [&_option]:bg-background-tertiary [&_option]:font-normal [&_option]:text-text-normal',
+              )}
+              data-testid="lang"
+              aria-label={t('fork:setting.language')}
+              value={i18n.language}
+              onChange={(e) => setLang(e.target.value as Lang)}
+            >
+              {langs.map((l) => (
+                <option key={l} value={l}>
+                  {langName(l)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </li>
+        {admin && lock('control')}
+        {admin && lock('login')}
         {admin && (
           <li className={cn(row, 'flex-col')}>
             <div className="mb-2.5 flex justify-between">

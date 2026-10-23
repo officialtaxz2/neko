@@ -240,13 +240,18 @@ await step('emoji picker inserts :name:', async () => {
   await A.fill('[data-testid=chat-input]', '')
 })
 await step('language switch (de) and back', async () => {
+  // the picker is in the settings
+  await A.click('[data-testid=tabs] >> text=Settings')
   await A.selectOption('[data-testid=lang]', 'de')
   await A.waitForSelector('[data-testid=tabs] >> text=Einstellungen', { timeout: 3000 })
   await A.selectOption('[data-testid=lang]', 'en')
   await A.waitForSelector('[data-testid=tabs] >> text=Settings', { timeout: 3000 })
+  await A.click('[data-testid=tabs] >> text=Chat')
 })
 await step('admin locks controls, bob sees lock + event', async () => {
-  await A.click('[data-testid=lock-control]')
+  // the lock switches are in the admin's settings, the header shows a chip while locked
+  await A.click('[data-testid=tabs] >> text=Settings')
+  await A.check('[data-testid=lock-switch-control]', { force: true })
   await B.waitForSelector('[data-testid=lock-control][data-locked]', { timeout: 5000 })
   await B.waitForFunction(
     () =>
@@ -256,8 +261,9 @@ await step('admin locks controls, bob sees lock + event', async () => {
     null,
     { timeout: 5000 },
   )
-  await A.click('[data-testid=lock-control]')
-  await B.waitForSelector('[data-testid=lock-control]:not([data-locked])', { timeout: 5000 })
+  await A.uncheck('[data-testid=lock-switch-control]', { force: true })
+  await B.waitForSelector('[data-testid=lock-control]', { state: 'detached', timeout: 5000 })
+  await A.click('[data-testid=tabs] >> text=Chat')
 })
 await step('admin mutes bob: input gone, event line; then unmute', async () => {
   await A.click('[data-testid=member]:not([data-self])', { button: 'right' })

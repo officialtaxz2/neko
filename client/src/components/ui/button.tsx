@@ -9,7 +9,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // connect, settings, about, the broadcast controls
-        primary: 'rounded-[5px] bg-style-primary p-1 leading-7.5 font-bold text-text-normal uppercase',
+        // the fork: dark ink on the bright mint (text-mint-ink, src/fork/theme.css)
+        primary: 'rounded-[5px] bg-style-primary p-1 leading-7.5 font-bold text-mint-ink uppercase',
         // the OAuth login
         outline:
           'rounded-[5px] border border-style-primary bg-background-tertiary p-1 leading-7.5 font-bold text-text-normal uppercase',

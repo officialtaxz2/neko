@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "Acerca de n.eko",
+    "in_room": "{{count}} en la sala",
+    "admin": "Admin",
+    "chat": "Chat",
+    "open_panel": "Abrir panel lateral",
+    "close_panel": "Cerrar panel lateral",
+    "new_messages": "Mensajes nuevos"
+  },
+  "chip": {
+    "control": "Control bloqueado",
+    "login": "Acceso bloqueado"
+  },
+  "room": {
+    "members": "Miembros"
+  },
+  "setting": {
+    "language": "Idioma"
+  },
+  "dock": {
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido"
+  }
+}

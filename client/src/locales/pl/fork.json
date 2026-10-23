@@ -1,0 +1,27 @@
+{
+  "header": {
+    "about": "O n.eko",
+    "in_room": "W pokoju: {{count}}",
+    "admin": "Admin",
+    "chat": "Czat",
+    "open_panel": "Otwórz panel boczny",
+    "close_panel": "Zamknij panel boczny",
+    "new_messages": "Nowe wiadomości"
+  },
+  "chip": {
+    "control": "Sterowanie zablokowane",
+    "login": "Logowanie zablokowane"
+  },
+  "room": {
+    "members": "Członkowie"
+  },
+  "setting": {
+    "language": "Język"
+  },
+  "dock": {
+    "play": "Odtwórz",
+    "pause": "Wstrzymaj",
+    "mute": "Wycisz",
+    "unmute": "Włącz dźwięk"
+  }
+}

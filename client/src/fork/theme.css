@@ -1,0 +1,131 @@
+/* The fork's look (src/fork/README.md): imported by src/index.css right after Tailwind, so its @theme
+   values win over upstream's. Upstream's components keep their semantic utilities
+   (bg-background-primary, text-style-primary, ...) and get the Obsidian palette and Cyber Mint through
+   them; the fork's own components add the glass and mint tokens below.
+
+   Design thesis: the room feels like calm, concentrated control of a remote desktop. Deep obsidian
+   surfaces and quiet glass bars step back so the picture stays the centre; Cyber Mint is the one colour
+   of action and of "you control it now", amber marks a lock, red only an error. */
+
+@font-face {
+  font-family: Whitney;
+  font-weight: 300;
+  font-display: swap;
+  src: url('./fonts/whitney-300.woff') format('woff');
+}
+@font-face {
+  font-family: Whitney;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/whitney-400.woff') format('woff');
+}
+@font-face {
+  font-family: Whitney;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/whitney-500.woff') format('woff');
+}
+@font-face {
+  font-family: Whitney;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/whitney-600.woff') format('woff');
+}
+@font-face {
+  font-family: Whitney;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/whitney-700.woff') format('woff');
+}
+
+@theme {
+  --font-sans: Whitney, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* upstream's semantic tokens, the values of the fork's Vue client (_variables.scss) */
+  --color-text-normal: oklch(86% 0.01 260);
+  --color-text-muted: oklch(62% 0.015 260);
+  --color-text-link: oklch(76% 0.16 160);
+
+  --color-interactive-normal: oklch(75% 0.01 260);
+  --color-interactive-hover: oklch(98% 0.005 260);
+  --color-interactive-muted: oklch(42% 0.015 260);
+
+  --color-background-primary: oklch(23% 0.025 260);
+  --color-background-secondary: oklch(18% 0.02 260);
+  --color-background-tertiary: oklch(14% 0.015 260);
+  --color-background-accent: oklch(35% 0.015 260);
+  --color-background-floating: oklch(11% 0.01 260);
+  --color-background-modifier-hover: rgba(255, 255, 255, 0.05);
+  --color-background-modifier-active: rgba(255, 255, 255, 0.08);
+  --color-background-modifier-selected: rgba(38, 230, 180, 0.12);
+  --color-background-modifier-accent: rgba(255, 255, 255, 0.03);
+
+  --shadow-elevation-low: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-elevation-high: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.07);
+
+  --color-style-primary: oklch(76% 0.16 160);
+  --color-style-error: #ff4a5a;
+
+  /* h-menu, h-controls, w-side: the header, the room bar (one row) and the side panel */
+  --spacing-menu: 48px;
+  --spacing-controls: 68px;
+  --spacing-side: 360px;
+
+  /* the fork's own tokens: text-pure, bg-mint, text-mint-ink, border-glass-line, ... */
+  --color-pure: oklch(98% 0.005 260);
+  --color-mint: oklch(76% 0.16 160);
+  --color-mint-active: oklch(68% 0.18 160);
+  /* text and icons on a mint surface */
+  --color-mint-ink: #06281f;
+  --color-warn: #f5c26b;
+  --color-admin: #ffb86c;
+  --color-badge: #ff5a66;
+  /* glass: a translucent surface over obsidian, its hover, its hairline and a stronger outline */
+  --color-glass: rgba(255, 255, 255, 0.04);
+  --color-glass-hover: rgba(255, 255, 255, 0.08);
+  --color-glass-border: rgba(255, 255, 255, 0.07);
+  --color-glass-line: rgba(255, 255, 255, 0.12);
+  /* the bars: the header over the picture, the room bar and the dock under it */
+  --color-bar-header: rgba(12, 13, 18, 0.65);
+  --color-bar-room: rgba(18, 21, 30, 0.98);
+  --color-bar-side: rgba(18, 21, 30, 0.45);
+  --color-sheet: oklch(11% 0.01 260);
+
+  --radius-outer: 16px;
+  --radius-inner: 12px;
+  --radius-control: 10px;
+  --radius-button: 8px;
+
+  --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+  --shadow-mint-glow: 0 0 16px rgba(38, 230, 180, 0.25);
+  --shadow-bar-up: 0 -4px 20px rgba(0, 0, 0, 0.25);
+  --shadow-bar-down: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-side: -10px 0 30px rgba(0, 0, 0, 0.25);
+  --shadow-sheet: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+@layer base {
+  /* one focus ring for everything, mint with a gap, also where a component brings its own outline */
+  :where(button, a, input, select, textarea, [role='button'], [role='tab'], [tabindex='0']):focus-visible {
+    outline: 2px solid var(--color-mint);
+    outline-offset: 2.5px;
+  }
+  /* the stacked layout scrolls the page: a thin scrollbar that does not compete with the picture */
+  @media only screen and (max-width: 1024px) {
+    html,
+    body {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

@@ -8,10 +8,11 @@ import { WebRTCTransport } from '@m1k1o/neko'
 import { cn } from '@/lib/utils'
 import logo from '@/assets/images/logo.svg'
 import { Dialog } from '@/components/Dialog'
-import { Toaster } from '@/components/ui/sonner'
-import { Header } from '@/layout/Header'
-import { Side } from '@/layout/Side'
-import { RoomBar } from '@/layout/RoomBar'
+import { Toaster } from '@/fork/layout/Toaster'
+import { Header } from '@/fork/layout/Header'
+import { Side } from '@/fork/layout/Side'
+import { RoomBar } from '@/fork/layout/RoomBar'
+import { MobileDock } from '@/fork/layout/MobileDock'
 import { Stage } from '@/features/video/Stage'
 import { MemberMenu } from '@/features/members/MemberMenu'
 import { Connect } from '@/features/connect/Connect'
@@ -60,19 +61,26 @@ export function App() {
         <main
           className={cn(
             'flex min-w-[360px] max-w-full grow flex-col overflow-auto',
-            expanded ? 'tablet:portrait:h-[40vh] tablet:landscape:h-screen' : 'tablet:h-screen',
+            expanded ? 'tablet:portrait:h-[40vh] tablet:landscape:h-screen phone:portrait:h-auto' : 'tablet:h-screen',
           )}
         >
           {!videoOnly && (
-            <div className="flex h-menu shrink-0 bg-background-tertiary" data-testid="header">
+            // the fork's header: glass over the page, above the picture
+            <div
+              className="z-[100] flex h-menu shrink-0 border-b border-glass-border bg-bar-header shadow-bar-down backdrop-blur-md"
+              data-testid="header"
+            >
               <Header />
             </div>
           )}
           {/* .video-container: index.html sizes it before the app renders (iOS) */}
-          <div className="video-container flex max-w-full grow bg-black/40">
+          {/* the fork: the picture sits in a soft vignette; on a portrait phone it keeps its own
+              height and the dock follows right below it */}
+          <div className="video-container phone:portrait:h-[min(62.5vw,60vh)]! phone:portrait:flex-none relative flex max-w-full grow overflow-hidden bg-[radial-gradient(circle_at_50%_50%,rgba(12,13,18,0.2)_0%,rgba(7,8,12,0.7)_100%)]">
             <Stage hideControls={cast} extraControls={videoOnly} />
           </div>
           {!videoOnly && <RoomBar />}
+          {!videoOnly && <MobileDock />}
         </main>
         {!videoOnly && <MemberMenu items={memberMenu} />}
         {expanded && <Side />}
