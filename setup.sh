@@ -338,9 +338,28 @@ for dir in "$PROFILE_DIR" "$DOWNLOADS_DIR"; do
 done
 
 # --------------------------------------------------------------------
+# Superseded images
+#
+# Rebuilding a tag leaves the image it pointed to behind without a name, a
+# few GB per update. The IDs our tags point to now are noted before building;
+# once the new neko is healthy, those that no tag uses any more are removed.
+# Only images this script built are touched, and none a container still uses.
+
+superseded=()
+note_image() {
+  local id
+  id="$(docker image inspect -f '{{.Id}}' "$1" 2>/dev/null || true)"
+  [[ -n "$id" ]] && superseded+=("$id")
+  return 0
+}
+# server-checks' image name in docker-compose.validation.yaml
+VALIDATION_IMAGE="my-neko/server-validation:testing"
+
+# --------------------------------------------------------------------
 # Optional checks (--check)
 
 if [[ "$DO_CHECK" == 1 ]]; then
+  note_image "$VALIDATION_IMAGE"
   [[ -f docker-compose.validation.yaml ]] || die "docker-compose.validation.yaml not found."
   validation=(docker compose -f docker-compose.validation.yaml)
   commit="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
@@ -366,6 +385,9 @@ if [[ "$DO_BUILD" == 1 ]]; then
   tag="${NEKO_IMAGE##*:}"
   build_args=(-y)
   [[ -n "$NO_CACHE" ]] && build_args+=("$NO_CACHE")
+
+  note_image "$repository/base:$tag"
+  note_image "$NEKO_IMAGE"
 
   log "Building base image $repository/base:$tag"
   bash ./build "$repository/base:$tag" "${build_args[@]}"
@@ -399,6 +421,19 @@ done
 if [[ "$status" != healthy ]]; then
   docker compose logs --tail 80 neko >&2 || true
   die "neko is '$status' after ${HEALTH_TIMEOUT}s; see the log above."
+fi
+
+removed=0
+# newest first: an old browser image goes before the old base it was built on
+for ((i = ${#superseded[@]} - 1; i >= 0; i--)); do
+  id="${superseded[i]}"
+  # still tagged (nothing was rebuilt): keep
+  [[ -n "$(docker image inspect -f '{{join .RepoTags " "}}' "$id" 2>/dev/null)" ]] && continue
+  # refused while a container uses it or an image builds on it
+  docker image rm "$id" >/dev/null 2>&1 && removed=$((removed + 1))
+done
+if ((removed > 0)); then
+  log "Removed $removed superseded image(s) of earlier builds"
 fi
 
 # --------------------------------------------------------------------
