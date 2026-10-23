@@ -78,6 +78,11 @@ export class WebRTCTransport implements StreamTransport {
     return this.pc
   }
 
+  // the playback watchdog's view, read-only, for diagnostics (the GUI's ?debug view)
+  get playback(): { attempts: number; framesTrusted: boolean } {
+    return { attempts: this.watchdog.attempts, framesTrusted: this.watchdog.trusted }
+  }
+
   on<K extends keyof TransportEvents>(event: K, cb: TransportEvents[K]) {
     return this.events.on(event, cb)
   }

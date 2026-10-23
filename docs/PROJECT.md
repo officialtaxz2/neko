@@ -88,7 +88,7 @@ The product remains one shared session, not independent per-user browser session
 
 ### IMPLEMENTED
 
-- Upstream's React + TypeScript client (v3 API) built with Vite; the Vue 2.7 client up to the tag `vue-final` had the same features below unless noted.
+- Upstream's React + TypeScript client (v3 API) built with Vite; the Vue 2.7 client up to commit `a7e53c0` had the same features below unless noted.
 - Major client/UI redesign (`client/src/fork/`).
 - Touch-device detection.
 - Trackpad mode and optional trackpad cursor.

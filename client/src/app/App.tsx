@@ -16,6 +16,8 @@ import { MobileDock } from '@/fork/layout/MobileDock'
 import { PassiveBar } from '@/fork/layout/PassiveBar'
 import { ShareConnect } from '@/fork/connect/ShareConnect'
 import { MediaStatus } from '@/features/media/MediaStatus'
+import { DebugOverlay } from '@/features/media/DebugOverlay'
+import { debugEnabled } from '@/state/debug'
 import { ClipboardPanel } from '@/fork/tools/ClipboardPanel'
 import { tryHLS } from '@/state/media'
 import { Button } from '@/components/ui/button'
@@ -27,6 +29,8 @@ import { About } from '@/features/about/About'
 const params = new URL(location.href).searchParams
 const cast = !!params.get('cast')
 const videoOnly = cast || !!params.get('embed')
+// the fork: ?debug shows the diagnostic text over the picture (state/debug.ts)
+const debug = debugEnabled()
 
 export function App() {
   const { t } = useTranslation()
@@ -96,6 +100,7 @@ export function App() {
             <Stage hideControls={cast} extraControls={videoOnly} />
             {/* the fork: how HLS is doing, when this page plays HLS (state/media.ts) */}
             {!cast && <MediaStatus />}
+            {debug && <DebugOverlay />}
           </div>
           {!bare && <RoomBar />}
           {!bare && <MobileDock />}

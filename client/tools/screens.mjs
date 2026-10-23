@@ -426,6 +426,9 @@ await shot('logout-confirm', {
   },
 })
 await shot('share-hls', { ...phone, ...share, hash: '?media=ll-hls#/ShareToken-12345', viewer: 'Gast', hls: 'fail' })
+// ?debug: the diagnostic text over the picture, on the desktop and on a phone
+await shot('debug-desktop', { ...desktop, hash: '?debug=1', side: false, after: (page) => page.waitForTimeout(1000) })
+await shot('debug-phone', { ...phone, hash: '?debug=1', side: false, after: (page) => page.waitForTimeout(1000) })
 
 await browser.close()
 await server.close()

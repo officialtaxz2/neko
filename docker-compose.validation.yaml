@@ -92,7 +92,7 @@ services:
     command: ["disabled"]
 
   dependency-audit:
-    image: node:18-bullseye-slim
+    image: node:24-trixie-slim
     working_dir: /work
     volumes:
       - type: bind

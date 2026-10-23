@@ -34,6 +34,9 @@ jobs:
   deploy-webpage:
     name: Deploy to GitHub Pages
     needs: build-webpage
+    # the fork: only upstream publishes the documentation site (forks have no Pages set up),
+    # as dockerhub.yml does for its images
+    if: github.repository_owner == 'm1k1o'
 
     # Deploy to the github-pages environment
     environment:

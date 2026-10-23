@@ -26,6 +26,13 @@ type Field = [bytes: number, value: number]
 
 export class DataChannelInput implements InputChannel {
   private dc: RTCDataChannel | null = null
+  // the fork: messages sent and dropped (channel not open), for the GUI's ?debug view
+  readonly stats = { sent: 0, skipped: 0 }
+
+  // the fork: the channel's state, for the GUI's ?debug view
+  get channelState(): RTCDataChannelState | 'none' {
+    return this.dc?.readyState ?? 'none'
+  }
 
   onCursorPosition?: (pos: { x: number; y: number }) => void
   onCursorImage?: (image: CursorImage) => void
@@ -78,7 +85,10 @@ export class DataChannelInput implements InputChannel {
 
   // opcode, u16 payload length, the fields; dropped while the channel is not open
   private send(op: number, ...fields: Field[]) {
-    if (this.dc?.readyState !== 'open') return
+    if (this.dc?.readyState !== 'open') {
+      this.stats.skipped++ // the fork
+      return
+    }
     const len = fields.reduce((n, [b]) => n + Math.abs(b), 0)
     const v = new DataView(new ArrayBuffer(3 + len))
     v.setUint8(0, op)
@@ -93,5 +103,6 @@ export class DataChannelInput implements InputChannel {
       o += Math.abs(b)
     }
     this.dc.send(v.buffer)
+    this.stats.sent++ // the fork
   }
 }
