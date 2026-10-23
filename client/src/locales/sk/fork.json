@@ -22,6 +22,14 @@
     "play": "Prehrať",
     "pause": "Pozastaviť",
     "mute": "Stlmiť",
-    "unmute": "Zapnúť zvuk"
+    "unmute": "Zapnúť zvuk",
+    "volume": "Hlasitosť"
+  },
+  "share": {
+    "title": "Sledovať",
+    "hint": "Cez tento odkaz môžeš sledovať a počúvať. Ovládať plochu ani chatovať nemôžeš.",
+    "watch": "Sledovať",
+    "connecting": "Pripája sa",
+    "invalid": "Odkaz je neplatný alebo už nie je aktívny."
   }
 }

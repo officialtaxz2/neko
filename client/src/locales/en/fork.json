@@ -22,6 +22,14 @@
     "play": "Play",
     "pause": "Pause",
     "mute": "Mute",
-    "unmute": "Unmute"
+    "unmute": "Unmute",
+    "volume": "Volume"
+  },
+  "share": {
+    "title": "Watch",
+    "hint": "This link lets you watch and listen. You cannot control the desktop or chat.",
+    "watch": "Watch",
+    "connecting": "Connecting",
+    "invalid": "The link is invalid or no longer active."
   }
 }

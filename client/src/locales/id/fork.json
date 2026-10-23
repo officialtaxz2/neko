@@ -22,6 +22,14 @@
     "play": "Putar",
     "pause": "Jeda",
     "mute": "Bisukan",
-    "unmute": "Bunyikan"
+    "unmute": "Bunyikan",
+    "volume": "Volume"
+  },
+  "share": {
+    "title": "Tonton",
+    "hint": "Dengan tautan ini kamu hanya bisa menonton dan mendengar. Kamu tidak bisa mengendalikan desktop atau mengobrol.",
+    "watch": "Tonton",
+    "connecting": "Menghubungkan",
+    "invalid": "Tautan tidak valid atau sudah tidak aktif."
   }
 }

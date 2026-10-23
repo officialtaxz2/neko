@@ -22,6 +22,14 @@
     "play": "Lecture",
     "pause": "Pause",
     "mute": "Couper le son",
-    "unmute": "Activer le son"
+    "unmute": "Activer le son",
+    "volume": "Volume"
+  },
+  "share": {
+    "title": "Regarder",
+    "hint": "Ce lien permet de regarder et d’écouter. Vous ne pouvez ni contrôler le bureau ni discuter.",
+    "watch": "Regarder",
+    "connecting": "Connexion",
+    "invalid": "Le lien n’est pas valide ou n’est plus actif."
   }
 }

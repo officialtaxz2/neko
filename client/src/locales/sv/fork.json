@@ -22,6 +22,14 @@
     "play": "Spela",
     "pause": "Pausa",
     "mute": "Stäng av ljud",
-    "unmute": "Slå på ljud"
+    "unmute": "Slå på ljud",
+    "volume": "Volym"
+  },
+  "share": {
+    "title": "Titta",
+    "hint": "Med den här länken kan du titta och lyssna. Du kan inte styra skrivbordet eller chatta.",
+    "watch": "Titta",
+    "connecting": "Ansluter",
+    "invalid": "Länken är ogiltig eller inte längre aktiv."
   }
 }

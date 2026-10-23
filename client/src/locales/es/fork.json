@@ -22,6 +22,14 @@
     "play": "Reproducir",
     "pause": "Pausar",
     "mute": "Silenciar",
-    "unmute": "Activar sonido"
+    "unmute": "Activar sonido",
+    "volume": "Volumen"
+  },
+  "share": {
+    "title": "Ver",
+    "hint": "Con este enlace puedes ver y escuchar. No puedes controlar el escritorio ni chatear.",
+    "watch": "Ver",
+    "connecting": "Conectando",
+    "invalid": "El enlace no es válido o ya no está activo."
   }
 }

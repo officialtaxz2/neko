@@ -15,17 +15,23 @@ sync with upstream touches as few upstream files as possible.
   emotes in one row), `MobileDock` (the phone's bar under the picture), `Side` (the panel on glass) and
   `Toaster` (glass toasts).
 - `room/`: fork components the layout composes (`MemberStrip`).
+- `connect/`: `ShareConnect`, the login screen of a view-only share link (`#/<token>`, see
+  `src/state/viewonly.ts` and `docs/VIEW_ONLY_SHARING.md`); `layout/PassiveBar` is its playback bar.
 - Strings: the namespace `fork`, `src/locales/<lang>/fork.json` in every language, used as
   `t('fork:key')`.
 
 Upstream files changed for the fork, each marked with a "the fork" comment: `src/app/App.tsx` (the
 shell's classes and the pieces above), `src/index.css` (the import), `src/main.tsx` (the namespace),
 `src/features/settings/Settings.tsx` (the language picker and the admin's lock switches),
-`src/components/ui/button.tsx` (dark ink on mint), `eslint.config.js` (the layer rule).
+`src/components/ui/button.tsx` (dark ink on mint), `eslint.config.js` (the layer rule),
+`src/features/video/Stage.tsx` (no control request without `can_host`), `src/state/app.ts` and
+`src/state/neko.ts` (the share link), and in the core `client.ts` (`tokenStorage`/`tokenKey`,
+`logout({ keepalive })`).
 
 Imports follow the layer rules (`eslint.config.js`): `src/fork` sits beside `src/layout`, it may use
 features, components, state and the plugin registry; only the app shell imports it.
 
 The visual check (DesignSystem.md, Gate 2) runs against a simulated server:
 `node tools/screens.mjs <out-dir>` renders the login, the desktop with and without the side panel, a
-narrow window, the phone upright with and without the panel, and the phone sideways.
+narrow window, the phone upright with and without the panel, the phone sideways, and a share link's
+login screen and passive view on desktop and phone.

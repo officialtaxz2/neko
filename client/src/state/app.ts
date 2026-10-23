@@ -59,6 +59,9 @@ export interface NekoApp {
   overlay: Overlay
   app: AppStore
   bus: Bus
+  // the fork: the token of a view-only share link this page was opened with (viewonly.ts); kept
+  // here only, never in a store or persistent storage
+  share?: string
 }
 
 // one value per instance, made on first use: a plugin's store, the bound actions

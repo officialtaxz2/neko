@@ -22,6 +22,14 @@
     "play": "Toista",
     "pause": "Tauko",
     "mute": "Mykistä",
-    "unmute": "Poista mykistys"
+    "unmute": "Poista mykistys",
+    "volume": "Äänenvoimakkuus"
+  },
+  "share": {
+    "title": "Katso",
+    "hint": "Tällä linkillä voit katsoa ja kuunnella. Työpöytää ei voi ohjata eikä chatata.",
+    "watch": "Katso",
+    "connecting": "Yhdistetään",
+    "invalid": "Linkki on virheellinen tai ei ole enää käytössä."
   }
 }

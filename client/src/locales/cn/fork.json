@@ -22,6 +22,14 @@
     "play": "播放",
     "pause": "暂停",
     "mute": "静音",
-    "unmute": "取消静音"
+    "unmute": "取消静音",
+    "volume": "音量"
+  },
+  "share": {
+    "title": "观看",
+    "hint": "通过此链接你只能观看和收听，无法控制桌面或聊天。",
+    "watch": "观看",
+    "connecting": "正在连接",
+    "invalid": "链接无效或已失效。"
   }
 }

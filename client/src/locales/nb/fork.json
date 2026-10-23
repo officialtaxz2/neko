@@ -22,6 +22,14 @@
     "play": "Spill av",
     "pause": "Pause",
     "mute": "Demp",
-    "unmute": "Slå på lyd"
+    "unmute": "Slå på lyd",
+    "volume": "Volum"
+  },
+  "share": {
+    "title": "Se på",
+    "hint": "Med denne lenken kan du se og lytte. Du kan ikke styre skrivebordet eller chatte.",
+    "watch": "Se på",
+    "connecting": "Kobler til",
+    "invalid": "Lenken er ugyldig eller ikke lenger aktiv."
   }
 }

@@ -42,11 +42,13 @@ const member = (id, name, over) => ({
 })
 
 // the room: Matze (admin, this session) with three others
-function room({ host = 's3', admin = true, lockedControls = false } = {}) {
+function room({ host = 's3', admin = true, lockedControls = false, viewOnly = false } = {}) {
   return {
     session_id: 's1',
     sessions: {
-      s1: member('s1', 'Matze', { is_admin: admin }),
+      s1: viewOnly
+        ? member('s1', 'Gast', { is_view_only: true, can_host: false, can_access_clipboard: false })
+        : member('s1', 'Matze', { is_admin: admin }),
       s2: member('s2', 'Nele'),
       s3: member('s3', 'Alex'),
       s4: member('s4', 'Bo', { is_admin: true }),
@@ -166,7 +168,10 @@ function fakeBrowser(token) {
   window.RTCPeerConnection = FakePeer
 }
 
-async function shot(name, { width, height, mobile = false, token = 'tok', state, side, tab, after }) {
+async function shot(
+  name,
+  { width, height, mobile = false, token = 'tok', state, side, tab, hash = '', viewer, after },
+) {
   if (only && !only.includes(name)) return
   const ctx = await browser.newContext({
     viewport: { width, height },
@@ -177,13 +182,14 @@ async function shot(name, { width, height, mobile = false, token = 'tok', state,
   })
   await ctx.addInitScript(fakeBrowser, token)
   await ctx.addInitScript(
-    ([side, tab]) => {
+    ([side, tab, viewer]) => {
       // the stored settings as src/state/storage.ts writes them
       localStorage.setItem('lang', 'de')
       if (side !== undefined) localStorage.setItem('side', side ? '1' : '0')
       if (tab) localStorage.setItem('tab', tab)
+      if (viewer) localStorage.setItem('view_name', viewer)
     },
-    [side, tab],
+    [side, tab, viewer],
   )
   const page = await ctx.newPage()
   page.on('pageerror', (e) => console.log(`${name}: pageerror ${e.message}`))
@@ -209,7 +215,7 @@ async function shot(name, { width, height, mobile = false, token = 'tok', state,
         send('signal/provide', { sdp: 'v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\n', iceservers: [] })
     })
   })
-  await page.goto(base)
+  await page.goto(base + hash)
   await page.waitForTimeout(1500)
   if (after) await after(page)
   if (process.env.DUMP)
@@ -252,6 +258,11 @@ await shot('desktop-narrow', { width: 900, height: 700, side: false })
 await shot('phone', { ...phone, side: false })
 await shot('phone-chat', { ...phone, side: true, tab: 'chat' })
 await shot('phone-landscape', { width: 844, height: 390, mobile: true, side: false })
+// a view-only share link (#/<token>): its login screen, then the picture with the playback bar
+const share = { hash: '#/ShareToken-12345', token: '', state: { viewOnly: true, host: 's3' } }
+await shot('share-login', { ...desktop, ...share })
+await shot('share-desktop', { ...desktop, ...share, viewer: 'Gast' })
+await shot('share-phone', { ...phone, ...share, viewer: 'Gast' })
 
 await browser.close()
 await server.close()

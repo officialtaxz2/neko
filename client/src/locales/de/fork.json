@@ -22,6 +22,14 @@
     "play": "Abspielen",
     "pause": "Pausieren",
     "mute": "Stummschalten",
-    "unmute": "Ton an"
+    "unmute": "Ton an",
+    "volume": "Lautstärke"
+  },
+  "share": {
+    "title": "Zuschauen",
+    "hint": "Über diesen Link siehst und hörst du zu. Steuern und Chatten geht hier nicht.",
+    "watch": "Zuschauen",
+    "connecting": "Verbinde",
+    "invalid": "Der Link ist ungültig oder nicht mehr aktiv."
   }
 }

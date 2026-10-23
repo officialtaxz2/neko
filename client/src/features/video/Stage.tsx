@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useStore } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
-import { selectControlling, selectIsAdmin } from '@m1k1o/neko'
+import { selectControlling, selectIsAdmin, selectSession } from '@m1k1o/neko'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowsOutIcon,
@@ -35,7 +35,7 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
   const { t } = useTranslation()
   const { client, overlay, app } = useNeko()
   const actions = useActions()
-  const { admin, hosting, hosted, implicit, lockedControls, video } = useStore(
+  const { admin, hosting, hosted, implicit, lockedControls, video, canHost } = useStore(
     client.store,
     useShallow((s) => ({
       admin: selectIsAdmin(s),
@@ -44,6 +44,8 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
       implicit: s.settings.implicit_hosting,
       lockedControls: s.settings.locked_controls,
       video: s.video,
+      // the fork: who may not host (a view-only session) gets no control request
+      canHost: !!selectSession(s)?.profile.can_host,
     })),
   )
   const emotes = useStore(app, (s) => s.emotes)
@@ -111,7 +113,7 @@ export function Stage({ hideControls, extraControls }: { hideControls: boolean; 
                 </DropdownMenu>
               </li>
             )}
-            {!controlLocked && !implicit && (
+            {canHost && !controlLocked && !implicit && (
               <li className={cn('mb-2.5 last:mb-0', extra)}>
                 <IconButton
                   variant="video"

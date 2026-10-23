@@ -564,6 +564,36 @@ test('authenticate: resumes the saved session, or fails with the ApiError', asyn
   assert.throws(() => expired.connect(), /not authenticated/)
 })
 
+test('autologin keeps the token where it is told to; logout can outlive the page', async () => {
+  const kept = new Map<string, string>()
+  const own = {
+    getItem: (k: string) => kept.get(k) ?? null,
+    setItem: (k: string, v: string) => void kept.set(k, v),
+    removeItem: (k: string) => void kept.delete(k),
+  }
+  const { client } = setup({ autologin: true, tokenStorage: own, tokenKey: 'neko_view_session' })
+  client.setUrl('http://neko.test/')
+  storage.set('neko_session', 'member') // a member's own session in localStorage stays untouched
+  net.respond = () => ({ status: 200, body: { ...session('v1'), token: 'view' } })
+  await client.login('Gast', 'share')
+  assert.equal(kept.get('neko_view_session'), 'view')
+  assert.equal(storage.get('neko_session'), 'member')
+
+  kept.set('neko_view_session', 'resumed')
+  // the same page loaded again (no reset: localStorage keeps the member's session)
+  const again = new NekoClient({ autologin: true, tokenStorage: own, tokenKey: 'neko_view_session' })
+  await again.authenticate()
+  assert.equal((fetches.at(-1)?.init.headers as Record<string, string>).Authorization, 'Bearer resumed')
+
+  await again.logout({ keepalive: true })
+  assert.equal(fetches.at(-1)?.url, 'http://neko.test/api/logout')
+  assert.equal(fetches.at(-1)?.init.keepalive, true)
+  assert.equal(kept.has('neko_view_session'), false)
+  assert.equal(storage.get('neko_session'), 'member')
+  await client.logout()
+  assert.equal(fetches.at(-1)?.init.keepalive, undefined, 'an ordinary logout is an ordinary request')
+})
+
 test('send: dropped while the socket is not open', async () => {
   const { client } = setup()
   client.send('chat/message', { text: 'x' }) // no socket at all

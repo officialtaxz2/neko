@@ -22,6 +22,14 @@
     "play": "Odtwórz",
     "pause": "Wstrzymaj",
     "mute": "Wycisz",
-    "unmute": "Włącz dźwięk"
+    "unmute": "Włącz dźwięk",
+    "volume": "Głośność"
+  },
+  "share": {
+    "title": "Oglądaj",
+    "hint": "Przez ten link możesz oglądać i słuchać. Nie możesz sterować pulpitem ani pisać na czacie.",
+    "watch": "Oglądaj",
+    "connecting": "Łączenie",
+    "invalid": "Link jest nieprawidłowy lub nieaktywny."
   }
 }

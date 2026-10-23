@@ -21,6 +21,10 @@ const STALE_MS = 25_000
 export interface NekoClientOptions {
   // remember the session token in localStorage
   autologin?: boolean
+  // where autologin keeps the token, and under which key; localStorage and `neko_session` unless
+  // given (a view-only share link keeps its own session apart, in sessionStorage)
+  tokenStorage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+  tokenKey?: string
   // connect as soon as setUrl() finds a valid session
   autoconnect?: boolean
   autoplay?: boolean
@@ -185,7 +189,7 @@ export class NekoClient {
   }
 
   async authenticate(token = this.state.connection.token) {
-    if (!token && this.opts.autologin) token = localStorage.getItem('neko_session') ?? undefined
+    if (!token && this.opts.autologin) token = this.tokenStorage.getItem(this.tokenKey) ?? undefined
     if (token) this.setToken(token)
     await this.api.req('GET', '/whoami')
     this.store.setState({ authenticated: true })
@@ -200,14 +204,22 @@ export class NekoClient {
     this.store.setState({ authenticated: true })
   }
 
-  async logout() {
+  // keepalive: the request outlives the page (logging out while it is left)
+  async logout({ keepalive = false } = {}) {
     this.close()
     try {
-      await this.api.req('POST', '/logout')
+      await this.api.req('POST', '/logout', undefined, keepalive ? { keepalive } : undefined)
     } finally {
       this.setToken('')
       this.store.setState({ authenticated: false })
     }
+  }
+
+  private get tokenStorage() {
+    return this.opts.tokenStorage ?? localStorage
+  }
+  private get tokenKey() {
+    return this.opts.tokenKey ?? 'neko_session'
   }
 
   private setToken(token: string) {
@@ -215,7 +227,7 @@ export class NekoClient {
     this.patch('connection', { token: token || undefined })
     if (!this.opts.autologin) return
     try {
-      token ? localStorage.setItem('neko_session', token) : localStorage.removeItem('neko_session')
+      token ? this.tokenStorage.setItem(this.tokenKey, token) : this.tokenStorage.removeItem(this.tokenKey)
     } catch {}
   }
 

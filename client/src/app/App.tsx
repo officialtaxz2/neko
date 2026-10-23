@@ -4,7 +4,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useTranslation } from 'react-i18next'
 import { useNeko } from '@/state/provider'
 import { useSlot } from '@/plugins'
-import { WebRTCTransport } from '@m1k1o/neko'
+import { selectSession, WebRTCTransport } from '@m1k1o/neko'
 import { cn } from '@/lib/utils'
 import logo from '@/assets/images/logo.svg'
 import { Dialog } from '@/components/Dialog'
@@ -13,6 +13,8 @@ import { Header } from '@/fork/layout/Header'
 import { Side } from '@/fork/layout/Side'
 import { RoomBar } from '@/fork/layout/RoomBar'
 import { MobileDock } from '@/fork/layout/MobileDock'
+import { PassiveBar } from '@/fork/layout/PassiveBar'
+import { ShareConnect } from '@/fork/connect/ShareConnect'
 import { Stage } from '@/features/video/Stage'
 import { MemberMenu } from '@/features/members/MemberMenu'
 import { Connect } from '@/features/connect/Connect'
@@ -24,7 +26,12 @@ const videoOnly = cast || !!params.get('embed')
 
 export function App() {
   const { t } = useTranslation()
-  const { client, app } = useNeko()
+  const neko = useNeko()
+  const { client, app } = neko
+  // the fork: a view-only share link, or a session the server made view-only, sees only the picture
+  // with a playback bar (fork/layout/PassiveBar.tsx): no header, side panel, room bar or toasts
+  const passive = useStore(client.store, (s) => !!neko.share || !!selectSession(s)?.profile.is_view_only)
+  const bare = videoOnly || passive
   const connected = useStore(client.store, (s) => s.connection.status === 'connected')
   const { side, about } = useStore(
     app,
@@ -50,7 +57,7 @@ export function App() {
     )
   }
 
-  const expanded = !videoOnly && side
+  const expanded = !bare && side
   return (
     // every icon filled, as in the v2 client (phosphor defaults to the outline `regular` weight)
     <IconContext.Provider value={{ weight: 'fill' }}>
@@ -64,7 +71,7 @@ export function App() {
             expanded ? 'tablet:portrait:h-[40vh] tablet:landscape:h-screen phone:portrait:h-auto' : 'tablet:h-screen',
           )}
         >
-          {!videoOnly && (
+          {!bare && (
             // the fork's header: glass over the page, above the picture
             <div
               className="z-[100] flex h-menu shrink-0 border-b border-glass-border bg-bar-header shadow-bar-down backdrop-blur-md"
@@ -79,13 +86,14 @@ export function App() {
           <div className="video-container phone:portrait:h-[min(62.5vw,60vh)]! phone:portrait:flex-none relative flex max-w-full grow overflow-hidden bg-[radial-gradient(circle_at_50%_50%,rgba(12,13,18,0.2)_0%,rgba(7,8,12,0.7)_100%)]">
             <Stage hideControls={cast} extraControls={videoOnly} />
           </div>
-          {!videoOnly && <RoomBar />}
-          {!videoOnly && <MobileDock />}
+          {!bare && <RoomBar />}
+          {!bare && <MobileDock />}
+          {passive && !cast && <PassiveBar />}
         </main>
-        {!videoOnly && <MemberMenu items={memberMenu} />}
+        {!bare && <MemberMenu items={memberMenu} />}
         {expanded && <Side />}
-        {!connected && <Connect />}
-        {!videoOnly && <Toaster />}
+        {!connected && (neko.share ? <ShareConnect /> : <Connect />)}
+        {!bare && <Toaster />}
         {about && <About />}
         <Dialog />
       </div>
