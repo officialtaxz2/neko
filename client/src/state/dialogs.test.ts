@@ -7,7 +7,14 @@ const fake = (name: string, value: unknown) =>
 fake('location', { href: 'http://neko.test/' })
 fake('localStorage', { getItem: () => null, setItem: () => {}, removeItem: () => {} })
 vi.mock('sonner', () => ({
-  toast: { info: vi.fn(), success: vi.fn(), warning: vi.fn(), error: vi.fn(), dismiss: vi.fn() },
+  toast: {
+    info: vi.fn(),
+    success: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+    dismiss: vi.fn(),
+    getToasts: () => [{ id: 1 }, { id: 'update' }, { id: 2 }],
+  },
 }))
 const { toast: sonner } = await import('sonner')
 const { createAppStore } = await import('./app')
@@ -55,8 +62,8 @@ describe('toast()', () => {
     toast('Failed', 'x', 'error')
     expect(sonner.error).toHaveBeenCalledWith('Failed', { description: 'x', duration: 5000 })
   })
-  it('dismissToasts() clears them all', () => {
+  it('dismissToasts() clears them all but the offer of a new version', () => {
     dismissToasts()
-    expect(sonner.dismiss).toHaveBeenCalledWith()
+    expect(vi.mocked(sonner.dismiss).mock.calls).toEqual([[1], [2]])
   })
 })

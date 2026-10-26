@@ -27,4 +27,7 @@ export type ToastKind = 'info' | 'success' | 'warning' | 'error'
 export function toast(title: string, text?: string, kind: ToastKind = 'info') {
   sonner[kind](title, { description: text, duration: 5000 })
 }
-export const dismissToasts = () => sonner.dismiss()
+// the fork: the offer of a new version (state/update.ts) stays until it is used; the connection's
+// own toasts clear the rest when it is back
+export const UPDATE_TOAST = 'update'
+export const dismissToasts = () => sonner.getToasts().forEach((t) => t.id !== UPDATE_TOAST && sonner.dismiss(t.id))

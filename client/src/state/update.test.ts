@@ -38,6 +38,14 @@ test('the built files: the paths under assets/, sorted, resolved against the pag
     '/room/assets/index-Dw4TracB.js',
     '/room/assets/react-D5ydvgTr.js',
   ])
+  // another origin's assets/ (a browser extension built with Vite, a CDN) are not this build
+  assert.deepEqual(
+    builtFiles(
+      ['chrome-extension://abcdef/assets/content-x1.js', 'https://cdn.test/assets/a.js', './assets/b.js'],
+      BASE,
+    ),
+    ['/assets/b.js'],
+  )
   // a lazy import's preload link is absolute: the same file
   assert.deepEqual(builtFiles(['https://neko.test/assets/react-D5ydvgTr.js', './assets/react-D5ydvgTr.js'], BASE), [
     '/assets/react-D5ydvgTr.js',

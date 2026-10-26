@@ -8,6 +8,7 @@ import { toast as sonner } from 'sonner'
 import { HLSTransport } from '@m1k1o/neko'
 import { t } from '@/i18n'
 import type { NekoApp } from './app'
+import { UPDATE_TOAST } from './dialogs'
 
 // a version that turns up this soon after the connection was interrupted reloads even when the
 // connection is back already (a share link and a kept session reconnect by themselves)
@@ -21,9 +22,14 @@ export const VISIBLE_MS = 60_000
 export const RELOAD_KEY = 'update_reload'
 
 // the built files an HTML page names (entry script, preloads, stylesheet): the paths under assets/,
-// whose names carry their content's hash; empty when the page names none
+// whose names carry their content's hash, on the page's own origin (a browser extension may add
+// links of its own); empty when the page names none
 export function builtFiles(urls: Iterable<string>, base: string): string[] {
-  const paths = [...urls].map((u) => new URL(u, base).pathname).filter((p) => p.includes('/assets/'))
+  const origin = new URL(base).origin
+  const paths = [...urls]
+    .map((u) => new URL(u, base))
+    .filter((u) => u.origin === origin && u.pathname.includes('/assets/'))
+    .map((u) => u.pathname)
   return [...new Set(paths)].sort()
 }
 
@@ -128,7 +134,7 @@ export function bindUpdates(neko: NekoApp, own: string[], env: UpdateEnv = brows
   }
   const offer = () => {
     sonner.info(t('fork:update.title'), {
-      id: 'update',
+      id: UPDATE_TOAST,
       duration: Infinity,
       action: { label: t('fork:update.reload'), onClick: reload },
     })
