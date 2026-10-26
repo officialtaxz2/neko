@@ -17,6 +17,13 @@ capture:
     # the automatic mode picks on an idle host; the smaller tiers use
     # libwebrtc's -6. static-threshold 100 (GStreamer's recommendation for
     # screen content) skips nearly unchanged blocks, which sharpens text.
+    # A keyframe is sent when a tier gains a viewer, when a viewer reports
+    # picture loss (rate-limited per tier) or when a frame was dropped locally;
+    # otherwise only every 4 seconds, which bounds recovery when a browser does
+    # not ask (Chrome asks only after 3 s without a decodable frame).
+    # max-intra-bitrate caps a keyframe at about 0.36 s of the tier's rate
+    # (900% of a frame at 25 fps, 720% at 20, 540% at 15) so it does not leave
+    # in one burst.
     ids: [high, medium, low, lowest]
     pipelines:
       high:
@@ -33,7 +40,8 @@ capture:
           buffer-size: "3072 * 4"
           buffer-initial-size: "3072 * 2"
           buffer-optimal-size: "3072 * 3"
-          keyframe-max-dist: "25"
+          keyframe-max-dist: "100"
+          max-intra-bitrate: "900"
           min-quantizer: "4"
           max-quantizer: "63"
           static-threshold: "100"
@@ -54,7 +62,8 @@ capture:
           buffer-size: "1152 * 4"
           buffer-initial-size: "1152 * 2"
           buffer-optimal-size: "1152 * 3"
-          keyframe-max-dist: "25"
+          keyframe-max-dist: "100"
+          max-intra-bitrate: "900"
           min-quantizer: "4"
           max-quantizer: "63"
           static-threshold: "100"
@@ -75,7 +84,8 @@ capture:
           buffer-size: "1152 * 4"
           buffer-initial-size: "1152 * 2"
           buffer-optimal-size: "1152 * 3"
-          keyframe-max-dist: "25"
+          keyframe-max-dist: "80"
+          max-intra-bitrate: "720"
           min-quantizer: "4"
           max-quantizer: "63"
           static-threshold: "100"
@@ -96,7 +106,8 @@ capture:
           buffer-size: "512 * 4"
           buffer-initial-size: "512 * 2"
           buffer-optimal-size: "512 * 3"
-          keyframe-max-dist: "25"
+          keyframe-max-dist: "60"
+          max-intra-bitrate: "540"
           min-quantizer: "4"
           max-quantizer: "63"
           static-threshold: "100"
