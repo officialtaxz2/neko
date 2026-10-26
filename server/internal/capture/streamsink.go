@@ -432,53 +432,59 @@ func (manager *StreamSinkManagerCtx) CreatePipeline() error {
 
 	pipeline := manager.pipeline
 	video := manager.codec.IsVideo()
-	manager.wg.Go(func() {
-		manager.logger.Debug().Msg("started emitting samples")
-
-		lastPTS := time.Duration(-1)
-		// samples that may have been queued before a dropped one
-		beforeDrop := 0
-		for {
-			sample, ok := <-pipeline.Sample()
-			if !ok {
-				manager.logger.Debug().Msg("stopped emitting samples")
-				return
-			}
-
-			if video {
-				sample.Duration = sampleDuration(lastPTS, sample)
-				if sample.PTSValid {
-					lastPTS = sample.PTS
-				}
-				manager.frames.Inc()
-
-				// The pipeline dropped an encoded frame because this loop fell
-				// behind. Later delta frames reference it, so every listener waits
-				// for the next keyframe instead of showing a corrupted picture until
-				// then. The drop happened while the sample channel was full, so a
-				// keyframe among the samples queued then may precede it and must
-				// not end the wait.
-				if beforeDrop > 0 {
-					beforeDrop--
-				}
-				select {
-				case _, ok := <-pipeline.Dropped():
-					if ok {
-						beforeDrop = cap(pipeline.Sample())
-						manager.awaitKeyframe()
-					}
-				default:
-				}
-			}
-
-			manager.onSample(sample, beforeDrop == 0)
-		}
-	})
+	manager.wg.Go(func() { manager.emitSamples(pipeline, video) })
 
 	manager.pipelinesCounter.Inc()
 	manager.pipelinesActive.Set(1)
 
 	return nil
+}
+
+// emitSamples passes the pipeline's samples to the listeners until the
+// pipeline is destroyed.
+func (manager *StreamSinkManagerCtx) emitSamples(pipeline gst.Pipeline, video bool) {
+	manager.logger.Debug().Msg("started emitting samples")
+
+	lastPTS := time.Duration(-1)
+	// samples that may have been queued before a dropped one
+	beforeDrop := 0
+	for {
+		sample, ok := <-pipeline.Sample()
+		if !ok {
+			manager.logger.Debug().Msg("stopped emitting samples")
+			return
+		}
+
+		if video {
+			sample.Duration = sampleDuration(lastPTS, sample)
+			if sample.PTSValid {
+				lastPTS = sample.PTS
+			}
+			manager.frames.Inc()
+
+			// The pipeline dropped an encoded frame because this loop fell
+			// behind. Later delta frames reference it, so every listener waits
+			// for the next keyframe instead of showing a corrupted picture until
+			// then. The drop happened while the sample channel was full, so a
+			// keyframe among the samples queued then may precede it and must
+			// not end the wait. If the drop happened only after this sample was
+			// read, all samples still in the channel precede it, so this one
+			// and the next cap(Sample()) samples count as queued.
+			if beforeDrop > 0 {
+				beforeDrop--
+			}
+			select {
+			case _, ok := <-pipeline.Dropped():
+				if ok {
+					beforeDrop = cap(pipeline.Sample()) + 1
+					manager.awaitKeyframe()
+				}
+			default:
+			}
+		}
+
+		manager.onSample(sample, beforeDrop == 0)
+	}
 }
 
 func (manager *StreamSinkManagerCtx) saveSampleBitrate(timestamp time.Time, sampleBytes float64) {

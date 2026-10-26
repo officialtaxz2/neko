@@ -565,14 +565,15 @@ func TestMediaSubscriptionOverflowWaitsForKeyframe(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		for len(delivered) == 0 || delivered[len(delivered)-1] < 13 {
+		for len(delivered) == 0 || delivered[len(delivered)-1] < 14 {
 			event := nextMediaEvent(t, subscription)
 			if event.Type == types.MediaEventTypeUnit {
 				delivered = append(delivered, event.Unit.Sequence)
 			}
 		}
 	}()
-	// let the reader empty the queue, so the keyframe is not dropped as well
+	// let the reader empty the queue, so later frames are not dropped because
+	// it is full
 	queued := subscription.(*captureMediaSubscription)
 	for deadline := time.Now().Add(time.Second); ; {
 		queued.mu.Lock()
@@ -586,8 +587,15 @@ func TestMediaSubscriptionOverflowWaitsForKeyframe(t *testing.T) {
 		}
 		time.Sleep(time.Millisecond)
 	}
-	high.emit(types.Sample{Generation: 1, Sequence: 12, DeltaUnit: false, Timestamp: time.Now(), Data: []byte{1}})
-	high.emit(types.Sample{Generation: 1, Sequence: 13, DeltaUnit: true, Timestamp: time.Now(), Data: []byte{1}})
+	// the queue has room again, but this delta frame still references the
+	// dropped one
+	requests = high.keyframeRequests()
+	high.emit(types.Sample{Generation: 1, Sequence: 12, DeltaUnit: true, Timestamp: time.Now(), Data: []byte{1}})
+	if high.keyframeRequests() <= requests {
+		t.Fatal("a delta frame after the drained queue did not repeat the keyframe request")
+	}
+	high.emit(types.Sample{Generation: 1, Sequence: 13, DeltaUnit: false, Timestamp: time.Now(), Data: []byte{1}})
+	high.emit(types.Sample{Generation: 1, Sequence: 14, DeltaUnit: true, Timestamp: time.Now(), Data: []byte{1}})
 	<-done
 
 	// a run of consecutive units, then the gap, then the keyframe and its delta
@@ -596,7 +604,7 @@ func TestMediaSubscriptionOverflowWaitsForKeyframe(t *testing.T) {
 			t.Fatalf("delivered %v: a delta frame followed the gap", delivered)
 		}
 	}
-	if tail := delivered[len(delivered)-2:]; tail[0] != 12 || tail[1] != 13 {
-		t.Fatalf("delivered %v, want the keyframe 12 and delta 13 after the gap", delivered)
+	if tail := delivered[len(delivered)-2:]; tail[0] != 13 || tail[1] != 14 {
+		t.Fatalf("delivered %v, want the keyframe 13 and delta 14 after the gap", delivered)
 	}
 }

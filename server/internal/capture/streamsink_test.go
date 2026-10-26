@@ -93,6 +93,7 @@ func newKeyframeTestSink(pipeline gst.Pipeline) *StreamSinkManagerCtx {
 		currentListeners: prometheus.NewGauge(prometheus.GaugeOpts{Name: "test_listeners"}),
 		currentBitrate:   prometheus.NewGauge(prometheus.GaugeOpts{Name: "test_bitrate"}),
 		totalBytes:       prometheus.NewCounter(prometheus.CounterOpts{Name: "test_bytes"}),
+		frames:           prometheus.NewCounter(prometheus.CounterOpts{Name: "test_frames"}),
 		keyframes:        prometheus.NewCounter(prometheus.CounterOpts{Name: "test_keyframes"}),
 		keyframeRequests: prometheus.NewCounter(prometheus.CounterOpts{Name: "test_keyframe_requests"}),
 	}
@@ -209,5 +210,64 @@ func TestKeyframeQueuedBeforeDropDoesNotEndTheWait(t *testing.T) {
 	manager.onSample(types.Sample{DeltaUnit: false, Length: 1}, true)
 	if len(listener.samples) != 2 {
 		t.Fatal("listener did not resume with a keyframe after the drop")
+	}
+}
+
+// samplePipeline delivers samples like gst.Pipeline: a sample channel of the
+// same capacity and a drop signal.
+type samplePipeline struct {
+	fakeKeyframePipeline
+	sample  chan types.Sample
+	dropped chan struct{}
+}
+
+func (pipeline *samplePipeline) Sample() chan types.Sample { return pipeline.sample }
+func (pipeline *samplePipeline) Dropped() <-chan struct{}  { return pipeline.dropped }
+
+type signalingListener struct {
+	samples chan types.Sample
+}
+
+func (listener *signalingListener) WriteSample(sample types.Sample) {
+	listener.samples <- sample
+}
+
+func TestDropAfterReadingASampleCoversTheWholeQueue(t *testing.T) {
+	pipeline := &samplePipeline{
+		sample:  make(chan types.Sample, 4),
+		dropped: make(chan struct{}, 1),
+	}
+	manager := newKeyframeTestSink(pipeline)
+	listener := &signalingListener{samples: make(chan types.Sample, 16)}
+	manager.addListener(listener)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		manager.emitSamples(pipeline, true)
+	}()
+
+	pipeline.sample <- types.Sample{Sequence: 1, DeltaUnit: false, Length: 1}
+	if sample := <-listener.samples; sample.DeltaUnit {
+		t.Fatal("listener did not start with the keyframe")
+	}
+
+	// The drop is signalled before the loop checks it, after the next sample
+	// was read: all samples queued behind that one precede the drop, the last
+	// of them a keyframe.
+	pipeline.dropped <- struct{}{}
+	for _, delta := range []bool{true, true, true, true, false, false, true} {
+		pipeline.sample <- types.Sample{DeltaUnit: delta, Length: 1}
+	}
+	close(pipeline.sample)
+	<-done
+	close(listener.samples)
+
+	var got []bool
+	for sample := range listener.samples {
+		got = append(got, sample.DeltaUnit)
+	}
+	if len(got) != 2 || got[0] || !got[1] {
+		t.Fatalf("listener received delta flags %v after the drop, want the second keyframe and its delta", got)
 	}
 }
