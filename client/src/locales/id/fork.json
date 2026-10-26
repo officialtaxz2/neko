@@ -139,5 +139,9 @@
   },
   "chat": {
     "today_at": "Hari ini pukul {{time}}"
+  },
+  "update": {
+    "title": "Versi baru tersedia",
+    "reload": "Muat ulang"
   }
 }

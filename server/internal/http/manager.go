@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -77,9 +78,12 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 	if config.Static != "" {
 		fs := http.FileServer(http.Dir(config.Static))
 		staticHandler = func(w http.ResponseWriter, r *http.Request) error {
-			_, err := os.Stat(config.Static + r.URL.Path)
+			info, err := os.Stat(config.Static + r.URL.Path)
 			if err == nil {
 				w.Header().Set("Cache-Control", staticCacheControl(r.URL.Path))
+				if etag := staticETag(config.Static+r.URL.Path, r.URL.Path, info); etag != "" {
+					w.Header().Set("ETag", etag)
+				}
 				fs.ServeHTTP(w, r)
 				return nil
 			}
@@ -169,4 +173,22 @@ func staticCacheControl(urlPath string) string {
 		return "public, max-age=31536000, immutable"
 	}
 	return "no-cache"
+}
+
+// Unhashed files are revalidated by an ETag of their modification time and
+// size, which takes precedence over If-Modified-Since. Last-Modified alone
+// answers 304 to a browser holding a newer copy, so after a rollback to an
+// older image it kept the newer index.html, whose assets the older image lacks.
+// A directory is served as its index.html, so that file names the ETag.
+func staticETag(filePath, urlPath string, info os.FileInfo) string {
+	if strings.HasPrefix(urlPath, "/assets/") {
+		return ""
+	}
+	if info.IsDir() {
+		var err error
+		if info, err = os.Stat(path.Join(filePath, "index.html")); err != nil || info.IsDir() {
+			return ""
+		}
+	}
+	return fmt.Sprintf(`"%x-%x"`, info.ModTime().UnixNano(), info.Size())
 }

@@ -139,5 +139,9 @@
   },
   "chat": {
     "today_at": "I dag kl. {{time}}"
+  },
+  "update": {
+    "title": "Ny versjon tilgjengelig",
+    "reload": "Last inn på nytt"
   }
 }

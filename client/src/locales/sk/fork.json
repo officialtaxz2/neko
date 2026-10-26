@@ -139,5 +139,9 @@
   },
   "chat": {
     "today_at": "Dnes o {{time}}"
+  },
+  "update": {
+    "title": "K dispozícii je nová verzia",
+    "reload": "Znova načítať"
   }
 }

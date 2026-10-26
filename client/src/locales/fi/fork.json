@@ -139,5 +139,9 @@
   },
   "chat": {
     "today_at": "Tänään klo {{time}}"
+  },
+  "update": {
+    "title": "Uusi versio saatavilla",
+    "reload": "Lataa uudelleen"
   }
 }
