@@ -5,7 +5,7 @@ import assert from 'node:assert/strict'
 import { fakeBrowser, fakeTransport } from '@/test/browser'
 
 vi.mock('sonner', () => ({
-  toast: { info: vi.fn(), success: vi.fn(), warning: vi.fn(), error: vi.fn(), dismiss: vi.fn() },
+  toast: { info: vi.fn(), success: vi.fn(), warning: vi.fn(), error: vi.fn(), dismiss: vi.fn(), getToasts: () => [] },
 }))
 vi.mock('@/i18n', () => ({ t: (key: string) => key }))
 fakeBrowser()

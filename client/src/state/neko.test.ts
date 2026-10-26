@@ -7,7 +7,7 @@ import type { Session } from '@m1k1o/neko'
 import { fakeBrowser, fakeTransport } from '@/test/browser'
 
 vi.mock('sonner', () => ({
-  toast: { info: vi.fn(), success: vi.fn(), warning: vi.fn(), error: vi.fn(), dismiss: vi.fn() },
+  toast: { info: vi.fn(), success: vi.fn(), warning: vi.fn(), error: vi.fn(), dismiss: vi.fn(), getToasts: () => [] },
 }))
 vi.mock('@/i18n', () => ({ t: (key: string) => key }))
 let stored = fakeBrowser()

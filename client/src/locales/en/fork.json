@@ -139,5 +139,9 @@
   },
   "chat": {
     "today_at": "Today at {{time}}"
+  },
+  "update": {
+    "title": "New version available",
+    "reload": "Reload"
   }
 }

@@ -138,3 +138,55 @@ func TestStaticFilesRevalidateExceptHashedAssets(t *testing.T) {
 		}
 	}
 }
+
+func TestStaticIndexRevalidatesAfterRollback(t *testing.T) {
+	staticDir := t.TempDir()
+	if err := os.MkdirAll(staticDir+"/assets", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(name, content string, modTime time.Time) {
+		t.Helper()
+		if err := os.WriteFile(staticDir+"/"+name, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(staticDir+"/"+name, modTime, modTime); err != nil {
+			t.Fatal(err)
+		}
+	}
+	newer := time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC)
+	write("index.html", "newer build", newer)
+	write("assets/index-AbC123.js", "x", newer)
+	memberConfig := &config.Member{}
+	sessionManager := session.New(&config.Session{})
+	apiManager := api.New(sessionManager, member.New(sessionManager, memberConfig), nil, nil, memberConfig, &config.Server{})
+	manager := New(testWebSocketManager{}, apiManager, &config.Server{Static: staticDir}, memberConfig, nil)
+	get := func(path string, header map[string]string) *httptest.ResponseRecorder {
+		request := httptest.NewRequest(http.MethodGet, path, nil)
+		for k, v := range header {
+			request.Header.Set(k, v)
+		}
+		recorder := httptest.NewRecorder()
+		manager.router.ServeHTTP(recorder, request)
+		return recorder
+	}
+
+	first := get("/", nil)
+	etag := first.Header().Get("ETag")
+	if first.Code != http.StatusOK || etag == "" {
+		t.Fatalf("first load: status %d, ETag %q", first.Code, etag)
+	}
+	cached := map[string]string{"If-None-Match": etag, "If-Modified-Since": first.Header().Get("Last-Modified")}
+	if got := get("/", cached).Code; got != http.StatusNotModified {
+		t.Fatalf("unchanged index.html: status %d, want 304", got)
+	}
+	if got := get("/assets/index-AbC123.js", nil).Header().Get("ETag"); got != "" {
+		t.Fatalf("hashed asset: ETag %q, want none", got)
+	}
+
+	// a rollback serves an older index.html; the browser asks with the newer copy's validators
+	write("index.html", "older build", newer.Add(-48*time.Hour))
+	rolledBack := get("/", cached)
+	if rolledBack.Code != http.StatusOK || rolledBack.Body.String() != "older build" {
+		t.Fatalf("after rollback: status %d, body %q, want 200 with the older build", rolledBack.Code, rolledBack.Body.String())
+	}
+}

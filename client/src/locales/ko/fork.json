@@ -139,5 +139,9 @@
   },
   "chat": {
     "today_at": "오늘 {{time}}"
+  },
+  "update": {
+    "title": "새 버전이 있습니다",
+    "reload": "새로고침"
   }
 }

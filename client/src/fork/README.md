@@ -43,11 +43,18 @@ sync with upstream touches as few upstream files as possible.
   (the picture's element, for fullscreen from the bar, with the Vue client's fallbacks: WebKit's
   prefixed call, the iPhone's video player for a viewer, the page filled with the picture for a host); and `src/components/Switch.tsx`, the on/off
   switch of the settings.
+- A new version for an open tab (`src/state/update.ts`, started in `src/main.tsx` for built pages):
+  the page compares the hashed names of its built files with those of the server's `index.html`
+  when the connection drops or returns, when the tab comes back, and when a lazily loaded file of
+  the old build is gone; it loads again when that interrupts nothing (no connection, or one back
+  within a minute of an interruption such as the deploy's restart) and otherwise offers it in a
+  toast with "Reload" (`layout/Toaster`'s action button). New tabs and reloads are served the new
+  build by the server's headers (`no-cache` with an ETag for `index.html`).
 - Strings: the namespace `fork`, `src/locales/<lang>/fork.json` in every language, used as
   `t('fork:key')`.
 
 Upstream files changed for the fork, each marked with a "the fork" comment: `src/app/App.tsx` (the
-shell's classes and the pieces above), `src/index.css` (the import), `src/main.tsx` (the namespace),
+shell's classes and the pieces above), `src/index.css` (the import), `src/main.tsx` (the namespace, the version check),
 `src/components/ui/button.tsx` (dark ink on mint), `eslint.config.js` (the layer rule),
 `src/features/video/Stage.tsx` (no control request without `can_host`; the trackpad's pointer,
 the special keys and "force touch" for the keyboard button; the buttons on the picture only in the
