@@ -290,6 +290,13 @@ type MediaSubscription interface {
 	Close() error
 }
 
+// MediaKeyframeRequester is implemented by video subscriptions and stream
+// sinks that can ask their encoder for a keyframe, for example after a
+// receiver reported picture loss. Implementations rate-limit the requests.
+type MediaKeyframeRequester interface {
+	RequestKeyframe()
+}
+
 type MediaBackendCapabilities struct {
 	ReceiveAudio        bool
 	ReceiveVideo        bool

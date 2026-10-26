@@ -21,6 +21,12 @@ import (
 var moveSinkListenerMu = sync.Mutex{}
 
 var _ types.StreamSinkNominalBitrateProvider = (*StreamSinkManagerCtx)(nil)
+var _ types.MediaKeyframeRequester = (*StreamSinkManagerCtx)(nil)
+
+// minKeyframeRequestInterval bounds forced keyframes per stream. All viewers of
+// a tier share one encoder, and a browser repeats its request every 200 ms
+// while it waits.
+const minKeyframeRequestInterval = 500 * time.Millisecond
 
 type StreamSinkManagerCtx struct {
 	id string
@@ -46,6 +52,8 @@ type StreamSinkManagerCtx struct {
 	pipeline   gst.Pipeline
 	pipelineMu sync.Mutex
 	pipelineFn func() (string, error)
+	// last forced keyframe, guarded by pipelineMu
+	lastKeyframeRequest time.Time
 
 	listeners   map[uintptr]types.SampleListener
 	listenersKf map[uintptr]types.SampleListener // keyframe lobby
@@ -56,6 +64,8 @@ type StreamSinkManagerCtx struct {
 	currentBitrate   prometheus.Gauge
 	totalBytes       prometheus.Counter
 	frames           prometheus.Counter
+	keyframes        prometheus.Counter
+	keyframeRequests prometheus.Counter
 	pipelinesCounter prometheus.Counter
 	pipelinesActive  prometheus.Gauge
 }
@@ -120,6 +130,28 @@ func streamSinkNew(codec codec.RTPCodec, pipelineFn func() (string, error), id s
 			Namespace: "neko",
 			Subsystem: "capture",
 			Help:      "Total number of video frames created by the pipeline; a rate below the configured fps means the encoder falls behind.",
+			ConstLabels: map[string]string{
+				"video_id":   id,
+				"codec_name": codec.Name,
+				"codec_type": codec.Type.String(),
+			},
+		}),
+		keyframes: promauto.NewCounter(prometheus.CounterOpts{
+			Name:      "streamsink_keyframes",
+			Namespace: "neko",
+			Subsystem: "capture",
+			Help:      "Total number of video keyframes created by the pipeline.",
+			ConstLabels: map[string]string{
+				"video_id":   id,
+				"codec_name": codec.Name,
+				"codec_type": codec.Type.String(),
+			},
+		}),
+		keyframeRequests: promauto.NewCounter(prometheus.CounterOpts{
+			Name:      "streamsink_keyframe_requests",
+			Namespace: "neko",
+			Subsystem: "capture",
+			Help:      "Total number of keyframes forced on the encoder, after rate limiting.",
 			ConstLabels: map[string]string{
 				"video_id":   id,
 				"codec_name": codec.Name,
@@ -216,12 +248,9 @@ func (manager *StreamSinkManagerCtx) stop() {
 
 func (manager *StreamSinkManagerCtx) addListener(listener types.SampleListener) {
 	ptr := reflect.ValueOf(listener).Pointer()
-	emitKeyframe := false
 
 	manager.listenersMu.Lock()
 	if manager.waitForKf {
-		// if this is the first listener, we need to emit a keyframe
-		emitKeyframe = len(manager.listenersKf) == 0
 		// if we're waiting for a keyframe, add it to the keyframe lobby
 		manager.listenersKf[ptr] = listener
 	} else {
@@ -233,10 +262,36 @@ func (manager *StreamSinkManagerCtx) addListener(listener types.SampleListener) 
 	manager.logger.Debug().Interface("ptr", ptr).Msgf("adding listener")
 	manager.currentListeners.Set(float64(manager.ListenersCount()))
 
-	// if we will be waiting for a keyframe, emit one now
-	if manager.pipeline != nil && emitKeyframe {
-		manager.pipeline.EmitVideoKeyframe()
+	// the new listener waits for a keyframe, ask for one now; while the lobby
+	// is not empty, onSample repeats the request
+	manager.RequestKeyframe()
+}
+
+// RequestKeyframe forces a keyframe from the video encoder, at most once per
+// minKeyframeRequestInterval. A failed request is not counted, so the next
+// one is not held back.
+func (manager *StreamSinkManagerCtx) RequestKeyframe() {
+	if !manager.waitForKf {
+		return
 	}
+
+	manager.pipelineMu.Lock()
+	defer manager.pipelineMu.Unlock()
+
+	if manager.pipeline == nil {
+		return
+	}
+
+	now := time.Now()
+	if now.Sub(manager.lastKeyframeRequest) < minKeyframeRequestInterval {
+		return
+	}
+	if !manager.pipeline.EmitVideoKeyframe() {
+		manager.logger.Warn().Msg("failed to request keyframe")
+		return
+	}
+	manager.lastKeyframeRequest = now
+	manager.keyframeRequests.Inc()
 }
 
 func (manager *StreamSinkManagerCtx) removeListener(listener types.SampleListener) {
@@ -377,33 +432,59 @@ func (manager *StreamSinkManagerCtx) CreatePipeline() error {
 
 	pipeline := manager.pipeline
 	video := manager.codec.IsVideo()
-	manager.wg.Go(func() {
-		manager.logger.Debug().Msg("started emitting samples")
-
-		lastPTS := time.Duration(-1)
-		for {
-			sample, ok := <-pipeline.Sample()
-			if !ok {
-				manager.logger.Debug().Msg("stopped emitting samples")
-				return
-			}
-
-			if video {
-				sample.Duration = sampleDuration(lastPTS, sample)
-				if sample.PTSValid {
-					lastPTS = sample.PTS
-				}
-				manager.frames.Inc()
-			}
-
-			manager.onSample(sample)
-		}
-	})
+	manager.wg.Go(func() { manager.emitSamples(pipeline, video) })
 
 	manager.pipelinesCounter.Inc()
 	manager.pipelinesActive.Set(1)
 
 	return nil
+}
+
+// emitSamples passes the pipeline's samples to the listeners until the
+// pipeline is destroyed.
+func (manager *StreamSinkManagerCtx) emitSamples(pipeline gst.Pipeline, video bool) {
+	manager.logger.Debug().Msg("started emitting samples")
+
+	lastPTS := time.Duration(-1)
+	// samples that may have been queued before a dropped one
+	beforeDrop := 0
+	for {
+		sample, ok := <-pipeline.Sample()
+		if !ok {
+			manager.logger.Debug().Msg("stopped emitting samples")
+			return
+		}
+
+		if video {
+			sample.Duration = sampleDuration(lastPTS, sample)
+			if sample.PTSValid {
+				lastPTS = sample.PTS
+			}
+			manager.frames.Inc()
+
+			// The pipeline dropped an encoded frame because this loop fell
+			// behind. Later delta frames reference it, so every listener waits
+			// for the next keyframe instead of showing a corrupted picture until
+			// then. The drop happened while the sample channel was full, so a
+			// keyframe among the samples queued then may precede it and must
+			// not end the wait. If the drop happened only after this sample was
+			// read, all samples still in the channel precede it, so this one
+			// and the next cap(Sample()) samples count as queued.
+			if beforeDrop > 0 {
+				beforeDrop--
+			}
+			select {
+			case _, ok := <-pipeline.Dropped():
+				if ok {
+					beforeDrop = cap(pipeline.Sample()) + 1
+					manager.awaitKeyframe()
+				}
+			default:
+			}
+		}
+
+		manager.onSample(sample, beforeDrop == 0)
+	}
 }
 
 func (manager *StreamSinkManagerCtx) saveSampleBitrate(timestamp time.Time, sampleBytes float64) {
@@ -450,7 +531,24 @@ func sampleDuration(lastPTS time.Duration, sample types.Sample) time.Duration {
 	return sample.PTS - lastPTS
 }
 
-func (manager *StreamSinkManagerCtx) onSample(sample types.Sample) {
+// awaitKeyframe moves every listener into the keyframe lobby and asks the
+// encoder for a keyframe.
+func (manager *StreamSinkManagerCtx) awaitKeyframe() {
+	manager.listenersMu.Lock()
+	for k, v := range manager.listeners {
+		manager.listenersKf[k] = v
+	}
+	manager.listeners = make(map[uintptr]types.SampleListener)
+	manager.listenersMu.Unlock()
+
+	manager.logger.Debug().Msg("pipeline dropped a frame, waiting for keyframe")
+	manager.RequestKeyframe()
+}
+
+// onSample passes a sample to the listeners. A keyframe ends the wait of the
+// listeners in the keyframe lobby only if afterDrop is set, that is if it
+// cannot precede a dropped frame.
+func (manager *StreamSinkManagerCtx) onSample(sample types.Sample, afterDrop bool) {
 	sample.Generation = manager.generation.Load()
 	sample.Sequence = manager.sequence.Add(1)
 	manager.listenersMu.Lock()
@@ -461,7 +559,8 @@ func (manager *StreamSinkManagerCtx) onSample(sample types.Sample) {
 	manager.saveSampleBitrate(sample.Timestamp, length)
 
 	// if is not delta unit -> it can be decoded independently -> it is a keyframe
-	if manager.waitForKf && !sample.DeltaUnit && len(manager.listenersKf) > 0 {
+	keyframe := manager.waitForKf && !sample.DeltaUnit
+	if keyframe && afterDrop && len(manager.listenersKf) > 0 {
 		// if current sample is a keyframe, move listeners from
 		// keyframe lobby to actual listeners map and clear lobby
 		for k, v := range manager.listenersKf {
@@ -469,6 +568,8 @@ func (manager *StreamSinkManagerCtx) onSample(sample types.Sample) {
 		}
 		manager.listenersKf = make(map[uintptr]types.SampleListener)
 	}
+	// a listener still waits, so the last request may have been lost
+	waiting := len(manager.listenersKf) > 0
 
 	// copy listeners before releasing lock to avoid holding it during dispatch
 	listeners := make([]types.SampleListener, 0, len(manager.listeners))
@@ -476,6 +577,13 @@ func (manager *StreamSinkManagerCtx) onSample(sample types.Sample) {
 		listeners = append(listeners, l)
 	}
 	manager.listenersMu.Unlock()
+
+	if keyframe {
+		manager.keyframes.Inc()
+	}
+	if waiting {
+		manager.RequestKeyframe()
+	}
 
 	for _, l := range listeners {
 		l.WriteSample(sample)

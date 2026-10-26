@@ -686,8 +686,12 @@ func (subscription *captureMediaSubscription) WriteSample(sample types.Sample) {
 
 	keyframe := !sample.DeltaUnit
 	if subscription.awaitKeyframe && !keyframe {
+		stream := subscription.stream
 		subscription.mu.Unlock()
 		mediaSubscriptionDroppedUnits.WithLabelValues(subscription.backend, source.ID, string(source.Kind), "keyframe_admission").Inc()
+		// the stream sink rate-limits this, so asking on every skipped unit
+		// repeats a request that got lost
+		requestStreamKeyframe(stream)
 		return
 	}
 	if keyframe {
@@ -702,7 +706,18 @@ func (subscription *captureMediaSubscription) WriteSample(sample types.Sample) {
 		Unit:   unit,
 	}
 	if subscription.pendingUnits >= subscription.queueCapacity {
+		// Later delta units reference the dropped one and nothing downstream
+		// notices the gap, so wait for the next keyframe instead of passing on
+		// a corrupted picture until then.
+		video := source.Kind == types.MediaKindVideo
+		if video {
+			subscription.awaitKeyframe = true
+		}
+		stream := subscription.stream
 		subscription.mu.Unlock()
+		if video {
+			requestStreamKeyframe(stream)
+		}
 		drop := types.MediaDrop{
 			Backend:  subscription.backend,
 			Kind:     source.Kind,
@@ -722,6 +737,25 @@ func (subscription *captureMediaSubscription) WriteSample(sample types.Sample) {
 	subscription.mu.Unlock()
 	mediaSubscriptionQueueDepth.WithLabelValues(subscription.backend, source.ID, string(source.Kind)).Observe(float64(depth))
 	subscription.notify()
+}
+
+// RequestKeyframe asks the subscribed video encoder for a keyframe, for
+// example after the receiver reported picture loss.
+func (subscription *captureMediaSubscription) RequestKeyframe() {
+	subscription.mu.Lock()
+	active := !subscription.closed && !subscription.paused && subscription.source.Kind == types.MediaKindVideo
+	stream := subscription.stream
+	subscription.mu.Unlock()
+
+	if active {
+		requestStreamKeyframe(stream)
+	}
+}
+
+func requestStreamKeyframe(stream types.StreamSinkManager) {
+	if requester, ok := stream.(types.MediaKeyframeRequester); ok {
+		requester.RequestKeyframe()
+	}
 }
 
 func (subscription *captureMediaSubscription) normalizeUnitLocked(sample types.Sample) types.EncodedMediaUnit {

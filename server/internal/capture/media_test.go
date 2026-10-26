@@ -21,6 +21,7 @@ type fakeMediaStream struct {
 	listeners   map[types.SampleListener]struct{}
 	addCount    int
 	removeCount int
+	keyframes   int
 }
 
 func newFakeMediaStream(id string, mediaCodec codec.RTPCodec, bitrate, nominal uint64) *fakeMediaStream {
@@ -66,6 +67,16 @@ func (stream *fakeMediaStream) MoveListenerTo(listener types.SampleListener, tar
 		return err
 	}
 	return stream.RemoveListener(listener)
+}
+func (stream *fakeMediaStream) RequestKeyframe() {
+	stream.mu.Lock()
+	stream.keyframes++
+	stream.mu.Unlock()
+}
+func (stream *fakeMediaStream) keyframeRequests() int {
+	stream.mu.Lock()
+	defer stream.mu.Unlock()
+	return stream.keyframes
 }
 func (stream *fakeMediaStream) emit(sample types.Sample) {
 	stream.mu.Lock()
@@ -522,5 +533,78 @@ func TestMediaSubscriptionOverflowIsLocalAndNonBlocking(t *testing.T) {
 	case <-slowDrained:
 	case <-time.After(time.Second):
 		t.Fatal("slow subscription did not close after its consumer resumed")
+	}
+}
+
+func TestMediaSubscriptionOverflowWaitsForKeyframe(t *testing.T) {
+	provider, _, high, _ := newTestMediaProvider()
+	subscription, err := provider.Subscribe(context.Background(), types.SourceSubscriptionRequest{
+		Kind: types.MediaKindVideo, Selector: types.MediaSelector{ID: "high"}, QueueCapacity: 2,
+		OverflowPolicy: types.MediaOverflowDropNewest, Backend: "test", Observer: &countingDropObserver{},
+	})
+	if err != nil {
+		t.Fatalf("Subscribe() error: %v", err)
+	}
+	defer closeAndDrainMediaSubscription(t, subscription)
+	nextMediaEvent(t, subscription)
+
+	// nobody reads: the bounded queue overflows within the first delta frames
+	for sequence := uint64(1); sequence <= 10; sequence++ {
+		high.emit(types.Sample{Generation: 1, Sequence: sequence, DeltaUnit: sequence != 1, Timestamp: time.Now(), Data: []byte{1}})
+	}
+	if high.keyframeRequests() == 0 {
+		t.Fatal("overflow did not request a keyframe")
+	}
+	requests := high.keyframeRequests()
+	high.emit(types.Sample{Generation: 1, Sequence: 11, DeltaUnit: true, Timestamp: time.Now(), Data: []byte{1}})
+	if high.keyframeRequests() <= requests {
+		t.Fatal("a delta frame skipped while waiting did not repeat the keyframe request")
+	}
+
+	var delivered []uint64
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for len(delivered) == 0 || delivered[len(delivered)-1] < 14 {
+			event := nextMediaEvent(t, subscription)
+			if event.Type == types.MediaEventTypeUnit {
+				delivered = append(delivered, event.Unit.Sequence)
+			}
+		}
+	}()
+	// let the reader empty the queue, so later frames are not dropped because
+	// it is full
+	queued := subscription.(*captureMediaSubscription)
+	for deadline := time.Now().Add(time.Second); ; {
+		queued.mu.Lock()
+		pending := queued.pendingUnits
+		queued.mu.Unlock()
+		if pending == 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("queue did not drain")
+		}
+		time.Sleep(time.Millisecond)
+	}
+	// the queue has room again, but this delta frame still references the
+	// dropped one
+	requests = high.keyframeRequests()
+	high.emit(types.Sample{Generation: 1, Sequence: 12, DeltaUnit: true, Timestamp: time.Now(), Data: []byte{1}})
+	if high.keyframeRequests() <= requests {
+		t.Fatal("a delta frame after the drained queue did not repeat the keyframe request")
+	}
+	high.emit(types.Sample{Generation: 1, Sequence: 13, DeltaUnit: false, Timestamp: time.Now(), Data: []byte{1}})
+	high.emit(types.Sample{Generation: 1, Sequence: 14, DeltaUnit: true, Timestamp: time.Now(), Data: []byte{1}})
+	<-done
+
+	// a run of consecutive units, then the gap, then the keyframe and its delta
+	for index, sequence := range delivered[:len(delivered)-2] {
+		if sequence != uint64(index+1) {
+			t.Fatalf("delivered %v: a delta frame followed the gap", delivered)
+		}
+	}
+	if tail := delivered[len(delivered)-2:]; tail[0] != 13 || tail[1] != 14 {
+		t.Fatalf("delivered %v, want the keyframe 13 and delta 14 after the gap", delivered)
 	}
 }

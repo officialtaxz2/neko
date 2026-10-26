@@ -129,9 +129,45 @@ func (track *Track) rtcpReader(sender *webrtc.RTPSender) {
 			continue
 		}
 
+		if track.kind == types.MediaKindVideo && requestsKeyframe(packets, track.ssrc) {
+			track.requestKeyframe()
+		}
+
 		if track.rtcpCh != nil {
 			track.rtcpCh <- packets
 		}
+	}
+}
+
+// requestsKeyframe reports whether the receiver lost a picture of this stream
+// and asks for a keyframe (PLI or FIR).
+func requestsKeyframe(packets []rtcp.Packet, ssrc uint32) bool {
+	for _, packet := range packets {
+		switch packet := packet.(type) {
+		case *rtcp.PictureLossIndication:
+			if packet.MediaSSRC == ssrc {
+				return true
+			}
+		case *rtcp.FullIntraRequest:
+			for _, entry := range packet.FIR {
+				if entry.SSRC == ssrc {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// requestKeyframe passes a receiver's keyframe request to the encoder of the
+// subscribed tier, which rate-limits it for all viewers of that tier.
+func (track *Track) requestKeyframe() {
+	track.streamMu.Lock()
+	subscription := track.subscription
+	track.streamMu.Unlock()
+
+	if requester, ok := subscription.(types.MediaKeyframeRequester); ok {
+		requester.RequestKeyframe()
 	}
 }
 

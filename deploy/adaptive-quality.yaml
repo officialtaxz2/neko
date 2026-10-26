@@ -10,6 +10,20 @@ capture:
     # time. The buffer-* values are milliseconds, not bitrates, and keep the
     # values each kind of tier had before. A tier's encoder only runs while
     # someone watches it.
+    # cpu-used is negative, so libvpx keeps that speed fixed. A positive value
+    # lets it speed up whenever a frame takes longer than its time budget;
+    # under CPU contention it then jumps to its fastest mode, which in an
+    # offline test overshot the rate about twice and lost 3-7 dB. -4 is what
+    # the automatic mode picks on an idle host; the smaller tiers use
+    # libwebrtc's -6. static-threshold 100 (GStreamer's recommendation for
+    # screen content) skips nearly unchanged blocks, which sharpens text.
+    # A keyframe is sent when a tier gains a viewer, when a viewer reports
+    # picture loss (rate-limited per tier) or when a frame was dropped locally;
+    # otherwise only every 4 seconds, which bounds recovery when a browser does
+    # not ask (Chrome asks only after 3 s without a decodable frame).
+    # max-intra-bitrate caps a keyframe at about 0.36 s of the tier's rate
+    # (900% of a frame at 25 fps, 720% at 20, 540% at 15) so it does not leave
+    # in one burst.
     ids: [high, medium, low, lowest]
     pipelines:
       high:
@@ -18,7 +32,7 @@ capture:
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(6144 * 650)"
-          cpu-used: "4"
+          cpu-used: "-4"
           end-usage: cbr
           threads: "4"
           deadline: "1"
@@ -26,9 +40,11 @@ capture:
           buffer-size: "3072 * 4"
           buffer-initial-size: "3072 * 2"
           buffer-optimal-size: "3072 * 3"
-          keyframe-max-dist: "25"
+          keyframe-max-dist: "100"
+          max-intra-bitrate: "900"
           min-quantizer: "4"
           max-quantizer: "63"
+          static-threshold: "100"
         show_pointer: true
       medium:
         width: "round(width / 3) * 2"
@@ -38,7 +54,7 @@ capture:
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(2464 * 650)"
-          cpu-used: "4"
+          cpu-used: "-6"
           end-usage: cbr
           threads: "4"
           deadline: "1"
@@ -46,9 +62,11 @@ capture:
           buffer-size: "1152 * 4"
           buffer-initial-size: "1152 * 2"
           buffer-optimal-size: "1152 * 3"
-          keyframe-max-dist: "25"
+          keyframe-max-dist: "100"
+          max-intra-bitrate: "900"
           min-quantizer: "4"
           max-quantizer: "63"
+          static-threshold: "100"
         show_pointer: true
       low:
         width: "round(width / 3) * 2"
@@ -58,7 +76,7 @@ capture:
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(1152 * 650)"
-          cpu-used: "4"
+          cpu-used: "-6"
           end-usage: cbr
           threads: "4"
           deadline: "1"
@@ -66,9 +84,11 @@ capture:
           buffer-size: "1152 * 4"
           buffer-initial-size: "1152 * 2"
           buffer-optimal-size: "1152 * 3"
-          keyframe-max-dist: "25"
+          keyframe-max-dist: "80"
+          max-intra-bitrate: "720"
           min-quantizer: "4"
           max-quantizer: "63"
+          static-threshold: "100"
         show_pointer: true
       lowest:
         width: "round(width / 4) * 2"
@@ -78,7 +98,7 @@ capture:
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(512 * 650)"
-          cpu-used: "4"
+          cpu-used: "-6"
           end-usage: cbr
           threads: "4"
           deadline: "1"
@@ -86,9 +106,11 @@ capture:
           buffer-size: "512 * 4"
           buffer-initial-size: "512 * 2"
           buffer-optimal-size: "512 * 3"
-          keyframe-max-dist: "25"
+          keyframe-max-dist: "60"
+          max-intra-bitrate: "540"
           min-quantizer: "4"
           max-quantizer: "63"
+          static-threshold: "100"
         show_pointer: true
 
 webrtc:
