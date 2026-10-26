@@ -356,16 +356,21 @@ done
 # replaced are kept as :previous (the way back: --rollback), and those that
 # :previous held until then are removed, as is a replaced server test image.
 # Only images this script built are touched, and none a container still uses.
+# Docker's containerd image store deletes a rebuilt tag's former image at
+# once, so a :setup-replaced tag holds each one until it is kept as :previous.
 
+# server-checks' image name in docker-compose.validation.yaml
+VALIDATION_IMAGE="my-neko/server-validation:testing"
 replaced=() # "<image>=<id it had before the build>"
+hold_tag() { printf '%s:setup-replaced' "${1%:*}"; }
 note_image() {
   local id
   id="$(docker image inspect -f '{{.Id}}' "$1" 2>/dev/null || true)"
-  [[ -n "$id" ]] && replaced+=("$1=$id")
+  [[ -n "$id" ]] || return 0
+  replaced+=("$1=$id")
+  [[ "$1" == "$VALIDATION_IMAGE" ]] || docker tag "$1" "$(hold_tag "$1")" || true
   return 0
 }
-# server-checks' image name in docker-compose.validation.yaml
-VALIDATION_IMAGE="my-neko/server-validation:testing"
 
 # --------------------------------------------------------------------
 # Optional checks (--check)
@@ -441,16 +446,20 @@ kept=0
 for ((i = ${#replaced[@]} - 1; i >= 0; i--)); do
   image="${replaced[i]%=*}"
   id="${replaced[i]##*=}"
-  # not rebuilt: nothing replaced
-  [[ "$(docker image inspect -f '{{.Id}}' "$image" 2>/dev/null)" == "$id" ]] && continue
+  hold="$(hold_tag "$image")"
   previous="${image%:*}:previous"
-  if [[ "$image" == "$VALIDATION_IMAGE" || "$image" == "$previous" ]]; then
+  # not rebuilt: nothing replaced
+  if [[ "$(docker image inspect -f '{{.Id}}' "$image" 2>/dev/null)" == "$id" ]]; then
+    :
+  elif [[ "$image" == "$VALIDATION_IMAGE" || "$image" == "$previous" ]]; then
     dropped+=("$id")
-    continue
+  else
+    old="$(docker image inspect -f '{{.Id}}' "$previous" 2>/dev/null || true)"
+    docker tag "$id" "$previous" && kept=$((kept + 1))
+    [[ -n "$old" && "$old" != "$id" ]] && dropped+=("$old")
   fi
-  old="$(docker image inspect -f '{{.Id}}' "$previous" 2>/dev/null || true)"
-  docker tag "$id" "$previous" && kept=$((kept + 1))
-  [[ -n "$old" && "$old" != "$id" ]] && dropped+=("$old")
+  # only the tag goes: the image now carries another one
+  [[ "$image" == "$VALIDATION_IMAGE" ]] || docker image rm "$hold" >/dev/null 2>&1 || true
 done
 removed=0
 for id in "${dropped[@]}"; do
