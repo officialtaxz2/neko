@@ -6,21 +6,24 @@ The values below were measurement-tuned and accepted on 2026-09-10 for the docum
 
 ## Profile contents
 
-`deploy/adaptive-quality.yaml` defines three VP8 pipelines in required highest-to-lowest order:
+`deploy/adaptive-quality.yaml` defines four VP8 pipelines in required highest-to-lowest order:
 
 | ID | Resolution at 1920×1080 | Frame rate | Nominal encoder target |
 | --- | ---: | ---: | ---: |
-| `high` | 1920×1080 | 25 fps | 1,996,800 bit/s |
-| `medium` | 1280×720 | 20 fps | 748,800 bit/s |
-| `low` | 960×540 | 15 fps | 332,800 bit/s |
+| `high` | 1920×1080 | 25 fps | 3,993,600 bit/s |
+| `medium` | 1280×720 | 25 fps | 1,601,600 bit/s |
+| `low` | 1280×720 | 20 fps | 748,800 bit/s |
+| `lowest` | 960×540 | 15 fps | 332,800 bit/s |
 
-For other desktop sizes, `medium` scales both dimensions to roughly two thirds and `low` to roughly one half; both expressions produce even dimensions. All pipelines use the same VP8 codec as required by Neko's stream selector. The first ID, `high`, is the initial/default stream.
+For other desktop sizes, `medium` and `low` scale both dimensions to roughly two thirds and `lowest` to one half; the expressions produce even dimensions. Lower tiers are scaled bilinearly (`videoscale method=1`); nearest-neighbour scaling dropped whole pixel rows and columns and made thin text strokes vanish or turn jagged. Bilinear suits these 1.5x and 2x reductions; a 3x reduction (360p) would need `method=4` (multi-tap bilinear). All pipelines use the same VP8 codec as required by Neko's stream selector. The first ID, `high`, is the initial/default stream.
+
+The 2026-10-26 ladder extends the accepted three-tier ladder (`high` 1080p25 1,996,800, `medium` 720p20 748,800, `low` 540p15 332,800 bit/s). Server upload is not the constraint on the target host, and the old `high` gave 1080p about half of libwebrtc's own per-resolution target, so fast motion turned soft; viewers below about 2.5 Mbit/s fell straight to 0.75 Mbit/s. `high` now has about 4 Mbit/s and a new 720p25 `medium` sits in between; the former `medium` and `low` stay unchanged as `low` and `lowest`, including their encoder buffers, so the measured 1.3 and 0.7 Mbit/s behavior below still applies to them under their new names. Adjacent tiers differ by about 2.1–2.5x. The `buffer-*` values are milliseconds and are unchanged per kind of tier. One more tier also means one more 30-second `downgrade_backoff` step for a viewer starting on `high` over a very weak path (about 70 instead of 40 seconds until `lowest`). **Pending target-server validation:** visual check of `high` with scrolling and video, CPU with several tiers active, and the compact recovery-probe regression below.
 
 Each tier's `nominal_bitrate` matches its encoder target. It does not alter encoding; before an upgrade it provides a stable reference for the next tier, which cannot shrink merely because the current desktop frame is easy to encode. Profiles that omit it continue to use the current tier's measured stream bitrate.
 
 The overlay mounts the profile read-only at `/etc/neko/adaptive-quality.yaml` and sets `NEKO_CONFIG` to that path. Existing Compose environment values still override corresponding YAML values, so the tracked base configuration continues to supply screen, ICE and deployment settings.
 
-The estimator is active rather than passive, starts at 2.5 Mbit/s and uses explicit timing/threshold values. Debug logging is enabled for the estimator. These values are deliberately kept in one mounted file so a measurement-led tuning change produces a reviewable diff.
+The estimator is active rather than passive, starts at 5 Mbit/s (2.5 Mbit/s with the former ladder) and uses explicit timing/threshold values. Debug logging is enabled for the estimator. These values are deliberately kept in one mounted file so a measurement-led tuning change produces a reviewable diff.
 
 The first bounded target-server constraint run on 2026-09-10 isolated the constrained viewer successfully, but took about 30 seconds to leave `high` and cascaded from `medium` to `low` about 15 seconds later. The next run reduced `stalled_duration` from 24 to 8 seconds and increased `downgrade_backoff` from 10 to 30 seconds. It left `high` within 20 seconds and recovered from `low` through `medium` to `high` within 40 seconds, but still cascaded to `low` during the 1.3 Mbit/s phase.
 
@@ -206,11 +209,11 @@ docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs -f ne
 
 ## Resource cost
 
-Pipelines are started on demand. If every viewer is on `high`, only that video pipeline is needed. If viewers occupy all three tiers, up to three VP8 capture/scale/encoder pipelines run concurrently. Each tier is configured with up to four encoder threads, so CPU demand can rise sharply; thread count is not a promise of exact core use. Scaling, queues and encoded buffers also add memory pressure.
+Pipelines are started on demand. If every viewer is on `high`, only that video pipeline is needed. If viewers occupy all four tiers, up to four VP8 capture/scale/encoder pipelines run concurrently. Each tier is configured with up to four encoder threads, so CPU demand can rise sharply; thread count is not a promise of exact core use. Scaling, queues and encoded buffers also add memory pressure.
 
 During a switch, the destination pipeline is started before the listener is moved and the unused source pipeline is stopped afterward. Short-lived encoder overlap is therefore expected. Outbound media bandwidth remains per viewer and should roughly follow that viewer's selected tier plus audio, RTP/RTCP and network overhead.
 
-Record host CPU, memory, load, pipeline gauges and packet/drop behavior while all three tiers are active. Lower `threads`, frame rates or target bitrates only from target-server evidence. If the host itself becomes saturated, slow-peer isolation cannot protect healthy viewers from shared CPU exhaustion.
+Record host CPU, memory, load, pipeline gauges and packet/drop behavior while several tiers are active. Lower `threads`, frame rates or target bitrates only from target-server evidence. If the host itself becomes saturated, slow-peer isolation cannot protect healthy viewers from shared CPU exhaustion.
 
 ## Compact recovery-probe regression — accepted at `ddf15cee`
 
