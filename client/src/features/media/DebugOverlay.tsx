@@ -34,6 +34,10 @@ export function DebugOverlay() {
       video?.addEventListener('loadeddata', onLoadedData)
     }
 
+    const offMessage = neko.client.events.on('message', (event, payload) => {
+      if (event === 'signal/video') counters.video = { id: String(payload?.id ?? ''), auto: !!payload?.auto }
+    })
+
     for (const type of TOUCH_EVENTS) window.addEventListener(type, onTouch, { capture: true, passive: true })
     const tick = () => {
       follow(neko.client.transport.element as HTMLVideoElement | null)
@@ -43,6 +47,7 @@ export function DebugOverlay() {
     const timer = window.setInterval(tick, 1000)
     return () => {
       clearInterval(timer)
+      offMessage()
       follow(null)
       for (const type of TOUCH_EVENTS) window.removeEventListener(type, onTouch, { capture: true })
     }

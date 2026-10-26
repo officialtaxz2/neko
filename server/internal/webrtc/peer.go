@@ -244,6 +244,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 	defer ticker.Stop()
 
 	state := newEstimatorObservationState(time.Now(), conf)
+	var receiverLoss receiverLossTracker
 
 	for range ticker.C {
 		now := time.Now()
@@ -251,12 +252,13 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		peer.metrics.SetReceiverEstimatedTargetBitrate(float64(targetBitrate))
 		// Pion's target can collapse on an otherwise healthy application-limited
 		// path. Keep it as the capacity input, but require recent receiver loss or
-		// NACK feedback before it can authorize a downgrade.
+		// NACK feedback above the configured share before it can authorize a downgrade.
 		feedback := peer.metrics.ReceiverFeedback()
-		congestionEvidence := assessReceiverCongestion(
+		congestionEvidence := receiverLoss.assess(
 			now,
 			feedback,
 			receiverCongestionEvidenceMaxAge(conf.ReadInterval, conf.UnstableDuration),
+			conf.CongestionLossThreshold,
 		)
 		peer.metrics.SetReceiverCongestionEvidence(congestionEvidence.confirmed)
 
@@ -338,6 +340,8 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			Uint64("receiver_report_fraction_lost", uint64(feedback.fractionLost)).
 			Uint64("receiver_report_total_lost", uint64(feedback.totalLost)).
 			Bool("receiver_nack_fresh", congestionEvidence.nackFresh).
+			Float64("receiver_loss_ratio", congestionEvidence.lossRatio).
+			Float64("receiver_nack_ratio", congestionEvidence.nackRatio).
 			Bool("recovery_probe_active", state.recoveryProbeActive).
 			Uint("remaining_recovery_steps", state.recoverySteps).
 			Str("direction", direction.String()).
@@ -524,9 +528,13 @@ func (state *estimatorObservationState) observe(
 		now.Sub(state.stalledSince) > conf.StalledDuration
 
 	// A downward trend or low target is not itself proof that the current tier
-	// no longer fits. Conversely, an insufficient estimate or confirmed
-	// receiver congestion must not count toward an opposite-direction upgrade.
-	if direction == utils.TrendDirectionDownward || insufficient || receiverCongestionConfirmed {
+	// no longer fits. Conversely, a downward trend or confirmed receiver
+	// congestion must not count toward an opposite-direction upgrade. A low
+	// target alone does not reset the window: GCC backs off to 0.85 of the
+	// received rate on every delay increase, which is already below the
+	// downgrade floor, so on a bursty but healthy path the window would never
+	// complete. The upgrade itself still checks the target against its threshold.
+	if direction == utils.TrendDirectionDownward || receiverCongestionConfirmed {
 		state.stableSince = now
 	}
 	if state.recoveryProbeActive &&
@@ -578,6 +586,10 @@ type receiverCongestionEvidence struct {
 	confirmed   bool
 	reportFresh bool
 	nackFresh   bool
+	// shares of the video packets expected in the last report interval that
+	// the receiver reported lost or requested again
+	lossRatio float64
+	nackRatio float64
 }
 
 func receiverCongestionEvidenceMaxAge(readInterval, unstableDuration time.Duration) time.Duration {
@@ -592,29 +604,76 @@ func receiverCongestionEvidenceMaxAge(readInterval, unstableDuration time.Durati
 	return maxAge
 }
 
-func assessReceiverCongestion(
+// receiverLossTracker turns the cumulative receiver report and NACK counters
+// into loss shares per report interval. A single lost packet is no congestion:
+// on Wi-Fi such losses are routine and repaired by retransmission while the
+// path still has plenty of capacity.
+type receiverLossTracker struct {
+	base     receiverFeedbackSnapshot
+	hasBase  bool
+	evidence receiverCongestionEvidence
+}
+
+func (tracker *receiverLossTracker) assess(
 	now time.Time,
 	feedback receiverFeedbackSnapshot,
 	maxAge time.Duration,
+	threshold float64,
 ) receiverCongestionEvidence {
-	if maxAge <= 0 {
-		return receiverCongestionEvidence{}
-	}
-
-	// One isolated report must expire before the unchanged unstable window can
-	// complete. Repeated lossy reports or NACKs refresh their peer-local signal.
-	reportFresh := feedback.reportAvailable &&
-		!feedback.reportedAt.After(now) &&
-		now.Sub(feedback.reportedAt) <= maxAge
-	nackFresh := !feedback.lastNackAt.IsZero() &&
+	nackFresh := maxAge > 0 &&
+		!feedback.lastNackAt.IsZero() &&
 		!feedback.lastNackAt.After(now) &&
 		now.Sub(feedback.lastNackAt) <= maxAge
+	reportFresh := maxAge > 0 &&
+		feedback.reportAvailable &&
+		!feedback.reportedAt.After(now) &&
+		now.Sub(feedback.reportedAt) <= maxAge
 
-	return receiverCongestionEvidence{
-		confirmed:   (reportFresh && feedback.fractionLost > 0) || nackFresh,
-		reportFresh: reportFresh,
-		nackFresh:   nackFresh,
+	// A missing or stale report cannot authorize a downgrade, and the next
+	// interval starts again from a fresh report.
+	if !reportFresh {
+		tracker.hasBase = false
+		tracker.evidence = receiverCongestionEvidence{}
+		return receiverCongestionEvidence{nackFresh: nackFresh}
 	}
+
+	if !tracker.hasBase {
+		tracker.base, tracker.hasBase = feedback, true
+		tracker.evidence = receiverCongestionEvidence{}
+		return receiverCongestionEvidence{reportFresh: true, nackFresh: nackFresh}
+	}
+
+	// no new report since the last one: keep its interval's result while fresh
+	if !feedback.reportedAt.After(tracker.base.reportedAt) {
+		evidence := tracker.evidence
+		evidence.reportFresh, evidence.nackFresh = true, nackFresh
+		return evidence
+	}
+
+	evidence := receiverCongestionEvidence{reportFresh: true, nackFresh: nackFresh}
+	// extended sequence numbers include wrap cycles; a smaller value means a
+	// restarted receiver and gives no interval to judge
+	expected := feedback.highestSequence - tracker.base.highestSequence
+	if expected > 0 && expected < 1<<31 {
+		// the cumulative loss is a signed 24-bit field; duplicates can lower it
+		lost := (feedback.totalLost - tracker.base.totalLost) & 0xFFFFFF
+		if lost > 0x7FFFFF {
+			lost = 0
+		}
+		nacked := feedback.nackedPackets - tracker.base.nackedPackets
+
+		evidence.lossRatio = float64(lost) / float64(expected)
+		evidence.nackRatio = float64(nacked) / float64(expected)
+		if threshold <= 0 {
+			evidence.confirmed = lost > 0 || nacked > 0
+		} else {
+			evidence.confirmed = evidence.lossRatio >= threshold || evidence.nackRatio >= threshold
+		}
+	}
+
+	tracker.base = feedback
+	tracker.evidence = evidence
+	return evidence
 }
 
 func (state *estimatorObservationState) markDowngrade(now time.Time, conf config.WebRTCEstimator) (bool, time.Duration) {
