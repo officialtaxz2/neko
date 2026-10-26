@@ -10,6 +10,13 @@ capture:
     # time. The buffer-* values are milliseconds, not bitrates, and keep the
     # values each kind of tier had before. A tier's encoder only runs while
     # someone watches it.
+    # cpu-used is negative, so libvpx keeps that speed fixed. A positive value
+    # lets it speed up whenever a frame takes longer than its time budget;
+    # under CPU contention it then jumps to its fastest mode, which in an
+    # offline test overshot the rate about twice and lost 3-7 dB. -4 is what
+    # the automatic mode picks on an idle host; the smaller tiers use
+    # libwebrtc's -6. static-threshold 100 (GStreamer's recommendation for
+    # screen content) skips nearly unchanged blocks, which sharpens text.
     ids: [high, medium, low, lowest]
     pipelines:
       high:
@@ -18,7 +25,7 @@ capture:
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(6144 * 650)"
-          cpu-used: "4"
+          cpu-used: "-4"
           end-usage: cbr
           threads: "4"
           deadline: "1"
@@ -29,6 +36,7 @@ capture:
           keyframe-max-dist: "25"
           min-quantizer: "4"
           max-quantizer: "63"
+          static-threshold: "100"
         show_pointer: true
       medium:
         width: "round(width / 3) * 2"
@@ -38,7 +46,7 @@ capture:
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(2464 * 650)"
-          cpu-used: "4"
+          cpu-used: "-6"
           end-usage: cbr
           threads: "4"
           deadline: "1"
@@ -49,6 +57,7 @@ capture:
           keyframe-max-dist: "25"
           min-quantizer: "4"
           max-quantizer: "63"
+          static-threshold: "100"
         show_pointer: true
       low:
         width: "round(width / 3) * 2"
@@ -58,7 +67,7 @@ capture:
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(1152 * 650)"
-          cpu-used: "4"
+          cpu-used: "-6"
           end-usage: cbr
           threads: "4"
           deadline: "1"
@@ -69,6 +78,7 @@ capture:
           keyframe-max-dist: "25"
           min-quantizer: "4"
           max-quantizer: "63"
+          static-threshold: "100"
         show_pointer: true
       lowest:
         width: "round(width / 4) * 2"
@@ -78,7 +88,7 @@ capture:
         gst_encoder: vp8enc
         gst_params:
           target-bitrate: "round(512 * 650)"
-          cpu-used: "4"
+          cpu-used: "-6"
           end-usage: cbr
           threads: "4"
           deadline: "1"
@@ -89,6 +99,7 @@ capture:
           keyframe-max-dist: "25"
           min-quantizer: "4"
           max-quantizer: "63"
+          static-threshold: "100"
         show_pointer: true
 
 webrtc:
