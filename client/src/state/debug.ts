@@ -47,13 +47,15 @@ export function storedSettings(storage: Storage | undefined = globalThis.localSt
   }
 }
 
-// what the overlay counts itself: touches that reached the page, and when the current stream was
-// put on the element and showed its first frame
+// what the overlay counts itself: touches that reached the page, when the current stream was
+// put on the element and showed its first frame, and the WebRTC quality tier the server last
+// selected (signal/video; with adaptive quality it changes without a new stream)
 export interface DebugCounters {
   touches: number
   lastTouch: string
   streamAt: number
   firstFrameAt: number
+  video?: { id: string; auto: boolean }
 }
 
 const READY = ['nothing', 'metadata', 'current', 'future', 'enough']
@@ -81,6 +83,8 @@ export function describe(neko: NekoApp, counters: DebugCounters, now = Date.now(
   } else if (transport instanceof HLSTransport && media.hls) {
     lines.push(`hls ${media.hls.mode} ${media.hls.status}${media.hls.detail ? ` ${media.hls.detail}` : ''}`)
   }
+
+  if (counters.video) lines.push(`quality ${counters.video.id || '-'} ${counters.video.auto ? 'auto' : 'fixed'}`)
 
   const video = transport.element as HTMLVideoElement | null
   if (!video) lines.push('video none')

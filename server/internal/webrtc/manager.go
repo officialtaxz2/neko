@@ -664,7 +664,7 @@ func (manager *WebRTCManagerCtx) openPeer(session types.Session, lease types.Med
 	})
 
 	// start metrics collectors
-	go metrics.rtcpReceiver(videoRtcp)
+	go metrics.rtcpReceiver(videoRtcp, videoTrack.SSRC())
 	go metrics.connectionStats(connection)
 
 	// start estimator reader

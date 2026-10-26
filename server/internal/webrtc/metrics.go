@@ -476,6 +476,7 @@ func (met *metrics) SetReceiverReport(report rtcp.ReceptionReport) {
 	met.receiverFeedback.reportedAt = time.Now()
 	met.receiverFeedback.fractionLost = report.FractionLost
 	met.receiverFeedback.totalLost = report.TotalLost
+	met.receiverFeedback.highestSequence = report.LastSequenceNumber
 	met.receiverFeedbackMu.Unlock()
 }
 
@@ -487,6 +488,7 @@ func (met *metrics) AddTransportLayerNacks(count uint64) {
 	met.transportLayerNacks.Add(float64(count))
 	met.receiverFeedbackMu.Lock()
 	met.receiverFeedback.lastNackAt = time.Now()
+	met.receiverFeedback.nackedPackets += count
 	met.receiverFeedbackMu.Unlock()
 }
 
@@ -538,7 +540,9 @@ func (met *metrics) SetSctpTransportStats(data webrtc.TransportStats) {
 // collectors
 //
 
-func (met *metrics) rtcpReceiver(rtcpCh chan []rtcp.Packet) {
+// rtcpReceiver reads the video sender's RTCP. Receiver reports and NACKs can
+// also cover the audio stream; only those for the video SSRC count.
+func (met *metrics) rtcpReceiver(rtcpCh chan []rtcp.Packet, videoSSRC uint32) {
 	for {
 		packets, ok := <-rtcpCh
 		if !ok {
@@ -551,12 +555,23 @@ func (met *metrics) rtcpReceiver(rtcpCh chan []rtcp.Packet) {
 				met.SetReceiverEstimatedMaximumBitrate(rtcpPacket.Bitrate)
 
 			case *rtcp.ReceiverReport:
-				l := len(rtcpPacket.Reports)
-				if l > 0 {
-					// use only last report
-					met.SetReceiverReport(rtcpPacket.Reports[l-1])
+				for _, report := range rtcpPacket.Reports {
+					if report.SSRC == videoSSRC {
+						met.SetReceiverReport(report)
+					}
+				}
+			// a client that sends media itself (microphone) may put its report
+			// blocks into sender reports instead
+			case *rtcp.SenderReport:
+				for _, report := range rtcpPacket.Reports {
+					if report.SSRC == videoSSRC {
+						met.SetReceiverReport(report)
+					}
 				}
 			case *rtcp.TransportLayerNack:
+				if rtcpPacket.MediaSSRC != videoSSRC {
+					continue
+				}
 				for _, pair := range rtcpPacket.Nacks {
 					packetList := pair.PacketList()
 					met.AddTransportLayerNacks(uint64(len(packetList)))
@@ -571,7 +586,11 @@ type receiverFeedbackSnapshot struct {
 	reportedAt      time.Time
 	fractionLost    uint8
 	totalLost       uint32
+	// extended highest sequence number received
+	highestSequence uint32
 	lastNackAt      time.Time
+	// cumulative packets requested again
+	nackedPackets uint64
 }
 
 func (met *metrics) connectionStats(connection *webrtc.PeerConnection) {

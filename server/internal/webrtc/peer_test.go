@@ -93,63 +93,205 @@ func TestSevereLossFreeEstimatorCollapseDoesNotDowngrade(t *testing.T) {
 	}
 }
 
-func TestReceiverCongestionEvidenceRequiresFreshLossOrNack(t *testing.T) {
-	now := time.Unix(1_700_000_000, 0)
+// receiverReportAt models the cumulative video feedback after packets were
+// expected, of which lost were reported missing and nacked requested again.
+func receiverReportAt(at time.Time, expected, lost uint32, nacked uint64) receiverFeedbackSnapshot {
+	return receiverFeedbackSnapshot{
+		reportAvailable: true,
+		reportedAt:      at,
+		highestSequence: 1_000 + expected,
+		totalLost:       lost,
+		nackedPackets:   nacked,
+	}
+}
+
+func TestReceiverCongestionEvidenceRequiresLossShare(t *testing.T) {
+	start := time.Unix(1_700_000_000, 0)
 	maxAge := 4 * time.Second
+	threshold := 0.02
 
 	tests := []struct {
-		name     string
-		feedback receiverFeedbackSnapshot
-		want     bool
+		name   string
+		lost   uint32
+		nacked uint64
+		want   bool
 	}{
-		{
-			name: "fresh clean report",
-			feedback: receiverFeedbackSnapshot{
-				reportAvailable: true,
-				reportedAt:      now.Add(-time.Second),
-			},
-		},
-		{
-			name: "fresh lossy report",
-			feedback: receiverFeedbackSnapshot{
-				reportAvailable: true,
-				reportedAt:      now.Add(-time.Second),
-				fractionLost:    3,
-			},
-			want: true,
-		},
-		{
-			name: "stale lossy report",
-			feedback: receiverFeedbackSnapshot{
-				reportAvailable: true,
-				reportedAt:      now.Add(-5 * time.Second),
-				fractionLost:    3,
-			},
-		},
-		{
-			name: "fresh nack",
-			feedback: receiverFeedbackSnapshot{
-				lastNackAt: now.Add(-time.Second),
-			},
-			want: true,
-		},
-		{
-			name: "future feedback is rejected",
-			feedback: receiverFeedbackSnapshot{
-				reportAvailable: true,
-				reportedAt:      now.Add(time.Second),
-				fractionLost:    3,
-				lastNackAt:      now.Add(time.Second),
-			},
-		},
+		{name: "clean interval"},
+		// ~220 packets/s on high: one or two repaired losses per interval are
+		// routine on Wi-Fi with ample capacity
+		{name: "isolated loss and nack", lost: 1, nacked: 2},
+		{name: "sustained 0.5% wifi loss", lost: 2, nacked: 2},
+		{name: "loss share above threshold", lost: 12, want: true},
+		{name: "nack share above threshold", lost: 1, nacked: 12, want: true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := assessReceiverCongestion(now, tt.feedback, maxAge).confirmed; got != tt.want {
-				t.Fatalf("confirmed = %v, want %v", got, tt.want)
+			var tracker receiverLossTracker
+			if got := tracker.assess(start, receiverReportAt(start, 0, 0, 0), maxAge, threshold); got.confirmed {
+				t.Fatal("first report confirmed congestion without an interval")
+			}
+			now := start.Add(2 * time.Second)
+			got := tracker.assess(now, receiverReportAt(now, 440, tt.lost, tt.nacked), maxAge, threshold)
+			if got.confirmed != tt.want {
+				t.Fatalf("confirmed = %v (loss %.4f, nack %.4f), want %v", got.confirmed, got.lossRatio, got.nackRatio, tt.want)
 			}
 		})
+	}
+}
+
+func TestReceiverCongestionEvidenceIgnoresSmallBurstOnLowTier(t *testing.T) {
+	start := time.Unix(1_700_000_000, 0)
+	maxAge := 4 * time.Second
+
+	// the low tiers send ~60 packets/s: one Wi-Fi burst of three packets is
+	// 2.5% of an interval but no sign of a shortage
+	for _, tt := range []struct {
+		name         string
+		lost, nacked uint32
+		want         bool
+	}{
+		{name: "three packet burst", lost: 3, nacked: 3},
+		{name: "sustained 5% loss", lost: 6, nacked: 6, want: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var tracker receiverLossTracker
+			tracker.assess(start, receiverReportAt(start, 0, 0, 0), maxAge, 0.02)
+			now := start.Add(2 * time.Second)
+			got := tracker.assess(now, receiverReportAt(now, 120, tt.lost, uint64(tt.nacked)), maxAge, 0.02)
+			if got.confirmed != tt.want {
+				t.Fatalf("confirmed = %v (loss %.4f), want %v", got.confirmed, got.lossRatio, tt.want)
+			}
+		})
+	}
+}
+
+func TestReceiverCongestionEvidenceZeroThresholdCountsAnyLoss(t *testing.T) {
+	start := time.Unix(1_700_000_000, 0)
+	var tracker receiverLossTracker
+	tracker.assess(start, receiverReportAt(start, 0, 0, 0), 4*time.Second, 0)
+	now := start.Add(2 * time.Second)
+	if !tracker.assess(now, receiverReportAt(now, 440, 0, 1), 4*time.Second, 0).confirmed {
+		t.Fatal("zero threshold ignored a single nack")
+	}
+}
+
+func TestReceiverCongestionEvidenceRequiresFreshReport(t *testing.T) {
+	start := time.Unix(1_700_000_000, 0)
+	maxAge := 4 * time.Second
+	var tracker receiverLossTracker
+
+	tracker.assess(start, receiverReportAt(start, 0, 0, 0), maxAge, 0.02)
+	lossyAt := start.Add(2 * time.Second)
+	lossy := receiverReportAt(lossyAt, 440, 40, 40)
+	if !tracker.assess(lossyAt, lossy, maxAge, 0.02).confirmed {
+		t.Fatal("lossy interval did not confirm congestion")
+	}
+	// no newer report: the interval's result holds while its report is fresh
+	if !tracker.assess(lossyAt.Add(3*time.Second), lossy, maxAge, 0.02).confirmed {
+		t.Fatal("fresh lossy report stopped confirming before it expired")
+	}
+	if tracker.assess(lossyAt.Add(5*time.Second), lossy, maxAge, 0.02).confirmed {
+		t.Fatal("stale lossy report still confirmed congestion")
+	}
+	// after a gap the next report only starts a new interval
+	nextAt := lossyAt.Add(6 * time.Second)
+	if tracker.assess(nextAt, receiverReportAt(nextAt, 900, 90, 90), maxAge, 0.02).confirmed {
+		t.Fatal("report after a gap was judged against a stale interval")
+	}
+	futureAt := nextAt.Add(2 * time.Second)
+	if tracker.assess(nextAt, receiverReportAt(futureAt, 1_300, 200, 200), maxAge, 0.02).confirmed {
+		t.Fatal("future report was accepted")
+	}
+}
+
+func TestWifiResidualLossDoesNotHoldViewerOffHighestTier(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	conf.ReadInterval = 2 * time.Second
+	conf.CongestionLossThreshold = 0.02
+	maxAge := receiverCongestionEvidenceMaxAge(conf.ReadInterval, conf.UnstableDuration)
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start, conf)
+	var tracker receiverLossTracker
+	mediumReference := deliveryBitrateReference(748_800, 748_800, 128_000, conf.TransportReserve)
+	highReference := deliveryBitrateReference(1_996_800, 0, 128_000, conf.TransportReserve)
+
+	// a viewer that was moved to medium now sees ample capacity and ~0.5%
+	// repaired loss (one or two NACKs per read); before, every NACK reset
+	// the stable window and the viewer never returned to high
+	state.markDowngrade(start, conf)
+	var expected, lost uint32
+	var nacked uint64
+	tracker.assess(start, receiverReportAt(start, 0, 0, 0), maxAge, conf.CongestionLossThreshold)
+	for elapsed := 2 * time.Second; elapsed <= 60*time.Second; elapsed += 2 * time.Second {
+		now := start.Add(elapsed)
+		expected += 180
+		lost++
+		nacked++
+		evidence := tracker.assess(now, receiverReportAt(now, expected, lost, nacked), maxAge, conf.CongestionLossThreshold)
+		decision := state.observe(now, utils.TrendDirectionNeutral, 3_000_000, mediumReference, evidence.confirmed, conf)
+		if decision.upgradeReady && estimatedBitrateSupportsUpgrade(3_000_000, highReference, conf.UpgradeDiffThreshold) {
+			if elapsed > conf.StableDuration+conf.ReadInterval {
+				t.Fatalf("upgrade became ready only after %v", elapsed)
+			}
+			return
+		}
+	}
+	t.Fatal("viewer with ample capacity and residual Wi-Fi loss never became upgrade-ready")
+}
+
+func TestRealCongestionStillDowngradesWithLossShare(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	conf.ReadInterval = 2 * time.Second
+	conf.CongestionLossThreshold = 0.02
+	maxAge := receiverCongestionEvidenceMaxAge(conf.ReadInterval, conf.UnstableDuration)
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start, conf)
+	var tracker receiverLossTracker
+	reference := deliveryBitrateReference(1_996_800, 1_996_800, 128_000, conf.TransportReserve)
+
+	// a 1.3 Mbit/s path under the ~2.2 Mbit/s high tier drops a large share
+	var expected, lost uint32
+	var nacked uint64
+	tracker.assess(start, receiverReportAt(start, 0, 0, 0), maxAge, conf.CongestionLossThreshold)
+	for elapsed := 2 * time.Second; elapsed <= 30*time.Second; elapsed += 2 * time.Second {
+		now := start.Add(elapsed)
+		expected += 440
+		lost += 40
+		nacked += 120
+		evidence := tracker.assess(now, receiverReportAt(now, expected, lost, nacked), maxAge, conf.CongestionLossThreshold)
+		if state.observe(now, utils.TrendDirectionNeutral, 1_300_000, reference, evidence.confirmed, conf).downgrade {
+			return
+		}
+	}
+	t.Fatal("sustained real congestion no longer downgraded")
+}
+
+func TestBriefTargetBackoffsDoNotResetStableWindow(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start, conf)
+	mediumReference := deliveryBitrateReference(748_800, 748_800, 128_000, conf.TransportReserve)
+	state.markDowngrade(start, conf)
+
+	// GCC backs off to 0.85 x received rate, just under the downgrade floor,
+	// and climbs again; loss-free reads see that every few seconds
+	backoff := 760_185 // 0.85 x (748,800 + 128,000) x 1.02 RTP overhead
+	for elapsed := 2 * time.Second; elapsed <= conf.StableDuration; elapsed += 2 * time.Second {
+		target := 1_400_000
+		if elapsed%(6*time.Second) == 0 {
+			target = backoff
+		}
+		decision := state.observe(start.Add(elapsed), utils.TrendDirectionNeutral, target, mediumReference, false, conf)
+		if target == backoff && !decision.insufficient {
+			t.Fatal("test back-off is not below the downgrade floor")
+		}
+		if elapsed == conf.StableDuration && !decision.upgradeReady {
+			t.Fatal("loss-free target back-offs blocked the stable window")
+		}
+		if decision.downgrade {
+			t.Fatalf("loss-free back-off downgraded at %v", elapsed)
+		}
 	}
 }
 
@@ -685,5 +827,34 @@ func TestReferenceBitrateForUpgrade(t *testing.T) {
 	}
 	if got, want := referenceBitrateForUpgrade(200_000, 0), uint64(200_000); got != want {
 		t.Fatalf("measured fallback = %d, want %d", got, want)
+	}
+}
+
+func TestPersistentlyLowLossFreeTargetNeitherUpgradesNorProbes(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start, conf)
+	mediumReference := deliveryBitrateReference(748_800, 748_800, 128_000, conf.TransportReserve)
+	highReference := deliveryBitrateReference(1_996_800, 0, 128_000, conf.TransportReserve)
+	state.markDowngrade(start, conf)
+
+	// the stable window may now complete while the target is low, but neither
+	// path may act on a target that does not support it
+	target := 700_000
+	for elapsed := 2 * time.Second; elapsed <= 90*time.Second; elapsed += 2 * time.Second {
+		now := start.Add(elapsed)
+		decision := state.observe(now, utils.TrendDirectionNeutral, target, mediumReference, false, conf)
+		if decision.downgrade {
+			t.Fatalf("loss-free low target downgraded at %v", elapsed)
+		}
+		if !decision.upgradeReady {
+			continue
+		}
+		if estimatedBitrateSupportsUpgrade(target, highReference, conf.UpgradeDiffThreshold) {
+			t.Fatalf("low target qualified for an ordinary upgrade at %v", elapsed)
+		}
+		if state.recoveryProbeReady(now, target, mediumReference, conf) {
+			t.Fatalf("low target started a recovery probe at %v", elapsed)
+		}
 	}
 }

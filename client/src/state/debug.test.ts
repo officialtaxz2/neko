@@ -80,3 +80,10 @@ test('the time from the stream to its first frame', () => {
   assert.match(text, /^stream since 3\.0s first frame after 1\.5s$/m)
   assert.match(debug.describe(neko, counters()), /^stream since - first frame after -$/m)
 })
+
+test('the quality tier the server selected, once it has said so', () => {
+  const neko = createNekoApp({ transport: fakeTransport() })
+  assert.doesNotMatch(debug.describe(neko, counters()), /^quality/m)
+  const text = debug.describe(neko, { ...counters(), video: { id: 'medium', auto: true } })
+  assert.match(text, /^quality medium auto$/m)
+})

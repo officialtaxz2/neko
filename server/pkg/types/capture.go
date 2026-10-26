@@ -206,8 +206,10 @@ func (config *VideoConfig) GetPipeline(screen ScreenSize) (string, error) {
 			return "", err
 		}
 
-		// element videoscale parameter method to 0 meaning nearest neighbor
-		scalePipeline = fmt.Sprintf("! videoscale method=0 ! capsfilter caps=video/x-raw,width=%d,height=%d name=resolution ! %s", w, h, queue)
+		// bilinear (videoscale method 1, its default): nearest neighbour drops whole
+		// pixel rows and columns when downscaling, so thin text strokes of a
+		// desktop vanish or turn jagged in every lower tier
+		scalePipeline = fmt.Sprintf("! videoscale method=1 ! capsfilter caps=video/x-raw,width=%d,height=%d name=resolution ! %s", w, h, queue)
 	}
 
 	// get encoder pipeline

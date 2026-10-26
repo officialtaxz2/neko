@@ -29,6 +29,7 @@ type Track struct {
 	writer  mediaSampleWriter
 	kind    types.MediaKind
 	metrics *metrics
+	ssrc    uint32
 
 	rtcpCh chan []rtcp.Packet
 
@@ -97,9 +98,17 @@ func NewTrack(logger zerolog.Logger, source types.MediaSource, connection *webrt
 	if err != nil {
 		return nil, err
 	}
+	if encodings := sender.GetParameters().Encodings; len(encodings) > 0 {
+		result.ssrc = uint32(encodings[0].SSRC)
+	}
 
 	go result.rtcpReader(sender)
 	return result, nil
+}
+
+// SSRC of the outgoing RTP stream, which receiver feedback refers to.
+func (track *Track) SSRC() uint32 {
+	return track.ssrc
 }
 
 func (track *Track) Shutdown() {

@@ -48,6 +48,10 @@ type WebRTCEstimator struct {
 	TransportReserve float64
 	// how much spare estimated bitrate over the upgrade stream reference is required before upgrading
 	UpgradeDiffThreshold float64
+	// share of the video packets the receiver reports lost or requests again
+	// (NACK) from which its feedback counts as congestion; isolated repaired
+	// losses on a fast path (typical Wi-Fi) stay below it
+	CongestionLossThreshold float64
 }
 
 type WebRTC struct {
@@ -192,6 +196,11 @@ func (WebRTC) Init(cmd *cobra.Command) error {
 
 	cmd.PersistentFlags().Float64("webrtc.estimator.upgrade_diff_threshold", 0.15, "how much spare estimated bitrate over the upgrade stream reference is required before upgrading")
 	if err := viper.BindPFlag("webrtc.estimator.upgrade_diff_threshold", cmd.PersistentFlags().Lookup("webrtc.estimator.upgrade_diff_threshold")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Float64("webrtc.estimator.congestion_loss_threshold", 0.02, "share of video packets reported lost or requested again (NACK) from which receiver feedback counts as congestion, zero counts any loss")
+	if err := viper.BindPFlag("webrtc.estimator.congestion_loss_threshold", cmd.PersistentFlags().Lookup("webrtc.estimator.congestion_loss_threshold")); err != nil {
 		return err
 	}
 
@@ -350,6 +359,7 @@ func (s *WebRTC) Set() {
 	s.Estimator.DowngradeDeficitThreshold = viper.GetFloat64("webrtc.estimator.diff_threshold")
 	s.Estimator.TransportReserve = viper.GetFloat64("webrtc.estimator.transport_reserve")
 	s.Estimator.UpgradeDiffThreshold = viper.GetFloat64("webrtc.estimator.upgrade_diff_threshold")
+	s.Estimator.CongestionLossThreshold = viper.GetFloat64("webrtc.estimator.congestion_loss_threshold")
 }
 
 func (s *WebRTC) SetV2() {

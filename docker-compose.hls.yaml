@@ -1,5 +1,5 @@
 # Explicit opt-in for passive HLS; omit this file to keep HLS disabled.
-# Requires the adaptive overlay's exact high/medium/low source geometry.
+# Requires the adaptive overlay: every HLS variant is transcoded from its `high` source.
 # HTTPS is mandatory; there is no insecure-loopback exception for HLS cookies.
 # Both modes are offered; viewers pick HLS (stable, ~20 s behind) or LL-HLS
 # (~3-5 s behind, needs HTTP/2 at the proxy). Set "hls" to offer only HLS.
