@@ -560,6 +560,14 @@ func (met *metrics) rtcpReceiver(rtcpCh chan []rtcp.Packet, videoSSRC uint32) {
 						met.SetReceiverReport(report)
 					}
 				}
+			// a client that sends media itself (microphone) may put its report
+			// blocks into sender reports instead
+			case *rtcp.SenderReport:
+				for _, report := range rtcpPacket.Reports {
+					if report.SSRC == videoSSRC {
+						met.SetReceiverReport(report)
+					}
+				}
 			case *rtcp.TransportLayerNack:
 				if rtcpPacket.MediaSSRC != videoSSRC {
 					continue

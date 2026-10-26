@@ -140,6 +140,32 @@ func TestReceiverCongestionEvidenceRequiresLossShare(t *testing.T) {
 	}
 }
 
+func TestReceiverCongestionEvidenceIgnoresSmallBurstOnLowTier(t *testing.T) {
+	start := time.Unix(1_700_000_000, 0)
+	maxAge := 4 * time.Second
+
+	// the low tiers send ~60 packets/s: one Wi-Fi burst of three packets is
+	// 2.5% of an interval but no sign of a shortage
+	for _, tt := range []struct {
+		name         string
+		lost, nacked uint32
+		want         bool
+	}{
+		{name: "three packet burst", lost: 3, nacked: 3},
+		{name: "sustained 5% loss", lost: 6, nacked: 6, want: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var tracker receiverLossTracker
+			tracker.assess(start, receiverReportAt(start, 0, 0, 0), maxAge, 0.02)
+			now := start.Add(2 * time.Second)
+			got := tracker.assess(now, receiverReportAt(now, 120, tt.lost, uint64(tt.nacked)), maxAge, 0.02)
+			if got.confirmed != tt.want {
+				t.Fatalf("confirmed = %v (loss %.4f), want %v", got.confirmed, got.lossRatio, tt.want)
+			}
+		})
+	}
+}
+
 func TestReceiverCongestionEvidenceZeroThresholdCountsAnyLoss(t *testing.T) {
 	start := time.Unix(1_700_000_000, 0)
 	var tracker receiverLossTracker
@@ -801,5 +827,34 @@ func TestReferenceBitrateForUpgrade(t *testing.T) {
 	}
 	if got, want := referenceBitrateForUpgrade(200_000, 0), uint64(200_000); got != want {
 		t.Fatalf("measured fallback = %d, want %d", got, want)
+	}
+}
+
+func TestPersistentlyLowLossFreeTargetNeitherUpgradesNorProbes(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start, conf)
+	mediumReference := deliveryBitrateReference(748_800, 748_800, 128_000, conf.TransportReserve)
+	highReference := deliveryBitrateReference(1_996_800, 0, 128_000, conf.TransportReserve)
+	state.markDowngrade(start, conf)
+
+	// the stable window may now complete while the target is low, but neither
+	// path may act on a target that does not support it
+	target := 700_000
+	for elapsed := 2 * time.Second; elapsed <= 90*time.Second; elapsed += 2 * time.Second {
+		now := start.Add(elapsed)
+		decision := state.observe(now, utils.TrendDirectionNeutral, target, mediumReference, false, conf)
+		if decision.downgrade {
+			t.Fatalf("loss-free low target downgraded at %v", elapsed)
+		}
+		if !decision.upgradeReady {
+			continue
+		}
+		if estimatedBitrateSupportsUpgrade(target, highReference, conf.UpgradeDiffThreshold) {
+			t.Fatalf("low target qualified for an ordinary upgrade at %v", elapsed)
+		}
+		if state.recoveryProbeReady(now, target, mediumReference, conf) {
+			t.Fatalf("low target started a recovery probe at %v", elapsed)
+		}
 	}
 }

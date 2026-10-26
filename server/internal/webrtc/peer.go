@@ -604,6 +604,9 @@ func receiverCongestionEvidenceMaxAge(readInterval, unstableDuration time.Durati
 	return maxAge
 }
 
+// fewest lost or NACKed packets in one report interval that can count as congestion
+const receiverCongestionMinPackets = 4
+
 // receiverLossTracker turns the cumulative receiver report and NACK counters
 // into loss shares per report interval. A single lost packet is no congestion:
 // on Wi-Fi such losses are routine and repaired by retransmission while the
@@ -667,7 +670,10 @@ func (tracker *receiverLossTracker) assess(
 		if threshold <= 0 {
 			evidence.confirmed = lost > 0 || nacked > 0
 		} else {
-			evidence.confirmed = evidence.lossRatio >= threshold || evidence.nackRatio >= threshold
+			// on low tiers 2% of an interval is two or three packets, which one
+			// burst (an unpaced keyframe) can lose on Wi-Fi without any shortage
+			evidence.confirmed = (evidence.lossRatio >= threshold && lost >= receiverCongestionMinPackets) ||
+				(evidence.nackRatio >= threshold && nacked >= receiverCongestionMinPackets)
 		}
 	}
 

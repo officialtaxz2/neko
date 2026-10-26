@@ -87,8 +87,8 @@ Operator report on 2026-10-26: after a random dip, a desktop and Wi-Fi phones/ta
 
 The correction:
 
-- Congestion evidence is now a share per receiver-report interval: lost packets (`TotalLost` delta) or NACKed packets, each divided by the expected packets (extended highest sequence delta), compared with `webrtc.estimator.congestion_loss_threshold` (default and profile `0.02`, the same 2 % at which Pion's loss controller stops increasing). `0` restores the previous any-loss behavior. A missing or stale report still cannot authorize a downgrade.
-- Only the receiver report block and NACKs for the video SSRC count; previously the last report block of a compound report was used, whichever stream it described.
+- Congestion evidence is now a share per receiver-report interval: lost packets (`TotalLost` delta) or NACKed packets, each divided by the expected packets (extended highest sequence delta), compared with `webrtc.estimator.congestion_loss_threshold` (default and profile `0.02`, the same 2 % at which Pion's loss controller stops increasing). An interval also needs at least four lost or NACKed packets, so that a single Wi-Fi burst (for example an unpaced keyframe) on the low tiers, where 2 % of an interval is two or three packets, does not count. `0` restores the previous any-loss behavior. A missing or stale report still cannot authorize a downgrade.
+- Only the report block and NACKs for the video SSRC count; previously the last report block of a compound report was used, whichever stream it described. Report blocks inside sender reports (a client that shares its microphone) count as well.
 - An insufficient target alone no longer resets the stable window. A downward trend or confirmed congestion still does, and every upgrade still checks the target against `upgrade_diff_threshold` (ordinary) or the current-tier reserve (probe).
 - Logs add `receiver_loss_ratio` and `receiver_nack_ratio`.
 
