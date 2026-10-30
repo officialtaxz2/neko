@@ -48,9 +48,9 @@ type WebRTCEstimator struct {
 	TransportReserve float64
 	// how much spare estimated bitrate over the upgrade stream reference is required before upgrading
 	UpgradeDiffThreshold float64
-	// share of the video packets the receiver reports lost or requests again
-	// (NACK) from which its feedback counts as congestion; isolated repaired
-	// losses on a fast path (typical Wi-Fi) stay below it
+	// share of the video packets the receiver still reports lost after
+	// retransmission from which its feedback counts as congestion; packets
+	// that NACK repaired never count, and zero counts any loss or NACK
 	CongestionLossThreshold float64
 }
 
@@ -199,7 +199,7 @@ func (WebRTC) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().Float64("webrtc.estimator.congestion_loss_threshold", 0.02, "share of video packets reported lost or requested again (NACK) from which receiver feedback counts as congestion, zero counts any loss")
+	cmd.PersistentFlags().Float64("webrtc.estimator.congestion_loss_threshold", 0.02, "share of video packets the receiver still reports lost after retransmission from which its feedback counts as congestion; repaired (NACKed) packets never count, zero counts any loss or NACK")
 	if err := viper.BindPFlag("webrtc.estimator.congestion_loss_threshold", cmd.PersistentFlags().Lookup("webrtc.estimator.congestion_loss_threshold")); err != nil {
 		return err
 	}

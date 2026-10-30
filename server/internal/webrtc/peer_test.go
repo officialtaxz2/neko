@@ -122,7 +122,11 @@ func TestReceiverCongestionEvidenceRequiresLossShare(t *testing.T) {
 		{name: "isolated loss and nack", lost: 1, nacked: 2},
 		{name: "sustained 0.5% wifi loss", lost: 2, nacked: 2},
 		{name: "loss share above threshold", lost: 12, want: true},
-		{name: "nack share above threshold", lost: 1, nacked: 12, want: true},
+		// NACKed packets that the retransmission delivered are no shortage
+		{name: "repaired nack share above threshold", lost: 1, nacked: 12},
+		// operator log 2026-10-30: VPS to home desktop, nothing lost after
+		// retransmission while up to 26% of the packets were requested again
+		{name: "heavy repaired nack share", nacked: 115},
 	}
 
 	for _, tt := range tests {
@@ -202,6 +206,43 @@ func TestReceiverCongestionEvidenceRequiresFreshReport(t *testing.T) {
 	futureAt := nextAt.Add(2 * time.Second)
 	if tracker.assess(nextAt, receiverReportAt(futureAt, 1_300, 200, 200), maxAge, 0.02).confirmed {
 		t.Fatal("future report was accepted")
+	}
+}
+
+func TestReceiverCongestionEvidenceKeepsVerdictOverUnjudgedInterval(t *testing.T) {
+	start := time.Unix(1_700_000_000, 0)
+	maxAge := 4 * time.Second
+
+	// reproduction at 1.3 Mbit/s: every few reports Chromium's highest sequence
+	// number went back by several hundred packets while the loss went on;
+	// judged as clean, those intervals kept resetting the downgrade windows
+	for _, tt := range []struct {
+		name         string
+		previousLost uint32
+		highest      uint32
+		want         bool
+	}{
+		{name: "lossy, sequence stands still", previousLost: 120, highest: 440, want: true},
+		{name: "lossy, sequence goes back", previousLost: 120, highest: 200, want: true},
+		{name: "clean, sequence goes back", highest: 200},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var tracker receiverLossTracker
+			tracker.assess(start, receiverReportAt(start, 0, 0, 0), maxAge, 0.02)
+			at := start.Add(2 * time.Second)
+			tracker.assess(at, receiverReportAt(at, 440, tt.previousLost, 0), maxAge, 0.02)
+			at = at.Add(2 * time.Second)
+			got := tracker.assess(at, receiverReportAt(at, tt.highest, tt.previousLost+300, 0), maxAge, 0.02)
+			if got.confirmed != tt.want || !got.unjudged {
+				t.Fatalf("confirmed = %v, unjudged = %v, want %v and unjudged", got.confirmed, got.unjudged, tt.want)
+			}
+			// the next interval with an advancing sequence is judged on its own
+			at = at.Add(2 * time.Second)
+			got = tracker.assess(at, receiverReportAt(at, tt.highest+440, tt.previousLost+300, 0), maxAge, 0.02)
+			if got.confirmed || got.unjudged {
+				t.Fatalf("clean interval after an unjudged one: confirmed = %v, unjudged = %v", got.confirmed, got.unjudged)
+			}
+		})
 	}
 }
 
@@ -446,7 +487,7 @@ func TestApplicationLimitedTierStartsBoundedOneStepRecoveryProbe(t *testing.T) {
 	if !decision.upgradeReady {
 		t.Fatal("clean tier did not become normally upgrade-ready")
 	}
-	if state.recoveryProbeReady(start.Add(conf.RecoveryProbeInterval), targetBitrate, lowReference, conf) {
+	if state.recoveryProbeReady(start.Add(conf.RecoveryProbeInterval), conf) {
 		t.Fatal("tier without a preceding automatic downgrade started a recovery probe")
 	}
 
@@ -461,7 +502,7 @@ func TestApplicationLimitedTierStartsBoundedOneStepRecoveryProbe(t *testing.T) {
 	for elapsed := 2 * time.Second; elapsed <= conf.RecoveryProbeInterval; elapsed += 2 * time.Second {
 		now := start.Add(elapsed)
 		decision := state.observe(now, utils.TrendDirectionNeutral, targetBitrate, lowReference, false, conf)
-		probeReady := decision.upgradeReady && state.recoveryProbeReady(now, targetBitrate, lowReference, conf)
+		probeReady := decision.upgradeReady && state.recoveryProbeReady(now, conf)
 		if elapsed < conf.RecoveryProbeInterval && probeReady {
 			t.Fatalf("recovery probe became ready before its interval at %v", elapsed)
 		}
@@ -495,7 +536,7 @@ func TestRecoveryProbeRequiresCleanHigherTierBeforeNextStep(t *testing.T) {
 	if state.recoveryProbeActive || state.recoveryProbeFailures != 0 {
 		t.Fatal("successful recovery probe did not clear its active/failure state")
 	}
-	if state.recoveryProbeReady(now, targetBitrate, mediumReference, conf) {
+	if state.recoveryProbeReady(now, conf) {
 		t.Fatal("successful probe allowed another immediate one-tier probe")
 	}
 }
@@ -584,7 +625,7 @@ func TestFailedRecoveryProbeUsesExponentialBoundedBackoff(t *testing.T) {
 
 	firstRetry := start.Add(conf.UnstableDuration + conf.RecoveryProbeInterval)
 	decision := state.observe(firstRetry, utils.TrendDirectionNeutral, targetBitrate, lowReference, false, conf)
-	if !decision.upgradeReady || !state.recoveryProbeReady(firstRetry, targetBitrate, lowReference, conf) {
+	if !decision.upgradeReady || !state.recoveryProbeReady(firstRetry, conf) {
 		t.Fatal("first failed probe did not reopen at its bounded retry time")
 	}
 
@@ -602,18 +643,20 @@ func TestFailedRecoveryProbeUsesExponentialBoundedBackoff(t *testing.T) {
 	if !state.upgradeBlockedByRecoveryBackoff(secondFailure.Add(2*conf.RecoveryProbeInterval - time.Second)) {
 		t.Fatal("failed probe did not block an otherwise capacity-qualified upgrade")
 	}
-	if state.recoveryProbeReady(secondFailure.Add(2*conf.RecoveryProbeInterval-time.Second), targetBitrate, lowReference, conf) {
+	if state.recoveryProbeReady(secondFailure.Add(2*conf.RecoveryProbeInterval-time.Second), conf) {
 		t.Fatal("failed-probe backoff expired early")
 	}
 	if state.upgradeBlockedByRecoveryBackoff(secondFailure.Add(2 * conf.RecoveryProbeInterval)) {
 		t.Fatal("failed-probe upgrade backoff did not expire at its boundary")
 	}
-	if !state.recoveryProbeReady(secondFailure.Add(2*conf.RecoveryProbeInterval), targetBitrate, lowReference, conf) {
+	if !state.recoveryProbeReady(secondFailure.Add(2*conf.RecoveryProbeInterval), conf) {
 		t.Fatal("failed-probe backoff did not expire at its boundary")
 	}
-	state.markUpgrade(secondFailure.Add(2*conf.RecoveryProbeInterval), conf)
-	if state.recoveryProbeFailures != 0 {
-		t.Fatal("capacity-qualified recovery did not clear failed-probe backoff")
+	if !state.markStepUp(secondFailure.Add(2*conf.RecoveryProbeInterval), conf) {
+		t.Fatal("capacity-qualified step back after a downgrade was not validated as a probe")
+	}
+	if state.recoveryProbeFailures != 2 {
+		t.Fatal("an unvalidated step cleared the failed-probe backoff")
 	}
 
 	if got, want := recoveryProbeBackoff(10, conf), conf.RecoveryProbeMaxBackoff; got != want {
@@ -653,7 +696,7 @@ func TestApplicationLimitedRecoveryRestoresTwoTiersInOrder(t *testing.T) {
 	}
 
 	decision := state.observe(start, utils.TrendDirectionNeutral, 650_000, lowReference, false, conf)
-	if !decision.upgradeReady || !state.recoveryProbeReady(start, 650_000, lowReference, conf) {
+	if !decision.upgradeReady || !state.recoveryProbeReady(start, conf) {
 		t.Fatal("clean low tier did not become ready for its first recovery step")
 	}
 	state.markRecoveryProbe(start, conf)
@@ -666,13 +709,13 @@ func TestApplicationLimitedRecoveryRestoresTwoTiersInOrder(t *testing.T) {
 	if !state.completeRecoveryProbe(mediumStable, utils.TrendDirectionNeutral, false, conf) {
 		t.Fatal("clean medium tier did not complete its recovery probe")
 	}
-	if state.recoveryProbeReady(mediumStable, 1_300_000, mediumReference, conf) {
+	if state.recoveryProbeReady(mediumStable, conf) {
 		t.Fatal("medium-to-high recovery probe started without its own interval")
 	}
 
 	highProbeAt := mediumStable.Add(conf.RecoveryProbeInterval)
 	decision = state.observe(highProbeAt, utils.TrendDirectionNeutral, 1_300_000, mediumReference, false, conf)
-	if !decision.upgradeReady || !state.recoveryProbeReady(highProbeAt, 1_300_000, mediumReference, conf) {
+	if !decision.upgradeReady || !state.recoveryProbeReady(highProbeAt, conf) {
 		t.Fatal("clean medium tier did not become ready for its second recovery step")
 	}
 	state.markRecoveryProbe(highProbeAt, conf)
@@ -830,31 +873,126 @@ func TestReferenceBitrateForUpgrade(t *testing.T) {
 	}
 }
 
-func TestPersistentlyLowLossFreeTargetNeitherUpgradesNorProbes(t *testing.T) {
+func TestTargetAtFloorStillAllowsRecoveryProbe(t *testing.T) {
 	conf := adaptiveEstimatorTestConfig()
 	start := time.Unix(1_700_000_000, 0)
 	state := newEstimatorObservationState(start, conf)
-	mediumReference := deliveryBitrateReference(748_800, 748_800, 128_000, conf.TransportReserve)
-	highReference := deliveryBitrateReference(1_996_800, 0, 128_000, conf.TransportReserve)
+	mediumReference := deliveryBitrateReference(1_601_600, 1_601_600, 128_000, conf.TransportReserve)
+	highReference := deliveryBitrateReference(3_993_600, 0, 128_000, conf.TransportReserve)
 	state.markDowngrade(start, conf)
 
-	// the stable window may now complete while the target is low, but neither
-	// path may act on a target that does not support it
-	target := 700_000
-	for elapsed := 2 * time.Second; elapsed <= 90*time.Second; elapsed += 2 * time.Second {
+	// repaired loss holds Pion's loss controller, and with it the target, at
+	// its 100 kbit/s floor on every tier; the ordinary upgrade cannot use it,
+	// but the clean tier must still probe once its interval has passed
+	target := 100_000
+	for elapsed := 2 * time.Second; elapsed <= conf.RecoveryProbeInterval; elapsed += 2 * time.Second {
 		now := start.Add(elapsed)
 		decision := state.observe(now, utils.TrendDirectionNeutral, target, mediumReference, false, conf)
 		if decision.downgrade {
-			t.Fatalf("loss-free low target downgraded at %v", elapsed)
+			t.Fatalf("loss-free floored target downgraded at %v", elapsed)
 		}
-		if !decision.upgradeReady {
-			continue
+		if decision.upgradeReady && estimatedBitrateSupportsUpgrade(target, highReference, conf.UpgradeDiffThreshold) {
+			t.Fatalf("floored target qualified for an ordinary upgrade at %v", elapsed)
 		}
-		if estimatedBitrateSupportsUpgrade(target, highReference, conf.UpgradeDiffThreshold) {
-			t.Fatalf("low target qualified for an ordinary upgrade at %v", elapsed)
+		probeReady := decision.upgradeReady && state.recoveryProbeReady(now, conf)
+		if elapsed < conf.RecoveryProbeInterval && probeReady {
+			t.Fatalf("recovery probe became ready before its interval at %v", elapsed)
 		}
-		if state.recoveryProbeReady(now, target, mediumReference, conf) {
-			t.Fatalf("low target started a recovery probe at %v", elapsed)
+		if elapsed == conf.RecoveryProbeInterval && !probeReady {
+			t.Fatal("clean tier with a floored target never probed")
 		}
+	}
+}
+
+func TestRepairedLossWithFlooredTargetKeepsHighestTier(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	conf.ReadInterval = 2 * time.Second
+	conf.CongestionLossThreshold = 0.02
+	maxAge := receiverCongestionEvidenceMaxAge(conf.ReadInterval, conf.UnstableDuration)
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start, conf)
+	var tracker receiverLossTracker
+	reference := deliveryBitrateReference(3_915_752, 3_993_600, 120_704, conf.TransportReserve)
+
+	// operator log 2026-10-30: the target fell from 0.88 Mbit/s to its floor,
+	// 9-26% of the video packets were NACKed per read and none stayed lost;
+	// the viewer used to go from high to lowest within about a minute
+	targets := []int{884_891, 458_371, 267_917, 151_825, 100_000}
+	nackShares := []float64{0.26, 0.13, 0.12, 0.11, 0.09, 0.15}
+	directions := []utils.TrendDirection{utils.TrendDirectionNeutral, utils.TrendDirectionDownward}
+	var expected uint32
+	var nacked uint64
+	tracker.assess(start, receiverReportAt(start, 0, 0, 0), maxAge, conf.CongestionLossThreshold)
+	for i, elapsed := 0, 2*time.Second; elapsed <= 120*time.Second; i, elapsed = i+1, elapsed+2*time.Second {
+		now := start.Add(elapsed)
+		expected += 760
+		nacked += uint64(760 * nackShares[i%len(nackShares)])
+		evidence := tracker.assess(now, receiverReportAt(now, expected, 0, nacked), maxAge, conf.CongestionLossThreshold)
+		if evidence.confirmed {
+			t.Fatalf("repaired loss confirmed congestion at %v (nack %.2f)", elapsed, evidence.nackRatio)
+		}
+		target := targets[min(i, len(targets)-1)]
+		decision := state.observe(now, directions[i/4%len(directions)], target, reference, evidence.confirmed, conf)
+		if decision.downgrade {
+			t.Fatalf("repaired loss downgraded the highest tier at %v", elapsed)
+		}
+	}
+}
+
+func TestStalledEstimateDowngradesDespiteStaleUpwardTrend(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start, conf)
+	reference := deliveryBitrateReference(3_993_600, 3_993_600, 128_000, conf.TransportReserve)
+
+	// a 1.3 Mbit/s path under high: the target sits at the estimator's floor,
+	// the trend window still holds the start-up ramp and reports UPWARD, and
+	// the receiver keeps losing packets; this used to freeze high for minutes
+	for elapsed := 2 * time.Second; elapsed <= 30*time.Second; elapsed += 2 * time.Second {
+		decision := state.observe(start.Add(elapsed), utils.TrendDirectionUpward, 100_000, reference, true, conf)
+		if decision.downgrade {
+			if elapsed <= conf.StalledDuration {
+				t.Fatalf("downgraded before the stalled window at %v", elapsed)
+			}
+			return
+		}
+	}
+	t.Fatal("pinned target with confirmed loss and a stale upward trend never downgraded")
+}
+
+func TestCapacityQualifiedStepAfterDowngradeBacksOffWhenItFails(t *testing.T) {
+	conf := adaptiveEstimatorTestConfig()
+	start := time.Unix(1_700_000_000, 0)
+	state := newEstimatorObservationState(start, conf)
+
+	if state.markStepUp(start, conf) {
+		t.Fatal("upgrade without a preceding automatic downgrade was treated as a recovery probe")
+	}
+
+	now := start.Add(time.Minute)
+	state.markDowngrade(now, conf)
+
+	// a lower tier below the path's capacity lets the target climb without
+	// bound, so the target alone qualifies a step that fails on the higher tier
+	for failures, want := range []time.Duration{30 * time.Second, time.Minute, 2 * time.Minute, 2 * time.Minute} {
+		now = now.Add(time.Minute)
+		if !state.markStepUp(now, conf) || !state.recoveryProbeActive {
+			t.Fatalf("step %d after a downgrade was not validated", failures+1)
+		}
+		now = now.Add(conf.StableDuration - time.Second)
+		failed, backoff := state.markDowngrade(now, conf)
+		if !failed {
+			t.Fatalf("step %d failing within its stable window did not count as failed", failures+1)
+		}
+		if backoff != want {
+			t.Fatalf("backoff after %d failed steps = %v, want %v", failures+1, backoff, want)
+		}
+		if !state.upgradeBlockedByRecoveryBackoff(now.Add(backoff - time.Second)) {
+			t.Fatalf("failed step %d did not block the next ordinary upgrade", failures+1)
+		}
+		if state.upgradeBlockedByRecoveryBackoff(now.Add(backoff)) {
+			t.Fatalf("failed step %d blocked upgrades past its backoff", failures+1)
+		}
+		now = now.Add(backoff)
 	}
 }

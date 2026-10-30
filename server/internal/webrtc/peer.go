@@ -251,8 +251,8 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		targetBitrate := peer.estimator.GetTargetBitrate()
 		peer.metrics.SetReceiverEstimatedTargetBitrate(float64(targetBitrate))
 		// Pion's target can collapse on an otherwise healthy application-limited
-		// path. Keep it as the capacity input, but require recent receiver loss or
-		// NACK feedback above the configured share before it can authorize a downgrade.
+		// path. Keep it as the capacity input, but require recent receiver loss
+		// above the configured share before it can authorize a downgrade.
 		feedback := peer.metrics.ReceiverFeedback()
 		congestionEvidence := receiverLoss.assess(
 			now,
@@ -339,6 +339,8 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			Bool("receiver_report_fresh", congestionEvidence.reportFresh).
 			Uint64("receiver_report_fraction_lost", uint64(feedback.fractionLost)).
 			Uint64("receiver_report_total_lost", uint64(feedback.totalLost)).
+			Uint64("receiver_report_highest_sequence", uint64(feedback.highestSequence)).
+			Bool("receiver_interval_unjudged", congestionEvidence.unjudged).
 			Bool("receiver_nack_fresh", congestionEvidence.nackFresh).
 			Float64("receiver_loss_ratio", congestionEvidence.lossRatio).
 			Float64("receiver_nack_ratio", congestionEvidence.nackRatio).
@@ -350,7 +352,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 		if decision.stalled {
 			debugLogger.Warn().
 				Time("stalled_since", state.stalledSince).
-				Msg("neutral estimate remains materially below the current delivery requirement")
+				Msg("estimate without a downward trend remains materially below the current delivery requirement")
 		}
 
 		if decision.downgrade {
@@ -424,12 +426,7 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			continue
 		}
 		normalUpgrade := estimatedBitrateSupportsUpgrade(targetBitrate, upgradeReferenceBitrate, conf.UpgradeDiffThreshold)
-		recoveryProbe := !normalUpgrade && state.recoveryProbeReady(
-			now,
-			targetBitrate,
-			downgradeReferenceBitrate,
-			conf,
-		)
+		recoveryProbe := !normalUpgrade && state.recoveryProbeReady(now, conf)
 		if !normalUpgrade && !recoveryProbe {
 			debugLogger.Debug().
 				Float64("current_delivery_diff", bitrateRatio(targetBitrate, downgradeReferenceBitrate)).
@@ -456,18 +453,16 @@ func (peer *WebRTCPeerCtx) estimatorReader() {
 			continue
 		}
 
-		if recoveryProbe {
-			state.markRecoveryProbe(now, conf)
+		if state.markStepUp(now, conf) {
 			peer.metrics.SetRecoveryProbeActive(true)
 			peer.metrics.IncRecoveryProbeAttempt()
 			debugLogger.Info().
 				Str("recovery_probe_stream_id", upgradeStream.ID).
+				Bool("capacity_qualified", normalUpgrade).
 				Time("recovery_probe_not_before", state.recoveryProbeNotBefore).
 				Uint("recovery_probe_failures", state.recoveryProbeFailures).
 				Uint("remaining_recovery_steps", state.recoverySteps).
 				Msg("started peer-local one-tier recovery probe")
-		} else {
-			state.markUpgrade(now, conf)
 		}
 
 		debugLogger.Info().Bool("recovery_probe", recoveryProbe).Msg("upgraded video stream")
@@ -519,10 +514,15 @@ func (state *estimatorObservationState) observe(
 		conf.DowngradeDeficitThreshold,
 	)
 
-	if direction != utils.TrendDirectionNeutral || !insufficient || !receiverCongestionConfirmed {
+	// An upward direction counts as well: the trend detector skips repeated
+	// values, so a target pinned at the estimator's floor never enters its
+	// window, which then still describes the samples from before the collapse
+	// (typically the start-up ramp) and reports UPWARD for as long as the
+	// receiver keeps losing packets.
+	if direction == utils.TrendDirectionDownward || !insufficient || !receiverCongestionConfirmed {
 		state.stalledSince = now
 	}
-	stalled := direction == utils.TrendDirectionNeutral &&
+	stalled := direction != utils.TrendDirectionDownward &&
 		insufficient &&
 		receiverCongestionConfirmed &&
 		now.Sub(state.stalledSince) > conf.StalledDuration
@@ -586,8 +586,10 @@ type receiverCongestionEvidence struct {
 	confirmed   bool
 	reportFresh bool
 	nackFresh   bool
+	// the last report interval could not be judged and kept the previous verdict
+	unjudged bool
 	// shares of the video packets expected in the last report interval that
-	// the receiver reported lost or requested again
+	// the receiver reported lost (after retransmission) or requested again
 	lossRatio float64
 	nackRatio float64
 }
@@ -604,13 +606,18 @@ func receiverCongestionEvidenceMaxAge(readInterval, unstableDuration time.Durati
 	return maxAge
 }
 
-// fewest lost or NACKed packets in one report interval that can count as congestion
+// fewest lost packets in one report interval that can count as congestion
 const receiverCongestionMinPackets = 4
 
 // receiverLossTracker turns the cumulative receiver report and NACK counters
-// into loss shares per report interval. A single lost packet is no congestion:
-// on Wi-Fi such losses are routine and repaired by retransmission while the
-// path still has plenty of capacity.
+// into shares per report interval. Only loss the receiver still reports after
+// retransmission counts as congestion. A NACKed packet that arrives on the
+// retransmission does not: the path had room for it, and losses that do not
+// come from this viewer's own rate (Wi-Fi, bursts of other traffic on the
+// line) are repaired that way without any shortage. Such losses are just as
+// frequent on a lower tier, so stepping down would not remove them. On an
+// overloaded path the retransmissions are lost as well and the receiver
+// reports the loss within a few seconds.
 type receiverLossTracker struct {
 	base     receiverFeedbackSnapshot
 	hasBase  bool
@@ -654,10 +661,18 @@ func (tracker *receiverLossTracker) assess(
 	}
 
 	evidence := receiverCongestionEvidence{reportFresh: true, nackFresh: nackFresh}
-	// extended sequence numbers include wrap cycles; a smaller value means a
-	// restarted receiver and gives no interval to judge
+	// Extended sequence numbers include wrap cycles. A value that did not
+	// advance or went back gives no interval to judge: a restarted receiver,
+	// or libwebrtc's receive statistics under heavy loss, whose highest
+	// sequence number and cumulative loss then stop matching each other for a
+	// few reports. Such an interval keeps the previous verdict; reading it as
+	// clean would reset the unstable and stalled windows every few seconds and
+	// hold an overloaded viewer on its tier.
 	expected := feedback.highestSequence - tracker.base.highestSequence
-	if expected > 0 && expected < 1<<31 {
+	if expected == 0 || expected >= 1<<31 {
+		evidence.confirmed = tracker.evidence.confirmed
+		evidence.unjudged = true
+	} else {
 		// the cumulative loss is a signed 24-bit field; duplicates can lower it
 		lost := (feedback.totalLost - tracker.base.totalLost) & 0xFFFFFF
 		if lost > 0x7FFFFF {
@@ -672,8 +687,7 @@ func (tracker *receiverLossTracker) assess(
 		} else {
 			// on low tiers 2% of an interval is two or three packets, which one
 			// burst (an unpaced keyframe) can lose on Wi-Fi without any shortage
-			evidence.confirmed = (evidence.lossRatio >= threshold && lost >= receiverCongestionMinPackets) ||
-				(evidence.nackRatio >= threshold && nacked >= receiverCongestionMinPackets)
+			evidence.confirmed = evidence.lossRatio >= threshold && lost >= receiverCongestionMinPackets
 		}
 	}
 
@@ -717,31 +731,38 @@ func (state *estimatorObservationState) markUpgrade(now time.Time, conf config.W
 	state.recoveryProbeNotBefore = now.Add(conf.RecoveryProbeInterval)
 }
 
+// markStepUp records an upgrade and reports whether it has to prove itself
+// like a recovery probe. Every step back toward a tier an automatic downgrade
+// left does, also when the target qualified it: on a lower tier Pion's target
+// is no capacity measurement. It climbs without bound while nothing is lost
+// and sits at its floor while repaired loss continues. A step that fails is
+// then followed by the exponential probe backoff instead of another attempt
+// after the plain upgrade backoff.
+func (state *estimatorObservationState) markStepUp(now time.Time, conf config.WebRTCEstimator) bool {
+	if state.recoverySteps == 0 {
+		state.markUpgrade(now, conf)
+		return false
+	}
+	state.markRecoveryProbe(now, conf)
+	return true
+}
+
 func (state *estimatorObservationState) upgradeBlockedByRecoveryBackoff(now time.Time) bool {
 	return state.recoveryProbeFailures > 0 && now.Before(state.recoveryProbeNotBefore)
 }
 
-func (state *estimatorObservationState) recoveryProbeReady(
-	now time.Time,
-	targetBitrate int,
-	currentReferenceBitrate uint64,
-	conf config.WebRTCEstimator,
-) bool {
-	if conf.RecoveryProbeInterval <= 0 ||
-		state.recoverySteps == 0 ||
-		state.recoveryProbeActive ||
-		now.Before(state.recoveryProbeNotBefore) {
-		return false
-	}
-
-	// The current tier must have its own configured spare capacity. This avoids
-	// probing from a merely marginal tier while still breaking the GCC
-	// application-limited deadlock at the next tier's higher nominal rate.
-	return estimatedBitrateSupportsUpgrade(
-		targetBitrate,
-		currentReferenceBitrate,
-		conf.UpgradeDiffThreshold,
-	)
+// recoveryProbeReady does not look at the target. The probe exists because the
+// target cannot show capacity above the rate the peer receives, and it does
+// not reliably show the current tier's headroom either: with a few percent of
+// repaired loss Pion's loss controller holds the target at its floor
+// (100 kbit/s) on every tier, which used to block every probe for good. The
+// caller only asks once the tier has been clean for the stable window, and a
+// probe that fails backs off exponentially.
+func (state *estimatorObservationState) recoveryProbeReady(now time.Time, conf config.WebRTCEstimator) bool {
+	return conf.RecoveryProbeInterval > 0 &&
+		state.recoverySteps > 0 &&
+		!state.recoveryProbeActive &&
+		!now.Before(state.recoveryProbeNotBefore)
 }
 
 func (state *estimatorObservationState) markRecoveryProbe(now time.Time, conf config.WebRTCEstimator) {
