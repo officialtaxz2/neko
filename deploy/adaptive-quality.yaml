@@ -140,8 +140,9 @@ webrtc:
     # Require 15% headroom over the nominal rate of the next tier.
     upgrade_diff_threshold: 0.15
     # Receiver feedback counts as congestion only from 2% of the video packets
-    # lost or requested again (NACK) per report interval. Isolated repaired
-    # losses (typical Wi-Fi) must not hold a fast viewer below high.
+    # per report interval that the receiver still reports lost after
+    # retransmission. Losses that NACK repairs (Wi-Fi, a lossy home line) must
+    # not push a fast viewer below high.
     congestion_loss_threshold: 0.02
 
 server:
