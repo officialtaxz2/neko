@@ -11,6 +11,7 @@
   "FullscreenAllowed": true,
   "PasswordManagerEnabled": false,
   "PromptForDownloadLocation": false,
+  "SyncDisabled": true,
   "VideoCaptureAllowed": true,
   "URLAllowlist": [
     "file:///home/neko/Downloads"
