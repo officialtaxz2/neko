@@ -1,5 +1,28 @@
 # Upstream Synchronization Audit
 
+## Merge of upstream `269ab9a` — 2026-11-16
+
+Merged the 14 upstream commits `92f9916..269ab9a` (PR #33). The previous
+sync was the merge `9a9b969` (React client, legacy `/ws` removed). Rule for
+conflicts: upstream's implementation is the standard, and fork code stays
+only where switching would remove a fork capability, layered on top of
+upstream's code.
+
+Remaining deliberate divergences in the merged areas:
+
+| Area | Upstream | Fork | Why |
+| --- | --- | --- | --- |
+| WebSocket writes and teardown (#728) | `peer.mu` around synchronous writes; `handle()` defers `connection.Close()`; `Destroy()` sends, then closes | Queued `utils.WebSocketWriter`; `Destroy()` uses `CloseAfterJSON`; `connect()` closes the connection after the writer flushed | A slow client cannot block broadcasts, and `SYSTEM_DISCONNECT` is delivered before the close. Upstream's #728 tests pass and depend on the close in `connect()`. |
+| Pending peer teardown (#740, #743) | Destroys the WebRTC peer | Same, plus revokes the session's media delivery (WebRTC or HLS) in `profileChanged`, `Delete` and `Disconnect` | Media deliveries are the fork's backend-neutral layer. Covered by `session/delivery_test.go`. |
+| `signalRequest` | Creates the peer, then validates the selection | Validates first, destroys a partially initialized peer | No peer for an empty selection, no leaked half-built peer. Tests use upstream's fakes. |
+| Capture subscriptions (#699) | `EncodedStreamSelector` | `StreamSelectorManager` behind the media provider | See "Deliberate divergence: capture subscription API" below. |
+
+Taken from upstream unchanged: same-origin WebSocket check with empty CORS,
+OAuth `email_verified` and provider coexistence, session stats helpers,
+file-upload truncation, broadcast empty timeout, TURN shared secret and
+Cloudflare TURN with per-session credentials, NAT 1-to-1 hostnames, and the
+keyboard composition fix.
+
 ## Authorized focused adaptations — 2026-10-07
 
 After the read-only assessment below, the operator approved the improvement

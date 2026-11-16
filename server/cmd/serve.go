@@ -161,6 +161,7 @@ func (c *serve) Start(cmd *cobra.Command) {
 
 	c.managers.capture = capture.New(
 		c.managers.desktop,
+		c.managers.session,
 		&c.configs.Capture,
 	)
 	c.managers.capture.Start()

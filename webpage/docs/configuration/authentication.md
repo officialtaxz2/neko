@@ -202,6 +202,7 @@ member:
   oauth:
     enabled: true
     # When true, visiting the Neko root page immediately starts OAuth login.
+    # Only applies when OAuth is the member provider.
     auto_redirect: true
     name: "Example SSO"
     admin_emails: ["platform-admin@example.com", "security@example.com"]
@@ -239,12 +240,33 @@ member:
 
 The sign-in endpoint is `GET /api/oauth/login`; the callback endpoint is `GET /api/oauth/callback`. OAuth login requires `session.cookie.enabled: true`, which is the default. Set `member.provider: oauth` to make OAuth the only member provider.
 
+OAuth login can also be offered next to another member provider. Keep `member.provider` set to that provider and enable `member.oauth`; the login screen then shows the password form and the OAuth button. `auto_redirect` has no effect in this setup, as redirecting would hide the password form.
+
+```yaml title="config.yaml"
+member:
+  provider: "multiuser"
+  multiuser:
+    admin_password: "admin"
+    user_password: "neko"
+  oauth:
+    enabled: true
+    name: "Example SSO"
+    client_id: "<client-id>"
+    client_secret: "<client-secret>"
+    issuer_url: "https://id.example.com"
+    scopes: ["openid", "profile", "email"]
+```
+
 `admin_emails` is a list matched against the standard `email` field, case-insensitively. An OAuth user is an administrator when either their email matches that list or their user-info/ID-token claims include `isAdmin: true`; their permissions then use `admin_profile`. The configured name and avatar fields are read from userinfo first, then fall back to the ID token when userinfo omits them. Avatar URLs are rendered by clients that support member avatars.
 
 `user_emails` restricts non-admin login to a list of allowed emails, matched the same way as `admin_emails`. If `user_emails` is empty (the default), any authenticated user is allowed to log in. Administrators (matched by `admin_emails` or `isAdmin: true`) can always log in regardless of `user_emails`. Users whose email is not allowed receive an HTTP 403 response and no session is created.
 
 :::warning
 `admin_emails` and `user_emails` are matched against the `email` claim. Most providers only include that claim if the `email` scope is requested, so `scopes` must include `"email"` (in addition to `"openid"`) or the claim will be empty and these lists will never match.
+:::
+
+:::warning
+If the provider returns `email_verified: false`, Neko ignores the email, so it cannot match `admin_emails` or `user_emails`. If the claim is missing, the email is trusted, because many providers (including generic OAuth2 providers such as GitHub) do not return it at all. In that case `admin_emails` and `user_emails` rely on the identity provider having verified the address. If users can register or edit their email without verification on a provider that does not send `email_verified`, anyone could claim an address listed in `admin_emails` and obtain an administrator session. Require email verification at the provider or do not use these lists.
 :::
 
 For OAuth sessions, `GET /api/whoami` includes `extra_data`: the merged userinfo and ID-token claims, with userinfo values taking precedence. It is returned only to the authenticated session owner and is intended for profile-field troubleshooting. Do not place secrets in provider profile claims.

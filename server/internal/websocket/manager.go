@@ -326,11 +326,16 @@ func (manager *WebSocketManagerCtx) handle(connection *websocket.Conn, peer type
 	logger := manager.logger.With().Str("session_id", session.ID()).Logger()
 
 	bytes := make(chan []byte)
-	cancel := make(chan error, 1)
+	cancel := make(chan error)
+
+	// closed when this function returns, so that the read loop never blocks on a send
+	// that nobody is going to receive
 	done := make(chan struct{})
-	// connect's writer cleanup closes the transport after a bounded terminal
-	// flush. Closing it here would discard SYSTEM_DISCONNECT on shutdown.
 	defer close(done)
+
+	// Unlike upstream, the connection is not closed here: connect() closes it
+	// after the peer's writer has flushed a terminal SYSTEM_DISCONNECT, which
+	// also interrupts the blocking read below.
 
 	ticker := time.NewTicker(pingPeriod)
 	defer ticker.Stop()
