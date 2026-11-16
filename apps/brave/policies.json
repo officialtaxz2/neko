@@ -1,5 +1,5 @@
 {
-  "AllowFileSelectionDialogs": false,
+  "AllowFileSelectionDialogs": true,
   "AutofillAddressEnabled": false,
   "AutofillCreditCardEnabled": false,
   "AutoplayAllowed": true,

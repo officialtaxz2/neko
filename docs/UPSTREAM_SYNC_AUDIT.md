@@ -28,7 +28,7 @@ keyboard composition fix.
 `apps/brave` deliberately differs from upstream in three places (see the
 README section "Brave"): `policies.json` keeps only the restrictions the
 shared session needs instead of upstream's locked-down set (no forced or
-blocked extensions, downloads allowed); `supervisord.conf` and
+blocked extensions, downloads and upload dialogs allowed); `supervisord.conf` and
 `supervisord.nvidia.conf` add `stopasgroup=true`, because the
 `/usr/bin/brave-browser` wrapper does not forward the stop signal and Brave
 was otherwise killed and lost its open tabs; and both add
