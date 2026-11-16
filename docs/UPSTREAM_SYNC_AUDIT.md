@@ -23,6 +23,19 @@ file-upload truncation, broadcast empty timeout, TURN shared secret and
 Cloudflare TURN with per-session credentials, NAT 1-to-1 hostnames, and the
 keyboard composition fix.
 
+## Brave app configuration — 2026-11-16
+
+`apps/brave` deliberately differs from upstream in three places (see the
+README section "Brave"): `policies.json` keeps only the restrictions the
+shared session needs instead of upstream's locked-down set (no forced or
+blocked extensions, downloads allowed); `supervisord.conf` and
+`supervisord.nvidia.conf` add `stopasgroup=true`, because the
+`/usr/bin/brave-browser` wrapper does not forward the stop signal and Brave
+was otherwise killed and lost its open tabs; and both add
+`--no-default-browser-check`. `Dockerfile`, `preferences.json` and the other
+flags stay as upstream. In a later sync, keep these three changes on top of
+upstream's files.
+
 ## Authorized focused adaptations — 2026-10-07
 
 After the read-only assessment below, the operator approved the improvement
