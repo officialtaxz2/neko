@@ -17,8 +17,8 @@ type signalSelector struct { types.StreamSelectorManager; ids []string }
 func (selector signalSelector) IDs() []string { return selector.ids }
 type signalCapture struct { types.CaptureManager; ids []string }
 func (capture signalCapture) Video() types.StreamSelectorManager { return signalSelector{ids: capture.ids} }
-type signalPeer struct { types.WebRTCPeer; videoErr, audioErr error; destroyed bool }
-func (peer *signalPeer) SetVideo(types.PeerVideoRequest) error { return peer.videoErr }
+type signalPeer struct { types.WebRTCPeer; videoErr, audioErr error; destroyed bool; video types.PeerVideoRequest }
+func (peer *signalPeer) SetVideo(video types.PeerVideoRequest) error { peer.video = video; return peer.videoErr }
 func (peer *signalPeer) SetAudio(types.PeerAudioRequest) error { return peer.audioErr }
 func (peer *signalPeer) Video() types.PeerVideo { return types.PeerVideo{} }
 func (peer *signalPeer) Audio() types.PeerAudio { return types.PeerAudio{} }
@@ -28,7 +28,7 @@ func (rtc *signalRTC) CreatePeer(types.Session) (*webrtc.SessionDescription, typ
 	rtc.opened = true
 	return &webrtc.SessionDescription{}, rtc.peer, nil
 }
-func (*signalRTC) ICEServers() []types.ICEServer { return nil }
+func (*signalRTC) ICEServers(types.Session) []types.ICEServer { return nil }
 
 func TestSignalRequestRejectsEmptySelectionBeforeCreatingPeer(t *testing.T) {
 	rtc := &signalRTC{}
@@ -51,4 +51,16 @@ func TestSignalRequestClosesPartialPeerAndRetainsSuccessfulPeer(t *testing.T) {
 			} else if err == nil || !peer.destroyed || session.sent != 0 { t.Fatalf("partial peer leaked at %s", stage) }
 		})
 	}
+}
+
+// When streams exist and the client sends no selector, the first video id is
+// used as the default stream.
+func TestSignalRequestDefaultsToFirstVideo(t *testing.T) {
+	peer := &signalPeer{}
+	handler := &MessageHandlerCtx{capture: signalCapture{ids: []string{"high", "low", "medium"}}, webrtc: &signalRTC{peer: peer}}
+	if err := handler.signalRequest(&signalSession{}, &message.SignalRequest{}); err != nil { t.Fatalf("unexpected error: %v", err) }
+	selector := peer.video.Selector
+	if selector == nil { t.Fatal("expected a default selector to be set") }
+	if selector.ID != "high" { t.Fatalf("expected default video id %q, got %q", "high", selector.ID) }
+	if selector.Type != types.StreamSelectorTypeExact { t.Fatalf("expected exact selector type, got %v", selector.Type) }
 }

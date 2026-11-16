@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -57,7 +58,13 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 
 	router.Get("/api/ws", WebSocketManager.Upgrade(func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
-		return origin == "" || config.AllowOrigin(origin)
+		if origin == "" || config.AllowOrigin(origin) {
+			return true
+		}
+
+		// by default, only same-origin browser connections are accepted
+		u, err := url.Parse(origin)
+		return err == nil && u.Host != "" && strings.EqualFold(u.Host, r.Host)
 	}))
 	if mediaHLS != nil {
 		mediaHLS(router)
@@ -95,6 +102,8 @@ func New(WebSocketManager types.WebSocketManager, ApiManager types.ApiManager, c
 		}
 	}
 
+	// Only when OAuth is the sole member provider: with another provider the
+	// redirect would hide the password login form.
 	if memberConfig.Provider == "oauth" && memberConfig.OAuth.Enabled && memberConfig.OAuth.AutoRedirect {
 		router.Get("/", func(w http.ResponseWriter, r *http.Request) error {
 			if ApiManager.IsAuthenticated(r) {

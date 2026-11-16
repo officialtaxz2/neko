@@ -68,6 +68,27 @@ func TestOAuthAutoRedirectSkipsAuthenticatedSessions(t *testing.T) {
 	}
 }
 
+func TestOAuthAutoRedirectOnlyForOAuthProvider(t *testing.T) {
+	staticDir := t.TempDir()
+	if err := os.WriteFile(staticDir+"/index.html", []byte("neko client"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// with another member provider, the root page keeps showing the login form
+	memberConfig := &config.Member{Provider: "multiuser", OAuth: oauth.Config{Enabled: true, AutoRedirect: true}}
+	sessionManager := session.New(&config.Session{
+		Cookie: config.SessionCookie{Enabled: true, Name: "NEKO_SESSION", Expiration: time.Hour},
+	})
+	apiManager := api.New(sessionManager, member.New(sessionManager, memberConfig), nil, nil, memberConfig, &config.Server{})
+	manager := New(testWebSocketManager{}, apiManager, &config.Server{Static: staticDir}, memberConfig, nil)
+
+	recorder := httptest.NewRecorder()
+	manager.router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/", nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, location = %q", recorder.Code, recorder.Header().Get("Location"))
+	}
+}
+
 type originCapturingWebSocketManager struct {
 	checkOrigin types.CheckOrigin
 }
@@ -188,5 +209,26 @@ func TestStaticIndexRevalidatesAfterRollback(t *testing.T) {
 	rolledBack := get("/", cached)
 	if rolledBack.Code != http.StatusOK || rolledBack.Body.String() != "older build" {
 		t.Fatalf("after rollback: status %d, body %q, want 200 with the older build", rolledBack.Code, rolledBack.Body.String())
+	}
+}
+
+func TestWebSocketOriginDefaultsToSameOrigin(t *testing.T) {
+	webSocketManager := &originCapturingWebSocketManager{}
+	serverConfig := &config.Server{}
+	memberConfig := &config.Member{}
+	sessionManager := session.New(&config.Session{})
+	apiManager := api.New(sessionManager, member.New(sessionManager, memberConfig), nil, nil, memberConfig, serverConfig)
+	New(webSocketManager, apiManager, serverConfig, memberConfig, nil)
+
+	request := httptest.NewRequest(http.MethodGet, "http://neko.example.test/api/ws", nil)
+
+	request.Header.Set("Origin", "http://neko.example.test")
+	if !webSocketManager.checkOrigin(request) {
+		t.Fatal("same Origin was rejected")
+	}
+
+	request.Header.Set("Origin", "https://attacker.example")
+	if webSocketManager.checkOrigin(request) {
+		t.Fatal("cross-site Origin was accepted with empty CORS")
 	}
 }
