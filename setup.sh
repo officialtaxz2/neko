@@ -19,6 +19,7 @@ NEKO_UID=1000 # uid/gid of the "neko" user inside the image (runtime/Dockerfile)
 HEALTH_TIMEOUT=180
 
 DO_BUILD=1
+RECREATE=0
 DO_CHECK=0
 NO_CACHE=""
 ROLLBACK=0
@@ -28,7 +29,8 @@ usage() {
 Usage: bash setup.sh [options]
 
 Options:
-  --no-build    Skip the image build, only prepare .env/directories and (re)start.
+  --no-build    Skip the image build, only prepare .env/directories and recreate the
+                containers, so changed policy files, .env or mounts take effect.
   --no-cache    Build without Docker cache (also pulls the latest browser release).
   --check       Run the server and client tests in containers first
                 (docker-compose.validation.yaml, a few minutes); stop if they fail.
@@ -41,7 +43,7 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --no-build) DO_BUILD=0 ;;
+    --no-build) DO_BUILD=0; RECREATE=1 ;;
     --no-cache) NO_CACHE="--no-cache" ;;
     --check) DO_CHECK=1 ;;
     --rollback) ROLLBACK=1; DO_BUILD=0 ;;
@@ -421,8 +423,16 @@ fi
 log "Validating Compose configuration"
 docker compose config --quiet
 
-log "Starting containers"
-docker compose up -d --remove-orphans
+if [[ "$RECREATE" == 1 ]]; then
+  # A plain `up -d` keeps a running container whose image and Compose
+  # configuration are unchanged. It would keep the old bind-mounted policy
+  # file, because `git pull` replaces the file instead of rewriting it.
+  log "Recreating containers (the stream restarts briefly)"
+  docker compose up -d --force-recreate --remove-orphans
+else
+  log "Starting containers"
+  docker compose up -d --remove-orphans
+fi
 
 cid="$(docker compose ps -q neko)"
 [[ -n "$cid" ]] || die "The neko container was not created."
