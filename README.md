@@ -17,8 +17,8 @@ The fork keeps Neko's shared session and roles (one person controls, everyone wa
 
 - Per-viewer adaptive quality: four VP8 tiers, from `high` (1080p) down to `lowest` (540p). Each viewer's tier is chosen on its own: it drops a tier only when its bandwidth falls short and its receiver still reports loss after retransmission, and it probes back up one tier at a time. See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md).
 - HLS and LL-HLS as a manual alternative to WebRTC for watching (H.264/AAC). WebRTC stays the default for everyone. See [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md).
-- View-only share links (`#/<16-character token>`), enforced by the server, not just hidden in the UI. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-- A media layer that separates the shared capture from per-viewer delivery, so one slow viewer cannot block the others. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+- View-only share links (`#/<16-character token>`), enforced by the server, not just hidden in the UI. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#view-only-share-links).
+- A media layer that separates the shared capture from per-viewer delivery, so one slow viewer cannot block the others. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#media-delivery).
 
 **Deployment**
 
@@ -104,7 +104,7 @@ HLS additionally needs:
 - `NEKO_MEDIA_HLS_TRUSTED_PROXIES`: the reverse proxy's address as Neko sees it. For a proxy on the same host that is the Docker network gateway; `setup.sh` stops when either value is missing and suggests it.
 - `NEKO_MEDIA_HLS_MODES`: `hls ll-hls` (default) or only `hls`. Conventional HLS runs about 20 seconds behind, LL-HLS about 3 to 5 seconds and needs HTTP/2 at the proxy (`deploy/check-ll-hls.sh` checks it).
 
-If the running container uses overlays that `COMPOSE_FILE` no longer lists, `setup.sh` stops before building and prints the line to add. Reverse proxy setup: [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md).
+If the running container uses overlays that `COMPOSE_FILE` no longer lists, `setup.sh` stops before building and prints the line to add. Reverse proxy setup: [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md#reverse-proxy).
 
 ## Browsers
 
@@ -148,13 +148,13 @@ Never commit `.env`, `files/`, `downloads/` or `policy.json`; they hold credenti
 
 | Document | Content |
 | --- | --- |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Architecture, media delivery and view-only links |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Architecture, media delivery, view-only links, invariants and open items |
 | [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md) | Adaptive quality: tiers, diagnostics, rollback |
 | [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md) | HLS/LL-HLS design and reverse proxy setup |
-| [`docs/UPSTREAM_SYNC_AUDIT.md`](docs/UPSTREAM_SYNC_AUDIT.md) | Record of every upstream merge and where the fork deviates |
+| [`docs/UPSTREAM_SYNC_AUDIT.md`](docs/UPSTREAM_SYNC_AUDIT.md) | Sync rule and every deliberate divergence from upstream |
 | [`client/src/fork/README.md`](client/src/fork/README.md) | The fork's client code |
 
-The fork follows upstream `m1k1o/neko` by merging its `master`, never by overwriting; each merge is reviewed and recorded in the sync audit.
+The fork follows upstream `m1k1o/neko` by merging its `master`, never by overwriting; each merge is reviewed in its pull request, and lasting divergences are listed in the sync audit.
 
 ## License
 
