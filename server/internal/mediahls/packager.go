@@ -571,12 +571,29 @@ func workerFormatMatches(worker *packagerWorker, source types.MediaSource) bool 
 	if worker.track.audio {
 		return source.Kind == types.MediaKindAudio && source.Codec.Name == "opus" && source.Codec.ClockRate == 48_000 && source.Codec.Channels == 2
 	}
-	// Every video rendition scales the same complete high-source format. Output
-	// geometry/rate remain checked against the rendition in acceptSample.
+	// Every video rendition scales the same complete high-source format. high is
+	// the full desktop, so any complete geometry and frame rate is accepted; the
+	// transcoder scales and resamples it, and acceptSample checks each output
+	// against its rendition. Once the worker knows a complete format (from the
+	// opened subscription or an earlier FORMAT), a different one restarts.
 	input := fixedVariants[0]
-	return source.Kind == types.MediaKindVideo && source.Codec.Name == "vp8" && source.ID == input.SourceID &&
-		source.Width == input.Width && source.Height == input.Height &&
-		source.FrameRateNumerator == input.FrameRate && source.FrameRateDenominator == 1
+	if source.Kind != types.MediaKindVideo || source.Codec.Name != "vp8" || source.ID != input.SourceID ||
+		!completeVideoFormat(source) {
+		return false
+	}
+	if worker.formatReady || completeVideoFormat(worker.source) {
+		return sameVideoFormat(worker.source, source)
+	}
+	return true
+}
+
+func completeVideoFormat(source types.MediaSource) bool {
+	return source.Width != 0 && source.Height != 0 && source.FrameRateNumerator != 0 && source.FrameRateDenominator != 0
+}
+
+func sameVideoFormat(a, b types.MediaSource) bool {
+	return a.Width == b.Width && a.Height == b.Height &&
+		a.FrameRateNumerator == b.FrameRateNumerator && a.FrameRateDenominator == b.FrameRateDenominator
 }
 
 func workerFormatIdentityMatches(worker *packagerWorker, source types.MediaSource) bool {

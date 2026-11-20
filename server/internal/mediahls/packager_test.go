@@ -191,7 +191,7 @@ func TestGenerationResetPreservesBoundedOldObjects(t *testing.T) {
 	}
 }
 
-func TestWorkerRequiresCompleteExactProviderFormat(t *testing.T) {
+func TestWorkerRequiresCompleteStableProviderFormat(t *testing.T) {
 	variant := FixedVariants()[0]
 	source := types.MediaSource{
 		ID: variant.SourceID, Kind: types.MediaKindVideo,
@@ -202,22 +202,55 @@ func TestWorkerRequiresCompleteExactProviderFormat(t *testing.T) {
 	if !workerFormatIdentityMatches(worker, source) || workerFormatMatches(worker, source) {
 		t.Fatal("cold provider identity was not kept pending for complete caps")
 	}
+	// high is the full desktop: every complete geometry and rate is scaled to
+	// the advertised renditions, not only the 1280x720 high output.
+	for _, size := range []struct{ width, height, fps uint32 }{
+		{1280, 720, 25}, {1920, 1080, 25}, {2560, 1440, 30}, {1280, 1024, 25}, {854, 480, 20},
+	} {
+		// The opened subscription had no caps yet (cold capture).
+		complete := source
+		complete.Width, complete.Height = size.width, size.height
+		complete.FrameRateNumerator, complete.FrameRateDenominator = size.fps, 1
+		if !workerFormatMatches(worker, complete) {
+			t.Fatalf("complete %dx%d@%d provider format was rejected", size.width, size.height, size.fps)
+		}
+	}
 	complete := source
-	complete.Width = variant.Width
-	complete.Height = variant.Height
-	complete.FrameRateNumerator = variant.FrameRate
-	complete.FrameRateDenominator = 1
-	if !workerFormatMatches(worker, complete) {
-		t.Fatal("complete exact provider format was rejected")
+	complete.Width, complete.Height = 1920, 1080
+	complete.FrameRateNumerator, complete.FrameRateDenominator = 25, 1
+	for name, mutate := range map[string]func(*types.MediaSource){
+		"zero width": func(source *types.MediaSource) { source.Width = 0 },
+		"zero height": func(source *types.MediaSource) { source.Height = 0 },
+		"zero frame-rate numerator": func(source *types.MediaSource) { source.FrameRateNumerator = 0 },
+		"zero frame-rate denominator": func(source *types.MediaSource) { source.FrameRateDenominator = 0 },
+		"zero generation": func(source *types.MediaSource) { source.Generation = 0 },
+		"other source": func(source *types.MediaSource) { source.ID = "medium" },
+		"other codec": func(source *types.MediaSource) { source.Codec.Name = "h264" },
+	} {
+		candidate := complete
+		mutate(&candidate)
+		if workerFormatMatches(worker, candidate) {
+			t.Fatalf("%s provider format was accepted", name)
+		}
 	}
-	complete.FrameRateNumerator++
-	if workerFormatMatches(worker, complete) {
-		t.Fatal("mislabeled provider frame rate was accepted")
-	}
-	complete.FrameRateNumerator = variant.FrameRate
-	complete.Generation = 0
-	if workerFormatMatches(worker, complete) {
-		t.Fatal("zero provider generation was accepted")
+	// Once a complete format is known, from the opened subscription or a ready
+	// FORMAT, a geometry or rate change restarts the generation instead of
+	// silently feeding running encoders.
+	for _, ready := range []bool{false, true} {
+		worker.source, worker.formatReady = complete, ready
+		if !workerFormatMatches(worker, complete) {
+			t.Fatalf("unchanged provider format was rejected (ready=%t)", ready)
+		}
+		resized := complete
+		resized.Width, resized.Height = 1280, 720
+		if workerFormatMatches(worker, resized) {
+			t.Fatalf("resized provider format was accepted (ready=%t)", ready)
+		}
+		retimed := complete
+		retimed.FrameRateNumerator = 30
+		if workerFormatMatches(worker, retimed) {
+			t.Fatalf("retimed provider format was accepted (ready=%t)", ready)
+		}
 	}
 }
 
