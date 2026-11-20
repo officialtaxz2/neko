@@ -17,8 +17,8 @@ The fork keeps Neko's shared session and roles (one person controls, everyone wa
 
 - Per-viewer adaptive quality: four VP8 tiers, from `high` (1080p) down to `lowest` (540p). Each viewer's tier is chosen on its own: it drops a tier only when its bandwidth falls short and its receiver still reports loss after retransmission, and it probes back up one tier at a time. See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md).
 - HLS and LL-HLS as a manual alternative to WebRTC for watching (H.264/AAC). WebRTC stays the default for everyone. See [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md).
-- View-only share links (`#/<16-character token>`), enforced by the server, not just hidden in the UI. See [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md).
-- A media layer that separates the shared capture from per-viewer delivery, so one slow viewer cannot block the others. See [`docs/MEDIA_SUBSCRIPTION_BOUNDARY.md`](docs/MEDIA_SUBSCRIPTION_BOUNDARY.md).
+- View-only share links (`#/<16-character token>`), enforced by the server, not just hidden in the UI. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+- A media layer that separates the shared capture from per-viewer delivery, so one slow viewer cannot block the others. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 **Deployment**
 
@@ -104,7 +104,7 @@ HLS additionally needs:
 - `NEKO_MEDIA_HLS_TRUSTED_PROXIES`: the reverse proxy's address as Neko sees it. For a proxy on the same host that is the Docker network gateway; `setup.sh` stops when either value is missing and suggests it.
 - `NEKO_MEDIA_HLS_MODES`: `hls ll-hls` (default) or only `hls`. Conventional HLS runs about 20 seconds behind, LL-HLS about 3 to 5 seconds and needs HTTP/2 at the proxy (`deploy/check-ll-hls.sh` checks it).
 
-If the running container uses overlays that `COMPOSE_FILE` no longer lists, `setup.sh` stops before building and prints the line to add. Proxy setup for Caddy: [`docs/HLS_LL_HLS_CADDY.md`](docs/HLS_LL_HLS_CADDY.md).
+If the running container uses overlays that `COMPOSE_FILE` no longer lists, `setup.sh` stops before building and prints the line to add. Reverse proxy setup: [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md).
 
 ## Browsers
 
@@ -136,8 +136,8 @@ client/    React + TypeScript/Vite client (upstream), the fork's design in clien
 server/    Go server and plugins
 apps/      browser and application images (apps/brave, apps/helium, ...)
 runtime/   base runtime image
-deploy/    adaptive-quality config, HLS proxy/check/diagnostic helpers
-docs/      the fork's project, architecture and validation notes
+deploy/    adaptive-quality config, HLS proxy and check helpers
+docs/      the fork's architecture, media and sync notes
 webpage/   upstream's documentation site
 setup.sh   install, update and rollback
 ```
@@ -148,19 +148,12 @@ Never commit `.env`, `files/`, `downloads/` or `policy.json`; they hold credenti
 
 | Document | Content |
 | --- | --- |
-| [`docs/PROJECT.md`](docs/PROJECT.md) | Goals, requirements and invariants |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Current architecture |
-| [`docs/WORKPLAN.md`](docs/WORKPLAN.md) | Next steps, open items and test history |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Architecture, media delivery and view-only links |
 | [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md) | Adaptive quality: tiers, diagnostics, rollback |
-| [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md) | HLS/LL-HLS design; validation, proxy and metrics in the `HLS_LL_HLS_*` files |
-| [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md) | View-only links: boundary, token, revocation |
-| [`docs/IOS_RECOVERY.md`](docs/IOS_RECOVERY.md) | Reconnect and recovery on iOS |
-| [`docs/STABILITY_REVIEW.md`](docs/STABILITY_REVIEW.md) | Stability review and device findings |
+| [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md) | HLS/LL-HLS design and reverse proxy setup |
 | [`docs/UPSTREAM_SYNC_AUDIT.md`](docs/UPSTREAM_SYNC_AUDIT.md) | Record of every upstream merge and where the fork deviates |
 | [`client/src/fork/README.md`](client/src/fork/README.md) | The fork's client code |
-| [`AGENTS.md`](AGENTS.md) | Rules and checkpoint notes for coding agents |
-
-The dated files in `docs/` (`*_2026-10-0x.md`, `LOCAL_DELTA_AUDIT.md`) are historical repair and audit records.
+| [`AGENTS.md`](AGENTS.md) | Rules, invariants and open items for coding agents |
 
 The fork follows upstream `m1k1o/neko` by merging its `master`, never by overwriting; each merge is reviewed and recorded in the sync audit.
 

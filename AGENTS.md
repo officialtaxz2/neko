@@ -335,7 +335,7 @@ Immediate sequence:
 
 Read before substantial work:
 
-- `README.md` — compact entry: features, deployment, configuration. Current status and `NEXT` are in `docs/WORKPLAN.md`.
+- `README.md` — compact entry and current status.
 - `docs/PROJECT.md` — goals, requirements, invariants and target state.
 - `docs/ARCHITECTURE.md` — verified current architecture.
 - `docs/WORKPLAN.md` — current `NEXT`, sync procedure, server-side verification and open items.
