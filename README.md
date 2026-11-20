@@ -221,7 +221,7 @@ See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md), [`docs/IOS_RECOVERY.
 
 ## Local deployment (Brave, optionally Helium)
 
-The tracked `docker-compose.yaml` is the sanitized deployment structure from `MyNekoProjekt`. It uses the locally built `my-neko/<NEKO_BROWSER>:latest` image with pulling disabled, cleans stale browser singleton locks before startup, and mounts the ignored profile/download directories. `NEKO_BROWSER` in `.env` selects the browser: `brave` (default, see [Brave](#brave)) or `helium` (`apps/helium`, see [Helium](#helium-optional)). The managed policy is mounted at `/etc/<NEKO_BROWSER>/policies/managed/policies.json`.
+The tracked `docker-compose.yaml` is the sanitized deployment structure from `MyNekoProjekt`. It uses the locally built `my-neko/<NEKO_BROWSER>:latest` image with pulling disabled and mounts the ignored profile/download directories. `NEKO_BROWSER` in `.env` selects the browser: `brave` (default, see [Brave](#brave)) or `helium` (`apps/helium`, see [Helium](#helium-optional)). The managed policy is mounted at `/etc/<NEKO_BROWSER>/policies/managed/policies.json`.
 
 On the target server, first installation and every update are the same command from the repository root:
 
