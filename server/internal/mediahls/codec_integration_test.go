@@ -3,7 +3,9 @@
 package mediahls
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"strings"
@@ -29,6 +31,9 @@ type codecFixtureProvider struct {
 	// so audio and video still begin together.
 	sourceStartDelay time.Duration
 	delayed          bool
+	// Optional capture geometry of the high source; zero keeps the high
+	// rendition's own output geometry. Production high is the full desktop.
+	highWidth, highHeight uint32
 	mu sync.Mutex
 	subscriptions map[string]int
 }
@@ -59,9 +64,12 @@ func (provider *codecFixtureProvider) Subscribe(ctx context.Context, request typ
 		for _, variant := range FixedVariants() {
 			if variant.ID == source.ID {
 				source.Width, source.Height = variant.Width, variant.Height
+				if source.ID == "high" && provider.highWidth != 0 {
+					source.Width, source.Height = provider.highWidth, provider.highHeight
+				}
 				source.FrameRateNumerator, source.FrameRateDenominator = variant.FrameRate, 1
 				rate = variant.FrameRate
-				pipelineSource = fmt.Sprintf("videotestsrc name=fixture_video is-live=true pattern=%s ! video/x-raw,format=I420,width=%d,height=%d,framerate=%d/1 ! vp8enc deadline=1 cpu-used=8 keyframe-max-dist=%d ! appsink name=appsink max-buffers=8 drop=true sync=false", pattern, variant.Width, variant.Height, rate, rate*2)
+				pipelineSource = fmt.Sprintf("videotestsrc name=fixture_video is-live=true pattern=%s ! video/x-raw,format=I420,width=%d,height=%d,framerate=%d/1 ! vp8enc deadline=1 cpu-used=8 keyframe-max-dist=%d ! appsink name=appsink max-buffers=8 drop=true sync=false", pattern, source.Width, source.Height, rate, rate*2)
 			}
 		}
 	}
@@ -228,7 +236,25 @@ func TestRealSkewedSourcesShareVideoClock(t *testing.T) {
 	})
 }
 
+// The adaptive profile's high tier is the full desktop, 1920x1080 by default.
+// Every rendition must still be scaled to its advertised output geometry, and
+// a desktop with another aspect ratio is letterboxed with square pixels rather
+// than emitted as anamorphic video that the fMP4 init does not describe.
+func TestRealCodecsAcceptAnyHighSourceGeometry(t *testing.T) {
+	for _, size := range []struct{ width, height uint32 }{{1920, 1080}, {1280, 1024}} {
+		t.Run(fmt.Sprintf("%dx%d", size.width, size.height), func(t *testing.T) {
+			testRealCodecsWithProvider(t, 0, &codecFixtureProvider{
+				origin: time.Now(), errors: make(chan error, 4), highWidth: size.width, highHeight: size.height,
+			}, requireSquarePixelRenditions)
+		})
+	}
+}
+
 func testRealCodecsWithSourcePhases(t *testing.T, highInputDelay time.Duration, phases map[string]time.Duration) {
+	testRealCodecsWithProvider(t, highInputDelay, &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4), clockOffsets: phases}, nil)
+}
+
+func testRealCodecsWithProvider(t *testing.T, highInputDelay time.Duration, provider *codecFixtureProvider, inspect func(*testing.T, *Packager)) {
 	t.Helper()
 	if err := validateGSTTranscoderElements(); err != nil {
 		t.Fatal(err)
@@ -238,7 +264,6 @@ func testRealCodecsWithSourcePhases(t *testing.T, highInputDelay time.Duration, 
 			t.Fatal(err)
 		}
 	}
-	provider := &codecFixtureProvider{origin: time.Now(), errors: make(chan error, 4), clockOffsets: phases}
 	diagnostics := &codecFixtureDiagnostics{
 		tracks: make(map[string]*codecFixtureTrace), highInputDelay: highInputDelay,
 	}
@@ -273,6 +298,9 @@ func testRealCodecsWithSourcePhases(t *testing.T, highInputDelay time.Duration, 
 	}
 	if _, err := packager.Master(); err != nil {
 		t.Fatal(err)
+	}
+	if inspect != nil {
+		inspect(t, packager)
 	}
 	packager.mu.Lock()
 	generation := packager.generation
@@ -651,3 +679,127 @@ func TestRealCodecsServeLowLatencyPartsAcrossRollover(t *testing.T) {
 	}
 }
 
+// requireSquarePixelRenditions reads each video init's SPS: the aspect ratio
+// must be unspecified or 1:1, because the init's width and height are the
+// rendition's display size.
+func requireSquarePixelRenditions(t *testing.T, packager *Packager) {
+	t.Helper()
+	for _, id := range []string{"high", "medium", "low"} {
+		track := packager.track(id)
+		track.mu.RLock()
+		initURI := track.initURI
+		track.mu.RUnlock()
+		init, ok := packager.Object(id, initURI)
+		if !ok {
+			t.Fatalf("rendition %s has no init", id)
+		}
+		data := init.Bytes()
+		at := bytes.Index(data, []byte("avcC"))
+		if at < 0 || at+12 > len(data) {
+			t.Fatalf("rendition %s init lacks avcC", id)
+		}
+		config := data[at+4:]
+		length := int(binary.BigEndian.Uint16(config[6:8]))
+		if 8+length > len(config) {
+			t.Fatalf("rendition %s avcC SPS is truncated", id)
+		}
+		sarWidth, sarHeight, err := spsSampleAspectRatio(config[8 : 8+length])
+		if err != nil {
+			t.Fatalf("rendition %s SPS: %v", id, err)
+		}
+		if sarWidth != sarHeight {
+			t.Fatalf("rendition %s has anamorphic pixels %d:%d", id, sarWidth, sarHeight)
+		}
+	}
+}
+
+// spsSampleAspectRatio returns 1:1 when the SPS leaves the ratio unspecified.
+func spsSampleAspectRatio(nal []byte) (uint32, uint32, error) {
+	rbsp := make([]byte, 0, len(nal))
+	for index := 1; index < len(nal); index++ { // skip the NAL header
+		if index >= 3 && nal[index] == 3 && nal[index-1] == 0 && nal[index-2] == 0 {
+			continue // emulation prevention byte
+		}
+		rbsp = append(rbsp, nal[index])
+	}
+	reader := spsBitReader{data: rbsp}
+	profile := reader.bits(8)
+	reader.bits(16) // constraint flags, level
+	reader.ue()     // seq_parameter_set_id
+	switch profile {
+	case 100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135:
+		if reader.ue() == 3 {
+			reader.bits(1)
+		}
+		reader.ue()
+		reader.ue()
+		reader.bits(1)
+		if reader.bits(1) != 0 {
+			return 0, 0, errors.New("scaling matrices are not parsed")
+		}
+	}
+	reader.ue() // log2_max_frame_num_minus4
+	switch reader.ue() {
+	case 0:
+		reader.ue()
+	case 1:
+		reader.bits(1)
+		reader.ue()
+		reader.ue()
+		for count := reader.ue(); count > 0; count-- {
+			reader.ue()
+		}
+	}
+	reader.ue()    // max_num_ref_frames
+	reader.bits(1) // gaps_in_frame_num_value_allowed_flag
+	reader.ue()    // pic_width_in_mbs_minus1
+	reader.ue()    // pic_height_in_map_units_minus1
+	if reader.bits(1) == 0 {
+		reader.bits(1)
+	}
+	reader.bits(1) // direct_8x8_inference_flag
+	if reader.bits(1) != 0 {
+		for range 4 {
+			reader.ue()
+		}
+	}
+	if reader.bits(1) == 0 || reader.bits(1) == 0 { // VUI, aspect_ratio_info
+		return 1, 1, reader.err
+	}
+	idc := reader.bits(8)
+	switch idc {
+	case 1:
+		return 1, 1, reader.err
+	case 255:
+		width := reader.bits(16)
+		return width, reader.bits(16), reader.err
+	}
+	return 0, 1, errors.Join(reader.err, fmt.Errorf("non-square aspect_ratio_idc %d", idc))
+}
+
+type spsBitReader struct {
+	data []byte
+	bit  int
+	err  error
+}
+
+func (reader *spsBitReader) bits(count int) uint32 {
+	var value uint32
+	for range count {
+		if reader.bit >= len(reader.data)*8 {
+			reader.err = errors.New("SPS is truncated")
+			return 0
+		}
+		value = value<<1 | uint32(reader.data[reader.bit/8]>>(7-reader.bit%8)&1)
+		reader.bit++
+	}
+	return value
+}
+
+func (reader *spsBitReader) ue() uint32 {
+	zeros := 0
+	for reader.bits(1) == 0 && reader.err == nil {
+		zeros++
+	}
+	return 1<<zeros - 1 + reader.bits(zeros)
+}

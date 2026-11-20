@@ -50,12 +50,12 @@ jobs:
         working-directory: client
         run: npm ci
 
-      - name: Cold LL-HLS start and browser playback
+      - name: Cold LL-HLS start, desktop sizes and browser playback
         working-directory: server
         env:
           HLS_BROWSER_PYTHON: /usr/bin/python3
           HLS_BROWSER_REQUIRED: "1"
         run: >
           go test -count=1 -v -timeout 15m -tags 'hlsintegration hlsbrowser'
-          -run 'TestRealCodecsLowLatencyReadyAfterSlowSourceStart|TestBrowserPlayback'
+          -run 'TestRealCodecsLowLatencyReadyAfterSlowSourceStart|TestRealCodecsAcceptAnyHighSourceGeometry|TestBrowserPlayback'
           ./internal/mediahls/

@@ -16,8 +16,11 @@ the Opus audio feed three H.264 workers and one AAC worker. Both modes serve the
 | `medium` | 854×480, 20 fps | 1,228,000 / 1,500,000 |
 | `low` | 640×360, 15 fps | 493,000 / 650,000 |
 
-- The input must be VP8 at exactly 1280×720 and 25 fps plus stereo 48 kHz Opus (`workerFormatMatches`);
-  any other format makes the packager restart with `format_change`.
+- The input is the `high` VP8 tier, i.e. the full desktop at any size and frame rate, plus stereo 48 kHz
+  Opus (`workerFormatMatches`). Every rendition is scaled to its fixed output above; a desktop that is not
+  16:9 gets black bars instead of distorted pixels. A size or rate change while the packager runs restarts
+  it: with `source_restart` when the capture pipeline is rebuilt, as on a desktop resize, with
+  `format_change` when only the caps change.
 - fMP4, closed two-second GOPs, six-second segments; LL-HLS adds one-second parts, blocking reloads,
   preload hints and rendition reports. `HOLD-BACK` is 18 s, `PART-HOLD-BACK` 3 s.
 - A start is ready after three complete segments (HLS) or one complete segment (LL-HLS), within 28 s.
@@ -78,20 +81,21 @@ parts. `deploy/check-hls-http.py` checks the HTTP boundary through `docker-compo
 `retained_bytes`, `publish_delay_seconds` and `drops_total{variant,stage,kind,reason}`. No label carries a
 session, lease or URL.
 
-The browser test plays the real packager output through the production MSE player in WebKitGTK:
+The browser test plays the real packager output through the production MSE player in WebKitGTK; the
+geometry test feeds 1920×1080 and 1280×1024 desktops through the real codecs:
 
 ```bash
 # needs node with the client dependencies, xvfb-run and python3 with WebKit2 4.1 GI bindings
-cd server && go test -count=1 -tags 'hlsintegration hlsbrowser' -run 'TestRealCodecsLowLatencyReadyAfterSlowSourceStart|TestBrowserPlayback' -v ./internal/mediahls/
+cd server && go test -count=1 -tags 'hlsintegration hlsbrowser' -run 'TestRealCodecsLowLatencyReadyAfterSlowSourceStart|TestRealCodecsAcceptAnyHighSourceGeometry|TestBrowserPlayback' -v ./internal/mediahls/
 ```
 
 `.github/workflows/hls_browser_test.yml` runs it on pull requests that touch the HLS server or client code.
 
 ## Open
 
-- `workerFormatMatches` accepts `high` only at 1280×720 and 25 fps, but the adaptive profile's `high` is the
-  full desktop size (1920×1080 by default), so HLS likely restarts with `format_change` and never becomes
-  ready on such a desktop. Not checked on the server.
+- Desktops other than 1280×720 are tested only with real codecs in CI, not on the server. Each of the
+  three video workers decodes the full `high` picture, which at 1920×1080 is 2.25 times the pixels of
+  720p; the packager's CPU use there is not measured.
 - Native playback (Safari, iPhone/iPad, Smart TVs) is not confirmed; an iPad's LL-HLS sessions became ready
   but did not play, cause unknown.
 - Reliable cold starts with the 28-second window, and latency on the real path, are not measured.
