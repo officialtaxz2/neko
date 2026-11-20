@@ -27,7 +27,7 @@ sync with upstream touches as few upstream files as possible.
   stays as it is. A plugin's lock (file transfer) comes through the `room.lock` slot: a switch in the
   Room section and a chip in the `Header`, which leaves out the plugin's own header button.
 - `connect/`: `ShareConnect`, the login screen of a view-only share link (`#/<token>`, see
-  `src/state/viewonly.ts` and `docs/VIEW_ONLY_SHARING.md`); `layout/PassiveBar` is its playback bar.
+  `src/state/viewonly.ts` and `docs/ARCHITECTURE.md`); `layout/PassiveBar` is its playback bar.
 - HLS (outside this folder, in their layers): `src/state/media.ts` (the choice, the transport, what
   the server offers), `src/state/diagnostics.ts` (the traces' read-only handle) and
   `src/features/media/` (the status on the picture, the settings' choice, the short select for a

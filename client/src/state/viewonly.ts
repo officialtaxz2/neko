@@ -1,4 +1,4 @@
-// View-only share links (docs/VIEW_ONLY_SHARING.md): `https://host/#/<16-character token>` logs in a
+// View-only share links (docs/ARCHITECTURE.md): `https://host/#/<16-character token>` logs in a
 // passive session, with the token as the password of POST /api/login (in the body: the fragment
 // never reaches a request line, a proxy log or a Referer). The server enforces what the session may
 // do; the GUI only shows the picture and the sound.

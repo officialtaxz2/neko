@@ -1,351 +1,91 @@
-# Opt-in Adaptive Quality Profile
+# Adaptive quality
 
-This document describes the opt-in multi-pipeline and per-peer bandwidth-estimator profile for the repository's Brave Compose baseline. The normal `docker-compose.yaml` remains the stable, single-pipeline default. Adaptive quality is enabled only when `docker-compose.adaptive.yaml` is supplied as a second Compose file.
+Each WebRTC viewer gets its own VP8 tier, chosen by a per-viewer estimator in
+`server/internal/webrtc/peer.go`. `docker-compose.adaptive.yaml` mounts `deploy/adaptive-quality.yaml`
+as `NEKO_CONFIG`; `.env.example` enables it through `COMPOSE_FILE`, and the HLS overlay needs it. Without
+the overlay Neko runs upstream's single `main` pipeline.
 
-The values below were measurement-tuned and accepted on 2026-09-10 for the documented target server with one healthy desktop, one healthy iPad and one constrained iPhone at commit `bfaca84e`. This is bounded deployment evidence, not a universal device or network guarantee, and it does not promote the overlay to the default.
+## Tiers
 
-## Profile contents
-
-`deploy/adaptive-quality.yaml` defines four VP8 pipelines in required highest-to-lowest order:
-
-| ID | Resolution at 1920×1080 | Frame rate | Nominal encoder target |
+| ID | Size at 1920×1080 | fps | `nominal_bitrate` (bit/s) |
 | --- | ---: | ---: | ---: |
-| `high` | 1920×1080 | 25 fps | 3,993,600 bit/s |
-| `medium` | 1280×720 | 25 fps | 1,601,600 bit/s |
-| `low` | 1280×720 | 20 fps | 748,800 bit/s |
-| `lowest` | 960×540 | 15 fps | 332,800 bit/s |
-
-For other desktop sizes, `medium` and `low` scale both dimensions to roughly two thirds and `lowest` to one half; the expressions produce even dimensions. Lower tiers are scaled bilinearly (`videoscale method=1`); nearest-neighbour scaling dropped whole pixel rows and columns and made thin text strokes vanish or turn jagged. Bilinear suits these 1.5x and 2x reductions; a 3x reduction (360p) would need `method=4` (multi-tap bilinear). All pipelines use the same VP8 codec as required by Neko's stream selector. The first ID, `high`, is the initial/default stream.
-
-The 2026-10-26 ladder extends the accepted three-tier ladder (`high` 1080p25 1,996,800, `medium` 720p20 748,800, `low` 540p15 332,800 bit/s). Server upload is not the constraint on the target host, and the old `high` gave 1080p about half of libwebrtc's own per-resolution target, so fast motion turned soft; viewers below about 2.5 Mbit/s fell straight to 0.75 Mbit/s. `high` now has about 4 Mbit/s and a new 720p25 `medium` sits in between; the former `medium` and `low` stay unchanged as `low` and `lowest`, including their encoder buffers, so the measured 1.3 and 0.7 Mbit/s behavior below still applies to them under their new names. Adjacent tiers differ by about 2.1–2.5x. The `buffer-*` values are milliseconds and are unchanged per kind of tier. One more tier also means one more 30-second `downgrade_backoff` step for a viewer starting on `high` over a very weak path (about 70 instead of 40 seconds until `lowest`). **Pending target-server validation:** visual check of `high` with scrolling and video, CPU with several tiers active, and the compact recovery-probe regression below.
-
-All tiers use a fixed encoder speed and skip nearly unchanged blocks (2026-10-26). With a positive `cpu-used`, libvpx's real-time mode adapts its speed to a per-frame time budget (frame interval × (16 − cpu-used)/16, 30 ms at 25 fps) and moves between speeds 4 and 16 (`vp8_auto_select_speed`). In an offline ffmpeg/libvpx test paced at 25 fps, the former `cpu-used: 4` matched fixed `-4` on an idle 4-core machine; with one competing busy process it switched to its fastest speed, encoded text at about 8.6 Mbit/s instead of 4 Mbit/s and lost about 7 dB PSNR on text and 3–5 dB on video without finishing sooner. Fixed values stay at the same quality and rate but cannot speed up: under real overload the capture's leaky one-frame queue drops frames, so the frame rate falls instead of the sharpness. `high` therefore uses `-4` (the idle-host behaviour of the former value) and the smaller tiers libwebrtc's x86 default `-6`. `static-threshold: 100` follows the GStreamer recommendation for screen sharing and gave text about +0.8 dB at an unchanged rate in the same test, with video unchanged. **Pending target-server validation:** frames per second (`neko_capture_streamsink_frames`), bitrate and CPU per tier with several tiers active, and a visual check that small changes such as the drawn pointer or a text cursor are not left behind. Rollback: restore `cpu-used: "4"` and remove `static-threshold`.
-
-Keyframes are sent on demand (2026-10-26). Before, every tier encoded a keyframe each second; in the offline test that took 28–34% of the bitrate. The server now forces a keyframe when a tier gains a waiting viewer (repeated while one still waits), when a viewer sends PLI or FIR for its video stream, and when an encoded frame was dropped before a viewer received it: after a full peer-local queue that viewer, and after a full pipeline sample channel every viewer of the tier, waits for the next keyframe instead of decoding later frames against a missing reference, which the browser cannot notice. Forced keyframes are limited to one per 500 ms per tier because all viewers of a tier share one encoder and a waiting browser repeats its request every 200 ms. `keyframe-max-dist` is 4 seconds per tier as a fallback: after loss that NACK cannot repair, libwebrtc's receiver asks for a keyframe only after 3 seconds without a decodable frame (`kMaxWaitForFrame`), so the fallback bounds that case. `max-intra-bitrate` caps a keyframe at about 0.36 seconds of the tier's rate (900% of a frame at 25 fps, 720% at 20 fps, 540% at 15 fps); without it, rarer keyframes and the long encoder buffer raised the largest one-second burst in the offline test. In that test, against fixed `-6` with 1-second keyframes, keyframes every 3 and 5 seconds gave +2.7 and +4.1 dB PSNR on scrolling text and +0.8 and +1.0 dB on video at an equal or lower rate; 4 seconds was not measured and should lie in between. `neko_capture_streamsink_keyframes` and `neko_capture_streamsink_keyframe_requests` count produced and forced keyframes per tier. **Pending target-server validation:** recovery time after induced loss (1–2% on one viewer), keyframes per tier and minute with healthy and lossy viewers, bitrate and largest one-second burst per tier including the effect of the 12-second encoder buffer, join and tier-switch start time, and HLS startup. The limit applies per tier, not per viewer, so one persistently lossy viewer can force up to two keyframes per second for everyone on its tier: watch `rate(neko_capture_streamsink_keyframe_requests[1m])` per tier with such a viewer, and above 30 forced keyframes per minute raise `minKeyframeRequestInterval` to 1 second. The HLS transcoder's leaky queue before `vp8dec` can still drop a VP8 frame unnoticed; the decoder then works against the missing reference until the next keyframe, now up to 4 seconds instead of 1. Watch HLS output under load for artifacts, and if they occur, request a keyframe there as well. Rollback: `keyframe-max-dist: "25"` and no `max-intra-bitrate` restore the former interval; the on-demand requests then only add keyframes.
-
-Each tier's `nominal_bitrate` matches its encoder target. It does not alter encoding; before an upgrade it provides a stable reference for the next tier, which cannot shrink merely because the current desktop frame is easy to encode. Profiles that omit it continue to use the current tier's measured stream bitrate.
-
-The overlay mounts the profile read-only at `/etc/neko/adaptive-quality.yaml` and sets `NEKO_CONFIG` to that path. Existing Compose environment values still override corresponding YAML values, so the tracked base configuration continues to supply screen, ICE and deployment settings.
-
-The estimator is active rather than passive, starts at 5 Mbit/s (2.5 Mbit/s with the former ladder) and uses explicit timing/threshold values. Debug logging is enabled for the estimator. These values are deliberately kept in one mounted file so a measurement-led tuning change produces a reviewable diff.
-
-The first bounded target-server constraint run on 2026-09-10 isolated the constrained viewer successfully, but took about 30 seconds to leave `high` and cascaded from `medium` to `low` about 15 seconds later. The next run reduced `stalled_duration` from 24 to 8 seconds and increased `downgrade_backoff` from 10 to 30 seconds. It left `high` within 20 seconds and recovered from `low` through `medium` to `high` within 40 seconds, but still cascaded to `low` during the 1.3 Mbit/s phase.
-
-The phase measurements identified encoder overshoot rather than host saturation: the nominal 1,996,800 bit/s `high` stream measured as high as 4,394,400 bit/s, while the nominal 499,200 bit/s `low` stream measured between 702,400 and 1,230,040 bit/s. The profile had limited `max-quantizer` to 20, 24 and 28; libvpx can let those quality floors override rate-control targets. [GStreamer documents 63 as the default worst-quality bound](https://gstreamer.freedesktop.org/documentation/vpx/GstVPXEnc.html?gi-language=c), while the [WebM real-time CBR guidance](https://www.webmproject.org/docs/encoder-parameters/) recommends a 50–63 range and demonstrates 56. Raising `max-quantizer` to 56 brought the unconstrained `high` stream to 1,996,120 bit/s against its 1,996,800 bit/s target. All three viewers stayed smooth on `high`, with zero peer-local audio/video drops.
-
-The constrained rerun rejected encoder tuning alone as sufficient. The healthy viewers remained smooth on `high`, but the constrained viewer oscillated upward while the impairment was unchanged: during the 1.3 Mbit/s phase it moved from `medium` to `low`, back to `medium`, and then to `high`; during the 0.7 Mbit/s phase it spent most of the phase on `medium` before reaching `low`. `Low` was the only constrained tier that became visibly usable in part of the 1.3 Mbit/s run, while returning to an unconstrained path restored smooth playback immediately.
-
-Source tracing explains that oscillation. The original `diff_threshold` both protects the current tier from downgrade and permits an upgrade by comparing the estimate with the **current** tier's measured rate. With approximately 2:1 adjacent targets, the old 0.15 upgrade value needed only 15% spare over the lower tier, not enough capacity for the next tier. The server now has a separate `upgrade_diff_threshold`; its default remains 0.15 for compatibility. Its focused target-server test passed, and a profile value of 1.30 removed upward oscillation under both unchanged constraints.
-
-That stable-selection rerun still failed constrained-viewer usability. At 1.3 Mbit/s the viewer reached `low` after 60 seconds and held it; at 0.7 Mbit/s it remained on `low`; both healthy viewers stayed smooth on `high` with zero peer-local drops. `Low` was usable under the 1.3 Mbit/s constraint but showed repeated freezes and audio loss at 0.7 Mbit/s. The low stream measured 494,296 bit/s and shared the shaped path with 128,400 bit/s of audio, consuming about 623 kbit/s before RTP/UDP/IP overhead and retransmission. The 0.7 Mbit/s shaper consequently stayed at capacity and dropped another 153,969 packets. After restoration playback was immediately smooth, but conservative estimation returned through `medium` within 90 seconds and reached `high` only later.
-
-The next measurement-led candidate budgeted transport headroom instead of changing more timers: `medium` is 748,800 bit/s, `low` is 332,800 bit/s, and all tiers allow VP8's full `max-quantizer: 63` range so the quality floor cannot defeat those limits. Its target-server run was a material improvement. At 1.3 Mbit/s, `medium` measured 569,136 bit/s plus 130,968 bit/s audio and remained watchable with only small occasional interruptions. At 0.7 Mbit/s, `low` measured 369,144 bit/s plus 125,672 bit/s audio and was likewise mostly watchable. Both healthy viewers remained smooth on `high`, all peer-local drop counters remained zero, and the constrained viewer recovered `low` to `medium` to `high` within 45 seconds after restoration. Baseline `high` measured 2,057,672 bit/s against its 1,996,800 bit/s target with no reported visual regression.
-
-One deterministic defect remained during that run: at an unchanged 0.7 Mbit/s constraint the estimator reported 613,076 bit/s and briefly upgraded `low` to `medium`, which immediately worsened playback before the downgrade back to `low`. The implementation still referenced the content-dependent measured current rate. Each profile tier now declares `nominal_bitrate`, and the server evaluates an upgrade directly against the next tier's nominal rate. With the normal 0.15 reserve, `low` to `medium` requires at least 861,120 bit/s, so the observed 613,076 bit/s is insufficient; profiles without this metadata retain their previous current-measured-rate fallback.
-
-## Post-acceptance startup-timing correction — focused target-server validation accepted
-
-During the 2026-09-11 media-subscription checkpoint, fresh same-host browser windows selected `high` and then switched to `medium` on their first logged `NEUTRAL` estimator reading. Repeating the observation with the pre-refactor rollback image `sha256:5b5c7747930bc863da05cb3f05d8bb7b97a624386d105bdade2448e5443d36a2` produced the same immediate transition, while the new candidate was `sha256:cc4d727a93e27d79c900adcb077252512c4cfc8f9b42f33685ddf7fd010b3061`. This bounds the observation as pre-existing estimator behavior rather than a media-subscription regression; it does not reproduce the earlier accepted desktop/iPad/iPhone network layout.
-
-Static tracing found a concrete inherited startup defect: `stableSince` began at estimator-reader creation, but `unstableSince` and `stalledSince` used Go's zero `time.Time`. Because `time.Since(time.Time{})` is effectively enormous, the configured `unstable_duration` and `stalled_duration` could be treated as already elapsed on the first qualifying estimate. The observed `high -> medium` transitions had precisely the vulnerable sequence: initial `high`, first `NEUTRAL` estimate with insufficient headroom, immediate downgrade.
-
-The repository follow-up initializes the stable, unstable and stalled observation windows from the same estimator-reader start time. `lastUpgradeTime` and `lastDowngradeTime` intentionally remain zero until an actual switch, preserving switch-backoff semantics. No bitrate, frame rate, threshold, duration, public API, protocol or deployment default changes in this unit.
-
-At exact commit `e5f55bf9`, the complete target-server validation service passed all configured Go packages followed by the server/plugin build. Fresh local base and Brave images built, the adaptive service started healthy with zero restarts, and a fresh single viewer remained on `high` throughout the roughly 54-second trace. Its first estimate arrived about two seconds after selection with `NEUTRAL` trend; no downgrade, upgrade or stall followed. The high stream measured about 1.89 Mbit/s, the receiver estimate rose to its 50 Mbit/s cap, and the active viewer's video queue-drop counter remained zero. This is focused confirmation that the corrected windows did not begin expired in that run.
-
-The operator closed the combined compatibility/estimator checkpoint with an explicit limitation: the ordinary/admin/view-only/private-mode/manual-tier/reconnect matrix and a fresh independently constrained three-viewer down/up isolation run were not repeated at `e5f55bf9`. They remain deferred to final grouped validation. The focused result does not promise that `high` will remain selected when a receiver's sustained estimate is below the capacity required for `high`, and it does not identify the startup defect as the sole cause of every sustained `medium` selection.
-
-## Post-acceptance steady-state correction — downgrade and bounded recovery gates validated
-
-Operator evidence on 2026-09-19 confirmed a different steady-state failure. One active healthy WebRTC peer used direct UDP and reported zero receiver loss, zero NACKs and zero local video drops, yet its automatic selection changed `high -> medium -> high -> medium`. Reload recreated the peer and estimator and temporarily returned it to `high`. This is a tier-selection defect; `max-quantizer` can affect motion detail within a tier but does not cause those tier changes.
-
-The first correction at exact commit `2d037f39` separated current-tier deficit from next-tier upgrade reserve. Its focused server tests/build, image rebuild and initial 180-second healthy-client gate passed on the target server. Longer unshaped observation then rejected it: the same direct-UDP peer, still with zero receiver loss, zero NACKs and zero local video drops, changed `high -> medium` at `12:11:00Z`, `medium -> low` at `12:11:34Z`, and recovered `low -> medium -> high` around `12:19Z`. The target estimate had fallen as low as roughly 0.47 Mbit/s even though the host shaper was absent and its qdisc recorded no drop. The first correction therefore fixed the 15% reserve error but still treated the estimator target itself as sufficient proof of congestion.
-
-The revised policy separates three questions:
-
-- The current complete-delivery reference is `max(measured video, nominal video) + measured active audio`, multiplied by `1 + transport_reserve` (0.05 in the tracked profile).
-- `diff_threshold` is the tolerated deficit below that current reference. With `0.15`, the estimator target becomes materially insufficient below 85% of the complete-delivery reference; absence of 15% spare is not a downgrade condition.
-- A materially insufficient target is advisory until fresh, peer-local receiver feedback confirms congestion. Confirmation is the latest RTCP receiver report with non-zero `FractionLost`, or a received NACK, no older than two estimator read intervals. A clean, missing or stale report cannot authorize a downgrade.
-- The confirmed shortage must still persist through the unchanged downward/neutral, `unstable_duration`, `stalled_duration` and `downgrade_backoff` gates. A transient loss/NACK cannot keep that window alive by itself.
-- Congestion feedback also resets the stable-upgrade window. Upgrade remains separate and requires a clean stable interval plus `1 + upgrade_diff_threshold` over the next tier's nominal complete-delivery reference, including current audio and transport reserve.
-
-For the tracked rates and an illustrative 128 kbit/s audio stream, a measured 1.90 Mbit/s `high` stream produces a 2,231,040 bit/s complete-delivery reference and an approximately 1,896,384 bit/s downgrade floor. A neutral 2.00 Mbit/s estimate holds `high` because it is above that floor. The reproduced 0.47 Mbit/s phantom estimate is below the floor, but now also holds `high` while receiver loss and NACK evidence remain zero. By contrast, the documented shaped phases deliberately produce sustained receiver loss and remain eligible to step down. On `medium`, the downgrade floor and the `high` upgrade requirement retain a deliberate deadband.
-
-The estimator still drives target/trend/shortage classification and recovery; it is neither disabled nor replaced by forced `high`. The receiver-evidence requirement is deliberately conservative because this deployment's Pion GCC target proved capable of a prolonged loss-free false collapse. A future verified queue-limited path that is genuinely unusable but produces neither receiver loss nor NACKs would need a separately validated delay signal rather than restoring target-only downgrades.
-
-The implementation remains entirely peer-local, keeps WebRTC as the default, leaves WebCodecs/HLS selection unchanged, and does not alter the profile's 12-second stable, 6-second unstable, 8-second stalled, 30-second downgrade-backoff or 5-second upgrade-backoff values. New metrics expose raw receiver-report fraction loss and the current policy evidence bit; estimator logs include feedback freshness, loss and NACK classification.
-
-Exact `2efcc6b1` target-server tests/build and image deployment passed. One unshaped viewer H then remained on `high` for 20 minutes while its target varied from 1,708,609 to 4,574,045 bit/s; it recorded zero loss, zero local video drops, no confirmed-congestion log entry and no switch. Ten intermittent NACK entries never persisted as the fresh evidence required by a downgrade. During endpoint-specific shaping of C, only C moved through `medium` to `low`; H remained visually good on `high` with no drop delta. This validates the repaired healthy hold, real constrained downgrade and cross-peer isolation for that run.
-
-The same run exposed a separate recovery weakness. After the shaper was restored to `fq_codel`, C was clean but remained on `low` for the full 90-second recovery phase: its target stayed around 0.49–0.65 Mbit/s, close to the low stream it was already receiving and below the approximately 1.06-Mbit/s nominal medium upgrade gate. C eventually recovered by itself to `high` later, when its target had risen to about 3.76 Mbit/s. Recovery was therefore possible but delayed by the lower tier application-limiting the very estimate used to authorize the next tier.
-
-The current follow-up preserves the ordinary nominal next-tier upgrade gate and adds a separate bounded recovery path. Every successful automatic downgrade records one peer-local recovery step; a peer without such a step cannot probe. After the lower tier has been clean and stable, has at least the configured reserve over its own complete-delivery reference, and has waited `recovery_probe_interval` (30 seconds in this profile), it may regain exactly one lost tier. The new tier must then complete its own fully observed stable window without a downward trend or fresh receiver congestion; pauses and missing/unmeasured sources do not count. The advisory target may remain below that probed tier's floor without deadlocking a loss-free probe, but another probe still requires reserve over the now-current tier. If material shortage plus fresh receiver loss/NACK evidence triggers the normal downgrade, the probe is failed and its next attempt waits exponentially longer, capped by `recovery_probe_max_backoff` (two minutes in this profile). A successful probe clears the failure count. This does not reset GCC, permanently force or probe above the pre-downgrade tier, relax downgrade evidence, or share state between peers.
-
-Focused repository tests cover the exact severe loss-free collapse, fresh/stale receiver evidence, sustained shortage, transient congestion, peer isolation, ordinary stable recovery, the application-limited probe boundary, higher-tier validation, failed-probe exponential/capped backoff, probe isolation, hysteresis, bitrate-reference construction and unchanged startup/backoff boundaries. They were not executed in Codex. The target server subsequently passed them as part of the complete focused server package sequence at exact commit `ddf15cee`.
-
-At `ddf15cee`, the target validation image passed the configured server packages, 30-second media-WebSocket fuzz run with 1,357,656 executions and trailing server/plugin build. Fresh base and Brave images built, image `sha256:1023bd9f6afb54fdec80935bf7b989c715d96eef91b1023a001a49b6ca4372cd` deployed healthy with zero restarts, and the adaptive preflight loaded the tracked profile. In the shortened two-viewer gate, endpoint-specific 700-kbit/s shaping drove only C from `high` through `medium` to `low` under fresh receiver evidence while H stayed `high` with zero video-drop delta. The operator observed C frozen on `high`/`medium` and fluid on `low`. After restoring the host's `fq_codel`, C remained clean, started one `low -> medium` recovery probe at 30 seconds, completed it successfully with no failure, and reached `high` at 60 seconds; the tier changes were visually apparent. The final state was C/H on `high`, probe active `0`, attempts/successes/failures `1/1/0`, healthy container, zero restarts and restored `fq_codel`. The ad-hoc wrapper returned `1` only because its filtered-file post-count found zero switch lines; the saved metrics/CSV, direct container logs and operator observation establish the gate itself, including evidence-backed `high -> medium -> low` decisions and clean bounded recovery.
-
-## Loss-share congestion evidence and stable window — pending target-server validation
-
-Operator report on 2026-10-26: after a random dip, a desktop and Wi-Fi phones/tablets stayed below `high` although a 150/80 Mbit/s line had ample capacity. Static tracing found two causes in the policy above; neither changes a bitrate, a tier or a timing value.
-
-- **Any single loss counted as congestion.** One NACK or one receiver report with non-zero `FractionLost` within two read intervals confirmed congestion. On Wi-Fi, isolated losses that retransmission repairs are routine, so a fast path was "congested" most of the time: the loss-free collapse protection did not apply to such viewers, and every NACK reset the stable window that both the ordinary upgrade and the recovery probe need. An offline replay of the unchanged decision functions (one documented loss-free GCC collapse, otherwise 2.6–4.6 Mbit/s on every tier, NACKs as a Poisson process) returned to `high` within 28 minutes in 50/50 runs at 0.25 NACKs/s, 7/50 at 0.5/s and 0/50 at 1/s; `high` sends about 220 packets/s, so 0.5/s is roughly 0.2 % loss.
-- **Every GCC back-off reset the stable window.** Pion's delay controller backs off to 0.85 × the received rate; with the 0.05 transport reserve the downgrade floor is 0.8925 × the sent media rate, so each back-off sampled by a read counted as insufficient and restarted the 12-second stable window, also on a loss-free path.
-
-The correction:
-
-- Congestion evidence is now a share per receiver-report interval: lost packets (`TotalLost` delta) or NACKed packets, each divided by the expected packets (extended highest sequence delta), compared with `webrtc.estimator.congestion_loss_threshold` (default and profile `0.02`, the same 2 % at which Pion's loss controller stops increasing). An interval also needs at least four lost or NACKed packets, so that a single Wi-Fi burst (for example an unpaced keyframe) on the low tiers, where 2 % of an interval is two or three packets, does not count. `0` restores the previous any-loss behavior. A missing or stale report still cannot authorize a downgrade.
-- Only the report block and NACKs for the video SSRC count; previously the last report block of a compound report was used, whichever stream it described. Report blocks inside sender reports (a client that shares its microphone) count as well.
-- An insufficient target alone no longer resets the stable window. A downward trend or confirmed congestion still does, and every upgrade still checks the target against `upgrade_diff_threshold` (ordinary) or the current-tier reserve (probe).
-- Logs add `receiver_loss_ratio` and `receiver_nack_ratio`.
-
-New focused tests cover Wi-Fi residual loss with ample capacity (upgrade-ready after the stable window), a 1.3 Mbit/s path under `high` (still downgrades), brief loss-free back-offs, the zero-threshold fallback and fresh/stale report handling. Re-run the compact recovery-probe regression below before relying on it; the constrained phases are expected to produce loss shares far above 2 %. Counting NACKed packets and the probe's current-tier reserve were withdrawn on 2026-10-30, see the next section.
-
-## Repaired loss and floored target — 2026-10-30, pending target-server validation
-
-Operator report on 2026-10-30: a home desktop viewer on an ample line (a 1080p50 Twitch stream plays at its top quality there) was sharp after a reload, turned soft after 30–60 seconds of full-screen sports video, kept getting worse and never recovered without another reload. The estimator log of that peer shows the whole cascade `high -> medium -> low -> lowest` within about one minute. On every logged line `receiver_report_total_lost` and `receiver_loss_ratio` were `0`, while `receiver_nack_ratio` was 0.03–0.26 per report interval: the path to this viewer loses packets on first transmission, and every one of them arrived on its NACK retransmission. `target_bitrate` sat at 100,000 bit/s on every tier (on `high` it passed 884,891 and 458,371 bit/s on the way there), so `insufficient` was `true` on every line. Three facts explain the report. The correction below changes no bitrate, tier or timing value.
-
-- **Repaired loss confirmed congestion.** The 2026-10-26 share counted NACKed packets like lost packets, so 3–26 % NACK share confirmed congestion in every interval although nothing was missing after retransmission. Such loss is not caused by the viewer's own rate: the log shows NACK shares of 3–14 % on `low` and `lowest` (332,800 bit/s) as well, so stepping down did not remove it.
-- **Pion's target cannot leave its floor under that loss.** Pion's send-side estimate is the minimum of its delay and loss controllers. The loss controller works on transport-wide feedback, i.e. loss before retransmission; it cuts the rate while that loss is above 10 %, raises it only below 2 %, and its minimum is a hard-coded 100,000 bit/s (`pion/interceptor` v0.1.49, `pkg/gcc/loss_based_bwe.go`). With several percent of first-transmission loss the target stays at or near that floor on every tier, so `insufficient` says nothing about capacity.
-- **Recovery needed headroom a floored target never shows.** The recovery probe still required the target to clear the current tier's complete-delivery reference by `upgrade_diff_threshold`, and the ordinary upgrade needs more. With the target at 100,000 bit/s no step up could start on any tier.
-
-A reproduction harness found three further defects that the operator log does not show. It runs this package's real peer (Pion GCC with the NoOp pacer, NACK responder, TWCC, track and estimator reader) against a headless Chromium receiver through a user-space UDP shaper (rate, 60 ms queue, 15 ms delay, random loss per phase), with busy synthetic 1080p25 content (`testsrc2` plus temporal noise) pre-encoded per tier with the profile's rate control.
-
-- **A stale upward trend blocked downgrades under real overload.** The trend detector skips repeated values. When the target falls in a few steps to its floor and stays there, its window still holds the climb before the collapse and it reports `UPWARD` for minutes. The stall path accepted only `NEUTRAL`, so a constant floored target satisfied neither the downward nor the stall path: at 1.3 Mbit/s with 1 % loss the viewer stayed on `high` through the whole two-minute phase and its picture froze.
-- **Unjudgeable report intervals counted as clean.** Under heavy overload Chromium's receive statistics stop matching each other: in some reports the cumulative loss rose by more than the highest sequence number advanced (interval shares above 1), and every few reports the highest sequence number went back by 245–677 packets (8 of 155 reads in one run). The loss-share code read such an interval as clean, and a clean read resets the unstable and stalled windows. With the stale-trend fix alone the viewer at 1.3 Mbit/s left `high` once but then stayed on `medium` (1.6 Mbit/s) for the rest of the phase at about one decoded frame per second.
-- **Capacity-qualified steps back were not validated.** On a tier below the path's capacity Pion's target climbs past the next tier's requirement within seconds, so the ordinary upgrade returned to the tier just left without the probe's failure backoff. At 3.8 Mbit/s, just under `high`'s actual rate, the viewer switched `high -> medium -> high -> medium -> high` in 66 seconds.
-
-The correction:
-
-- Only loss the receiver still reports after retransmission (`TotalLost` delta per report interval) confirms congestion; `receiver_nack_ratio` is still logged but no longer counts. On an overloaded path the retransmissions are lost as well and the receiver reports the loss within a few seconds. `congestion_loss_threshold: 0` still restores the original any-loss-or-NACK behavior.
-- A report interval whose highest sequence number did not advance or went back keeps the previous interval's verdict instead of counting as clean. The log marks it with `receiver_interval_unjudged=true` and now includes `receiver_report_highest_sequence`. The review traced the likely cause, not reproduced here: libwebrtc's stream-restart heuristic (`StreamStatisticianImpl::UpdateOutOfOrder`; with NACK the reordering threshold is `kMaxPacketAgeToNack`, 450 packets) takes two consecutive packets more than 450 sequence numbers from the current maximum as a restart and does not count the gap as loss, and old retransmissions after such a restart move the maximum back. The converse case is not covered: a forward gap of more than 450 consecutive lost packets (about one second on `high`) also counts as a restart, so that interval reads as diluted or clean rather than unjudged. It needs a near-total outage.
-- The stall window runs while the direction is not `DOWNWARD` (previously only `NEUTRAL`), so a stale `UPWARD` no longer blocks a confirmed, persistent shortage. The downgrade still needs fresh receiver loss and the unstable, stalled and backoff windows.
-- The recovery probe no longer looks at the target. It starts once the lower tier has been clean (no confirmed congestion, no downward trend) for the stable window and `recovery_probe_interval` or the failure backoff has passed. Its failure path is unchanged: material shortage plus fresh receiver loss downgrades again and doubles the wait up to `recovery_probe_max_backoff`.
-- Every step back toward a tier that an automatic downgrade left is validated like a probe, also when the target qualified it as an ordinary upgrade (`capacity_qualified=true` in `started peer-local one-tier recovery probe`). A failed step therefore backs off exponentially instead of returning after the 5-second upgrade backoff. Each step also waits for its own 12-second stable window before the next one, so returning over several tiers takes about 12 seconds per tier instead of 5.
-
-Harness runs before and after the correction (same content, phases and shaper; tier changes in seconds from connect):
-
-| Scenario | Before | After |
-| --- | --- | --- |
-| D: operator pattern. 180 s of 250 ms bursts every 2 s (20 % random loss, 60 ms standing queue), no rate limit | `high -> medium` at 78 s, `medium` for 152 s until a probe at 230 s; 15 packets lost after retransmission | stays on `high`; 36 packets lost after retransmission; 5.0 s of freezes during the bursts (4.5 s before) |
-| E2: 1.3 Mbit/s, 1 % loss for 120 s | stays on `high`, decodes 0.2 frames/s, frozen for the whole phase | `high -> medium` at 54 s, `medium -> low` at 86 s, one failed probe; 9.7 frames/s; back on `high` 22 s after the phase |
-| E1: 3.8 Mbit/s for 120 s, just under `high`'s actual rate | `high -> medium -> high -> medium -> high` (62, 86, 104, 128 s); 25 s of freezes | first downgrade at 70 s; failed steps back wait 22, 32 and 62 s; 36 s of freezes; back on `high` 64 s after the phase |
-| C: 3 Mbit/s for 20 s | stays on `high`, 6.7 frames/s | `high -> medium` at 54 s, back on `high` 16 s after the dip; 12 frames/s |
-
-Limits of this evidence: the content is synthetic, the shaper is user-space and the receiver runs on the same host, so the harness reproduces the mechanism, not the operator's line. The fix is not validated on the target server. A path whose losses NACK repairs completely, but too late for playout, no longer counts as congested: libwebrtc counts a late retransmission, and every duplicate of one, as received, so such a viewer freezes without reporting loss. E1 shows this early in its overload: for about 8 s the receiver reported no loss after retransmission while it froze, which restarted the stall window, so the first downgrade came 8 s later than before and the phase had 36 instead of 25 seconds of freezes (one run each). The operator log shows no such case. After deployment, compare `receiver_loss_ratio` with the browser's freeze count (`chrome://webrtc-internals`). Follow-ups from the review: log Pion's delay/loss split (`GetStats()`: `delayTargetBitrate`, `lossTargetBitrate`, `averageLoss`) so that the next operator log shows whether the delay half was healthy; then consider gating the probe on the delay half, which keeps a reserve check without the loss controller's floor; and log the share of sequence numbers NACKed more than once as a faster signal for late repair.
-
-Focused tests: `TestRepairedLossWithFlooredTargetKeepsHighestTier` replays the operator log, `TestStalledEstimateDowngradesDespiteStaleUpwardTrend` covers the floored-target overload, `TestTargetAtFloorStillAllowsRecoveryProbe` the probe at 100,000 bit/s, `TestReceiverCongestionEvidenceKeepsVerdictOverUnjudgedInterval` the unjudgeable intervals, and `TestCapacityQualifiedStepAfterDowngradeBacksOffWhenItFails` the 30 s, 60 s, 2 min backoff of failed capacity-qualified steps. `TestReceiverCongestionEvidenceRequiresLossShare` now expects a heavy NACK share without loss to stay unconfirmed.
-
-Target-server validation: with the operator's desktop on full-screen motion for at least ten minutes, the viewer must stay on `high` while `receiver_loss_ratio` stays below 0.02, whatever `receiver_nack_ratio` and `target_bitrate` show; every `downgraded video stream` must follow reads with `receiver_congestion_confirmed=true` and a loss share of at least 0.02. Then repeat the compact recovery-probe regression below: C must still leave `high` under the shaper and return within three minutes.
-
-## Fast-motion softness observation
-
-After the focused run, the operator reported a possible softer image during fast scrolling and high-motion video, while static content looked good. The comparison at that checkpoint found `deploy/adaptive-quality.yaml` and `docker-compose.adaptive.yaml` byte-identical to the accepted `bfaca84e` configuration; the media-subscription refactor added timing, format and lifecycle metadata but did not alter encoder construction or its settings; and the GStreamer/provider/WebRTC adapter forwarded the same encoded payload bytes into Pion. The later steady-state decision correction adds `transport_reserve` to the estimator profile but still changes no encoder parameter or payload path. The focused run also reported zero video queue drops. There is therefore no current evidence that the refactor or estimator correction introduced a visual-quality regression.
-
-The observation is technically plausible under the existing accepted profile. Its `high` tier is fixed-rate VP8 at 1,996,800 bit/s and 25 fps with `max-quantizer: 63`; complex movement changes many blocks at once, so the encoder may spend more of its fixed budget on motion and temporarily quantize detail more heavily than on a static desktop. This is not proven to be the operator's cause. Keep the profile unchanged until a controlled same-content A/B compares at least the current target with a higher target and/or tighter quantizer bound while recording encoded bitrate, receiver `getStats()` loss/drop/freeze/QP information, host utilization and comparable captures. Treat that future test as quality tuning, not as a prerequisite for the closed compatibility checkpoint.
-
-## Target-server acceptance — 2026-09-10
-
-The final candidate was built and exercised from `testing` at `bfaca84e0bcf`. The target host intentionally has no Go installation, so the repository's server Docker image ran the focused capture and WebRTC tests; both packages passed. The local base and Brave images then built successfully, Compose started the adaptive service healthy with zero restarts, and the running Brave image ID was `sha256:a3efc4573a26965b0b9ccc54a289278fcd570d206c8ddaea58719f5e1a2c69ca`.
-
-Combined acceptance evidence:
-
-| Phase | Healthy desktop / iPad | Constrained iPhone | Relevant measurements | Result |
-| --- | --- | --- | --- | --- |
-| unconstrained baseline | both remained visually smooth on `high`; audio/video drop counters stayed at zero | visually smooth on `high`; drop counters stayed at zero | `high` measured 1,708,808 bit/s in the final baseline | pass |
-| 1.3 Mbit/s, 80 ms RTT, 1% loss | both remained smooth on `high`; no peer-local drops | `medium` was watchable with only small occasional interruptions | 569,136 bit/s video plus 130,968 bit/s audio in the passing rate-control run | pass; final nominal gate only makes upgrades stricter |
-| 0.7 Mbit/s, 120 ms RTT, 2% loss | both remained smooth on `high`; no peer-local drops and no shaped-class traffic | initially froze on `medium`, reached `low` by 45 seconds, then stayed watchable on `low` through 90 seconds without the previous upward excursion | target estimate stayed between 100,000 and 328,879 bit/s on `low`; shaped class carried 7,068,103 bytes during the approximately 91-second phase | pass |
-| impairment removed | both remained on `high` | moved to `medium` by 15 seconds and `high` by 45 seconds; playback became smooth | final `high` rate 2,001,544 bit/s; only `high` remained active with three listeners | pass |
-
-The final container used 102.74% CPU and 903.1 MiB of 25.43 GiB RAM on an eight-CPU host, so the observed result did not indicate sustained host saturation. The host qdisc was restored to its original `fq_codel` configuration after shaping.
-
-Refresh/rejoin and transient cellular interruption were also exercised. Reload produced a new active iPhone session on `high` with zero peer-local drops. After a 15-second flight-mode interruption, another new iPhone session was already active on `high` at the first 10-second sample and remained connected throughout the 90-second observation. The desktop and iPad stayed smooth on `high` with zero drop deltas throughout. The operator reports that iPhone playback worked after reload and, where iOS required it, pressing the central Play control. This proves the manual reload/play fallback without cross-peer disruption; it does not prove fully automatic in-place iOS recovery without user action.
-
-The later bounded no-reload client implementation on `testing` is outside this adaptive-profile acceptance record. Its separate same-peer, replacement-session and Safari policy validation remains pending under [`IOS_RECOVERY.md`](IOS_RECOVERY.md).
-
-Decision: **accepted as an opt-in profile for this tested deployment and scenario**. Keep the base Compose deployment single-pipeline, retain the documented rollback path, and remeasure before claiming other devices, architectures or materially different network envelopes.
-
-## Before activation
-
-Run these commands only on the real target server. Preserve the currently working image under a rollback tag, then rebuild because the adaptive unit includes server-side bitrate/metrics changes:
+| `high` | 1920×1080 | 25 | 3,993,600 |
+| `medium` | 1280×720 | 25 | 1,601,600 |
+| `low` | 1280×720 | 20 | 748,800 |
+| `lowest` | 960×540 | 15 | 332,800 |
+
+- The first ID is the start tier. A tier's encoder runs only while someone watches it, so CPU grows with
+  the number of tiers in use (up to four encoders with four threads each).
+- `nominal_bitrate` equals the encoder target and is the reference for stepping up, so an easy-to-encode
+  picture on the current tier cannot make the next tier look affordable.
+- Lower tiers scale bilinearly (`videoscale method=1`); nearest-neighbour made thin text vanish.
+- Encoder: CBR, full quantizer range (`max-quantizer: 63`), fixed speed (`cpu-used: -4` on `high`, `-6`
+  below; a positive value lets libvpx speed up under CPU contention and lose 3–7 dB),
+  `static-threshold: 100` for screen content.
+- Keyframes come on demand: when a tier gains a viewer, on PLI/FIR and after a locally dropped frame, at
+  most one per 500 ms per tier; otherwise every 4 seconds (`keyframe-max-dist`). `max-intra-bitrate` caps
+  a keyframe at about 0.36 s of the tier's rate.
+
+## Decision rules
+
+The estimator reads Pion's GCC target every `read_interval` (2 s) and compares it with the viewer's
+complete-delivery reference: `max(measured, nominal video) + measured audio`, times `1 + transport_reserve`
+(0.05).
+
+- **Down one tier** only when all hold: the target is more than `diff_threshold` (0.15) below the
+  reference, the receiver confirms congestion, the trend is downward or this has lasted
+  `stalled_duration` (8 s) without one, the shortage has lasted `unstable_duration` (6 s), and
+  `downgrade_backoff` (30 s) has passed since the last downgrade.
+- **Congestion** is confirmed only by loss the receiver still reports after retransmission: per RTCP
+  report interval, lost packets of the video SSRC divided by expected packets, at least
+  `congestion_loss_threshold` (0.02) and at least four packets. NACKed packets that arrived on
+  retransmission do not count; reports older than two read intervals do not count. An interval whose
+  highest sequence number did not advance keeps the previous verdict.
+- **Up one tier** after a clean `stable_duration` (12 s) when the target exceeds the next tier's reference
+  by `upgrade_diff_threshold` (0.15) and `upgrade_backoff` (5 s) has passed.
+- **Recovery probe:** a viewer that was downgraded automatically may try the tier it lost once the lower
+  tier was clean for the stable window and `recovery_probe_interval` (30 s) has passed, whatever the target
+  says (Pion's loss controller can pin it at 100,000 bit/s). Every step back toward a lost tier is
+  validated like a probe: a failed step doubles the wait, up to `recovery_probe_max_backoff` (2 min).
+
+All state is per viewer. `congestion_loss_threshold: 0` restores the old any-loss-or-NACK rule.
+
+## Diagnosis
+
+The estimator logs at debug level (`debug: true` in the profile):
 
 ```bash
-docker image tag my-neko/brave:latest my-neko/brave:pre-adaptive
-cd server
-go test ./internal/capture -run '^(TestSaveSampleBitrateUsesBitsPerSecond|TestNominalBitrate)$'
-go test ./internal/webrtc -run '^(TestInitialEstimatorObservationTimesDoNotStartExpired|TestNeutralLossFreeEstimateDoesNotDowngradeWithoutUpgradeReserve|TestSevereLossFreeEstimatorCollapseDoesNotDowngrade|TestReceiverCongestionEvidenceRequiresLossShare|TestReceiverCongestionEvidenceZeroThresholdCountsAnyLoss|TestReceiverCongestionEvidenceRequiresFreshReport|TestWifiResidualLossDoesNotHoldViewerOffHighestTier|TestRepairedLossWithFlooredTargetKeepsHighestTier|TestStalledEstimateDowngradesDespiteStaleUpwardTrend|TestTargetAtFloorStillAllowsRecoveryProbe|TestCapacityQualifiedStepAfterDowngradeBacksOffWhenItFails|TestReceiverCongestionEvidenceKeepsVerdictOverUnjudgedInterval|TestRealCongestionStillDowngradesWithLossShare|TestBriefTargetBackoffsDoNotResetStableWindow|TestReceiverCongestionEvidenceExpiresBeforeUnstableWindow|TestTransientReceiverCongestionDoesNotDowngrade|TestEstimatorCongestionEvidenceRemainsPeerLocal|TestSustainedInsufficientNeutralEstimateDowngrades|TestEstimatorRecoveryRequiresStableCapacityBeforeUpgrade|TestEstimatorHysteresisPreventsRapidOscillation|TestEstimatorStartupAndBackoffWindowsRemainBounded|TestDeliveryBitrateReferenceUsesNominalMeasuredAudioAndTransport|TestEstimatedBitrateRequiresDowngrade|TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade)$'
-./build
-cd ..
-./build my-neko/base:latest -y
-./build my-neko/brave:latest -y
+docker compose logs -f neko | grep -E "got bitrate from estimator|downgraded video stream|upgraded video stream|recovery probe|set video"
 ```
 
-When the target host deliberately has no Go toolchain, validate through the repository's server image instead:
+On each `got bitrate from estimator` line, compare `receiver_loss_ratio` (counts) with
+`receiver_nack_ratio` (logged only): a high NACK share with zero loss is a path that loses first
+transmissions but repairs them, and must not cost a tier. Further fields: `target_bitrate`, the reference
+and floor, `insufficient`, the trend, `receiver_interval_unjudged` and `receiver_congestion_confirmed`.
+A probe log with `capacity_qualified=true` is a step the target alone would have allowed.
 
-```bash
-VALIDATION_IMAGE="my-neko/server-validation:$(git rev-parse --short=8 HEAD)"
-docker build -t "$VALIDATION_IMAGE" ./server
-docker run --rm "$VALIDATION_IMAGE" \
-  go test ./internal/capture \
-  -run '^(TestSaveSampleBitrateUsesBitsPerSecond|TestNominalBitrate)$'
-docker run --rm "$VALIDATION_IMAGE" \
-  go test ./internal/webrtc \
-  -run '^(TestInitialEstimatorObservationTimesDoNotStartExpired|TestNeutralLossFreeEstimateDoesNotDowngradeWithoutUpgradeReserve|TestSevereLossFreeEstimatorCollapseDoesNotDowngrade|TestReceiverCongestionEvidenceRequiresLossShare|TestReceiverCongestionEvidenceZeroThresholdCountsAnyLoss|TestReceiverCongestionEvidenceRequiresFreshReport|TestWifiResidualLossDoesNotHoldViewerOffHighestTier|TestRepairedLossWithFlooredTargetKeepsHighestTier|TestStalledEstimateDowngradesDespiteStaleUpwardTrend|TestTargetAtFloorStillAllowsRecoveryProbe|TestCapacityQualifiedStepAfterDowngradeBacksOffWhenItFails|TestReceiverCongestionEvidenceKeepsVerdictOverUnjudgedInterval|TestRealCongestionStillDowngradesWithLossShare|TestBriefTargetBackoffsDoNotResetStableWindow|TestReceiverCongestionEvidenceExpiresBeforeUnstableWindow|TestTransientReceiverCongestionDoesNotDowngrade|TestEstimatorCongestionEvidenceRemainsPeerLocal|TestSustainedInsufficientNeutralEstimateDowngrades|TestEstimatorRecoveryRequiresStableCapacityBeforeUpgrade|TestEstimatorHysteresisPreventsRapidOscillation|TestEstimatorStartupAndBackoffWindowsRemainBounded|TestDeliveryBitrateReferenceUsesNominalMeasuredAudioAndTransport|TestEstimatedBitrateRequiresDowngrade|TestEstimatedBitrateSupportsUpgrade|TestReferenceBitrateForUpgrade)$'
-./build my-neko/base:latest -y
-./build my-neko/brave:latest -y
-```
+Metrics (`/metrics`, `server.metrics: true`): `neko_capture_streamsink_bitrate{video_id}`,
+`neko_webrtc_video_listeners` (current tier per session), `neko_webrtc_receiver_estimated_target_bitrate`,
+`neko_webrtc_receiver_congestion_evidence`, `neko_webrtc_recovery_probe_*`,
+`neko_webrtc_track_dropped_samples_total`, `neko_capture_streamsink_keyframes` and `_keyframe_requests`.
+Above 30 forced keyframes per minute on one tier, raise `minKeyframeRequestInterval` to one second.
 
-If `.env` sets another `NEKO_IMAGE`, use that image name for the backup and build commands. Keep the rollback tag local and never copy credentials into a tracked file.
+## Open checks on the server
 
-Validate the merged Compose model without printing resolved secrets, recreate the service, and inspect its state:
-
-```bash
-docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml config --quiet
-docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml up -d --force-recreate
-docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml ps
-docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs --since=5m neko
-```
-
-Required startup evidence:
-
-- the `neko` service is healthy/running and uses the intended locally built image;
-- the log contains `preflight complete with config file` and no configuration/GStreamer error;
-- joining a viewer starts `high`, shown by `set video` with `video_id=high` and by the metrics below;
-- the existing Brave profile, downloads and managed policy still load from their original mounts.
-
-## Observability
-
-With the default loopback HTTP port, inspect the relevant metrics on the target server:
-
-```bash
-curl -fsS http://127.0.0.1:8082/metrics \
-  | grep -E 'neko_(capture_(streamsink_(bitrate|listeners|bytes)|pipelines_active)|webrtc_(receiver_(congestion_evidence|estimated_target_bitrate|report_(fraction_lost|total_lost))|recovery_probe_(active|attempts_total|successes_total|failures_total)|track_dropped_samples_total|transport_layer_nacks|video_listeners))'
-```
-
-Replace `8082` when `NEKO_HTTP_PORT` has been changed. The important series are:
-
-- `neko_capture_streamsink_bitrate`: measured encoded pipeline rate in bit/s, labeled by `video_id`;
-- `neko_webrtc_receiver_estimated_target_bitrate`: estimator target in bit/s, labeled by `session_id`;
-- `neko_webrtc_receiver_report_fraction_lost`: latest raw RTCP 8-bit interval-loss value, labeled by `session_id`;
-- `neko_webrtc_receiver_report_total_lost`: latest cumulative RTCP receiver-report loss value, labeled by `session_id`;
-- `neko_webrtc_transport_layer_nacks`: cumulative received NACK entries, labeled by `session_id`;
-- `neko_webrtc_receiver_congestion_evidence`: `1` only while the receiver's recent loss after retransmission reaches `congestion_loss_threshold` and can authorize an adaptive downgrade; packets repaired by NACK do not count;
-- `neko_webrtc_recovery_probe_active`: `1` only while that peer is validating a probe-selected higher tier;
-- `neko_webrtc_recovery_probe_attempts_total`, `neko_webrtc_recovery_probe_successes_total` and `neko_webrtc_recovery_probe_failures_total`: cumulative peer-local probe outcomes;
-- `neko_webrtc_video_listeners`: the selected tier for each session (`1` is active);
-- `neko_webrtc_track_dropped_samples_total`: cumulative peer-local queue drops, labeled by `session_id` and `kind`;
-- `neko_capture_streamsink_listeners` and `neko_capture_pipelines_active`: demand and active encoder pipelines;
-- `neko_capture_streamsink_bytes`: cumulative encoded output, useful for an independent rate calculation.
-
-The bitrate gauge and estimator target deliberately use the same bit/s unit. A completed or closed session can leave cumulative counters in the Prometheus registry; use `neko_webrtc_connection_state == 5` or a current `video_listeners == 1` series to identify active sessions. Evaluate queue-drop counter deltas during a phase, not their lifetime totals.
-
-For switch decisions and their measured inputs, follow the estimator logs:
-
-```bash
-docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml logs -f neko \
-  | grep -E "got bitrate from estimator|downgraded video stream|upgraded video stream|recovery probe|set video|dropping sample|don't have enough bitrate"
-```
-
-`got bitrate from estimator` includes `target_bitrate`, measured and nominal video rates, measured audio, transport reserve, complete-delivery reference, downgrade floor, insufficiency classification, trend, receiver-report freshness/fraction/total loss, NACK freshness, the interval shares `receiver_loss_ratio` (counts) and `receiver_nack_ratio` (logged only), `receiver_report_highest_sequence`, `receiver_interval_unjudged` (an interval whose highest sequence number did not advance or went back kept the previous verdict) and the final receiver-congestion confirmation. A rejected nominal-rate upgrade includes `upgrade_reference_bitrate` and `nominal_reference`; the collector retains its `don't have enough bitrate` message. Recovery-probe logs record start (`capacity_qualified=true` when the target alone would have allowed the step), clean completion, failure count and the next backoff. The trace-only `dropping sample` line may not be visible at the normal log level; the counter is the authoritative drop diagnostic.
-
-## Resource cost
-
-Pipelines are started on demand. If every viewer is on `high`, only that video pipeline is needed. If viewers occupy all four tiers, up to four VP8 capture/scale/encoder pipelines run concurrently. Each tier is configured with up to four encoder threads, so CPU demand can rise sharply; thread count is not a promise of exact core use. Scaling, queues and encoded buffers also add memory pressure.
-
-During a switch, the destination pipeline is started before the listener is moved and the unused source pipeline is stopped afterward. Short-lived encoder overlap is therefore expected. Outbound media bandwidth remains per viewer and should roughly follow that viewer's selected tier plus audio, RTP/RTCP and network overhead.
-
-Record host CPU, memory, load, pipeline gauges and packet/drop behavior while several tiers are active. Lower `threads`, frame rates or target bitrates only from target-server evidence. If the host itself becomes saturated, slow-peer isolation cannot protect healthy viewers from shared CPU exhaustion.
-
-## Compact recovery-probe regression — accepted at `ddf15cee`
-
-The exact `2efcc6b1` run already supplied a 20-minute healthy hold, real constrained downgrade and peer-isolation evidence. This follow-up is limited to the changed recovery behavior while retaining a short concurrent H guard. It intentionally uses only one healthy viewer `H` and one independently constrained viewer `C`; retain the longer three-viewer matrix below for final grouped acceptance.
-
-The procedure passed on the target server on 2026-09-23 with the exact result summarized above. It remains here as the reproducible regression procedure; it does not replace the deferred final grouped matrix.
-
-1. On an exact clean `testing` commit, run the focused capture/WebRTC tests above, build the server plus selected local image, validate the merged base/adaptive Compose model and recreate the service. Record commit, immutable image ID, health and restart count.
-2. Join H and C over WebRTC, identify their distinct active `session_id` values and C's UDP endpoint, and confirm both begin on `high`. Keep changing content visible on both.
-3. Apply the already verified endpoint-specific shaper only to C. It is sufficient to drive C to `low` once with sustained fresh receiver evidence; confirm H remains on `high`, no H video-drop counter increases, shaped traffic belongs only to C, and at least one real downgrade is recorded. There is no need to repeat the earlier 20-minute unshaped soak or preserve every prior 90-second shaped phase.
-4. Remove the impairment completely and confirm `fq_codel` is restored. C must recover in order `low -> medium -> high` within three minutes. At least one transition should be attributable either to an ordinary capacity-qualified upgrade or to `recovery_probe_attempts_total`; an active probe must end in a success or an evidence-gated failure, never remain stuck. H must stay on `high` with no new local video drops.
-5. Capture final metrics/logs with `deploy/collect-adaptive-quality.sh`. Reject the run for any unexplained H downgrade, C recovery beyond three minutes, probe failure without the normal fresh congestion evidence, immediate repeated failed probes inside their reported backoff, cross-peer tier/drop changes, reconnect storm, GStreamer error, container restart or unremoved host shaper.
-
-This compact gate demonstrates the reported healthy-client regression and continued constrained-client adaptation together. It does not replace the final role/device/recovery/resource matrix.
-
-## Healthy-plus-constrained-viewer acceptance
-
-Use two healthy viewers (`H1`, `H2`) and one independently constrained viewer (`C`). A constraint must apply only to `C`'s receive path. Browser HTTP throttling is not sufficient evidence because WebRTC media normally uses UDP; use a router, VM/network namespace or OS shaper whose scope and actual throughput can be verified. Record the shaper/tool, client IP, browser versions, server commit and image ID.
-
-When combining a rate limit with `netem`, bound and inspect the queue explicitly. The default 1,000-packet limit produced several seconds of backlog and an invalid frozen-viewer result during the first target-server attempt. Verify non-zero shaped traffic, bounded backlog and an unshaped healthy-viewer path from `tc -s` output; record kernel-shaper drops separately from `neko_webrtc_track_dropped_samples_total`, which measures the earlier peer-local track queue.
-
-Take a metrics snapshot at the beginning and end of every phase and keep the estimator log running. Map `H1`, `H2` and `C` to `session_id` values by joining them one at a time and observing the newly active `video_listeners` series.
-
-The repository includes a non-destructive collection helper and result template. It reads only the filtered adaptive metrics and logs and never reads `.env`. Keep its output outside the repository because raw evidence can contain session IDs and host details:
-
-```bash
-ADAPTIVE_RESULT_DIR="../neko-adaptive-results-$(date -u +%Y%m%dT%H%M%SZ)"
-./deploy/collect-adaptive-quality.sh init "$ADAPTIVE_RESULT_DIR"
-```
-
-At every phase boundary, take a named snapshot. Use `baseline-start`, `baseline-end`, `medium-start`, `medium-end`, `low-start`, `low-end`, `restored-start` and `restored-end` so before/after counter deltas remain unambiguous:
-
-```bash
-./deploy/collect-adaptive-quality.sh snapshot "$ADAPTIVE_RESULT_DIR" baseline-start
-# Run the phase, then:
-./deploy/collect-adaptive-quality.sh snapshot "$ADAPTIVE_RESULT_DIR" baseline-end
-```
-
-After the final recovery checks, capture the relevant estimator/switch log window and complete `RESULTS.md` in the evidence directory:
-
-```bash
-./deploy/collect-adaptive-quality.sh logs "$ADAPTIVE_RESULT_DIR" 60m
-```
-
-Set `NEKO_METRICS_URL` for the helper when the metrics endpoint is not `http://127.0.0.1:8082/metrics`. The helper records the running container's configured image and immutable image ID without dumping its environment or resolved Compose configuration. Review and sanitize the completed result before adding a summary to the repository.
-
-1. Start `H1`, wait for video/audio/control, then start `H2` and finally `C`. Leave all paths unconstrained for 60 seconds.
-2. Confirm all three sessions have `video_id="high"`, target estimates are being updated, and no healthy-session video-drop counter increases during a further 60-second baseline.
-3. Limit only `C` to 1.3 Mbit/s receive bandwidth, 80 ms added round-trip latency and 1% packet loss for 90 seconds. Keep `H1` and `H2` actively displaying the same changing desktop content.
-4. Confirm `C` changes from `high` to `medium`; `H1` and `H2` must remain on `high`, remain responsive and show no new peer-local video drops. Correlate the switch with `target_bitrate`, `stream_bitrate` and a downgrade log entry.
-5. Tighten only `C` to 0.7 Mbit/s receive bandwidth, 120 ms added round-trip latency and 2% packet loss for 90 seconds.
-6. Confirm `C` changes to `low`. Its video-drop counter may increase, but any increase must remain labeled with `C`'s session. `H1` and `H2` must still remain on `high` without a new drop delta or visible latency/freeze.
-7. Remove all impairment from `C`, provide at least 5 Mbit/s receive bandwidth, and wait up to 90 seconds.
-8. Confirm `C` returns through `medium` to `high`, while `H1` and `H2` never changed tier. Confirm unused `medium` and `low` pipelines return to zero listeners and become inactive.
-9. Repeat the complete throttle/restore sequence with the legacy client/protocol path when that path is part of the deployment. It must request automatic selection and exhibit the same peer-local behavior.
-10. Exercise refresh/rejoin and a transient network interruption for `C`; recovery must not move or stall either healthy session.
-
-Acceptance requires all of the following:
-
-- only `C` changes quality during impairment and recovers to `high` afterward;
-- both healthy viewers remain usable, stay on `high`, and acquire no new peer-local video-drop count;
-- estimator and measured stream bitrates are plausible bit/s values rather than differing by an unexplained factor of eight;
-- no global capture stall, reconnect storm, GStreamer error or sustained host resource saturation occurs;
-- pipeline listener/active gauges return to the expected state after recovery and disconnect;
-- exact phase measurements and any deviations are recorded before tuning values are changed.
-
-Use this result table in the server-side record:
-
-| Phase | H1 tier / drop delta | H2 tier / drop delta | C tier / drop delta | C target bit/s | Stream bit/s | Host CPU/RAM | Result/notes |
-| --- | --- | --- | --- | ---: | ---: | --- | --- |
-| baseline |  |  |  |  |  |  |  |
-| C 1.3 Mbit/s |  |  |  |  |  |  |  |
-| C 0.7 Mbit/s |  |  |  |  |  |  |  |
-| restored |  |  |  |  |  |  |  |
+- Since #32: the home desktop stays on `high` for at least ten minutes of full-screen motion while
+  `receiver_loss_ratio` stays below 0.02, whatever the NACK share and target show. Every downgrade follows
+  reads with `receiver_congestion_confirmed=true`.
+- A constrained second viewer (about 0.7 Mbit/s) still leaves `high` and returns within three minutes
+  after the limit is lifted, while a healthy viewer never changes tier.
+- CPU and frame rate (`neko_capture_streamsink_frames`) with several tiers active; HLS output for
+  artifacts, since its decoder can lose a VP8 frame silently until the next keyframe.
+- A path whose losses NACK repairs too late for playout freezes without counting as congestion. Compare
+  `receiver_loss_ratio` with the browser's freeze count in `chrome://webrtc-internals`.
 
 ## Rollback
 
-To disable adaptive quality while retaining the current image, tear down the merged model and recreate from the base Compose file only:
-
-```bash
-docker compose -f docker-compose.yaml -f docker-compose.adaptive.yaml down
-docker compose -f docker-compose.yaml up -d --force-recreate
-docker compose -f docker-compose.yaml config --quiet
-```
-
-The recreated service must no longer contain the adaptive config mount or `NEKO_CONFIG`, and it must expose only the default `main` stream. Host profile/download data are bind-mounted and are not removed by these commands.
-
-If rollback of the newly built server image is also required, use the backup tag created before activation:
-
-```bash
-NEKO_IMAGE=my-neko/brave:pre-adaptive docker compose -f docker-compose.yaml up -d --force-recreate
-```
-
-Adapt the image name if the deployment did not use `my-neko/brave:latest`. After rollback, repeat login, playback, control, profile/policy and healthy-viewer smoke checks.
+- Encoder settings: `cpu-used: "4"` without `static-threshold`, or `keyframe-max-dist` at one second per
+  tier without `max-intra-bitrate`.
+- Image: `bash setup.sh --rollback`.
+- Whole feature: set `COMPOSE_FILE=docker-compose.yaml` in `.env` (this also turns HLS off), run
+  `docker compose down`, then `bash setup.sh --no-build`.
