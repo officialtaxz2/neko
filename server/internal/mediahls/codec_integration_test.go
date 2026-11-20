@@ -679,7 +679,6 @@ func TestRealCodecsServeLowLatencyPartsAcrossRollover(t *testing.T) {
 	}
 }
 
-
 // requireSquarePixelRenditions reads each video init's SPS: the aspect ratio
 // must be unspecified or 1:1, because the init's width and height are the
 // rendition's display size.
@@ -751,10 +750,10 @@ func spsSampleAspectRatio(nal []byte) (uint32, uint32, error) {
 			reader.ue()
 		}
 	}
-	reader.ue()     // max_num_ref_frames
-	reader.bits(1)  // gaps_in_frame_num_value_allowed_flag
-	reader.ue()     // pic_width_in_mbs_minus1
-	reader.ue()     // pic_height_in_map_units_minus1
+	reader.ue()    // max_num_ref_frames
+	reader.bits(1) // gaps_in_frame_num_value_allowed_flag
+	reader.ue()    // pic_width_in_mbs_minus1
+	reader.ue()    // pic_height_in_map_units_minus1
 	if reader.bits(1) == 0 {
 		reader.bits(1)
 	}

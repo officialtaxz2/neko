@@ -195,10 +195,10 @@ func TestWorkerRequiresCompleteStableProviderFormat(t *testing.T) {
 	variant := FixedVariants()[0]
 	source := types.MediaSource{
 		ID: variant.SourceID, Kind: types.MediaKindVideo,
-		Codec: types.MediaCodec{Name:"vp8", MIMEType:"video/vp8", ClockRate:90_000},
-		Generation:1,
+		Codec:      types.MediaCodec{Name: "vp8", MIMEType: "video/vp8", ClockRate: 90_000},
+		Generation: 1,
 	}
-	worker := &packagerWorker{track:&trackState{id:variant.ID, variant:variant}, source:source}
+	worker := &packagerWorker{track: &trackState{id: variant.ID, variant: variant}, source: source}
 	if !workerFormatIdentityMatches(worker, source) || workerFormatMatches(worker, source) {
 		t.Fatal("cold provider identity was not kept pending for complete caps")
 	}
@@ -219,13 +219,13 @@ func TestWorkerRequiresCompleteStableProviderFormat(t *testing.T) {
 	complete.Width, complete.Height = 1920, 1080
 	complete.FrameRateNumerator, complete.FrameRateDenominator = 25, 1
 	for name, mutate := range map[string]func(*types.MediaSource){
-		"zero width": func(source *types.MediaSource) { source.Width = 0 },
-		"zero height": func(source *types.MediaSource) { source.Height = 0 },
-		"zero frame-rate numerator": func(source *types.MediaSource) { source.FrameRateNumerator = 0 },
+		"zero width":                  func(source *types.MediaSource) { source.Width = 0 },
+		"zero height":                 func(source *types.MediaSource) { source.Height = 0 },
+		"zero frame-rate numerator":   func(source *types.MediaSource) { source.FrameRateNumerator = 0 },
 		"zero frame-rate denominator": func(source *types.MediaSource) { source.FrameRateDenominator = 0 },
-		"zero generation": func(source *types.MediaSource) { source.Generation = 0 },
-		"other source": func(source *types.MediaSource) { source.ID = "medium" },
-		"other codec": func(source *types.MediaSource) { source.Codec.Name = "h264" },
+		"zero generation":             func(source *types.MediaSource) { source.Generation = 0 },
+		"other source":                func(source *types.MediaSource) { source.ID = "medium" },
+		"other codec":                 func(source *types.MediaSource) { source.Codec.Name = "h264" },
 	} {
 		candidate := complete
 		mutate(&candidate)

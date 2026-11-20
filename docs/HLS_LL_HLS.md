@@ -18,8 +18,9 @@ the Opus audio feed three H.264 workers and one AAC worker. Both modes serve the
 
 - The input is the `high` VP8 tier, i.e. the full desktop at any size and frame rate, plus stereo 48 kHz
   Opus (`workerFormatMatches`). Every rendition is scaled to its fixed output above; a desktop that is not
-  16:9 gets black bars instead of distorted pixels. A size or rate change while the packager runs (for
-  example a new desktop resolution) restarts it with `format_change`.
+  16:9 gets black bars instead of distorted pixels. A size or rate change while the packager runs restarts
+  it: with `source_restart` when the capture pipeline is rebuilt, as on a desktop resize, with
+  `format_change` when only the caps change.
 - fMP4, closed two-second GOPs, six-second segments; LL-HLS adds one-second parts, blocking reloads,
   preload hints and rendition reports. `HOLD-BACK` is 18 s, `PART-HOLD-BACK` 3 s.
 - A start is ready after three complete segments (HLS) or one complete segment (LL-HLS), within 28 s.
