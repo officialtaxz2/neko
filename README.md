@@ -153,7 +153,6 @@ Never commit `.env`, `files/`, `downloads/` or `policy.json`; they hold credenti
 | [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md) | HLS/LL-HLS design and reverse proxy setup |
 | [`docs/UPSTREAM_SYNC_AUDIT.md`](docs/UPSTREAM_SYNC_AUDIT.md) | Record of every upstream merge and where the fork deviates |
 | [`client/src/fork/README.md`](client/src/fork/README.md) | The fork's client code |
-| [`AGENTS.md`](AGENTS.md) | Rules, invariants and open items for coding agents |
 
 The fork follows upstream `m1k1o/neko` by merging its `master`, never by overwriting; each merge is reviewed and recorded in the sync audit.
 
