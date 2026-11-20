@@ -37,9 +37,10 @@ the Opus audio feed three H.264 workers and one AAC worker. Both modes serve the
    `CanWatch`, a new primary delivery and shutdown revoke it; unknown and revoked leases get the same 404.
 4. Private mode pauses the lease (`503` with `Retry-After: 1`); the client clears its buffers.
 
-Fixed limits: 128 leases and 512 requests in total (`max_leases`, `max_requests`); per lease 8
-simultaneous requests, 4 of them blocking, 12 playlists/s and 32 objects/s; blocking reload 7 s. Every
-response is `Cache-Control: private, no-store`; there is no CDN or shared cache.
+Limits: at most 128 leases and 512 requests in total (`media.hls.max_leases` and
+`media.hls.max_requests` can only lower them); fixed per lease: 8 simultaneous requests, 4 of them
+blocking, 12 playlists/s and 32 objects/s; blocking reload 7 s. Every response is
+`Cache-Control: private, no-store`; there is no CDN or shared cache.
 
 ## Configuration
 
@@ -88,6 +89,9 @@ cd server && go test -count=1 -tags 'hlsintegration hlsbrowser' -run 'TestRealCo
 
 ## Open
 
+- `workerFormatMatches` accepts `high` only at 1280×720 and 25 fps, but the adaptive profile's `high` is the
+  full desktop size (1920×1080 by default), so HLS likely restarts with `format_change` and never becomes
+  ready on such a desktop. Not checked on the server.
 - Native playback (Safari, iPhone/iPad, Smart TVs) is not confirmed; an iPad's LL-HLS sessions became ready
   but did not play, cause unknown.
 - Reliable cold starts with the 28-second window, and latency on the real path, are not measured.

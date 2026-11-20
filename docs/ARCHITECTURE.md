@@ -76,7 +76,8 @@ exactly 16 Base64URL characters, different from both passwords. Empty disables t
   the password in the body of `POST /api/login`, so it never appears in a request line, proxy log or
   `Referer`. It stays visible in browser history and anything the link is pasted into.
 - The provider compares it in constant time and returns `NewViewOnlyMemberProfile`: watch and receive
-  chat only. `RestrictViewOnly` removes admin, host, media sharing and clipboard whenever a profile is set.
+  chat only. `RestrictViewOnly` removes admin, host, media sharing, clipboard and the inactive cursor
+  whenever a view-only profile is set.
 - Enforcement is on the server: the WebSocket accepts only heartbeat, WebRTC signalling and HLS
   negotiation (`internal/websocket/viewonly.go`), the data channel only ping, and every interactive HTTP
   route, handler and plugin checks `IsInteractive()`. Inbound media tracks and host assignment are refused.

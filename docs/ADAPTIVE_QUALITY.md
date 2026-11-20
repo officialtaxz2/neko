@@ -38,7 +38,7 @@ complete-delivery reference: `max(measured, nominal video) + measured audio`, ti
   `downgrade_backoff` (30 s) has passed since the last downgrade.
 - **Congestion** is confirmed only by loss the receiver still reports after retransmission: per RTCP
   report interval, lost packets of the video SSRC divided by expected packets, at least
-  `congestion_loss_threshold` (0.02) and at least four packets. NACKed packets that arrived on
+  `congestion_loss_threshold` (0.02) and at least four lost packets. NACKed packets that arrived on
   retransmission do not count; reports older than two read intervals do not count. An interval whose
   highest sequence number did not advance keeps the previous verdict.
 - **Up one tier** after a clean `stable_duration` (12 s) when the target exceeds the next tier's reference
@@ -68,7 +68,8 @@ Metrics (`/metrics`, `server.metrics: true`): `neko_capture_streamsink_bitrate{v
 `neko_webrtc_video_listeners` (current tier per session), `neko_webrtc_receiver_estimated_target_bitrate`,
 `neko_webrtc_receiver_congestion_evidence`, `neko_webrtc_recovery_probe_*`,
 `neko_webrtc_track_dropped_samples_total`, `neko_capture_streamsink_keyframes` and `_keyframe_requests`.
-Above 30 forced keyframes per minute on one tier, raise `minKeyframeRequestInterval` to one second.
+Above 30 forced keyframes per minute on one tier, raise the constant `minKeyframeRequestInterval`
+(`server/internal/capture/streamsink.go`) to one second.
 
 ## Open checks on the server
 

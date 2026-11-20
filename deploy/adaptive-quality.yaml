@@ -1,4 +1,5 @@
-# Experimental, opt-in adaptive-quality profile for the local Brave image.
+# Adaptive-quality profile for the local Brave image, mounted by docker-compose.adaptive.yaml
+# (enabled through COMPOSE_FILE in .env.example).
 # IDs are ordered from highest to lowest quality; the first is the default.
 capture:
   video:
