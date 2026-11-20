@@ -1,4 +1,4 @@
-# Opt-in overlay for per-viewer adaptive video quality.
+# Overlay for per-viewer adaptive video quality (.env.example enables it through COMPOSE_FILE).
 # Start it together with docker-compose.yaml; the stable base file remains
 # single-pipeline when this overlay is not supplied.
 services:

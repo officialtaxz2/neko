@@ -1,8 +1,8 @@
 // The fork: `?debug` (e.g. `&debug=1`) shows a few lines of text over the picture for devices without
 // a reachable console (iPhone, the TV): the stream's path and connection, the video element, the
 // playback watchdog, input counters, the stored settings and the last page errors. It only reads;
-// without the parameter nothing changes. Ported from the Vue client's video-debug.js
-// (docs/IOS_RECOVERY.md). Never shows a session token or a password.
+// without the parameter nothing changes. Ported from the Vue client's video-debug.js (in Git history).
+// Never shows a session token or a password.
 import { HLSTransport, WebRTCTransport, samplePlayback } from '@m1k1o/neko'
 import type { NekoApp } from './app'
 import { mediaStore } from './media'

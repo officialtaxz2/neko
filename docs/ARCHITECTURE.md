@@ -1,337 +1,95 @@
 # Architecture
 
-Current source assessment: 2026-10-07, initial `testing` HEAD `a91d9388`,
-latest bounded PC HLS/WebRTC checkpoint `8d8126c9`, prior accepted `8741f788`
-image/evidence preserved, current healthy live image
-`8d8126c9` with conventional HLS enabled, `master` unchanged at `d9105ef8`.
-The authorized independent B1–B3/B6 improvements were published at exact-f03.
-Its supplied client/normal Go and six race-package gates passed, but capture
-event-ordering failed preparation before Base/Brave images. The bounded format
-handoff correction at exact-8d subsequently passed supplied preparation: old
-defect/100 race repetitions/backend/server/images by final helper success.
-Client evidence is inherited from unchanged f03. Subsequent exact-8d baseline
-activation passed healthy with 2/2 disabled-HLS probes; same-image HLS enablement
-then passed healthy with 19/19 denial probes. The operator explicitly confirmed
-at least ten minutes of moving HLS A/V and concurrent working WebRTC in two PC
-tabs, without observed freeze, Retry or reload. That bounded coexistence gate passed.
-Full browser/device acceptance remains pending. No new-source gate inherits an 8741 pass.
-The [comparative review](STABILITY_REVIEW.md#comparative-fork-and-transport-review--2026-10-07)
-and [current Workplan](WORKPLAN.md#next) distinguish implemented mechanisms,
-supplied target results and unmeasured benefit. Historical checkpoints below
-retain their original evidence limits; they are not the latest live status.
+The fork runs upstream's Neko server (Go, Pion WebRTC, GStreamer capture, X11 input) and upstream's React
+client on the v3 API. This file describes what the fork adds or changes and the rules it must keep. Feature
+overview and deployment: [`README.md`](../README.md); client code: [`client/src/fork/README.md`](../client/src/fork/README.md).
 
-Source follow-up (2026-10-10): ordinary-member HLS selection was approved after
-the existing role-only client refusal. Discovery, selection and startup now use
-authenticated-session/server-advertisement boundaries rather than admin/view-only
-status. Server `CanWatch`/ticket/lease/revocation checks and receive-only input
-are unchanged. The client change and scoped preparation mode are implemented/
-statically reviewed, not target-verified or deployed. Exact-8d idle/WebRTC/HLS
-resource screens are baseline evidence; finish comparisons there before new
-candidate preparation. Follow Workplan NEXT.
+## Invariants
 
-## Current repository architecture
+- One shared browser and session for all participants, not one per viewer.
+- At most one participant controls the desktop; admin lock, grant and revoke keep working.
+- View-only is enforced by the server (`MemberProfile.IsViewOnly`); hiding controls is not authorization.
+- A slow or lossy viewer may lose its own frames or tier, but must not slow down other viewers.
+- Media transport does not decide authorization: WebRTC and HLS viewers share the same room and checks.
+- WebRTC is the default; HLS/LL-HLS is chosen manually and is receive-only. Nothing falls back on its own.
+- Touch, trackpad, fullscreen, autoplay and playback recovery on phones and tablets are regression-sensitive.
 
-WebCodecs removal (2026-10-14): the opt-in WebCodecs/media-WebSocket receive
-prototype was removed by operator decision. `server/internal/mediaws`, the
-`/api/media/ws` route, the `media.webcodecs_ws.*` flags, the
-`media/capabilities`/`media/create`/`media/offer` events, the client
-worker/decoder/canvas path and the Compose overlay are deleted. A stored
-`webcodecs-ws` preference or `?media=webcodecs-ws` link now resolves to WebRTC.
-The central delivery manager, provider, HLS and WebRTC paths are unchanged.
-WebCodecs paragraphs below are history.
+## Event socket
+
+The browser logs in with `POST /api/login` and keeps one WebSocket on `/api/ws` for session events,
+WebRTC signalling, chat, control and HLS negotiation. Mouse and keyboard input goes over the WebRTC data
+channel. Each socket writes through one queued `utils.WebSocketWriter` (FIFO, at most 128 messages or
+16 MiB including the one being written, 5-second write deadline); a client that falls behind is
+disconnected instead of blocking room broadcasts. JSON encoding still happens on the sender's goroutine.
+
+## Media delivery
 
 ```text
-browser client
-    |
-    | WebSocket signaling/events
-    | WebRTC media + data channel
-    | explicit passive/admin opt-in: event WebSocket + authenticated HTTPS HLS/LL-HLS
-    |               -> native video or pinned local hls.js/MSE
-    v
-server/
-    +-- session / auth / room APIs
-    +-- WebRTC peer/track handling
-    +-- capture / GStreamer
-    +-- desktop/X11 control
-    +-- plugins
-            |
-            v
-shared server-side X11 browser/desktop
+GStreamer pipelines (one per tier, started on demand)
+  -> capture provider (server/internal/capture/media.go)
+       encoded units with PTS/DTS, format, generation, discontinuities
+  -> bounded subscriptions, overflow drops the newest unit for that subscriber only
+  -> media delivery manager (server/internal/media/manager.go)
+       checks the live session and CanWatch, one primary delivery per session
+  -> backend: WebRTC (one subscription per viewer) or HLS (shared, see HLS_LL_HLS.md)
 ```
 
-### Event socket versus media delivery
-
-The browser's normal **event/session WebSocket** is legacy `/ws`. Its server
-adapter logs in through local HTTP and bridges to internal `/api/ws`, so the
-current logical event connection includes two server-side sockets. It carries
-login/session initialization, WebRTC SDP/ICE, chat/member/room actions, control
-grants/releases and optional-media capability/ticket exchanges. It remains
-required with WebRTC and HLS. High-rate interactive input is carried
-by the WebRTC RTCDataChannel, separately from room control messages.
-
-HLS uses authenticated HTTPS objects and a playback lease negotiated on
-that same event plane; it is also receive-only with passive/admin eligibility.
-
-The central manager authorizes a participant delivery; the capture provider
-supplies shared encoded sources to its backend. WebRTC deliveries subscribe per viewer to demanded source outputs. Active HLS instead
-has **one shared high-video provider subscription and one shared audio
-subscription**, independent of viewer count. The high VP8 data fan out into
-three distinct VP8-decode/H.264-encode workers; a fourth worker converts Opus to
-AAC. Conventional HLS and LL-HLS share these workers and their object store.
-This avoids separate per-rendition source phases and creates no new HLS desktop
-capture, but adds native conversion and retains demand for high capture.
-
-One primary delivery per session, current `CanWatch` checks, bounded queues,
-explicit formats/timestamp validity/generations and revocation remain common
-invariants. Media consumer isolation does not isolate the shared event adapter,
-capture/native runtime or host CPU. The baseline event writers lacked bounded
-write deadlines; the common stability consequences are a static finding, not
-the demonstrated cause of the reported television incident.
-
-Current event connections use one `utils.WebSocketWriter` per socket, also on
-both legs of the legacy bridge: FIFO, 128 records/16 MiB including in-flight
-payloads, five-second write/terminal-flush ceilings and overflow by connection
-closure. Room fan-out no longer waits for network writes, though JSON encoding
-still runs synchronously. A logical legacy connection has three server writers;
-the ceilings are per socket, not total service RSS or a measured cost reduction.
-Revocation is applied before bounded terminal flushing. Reader cancellation
-avoids blocked channel handoffs. Legacy JSON API/Dial operations have 15-second
-limits and a session context, cleanup uses its own five-second context; streamed
-file bodies keep their request lifetime rather than an API total timeout.
-
-Normal legacy username/password login still uses the event URL query, whereas
-view-only login uses the compact fragment/subprotocol and optional media uses
-tickets/scoped leases. Credential-safe media URLs do not remove the common
-legacy login/logging boundary. Preserve reviewed proxy/log redaction and keep
-credentials, tokens, tickets and cookies out of evidence.
-
-Supporting trees:
-
-- `apps/` — browser/application images
-- `runtime/` — common runtime support
-- `client/` — participant UI and protocol client
-- `webpage/` — inherited documentation
-
-## Client
-
-### IMPLEMENTED
-
-Since 2026-10-23 the client is upstream's React client on the v3 API (`/api/ws`); the Vue 2.7 client and the legacy `/ws` protocol are gone (the last Vue client is commit `a7e53c0`, whose description of this section is in Git history).
-
-- React 19, TypeScript, Vite, zustand stores, Tailwind CSS v4.
-- `client/core`: the framework-free `@m1k1o/neko` package: `NekoClient` (session, reconnect, events), the stream transports (`transport/webrtc.ts`, the fork's `transport/hls.ts`), the input overlay (`overlay.ts`, with the fork's trackpad mode) and the playback watchdog (`playback.ts`).
-- `client/src`: the GUI in layers (`app`, `layout`, `features`, `components`, `state`, `plugins`), checked by ESLint layer rules. The fork's design is in `client/src/fork/` (theme tokens, header, room bar, phone dock, control pill, More menu, settings; see its README); fork features in the shared layers are marked "the fork".
-
-Current behavior includes:
-
-- `signal/request` asks for `video: {auto: true}`, so the per-peer bandwidth estimator can switch pipelines when several are configured;
-- public STUN only when the server lists no ICE servers; explicit lists are kept;
-- an eight-second grace for ICE `disconnected` before it counts as failed, matching the server's peer grace; the ICE state backs up browsers without `connectionState`;
-- the playback watchdog: no presented frames (or no time progress) for eight seconds in the foreground re-attaches the same stream, up to three times, then stops playback; a hidden page, a deliberate pause or a running re-attachment is not a stall;
-- a page put into the bfcache disconnects and reconnects on return;
-- upstream's reconnect: ten attempts with a whoami check, none after kick or logout;
-- input over the WebRTC data channel; HLS is receive-only (`client.receiveOnly`: no control request, no implicit hosting, no overlay input);
-- the overlay does not draw a second cursor when `system/init` reports `webrtc.pointer_in_video`;
-- a compact `#/<16-character-Base64URL-token>` fragment opens a name-only view-only login; the token goes only into the `/api/login` body, the share session lives in `sessionStorage` apart from a member's session, and a view-only session sees only the picture with a playback bar;
-- `media_backend` (stored) or `?media=hls|ll-hls` (one visit) selects WebRTC, HLS or LL-HLS among the modes the server advertises; a change reloads, there is no automatic fallback; hls.js loads lazily in a chunk of its own, Apple devices and TVs play natively;
-- touch: a touch screen without mouse and hover, or "force touch", gets the on-screen keyboard and the special keys' bar (held modifiers, Esc, Tab, Ctrl shortcuts, arrows); trackpad mode moves a pointer relatively, taps click, a long press right-clicks;
-- the clipboard: synchronized on hovering the picture where the browser can read it, otherwise through the clipboard panel with the last ten texts (in memory, cleared on logout);
-- a read-only `window.__nekoTrace` handle (states, element, WebRTC peer; no token) for `deploy/trace-*.js`.
-
-Demo mode was not carried over.
-
-## Fork-specific scope
-
-Verified fork changes after merge base `d74052bb844c43a0cc3c2386d083f7505dc483a2` are concentrated in `client/`, including UI, connection, controls, settings, video, stores and client protocol behavior.
-
-## Server
-
-### IMPLEMENTED
-
-- Go module `github.com/m1k1o/neko/server`
-- Go version declaration `1.25.0`
-- Pion WebRTC
-- GStreamer capture
-- X11 desktop/input integration
-- plugins and HTTP/WebSocket APIs
-
-The integrated upstream server additionally contains:
-
-- bounded, non-blocking sample queues per WebRTC track;
-- capture-listener dispatch outside the shared listener mutex;
-- multi-pipeline selection driven by each peer's bandwidth estimator;
-- H.265 codec and software/VA-API/NVENC pipeline support;
-- configurable capture-pointer visibility;
-- server-enforced file download/upload/delete permissions;
-- an optional host-authorized `openinapp` plugin;
-- XInput-device keyboard dispatch for Firefox/GDK3 compatibility.
-
-The compatibility refactor on `testing` adds an internal transport-neutral media layer without adding a client-visible transport:
-
-```text
-GStreamer appsink
-    -> timestamped types.Sample compatibility input
-    -> capture-backed EncodedMediaProvider
-    -> bounded MediaSubscription event queue
-    -> authorized MediaDeliveryManager lease
-    -> WebRTC backend adapter
-    -> Pion TrackLocalStaticSample
-```
-
-`server/pkg/types/media.go` contains only codec/source descriptions, encoded units, lifecycle events, selectors and provider/delivery interfaces; it imports no Pion type. `server/internal/capture/media.go` adapts the existing demand-driven stream sinks, owns keyframe admission and source changes, and publishes format, unit, discontinuity and end events. GStreamer exposes PTS, DTS, duration and caps-derived dimensions/frame rate; each pipeline creation advances a source generation and sequence. The provider aligns valid GStreamer timestamps with one manager-owned timeline and preserves the Go arrival timestamp only as `CapturedAt` for the existing Pion compatibility field.
-
-`server/internal/media/manager.go` is the only participant-facing delivery registry. It checks the current authenticated session and `CanWatch`, intersects requests with registered backend capabilities, issues a backend/session-scoped lease with no credential access, keeps one primary delivery per session and owns replacement, revocation, shutdown and generic watching state. View-only sessions pass the same receive authorization because their normalized profile retains `CanWatch`; no delivery capability grants input, control, plugins or media publication.
-
-WebRTC remains a compatibility backend as well as the current control-data transport. Its private `CreatePeer` path therefore carries the already-authenticated concrete session only in the call context needed to preserve signaling, data-channel authorization and session events. The adapter has no general session-manager dependency, and neither the generic backend request nor its lease exposes a login/share credential.
-
-The migrated WebRTC track has no sample channel of its own. It consumes the provider subscription directly with the existing effective capacity of two encoded units and drop-new overflow. The existing `neko_webrtc_track_dropped_samples_total` callback remains peer-local, while new low-cardinality `neko_media_*` metrics expose subscription demand, queue observations, deliveries, bytes/units, drops, discontinuities and source generation.
-
-The adaptive-quality follow-up adds bit/s stream-rate accounting aligned with the estimator, a per-pipeline bitrate gauge, and peer-local sample-drop counters labeled by session and media kind. The operator confirmed the server-image build and focused bitrate/nominal-rate/estimator tests, then observed plausible pipeline bit/s values and peer-local metrics during three-viewer target-server runs.
-
-The non-blocking queue and unlocked fan-out establish code-level slow-peer isolation: a backpressured peer drops its own samples instead of blocking capture dispatch. The drop path now increments `neko_webrtc_track_dropped_samples_total`, making cross-peer behavior distinguishable without trace logs.
-
-The estimator compares Pion's per-peer target against the current stream bitrate. Static review for the adaptive profile found that the latter had been accumulated as encoded bytes/s even though Pion reports bit/s. The capture path now multiplies sample bytes by eight, publishes the result atomically and exports `neko_capture_streamsink_bitrate`; the target-server measurements confirmed the corrected unit.
-
-Target-server impairment runs then exposed an asymmetric decision requirement. Downgrade needs to ask whether the current tier still fits, while upgrade needs enough capacity for the next tier. Reusing one 0.15 current-tier threshold allowed premature upward oscillation. The server now has a separate `upgrade_diff_threshold`, defaulting to the old 0.15 behavior for compatibility. Measurement-led constrained-tier rates made both shaped phases mostly usable, but one low-to-medium excursion remained because upgrade still referenced the content-dependent measured current rate. Video pipelines can now declare `nominal_bitrate`; before an upgrade the estimator uses the next tier's stable nominal value when present and retains the current measured-rate fallback when absent. The final target-server rerun held the constrained viewer on `low`, then recovered it through `medium` to `high`; the opt-in profile was accepted for that bounded scenario. At that checkpoint the stable deployment and existing configurations were behaviorally unchanged; the later steady-state correction below deliberately revises estimator semantics while leaving the default-disabled base path unchanged.
-
-A later target-server trace exposed a separate inherited startup-timing edge. `unstableSince` and `stalledSince` began as Go zero times, so `time.Since(...)` made their configured grace periods appear already elapsed on the first qualifying neutral estimate. Current `testing` starts the stable, unstable and stalled observation windows together when the estimator reader starts; upgrade/downgrade backoff timestamps remain unset until a real switch. This changes no profile value, public API or transport. At exact commit `e5f55bf9`, the complete target-server validation service/build passed and one fresh viewer stayed on `high` for the full focused startup trace with no downgrade, upgrade, stall or video queue drop. This does not imply that `high` must be retained when sustained receiver estimates cannot support it.
-
-A 2026-09-19 direct-UDP trace then isolated a different steady-state defect: a healthy peer with zero reported loss, NACKs and local video drops repeatedly switched tiers. The first correction built the current delivery reference from `max(measured video, nominal video) + measured active audio`, added `transport_reserve`, treated `diff_threshold` as tolerated deficit and kept `upgrade_diff_threshold` separate. It passed focused tests/build and a short target gate at `2d037f39`, but a longer unshaped run still produced `high -> medium -> low -> medium -> high` with zero loss/NACK/video drops. The GCC target/trend therefore cannot be trusted as sole congestion proof in this no-pacer architecture.
-
-The revised per-peer policy retains that complete-delivery reference and deadband, but a downward trend or neutral stall can downgrade only while fresh RTCP receiver feedback also reports non-zero interval loss or a recent NACK. Feedback older than two estimator read intervals is non-actionable; a clean observation resets the unstable downgrade window, and any congestion evidence resets the stable upgrade window. Ordinary upgrades independently require a clean stable interval and `upgrade_diff_threshold` above the next tier's nominal complete-delivery reference. The metrics layer records latest receiver-report fraction loss and a derived `receiver_congestion_evidence` gauge under the same session label, while mutable feedback timestamps are protected independently of Prometheus collectors. State remains peer-local, and the existing configured timing/backoff values are unchanged.
-
-Exact target-server validation of `2efcc6b1` accepted the healthy hold and constrained downgrade/isolation halves of that policy: H remained on `high` for 20 minutes and throughout C's endpoint-specific `high -> medium -> low` impairment, with no H drop or tier change. It also exposed a recovery deadlock: once C sent only the low tier, GCC remained application-limited around the low delivery rate and could not satisfy the next tier's nominal reserve for 90 seconds, although it eventually climbed and restored `high` later. The current follow-up records one recovery step for each successful automatic downgrade and permits exactly one higher-tier probe only while a step remains, after the existing clean stable decision, adequate reserve over the current complete-delivery reference and a separate 30-second profile interval. The probe must itself remain observed without a downward trend or fresh receiver congestion for a complete stable window; the advisory target alone cannot deadlock that validation. A receiver-evidence-gated downgrade marks it failed and applies exponential peer-local retry backoff capped at two minutes in the tracked profile. New fixed metrics expose active, attempted, successful and failed probes. This neither resets GCC nor forces `high`, cannot probe a peer that was not automatically downgraded, and cannot share state across viewers.
-
-A 2026-10-26 operator report (desktop and Wi-Fi viewers stuck below `high` on an ample line) led to two further corrections, pending target-server validation. Receiver evidence is now a per-report-interval share of lost or NACKed video packets against `congestion_loss_threshold` (0.02) instead of any single loss, so routine repaired Wi-Fi losses neither authorize downgrades nor reset the stable window; only feedback for the video SSRC counts. An insufficient target alone no longer resets the stable window, because Pion's 0.85 back-off always lands below the 0.8925 downgrade floor; upgrades still check the target against their thresholds. Details in `docs/ADAPTIVE_QUALITY.md`.
-
-A 2026-10-30 operator log (home desktop, `high -> lowest` within a minute, no return) narrowed that evidence further, pending target-server validation. The log showed 3–26 % NACKed but zero lost packets per interval and a target pinned at Pion's 100 kbit/s loss-controller floor on every tier. Only loss the receiver still reports after retransmission now confirms congestion; the recovery probe no longer requires target headroom on the current tier, which a floored target never shows; a stale `UPWARD` trend over a target pinned at its floor no longer blocks a stall downgrade; and every step back toward a tier an automatic downgrade left is validated with the probe's failure backoff, also when the target qualified it. Details and the before/after reproduction in `docs/ADAPTIVE_QUALITY.md`.
-
-A static follow-up found no encoder-quality mutation in the media-subscription refactor: the accepted adaptive Compose/profile files are unchanged since `bfaca84e`, encoder construction/configuration is unchanged, and the same encoded GStreamer payload bytes are passed through the provider into Pion. The reported possibility of softer fast-motion output is compatible with the existing roughly 2-Mbit/s, 25-fps VP8 CBR tier and its full `max-quantizer: 63` range, but remains subjective until a controlled bitrate/quantizer A/B. It is tracked as later tuning rather than attributed to the new boundary.
-
-(History; removed on 2026-10-14.) The current fork still relies on Neko's WebRTC server model by default. When `media.webcodecs_ws.enabled` was false, WebRTC remains the only registered delivery adapter. Enabling that experimental server flag also registers the credential-free `webcodecs-ws` backend and exact `/api/media/ws` route. A client selects it through either the normalized persisted `webcodecs-ws` preference or exactly one diagnostic `?media=webcodecs-ws` override: the authenticated legacy event socket then omits `signal/request`, exposes its already authenticated session ID through `system/init`, negotiates a one-time ticket and keeps normal session/chat events while the dedicated media socket is owned by the worker. A client that resolves to the absent/invalid-safe WebRTC default follows the original signaling path byte-for-byte at the protocol boundary. The complete Phase 1–3 contract was specified in `WEBCODECS_MEDIA_WEBSOCKET.md` (deleted; see Git history).
-
-The view-only follow-up adds a transport-independent `MemberProfile.IsViewOnly` marker and a fixed multi-user share profile. The marker is normalized before login-lock evaluation and whenever sessions are created or updated. Server enforcement then applies at the authenticated HTTP routes, current and legacy WebSocket dispatchers, both WebRTC data-channel formats, inbound media tracks, host assignment and plugin managers. Only heartbeat and receive-media signalling cross the passive WebSocket boundary; only data-channel ping crosses the modern passive data boundary. Passive sessions cannot be persisted or restored.
-
-```text
-#/<token> fragment
-        |
-        | Sec-WebSocket-Protocol: neko-view.<token>
-        v
-multi-user authentication -> normalized is_view_only session
-        |                              |
-        | receive signalling/media    `-- deny HTTP/input/plugin/media-publish paths
-        v
-same shared WebRTC room/desktop
-```
-
-This is still a WebRTC receive-media implementation. Its authorization identity is deliberately outside the media transport so a later HLS/LL-HLS subscriber can reuse the same room/session boundary.
-
-## Deployment/configuration baseline
-
-The default root `config.yml` is no longer copied into the base image. Server defaults now keep implicit hosting and cookie authentication disabled, matching the removed file's effective defaults. Deployments must supply intentional settings through environment variables or a mounted YAML file.
-
-The repository `docker-compose.yaml` now represents this fork's operator-confirmed deployment baseline: a locally built Brave image with registry pulling disabled, pre-start singleton-lock cleanup, persistent but ignored profile/download paths, optional managed policy, loopback HTTP binding, configurable WebRTC UDP range and enabled file transfer. `.env.example` documents non-secret settings and the optional `NEKO_VIEW_ONLY_TOKEN`; Compose refuses to resolve while either password is empty. Actual `.env`, share credential, profile, downloads and instance policy stay outside Git.
-
-Since 2026-10-16, `NEKO_BROWSER` selects the browser image, its profile mount and its policy mount: `brave` (default, unchanged paths) or `helium` (`apps/helium`, profile in `NEKO_PROFILE_DIR/helium`). `setup.sh` and the reusable `deploy/` HLS helpers (through `deploy/neko-browser.sh`) resolve the same value; the `prepare-hls-*` helpers stay pinned to their historical Brave images. Helium's policy path, skipped first-run page and Web Store installs (downloads allowed, Helium services enabled in the profile) were target-verified on 2026-10-16; DRM is not yet verified.
-
-`docker-compose.adaptive.yaml` is a separate opt-in overlay. It mounts `deploy/adaptive-quality.yaml`, whose ordered `high`/`medium`/`low` VP8 definitions activate demand-driven multi-pipeline encoding and the per-peer estimator. Omitting the overlay leaves the validated single-pipeline baseline unchanged. The overlay was accepted on the target server for the documented desktop/iPad/iPhone scenario on 2026-09-10. Activation, metrics, resource implications, bounded evidence and rollback are in [`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md).
-
-The first target-server deployment smoke test exposed a filename regression in the sanitized reconstruction: the external policy was mounted as `/etc/brave/policies/managed/policy.json` instead of replacing the image's `/etc/brave/policies/managed/policies.json`. Restoring the original plural destination made both the custom managed policy and persistent profile load as intended. This initially validated the deployment/mount path; the operator subsequently confirmed the rest of the applicable integration regression matrix.
-
-The runtime/browser image tree also includes ARM64 Widevine installation, ARM64 Google Chrome image support, updated Chromium-family policies and NVIDIA encoder fallback selection. These image paths have not been built in Codex.
-
-## Local deployment reference
-
-The complete 2026-09-09 filesystem audit found all 724 baseline files in `MyNekoProjekt`: 138 are byte-identical, 585 differ only by CRLF/LF, and only `docker-compose.yaml` differs substantively. The tree also contains 3,928 browser-profile/runtime files and one empty local policy file. No application-source improvement was missing. The compose structure was initially excluded with its instance data, then deliberately reconstructed after the operator confirmed it as the desired deployment configuration.
-
-The raw local compose combined the custom Brave deployment/profile/policy/download mounts, lock cleanup, port mappings and file-transfer configuration with instance credentials. Only the sanitized structure is tracked.
-
-Only sanitized, reusable deltas belong in Git. See [`LOCAL_DELTA_AUDIT.md`](LOCAL_DELTA_AUDIT.md).
-
-## Target boundaries
-
-### TARGET
-
-- keep authorization/control independent from media transport;
-- make weak-viewer behavior peer-local;
-- support per-viewer quality selection;
-- preserve the server-enforced view-only role across future media backends;
-- allow alternative receive-media paths without creating a separate room;
-- allow different participants in the same room to use different media backends when role/device/network capability requires it;
-- treat interactive low-latency fallback and passive/view-only streaming as separate compatibility problems.
-
-### Target media-backend shape
-
-The intended boundary is a shared encoded-media/subscription layer feeding peer-specific delivery backends:
-
-```text
-shared capture / encoder outputs
-        |
-        +-- WebRTC -------------------- interactive default
-        |
-        +-- HLS / LL-HLS ------------- passive/view-only candidate
-        |
-        `-- other backend ------------ only when capability evidence requires it
-```
-
-The control/session/auth path must remain independent enough that a receive-only backend does not gain control capability. A passive viewer can therefore use HTTP-streaming media while remaining in the same logical Neko room.
-
-The concrete boundary is implemented in [`MEDIA_SUBSCRIPTION_BOUNDARY.md`](MEDIA_SUBSCRIPTION_BOUNDARY.md). It distinguishes a backend subscription to an encoded source from the authorized delivery attached to a participant: WebRTC subscribes per participant. The default-off HLS packager instead shares one high-video and one audio provider subscription across four conversion workers and issues separate short-lived viewer leases. The central delivery manager checks `CanWatch`; backends never receive login/share credentials or authority over control, plugins or member profiles.
-
-The capture publisher commits the immutable selected-format barrier under its
-queue mutex before the event-channel handoff. A subsequent source transition
-therefore queues discontinuity/format behind the selected event; bootstrap
-formats can be coalesced only before selection. The 2026-10-07 correction changes
-ordering only. Exact-8d preparation reports the deterministic old defect and
-100 repaired subscription race repetitions passed; device acceptance is open.
-
-(History; removed on 2026-10-14.) The version-1 WebCodecs/media-WebSocket specialization was fixed in `WEBCODECS_MEDIA_WEBSOCKET.md` (deleted; see Git history): an authenticated event-plane exchange creates a short-lived single-use ticket, the dedicated socket carries strict VP8/Opus records, every server/browser queue is bounded, stale generations are rejected, and audio owns the common presentation clock. Phase 1 implements the event exchange, ticket store, record codec and default-off server flag. Phase 2 implements the conditionally registered route/backend: it captures the original socket peer before generic proxy rewriting, trusts forwarded transport/address headers only from configured proxy CIDRs, requires secure transport and exact Origin plus ordered subprotocols, atomically redeems the ticket, re-resolves the live `CanWatch` session, then opens only credential-free exact-source subscriptions. A single writer drains lifecycle before media, READY keeps the lease opening, bounded feedback and sent-PTS history detect stalled/lagging delivery, and local generation/keyframe recovery or close contains overload to that participant. Phase 3 implements the isolated browser side: a strict shared-fixture parser and media-socket/decoder worker enforce the browser queue bounds, an AudioWorklet and canvas renderer use the fixed clock/drop rules, reset closes stale frames, and only the specified same-backend retries or explicit user actions are available. The browser side is selected by the normalized stored preference when no `media` query is present, or by the exact stateless URL override when it is present. Decoding continues within the four-entry WebCodecs queue when the two-frame renderer hand-off is full; surplus decoded `VideoFrame`s are closed locally so renderer scheduling cannot back up the compressed socket queue, while true compressed/audio overflow retains resync recovery and bounded source-specific diagnostics. WebCodecs component callbacks that mutate renderer primitives are Vue-bound prototype methods rather than class-field arrows, avoiding vue-class-component 7's synthetic data-instance capture; the client also releases a transferred frame immediately when its typed event emitter reports no mounted renderer listener. A single empty 128-frame AudioWorklet quantum is treated as transient; only 100 ms of continuous empty input raises the existing common A/V underflow recovery. Feedback uses a self-scheduled 1100-ms loop plus a server-side one-per-second token bucket with burst two, and only the server turns sustained reported A/V skew into recovery. Every resync refreshes feedback/progress/skew observation state while retaining the explicit two-second recovery deadline for a progress-timeout resync. Retryable `backend_error` END records leave the close handler attached so 4413/4500 remains the retry authority, and only 30 stable streaming seconds reset its four-attempt budget. Both server enablement and client selection are explicit. WebRTC remains the default and no transport fallback is automatic. The prototype is receive-only because current high-rate input still uses the WebRTC data channel; this is an explicit boundary, not hidden control-path parity.
-
-The passive HLS/LL-HLS specialization is fixed separately in
-[`HLS_LL_HLS.md`](HLS_LL_HLS.md). Phases 1–3 and separate Phase 4 assets are
-implemented: default-off configuration, event negotiation, digest-only ten-second
-one-use tickets, sliding scoped cookie leases, strict HTTP/Origin/proxy policy,
-a shared bounded H.264/AAC fMP4 packager and explicit native or pinned local
-hls.js/MSE playback. The current packager consumes one high VP8 subscription and
-one shared Opus subscription; three video workers separately decode/scale/encode
-H.264 and one audio worker encodes AAC. Generation/anchor, fixed-GOP, rolling
-playlist and progress rules are explicit. HLS HTTP delivery has bounded writes,
-blocking reloads and retention; the common normal event writer has a separate
-unbounded-write finding and must not inherit an isolation claim from HLS.
-
-Both HLS modes reuse the same immutable retained objects and conversion workers.
-Private Mode releases demand, renewal preserves the short-lived cookie, permission
-loss closes the central delivery, and the last unpaused viewer starts a 15-second
-idle grace before worker/subscription/object cleanup. Active high input is fixed
-at 1280×720/25-fps VP8 and stereo 48-kHz Opus; arbitrary source-format changes
-are not currently transparent. Advertised-only passive/admin choices and explicit
-Retry do not provide an automatic fallback or an input channel.
-
-The supplied target is healthy exact-8741 with conventional HLS enabled.
-Preparation passed the recorded client/wire/package/image gates, and the operator
-confirmed at least five minutes of moving PC/Helium HLS picture/audio without
-Retry/reload alongside continuing WebRTC. Reliable cold start, native/TV/LL-HLS,
-scripted event/recovery, resource and final grouped acceptance remain open.
-No fresh native/fuzz gate or causal live-parser trace is inferred. Detailed
-historical failures and repairs remain in [WORKPLAN.md](WORKPLAN.md),
-[the startup record](HLS_STARTUP_REPAIR_2026-10-04.md) and
-[the latest rolling-window record](HLS_PLAYLIST_WINDOW_REPAIR_2026-10-07.md).
-
-The compatibility refactor closes the planned gaps in the former WebRTC-facing `types.Sample`/`SampleListener` seam: format metadata, real GStreamer PTS/DTS, a manager-owned timeline, generations and discontinuities are explicit; subscriber queues are bounded and non-blocking; and generic session watching state no longer depends on the name `WebRTC`. Legacy stream-sink types remain capture-internal compatibility machinery, while WebRTC depends only on `EncodedMediaProvider`/`MediaSubscription`. That earlier compatibility block added no new transport, public API or configuration.
-
-This architecture is directionally aligned with upstream issue #371, which explicitly lists `m3u8`/HLS, WebRTC, QUIC and other media backends and proposes selecting them according to user-device, network and server capabilities.
-
-### LATER/OPTIONAL
-
-- WebTransport/QUIC productionization after simpler fallbacks are proven;
-- MPEG-DASH where it materially improves passive-client compatibility;
-- MJPEG only as an ultra-legacy image-only last resort;
-- fully automatic transport/codec selection after explicit capability detection and measured fallback behavior.
-
-The source-subscription and participant-delivery interface semantics are decided. The WebCodecs prototype described next was removed on 2026-10-14. Version-1 WebCodecs framing/negotiation, the server media endpoint/backend/queue state machines, the isolated receive-only client and its persisted manual selection/compact status productization are implemented. Phase 4 adds only a separate explicit Compose enablement overlay, credential-safe fixed-metric collection/PromQL and the grouped-validation record; omitting the overlay leaves the stable deployment unchanged. At exact `86893473`, automated, image, deployment/security and a roughly 15-minute zero-resync technical streaming checkpoint passed. The operator observed continuously visible video without conspicuous black flashes or stutters and audible approximately synchronized audio. The measured 25-fps cadence is the configured shared adaptive `high` source rate; a subjectively slightly less fluid WebCodecs presentation still requires a controlled pacing A/B, and the wider grouped matrix remains open. Exact `12cfe43b` passed the focused client productization checkpoint: 26 tests, type/build, image/deployment/security and the persisted/default/override/healthy/terminal browser matrix succeeded, while live view-only fragment preservation was not repeated and remains backed by automated coverage. The HLS contract and Phases 1–3 server/passive-client work are implemented in the repository. Focused automated target checks passed at `e85d8568`, and the default-off base/Brave image deployment started healthy at `741025c3`. Phase 4 assets and subsequent repairs reached supplied exact-8741 preparation/activation and at least five minutes of moving PC/Helium HLS A/V alongside working WebRTC. Cold-start, scripted event/recovery, native/TV/LL-HLS and resource/full grouped acceptance remain OPEN; historical incidents and exact evidence limits are recorded in `WORKPLAN.md`. The required final stability review is tracked in `STABILITY_REVIEW.md`; automatic selection remains later work.
-
-## Verification boundary
-
-Architecture/runtime claims beyond repository inspection must be verified on the real target server, not in Codex. Codex should prepare server-side validation steps but must not execute the application, builds, tests, Docker or media/device checks.
-
-The semantic upstream merge is recorded in [`UPSTREAM_SYNC_AUDIT.md`](UPSTREAM_SYNC_AUDIT.md). Its applicable target-server build and regression matrix were operator-confirmed on 2026-09-09 after the deployment policy-mount correction. The adaptive overlay, bitrate-unit correction, diagnostics and next-tier nominal upgrade gate were subsequently built, focused-tested and accepted on 2026-09-10 for the documented three-viewer target-server scenario. The view-only boundary, real inbound-media denial and revocation passed through `80eeca64`; exact-commit client/server checks, deployment, HTTP probe and compact-link browser smoke then passed at `913a981e`. The operator closed that grouped checkpoint without executing the manual iPhone deep test, so no no-reload iPhone claim is made. At `a32027d`, the media-subscription/WebRTC compatibility refactor passed the expanded target-server Go suite and server/plugin build, local image builds, healthy startup, a current-protocol lifecycle probe and initial metrics inspection. At exact follow-up `e5f55bf9`, the full server validation/build passed again, fresh images deployed healthy, and the estimator correction passed its focused single-viewer startup trace. The operator closed that checkpoint on 2026-09-12 while explicitly deferring a repeat of the full role/private-mode/reconnect matrix and induced three-viewer adaptive down/up run to final grouped validation; those checks are not claimed at `e5f55bf9`. Codex did not execute any runtime checks.
+- `server/pkg/types/media.go` defines sources, encoded units, events, subscriptions and the backend
+  interfaces without Pion types.
+- The provider starts an encoder on its first subscriber and stops it after the last. It admits a new
+  video subscriber at a keyframe and forces a keyframe when a tier gains a waiting viewer (rate-limited,
+  see `ADAPTIVE_QUALITY.md`). Recreating a pipeline or changing its format advances the source generation.
+- The manager issues a lease per session and backend. Logout, kick, deletion, loss of `CanWatch`, a new
+  primary delivery and shutdown revoke it centrally. Backends never see login or share credentials.
+- A WebRTC track consumes its subscription directly with a queue of two units. A full queue drops that
+  viewer's unit and counts it in `neko_webrtc_track_dropped_samples_total{session_id,kind}`.
+- `neko_media_*` metrics cover deliveries, subscriptions, queue depth, drops, discontinuities and source
+  generation, without session labels.
+
+Per-viewer tier selection (`server/internal/webrtc/peer.go`) is described in
+[`ADAPTIVE_QUALITY.md`](ADAPTIVE_QUALITY.md), the HLS backend (`server/internal/mediahls/`) in
+[`HLS_LL_HLS.md`](HLS_LL_HLS.md).
+
+## Client mechanics
+
+- `signal/request` asks for `video: {auto: true}`, so the server can switch tiers per viewer.
+- Public STUN servers are added only when the server lists no ICE servers.
+- ICE `disconnected` has an eight-second grace before it counts as failed, matching the server.
+- Playback watchdog (`client/core/src/playback.ts`): no new frames or no time progress for eight seconds
+  in the foreground re-attaches the same stream, at most three times, then stops. A hidden page, a
+  deliberate pause or a running re-attachment is not a stall.
+- Reconnect is upstream's: ten attempts with a whoami check, none after kick or logout. A page restored
+  from the back/forward cache reconnects.
+- The overlay draws no second cursor when `system/init` reports `webrtc.pointer_in_video`.
+- Stream choice (`client/src/state/media.ts`): the stored `media_backend` or `?media=hls|ll-hls` for one
+  visit, among the modes the server advertises. A change reloads the page. With HLS, `client.receiveOnly`
+  turns off control requests, implicit hosting and all overlay input.
+- `?debug` shows stream, connection, watchdog and input state over the picture (`client/src/state/debug.ts`).
+  `window.__nekoTrace` is a read-only handle for `deploy/trace-*.js`.
+
+## View-only share links
+
+`member.multiuser.view_only_token` (`NEKO_VIEW_ONLY_TOKEN` in `.env`) is a 96-bit bearer token written as
+exactly 16 Base64URL characters, different from both passwords. Empty disables the link.
+
+- The link is `https://host/#/<token>`. The client (`client/src/state/viewonly.ts`) sends the token only as
+  the password in the body of `POST /api/login`, so it never appears in a request line, proxy log or
+  `Referer`. It stays visible in browser history and anything the link is pasted into.
+- The provider compares it in constant time and returns `NewViewOnlyMemberProfile`: watch and receive
+  chat only. `RestrictViewOnly` removes admin, host, media sharing, clipboard and the inactive cursor
+  whenever a view-only profile is set.
+- Enforcement is on the server: the WebSocket accepts only heartbeat, WebRTC signalling and HLS
+  negotiation (`internal/websocket/viewonly.go`), the data channel only ping, and every interactive HTTP
+  route, handler and plugin checks `IsInteractive()`. Inbound media tracks and host assignment are refused.
+- View-only sessions are not written to `session.file`. The client keeps the session token in
+  `sessionStorage` (`neko_view_session`), apart from a member's session, and logs out on leaving the page.
+- The token has no expiry. To revoke it, change or clear it in `.env` and recreate the container
+  (`bash setup.sh --no-build`); hand out a new link only if sharing should continue.
+- `deploy/check-view-only-http.py` checks the HTTP boundary via `docker-compose.validation.yaml`.
+
+## Open items
+
+- An older Hisense Smart TV (VIDAA) of a regular viewer lost WebRTC around joins, chat and control
+  changes; model, firmware and cause are unknown. HLS on that TV is untested.
+- Recovery on an iPhone after a network interruption without reload has not been tested on a real device.
+- Upstream's capture subscription API (#699) is not adopted; see `UPSTREAM_SYNC_AUDIT.md`.
