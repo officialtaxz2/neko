@@ -1,5 +1,28 @@
 # Upstream Synchronization Audit
 
+## Merge of upstream `8fd303c` — 2026-11-20
+
+Merged the single upstream commit `8fd303c` (#741) without conflicts.
+`runtime/chromium-unlock` wraps the Chromium-based browsers and removes a
+stale `SingletonLock` (other hostname or dead process) before the browser
+starts; it reads the profile from `--user-data-dir=` and then `exec`s the
+browser, so supervisord's signals still reach the same process.
+
+The fork fixed the same problem differently, with a one-off `cleanup`
+service in `docker-compose.yaml` that deleted the lock files before
+`neko` started. Following the sync rule, that service is removed in favour
+of upstream's wrapper. The fork-only `apps/helium/supervisord.conf` gets the
+same wrapper, so Helium's profile (`helium/` subdirectory) stays covered.
+This is an equivalent replacement: both cover the recreated container
+(new hostname). A restart without recreation keeps the hostname, and
+Chromium removes a same-host lock of a dead process by itself. Note for
+`setup.sh --rollback` to a build before this merge: that image has no
+wrapper and Compose no longer has `cleanup`, so after an unclean stop
+delete `SingletonLock`, `SingletonSocket` and `SingletonCookie` from
+`NEKO_PROFILE_DIR` by hand.
+Brave keeps its three documented divergences (see below) on top of
+upstream's new `command=` line.
+
 ## Merge of upstream `269ab9a` — 2026-11-16
 
 Merged the 14 upstream commits `92f9916..269ab9a` (PR #33). The previous

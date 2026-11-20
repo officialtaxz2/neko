@@ -1,25 +1,9 @@
 services:
-  cleanup:
-    image: "alpine:latest"
-    restart: "no"
-    volumes:
-      - "${NEKO_PROFILE_DIR:-./files}:/cleanup-dir"
-    command: >-
-      sh -c "rm -f /cleanup-dir/SingletonLock
-      /cleanup-dir/SingletonCookie
-      /cleanup-dir/SingletonSocket
-      /cleanup-dir/helium/SingletonLock
-      /cleanup-dir/helium/SingletonCookie
-      /cleanup-dir/helium/SingletonSocket"
-
   neko:
     # The locally built browser image (apps/<NEKO_BROWSER>, default brave).
     image: "${NEKO_IMAGE:-my-neko/${NEKO_BROWSER:-brave}:latest}"
     pull_policy: never
     restart: "unless-stopped"
-    depends_on:
-      cleanup:
-        condition: service_completed_successfully
     shm_size: "2gb"
     privileged: true
     cap_add:
