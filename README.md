@@ -4,27 +4,18 @@ A customized fork of [m1k1o/neko](https://github.com/m1k1o/neko): a self-hosted 
 
 The fork keeps Neko's shared session and roles (one person controls, everyone watches; admins can lock and hand over control). It adds a redesigned client for desktop and phone, per-viewer adaptive quality, HLS as an alternative stream, view-only share links and a one-command deployment with Brave or Helium.
 
-## Contents
-
-- [What the fork adds](#what-the-fork-adds)
-- [Deployment](#deployment)
-- [Configuration](#configuration)
-- [Browsers](#browsers)
-- [Repository layout](#repository-layout)
-- [Documentation](#documentation)
-
 ## What the fork adds
 
 **Client** (upstream's React client with the fork's design in [`client/src/fork/`](client/src/fork/README.md))
 
 - Redesigned interface for desktop, phone and tablet, with a control pill that says who has control.
 - Touch input: trackpad mode with its own pointer, "force touch" and a bar of special keys above the on-screen keyboard.
-- Playback watchdog and recovery, plus a bounded reconnect (four attempts at 1, 2, 5 and 10 seconds) when a connection cannot recover by itself.
+- Playback watchdog: when the picture stops for eight seconds in the foreground, the stream is re-attached, up to three times.
 - Open tabs notice a new deployment: they reload when that interrupts nothing, otherwise they offer a reload.
 
 **Server and media**
 
-- Per-viewer adaptive quality: three VP8 tiers (`high`, `medium`, `low`). A viewer drops a tier only when its bandwidth falls short and its receiver reports loss or NACKs, probes back up one tier at a time, and never affects other viewers. See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md).
+- Per-viewer adaptive quality: four VP8 tiers, from `high` (1080p) down to `lowest` (540p). Each viewer's tier is chosen on its own: it drops a tier only when its bandwidth falls short and its receiver still reports loss after retransmission, and it probes back up one tier at a time. See [`docs/ADAPTIVE_QUALITY.md`](docs/ADAPTIVE_QUALITY.md).
 - HLS and LL-HLS as a manual alternative to WebRTC for watching (H.264/AAC). WebRTC stays the default for everyone. See [`docs/HLS_LL_HLS.md`](docs/HLS_LL_HLS.md).
 - View-only share links (`#/<16-character token>`), enforced by the server, not just hidden in the UI. See [`docs/VIEW_ONLY_SHARING.md`](docs/VIEW_ONLY_SHARING.md).
 - A media layer that separates the shared capture from per-viewer delivery, so one slow viewer cannot block the others. See [`docs/MEDIA_SUBSCRIPTION_BOUNDARY.md`](docs/MEDIA_SUBSCRIPTION_BOUNDARY.md).
@@ -110,14 +101,14 @@ Because the list is in `.env`, plain `docker compose` commands (for example `doc
 HLS additionally needs:
 
 - `NEKO_MEDIA_HLS_ALLOWED_ORIGINS`: the exact public `https://` origin.
-- `NEKO_MEDIA_HLS_TRUSTED_PROXIES`: the reverse proxy's address as Neko sees it. For a proxy on the same host that is the Docker network gateway, which `setup.sh` suggests when the value is missing.
+- `NEKO_MEDIA_HLS_TRUSTED_PROXIES`: the reverse proxy's address as Neko sees it. For a proxy on the same host that is the Docker network gateway; `setup.sh` stops when either value is missing and suggests it.
 - `NEKO_MEDIA_HLS_MODES`: `hls ll-hls` (default) or only `hls`. Conventional HLS runs about 20 seconds behind, LL-HLS about 3 to 5 seconds and needs HTTP/2 at the proxy (`deploy/check-ll-hls.sh` checks it).
 
 If the running container uses overlays that `COMPOSE_FILE` no longer lists, `setup.sh` stops before building and prints the line to add. Proxy setup for Caddy: [`docs/HLS_LL_HLS_CADDY.md`](docs/HLS_LL_HLS_CADDY.md).
 
 ## Browsers
 
-Both browsers keep history, open tabs, bookmarks, cookies, settings and extensions across restarts, and extensions install from the Chrome Web Store as usual. The managed policy only blocks what would endanger the shared session:
+Both browsers keep their profile (history, bookmarks, cookies, settings, extensions) across restarts, and extensions install from the Chrome Web Store as usual. The managed policy only blocks what would endanger the shared session:
 
 - no developer tools (they would show every viewer the session cookies of logged-in sites),
 - no password manager or autofill, no extra profiles or guest windows,
@@ -126,13 +117,11 @@ Both browsers keep history, open tabs, bookmarks, cookies, settings and extensio
 
 Because these are managed policies, the browser shows "Managed by your organization"; that refers only to this file. Downloads land in `NEKO_DOWNLOADS_DIR`, which Neko's file transfer serves.
 
-After a crash or container recreation, stale profile locks are removed on start (`runtime/chromium-unlock`). An image from before that change does not have it: if the browser then refuses to start, delete `SingletonLock`, `SingletonSocket` and `SingletonCookie` in `NEKO_PROFILE_DIR`.
+Stale profile locks are removed on start (`runtime/chromium-unlock`). An image built before #37 lacks this: if the browser then refuses to start, delete `Singleton{Lock,Socket,Cookie}` in `NEKO_PROFILE_DIR`.
 
 ### Brave (default)
 
-`apps/brave` installs the current stable release from Brave's signed apt repository; `bash setup.sh --no-cache` updates it. The profile lives directly in `NEKO_PROFILE_DIR`, and Brave restores the open tabs on start ("Continue where you left off"). Brave Shields blocks ads; no extension is preinstalled. Brave allows file upload dialogs; they show the container's files, so upload a file with Neko's file transfer first and then pick it from `~/Downloads`.
-
-Brave is stopped with `stopasgroup=true` in `apps/brave/supervisord.conf`. `/usr/bin/brave-browser` is a wrapper that does not forward signals, so without it Brave was killed after ten seconds and lost its tabs.
+`apps/brave` installs the current stable release from Brave's signed apt repository; `bash setup.sh --no-cache` updates it. The profile lives directly in `NEKO_PROFILE_DIR`, and Brave restores the open tabs on start ("Continue where you left off"; this needs `stopasgroup=true` in `apps/brave/supervisord.conf`, because `/usr/bin/brave-browser` does not forward the stop signal). Brave Shields blocks ads; no extension is preinstalled. Brave allows file upload dialogs; they show the container's files, so upload a file with Neko's file transfer first and then pick it from `~/Downloads`.
 
 ### Helium (optional)
 
